@@ -14,14 +14,20 @@
 #include "header.h"
 #include "trailer.h"
 
+#define ZC_BUFFER_MAX_SIZE (RLE_START_HEADER_SIZE +		\
+		(RLE_MAX_SEQ_NO * RLE_CONT_HEADER_SIZE) +	\
+	       	RLE_END_HEADER_SIZE +				\
+		RLE_CRC32_FIELD_SIZE +				\
+		(RLE_MAX_SEQ_NO * sizeof(int *))
+
 /**
  * Structure of pair or pointers
  * pointing to start and end addresses
  * of PDU data (complete or fragment)
  * */
 struct zc_ptrs_data {
-	uint32_t *start;
-	uint32_t *end;
+	int *start;
+	int *end;
 };
 
 /**
