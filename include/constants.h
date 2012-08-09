@@ -1,7 +1,6 @@
 /**
  * @file   constants.h
  * @author Aurelien Castanie
- * @date   Mon Aug  6 09:27:35 CEST 2012
  *
  * @brief  Definition of RLE context and status structure, functions and variables
  *
@@ -19,6 +18,13 @@
 
 #define IP_VERSION_4	4
 #define IP_VERSION_6	6
+
+enum rle_packet_type {
+	RLE_COMPLETE_PACKET = 0,
+	RLE_START_PACKET,
+	RLE_CONT_PACKET,
+	RLE_END_PACKET
+};
 
 #endif /* _CONSTANTS_H */
 

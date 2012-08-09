@@ -3,7 +3,7 @@
  * @author Aurelien Castanie
  * @date   Mon Aug  6 14:15:24 CEST 2012
  *
- * @brief  Definition of RLE encapsulation structure, functions and variables
+ * @brief  RLE encapsulation functions
  *
  *
  */
@@ -16,43 +16,61 @@
 #include "zc_buffer.h"
 
 static int create_header(struct rle_ctx_management *rle_ctx,
-			void *data_buffer)
+			void *data_buffer, size_t data_length)
 {
 	/* map RLE header to the already allocated buffer */
 	zc_rle_header_complete *rle_hdr = (zc_rle_header_complete *)rle_ctx->buf;
-
-	/* retrieve PDU IP header to get some information */
-	struct iphdr *ip_hdr = (struct iphdr *)data_buf;
+	rle_hdr->ptrs->start = NULL;
+	rle_hdr->ptrs->end = NULL;
 
 	/* fill RLE complete header */
-	rle_hdr->header.head.start_ind = 1;
-	rle_hdr->header.head.end_ind = 1;
-	rle_hdr->header.head.rle_packet_length = ntohs(ip_hdr->tot_len);
-	rle_hdr->header.head.label_type = RLE_LT_IMPLICIT_PROTO_TYPE; // TODO set the good LT from NCC
-	rle_hdr->header.head.proto_type_supp = RLE_T_PROTO_TYPE_NO_SUPP;
-	rle_hdr->header.proto_type = RLE_PROTO_TYPE_IP; // TODO set the good T from NCC
+	rle_hdr->header.head.b.start_ind = 1;
+	rle_hdr->header.head.b.end_ind = 1;
+	rle_hdr->header.head.b.rle_packet_length = data_length;
+	rle_hdr->header.head.b.label_type = RLE_LT_IMPLICIT_PROTO_TYPE; // TODO set the good LT from NCC, if pb C_ERROR
+	rle_hdr->header.head.b.proto_type_supp = RLE_T_PROTO_TYPE_NO_SUPP;
+	rle_hdr->header.proto_type = RLE_PROTO_TYPE_IP; // TODO set the good T from NCC, if pb C_ERROR
 
 	/* set start & end PDU data pointers */
-	rle_hdr->ptrs->start = (int *)rle_ctx->buf;
-	rle_hdr->ptrs->end = (int *)(rle_ctx->buf + ntohs(ip_hdr->tot_len));
+	rle_hdr->ptrs->start = (int *)data_buffer;
+	rle_hdr->ptrs->end = (int *)(data_buffer + data_length);
+
+	/* update rle context */
+	rle_ctx_set_end_address(rle_ctx,
+				(int *)(rle_hdr->ptrs->end + sizeof(int *)));
+	rle_ctx_set_is_fragmented(rle_ctx, C_FALSE);
+	rle_ctx_set_frag_counter(rle_ctx, 1);
+	rle_ctx_set_use_crc(rle_ctx, C_FALSE);
+	rle_ctx_set_pdu_length(rle_ctx, data_length);
+	rle_ctx_set_remaining_pdu_length(rle_ctx, data_length);
+	/* RLE packet length is the sum of packet label, protocol type & payload length */
+	// TODO buggy test (payload_length - RLE_PROTO_TYPE_FIELD_SIZE) value !!!!!
+	rle_ctx_set_rle_length(rle_ctx,
+				(data_length + RLE_PROTO_TYPE_FIELD_SIZE));
+	rle_ctx_set_proto_type(rle_ctx, rle_hdr->header.proto_type); // TODO
+	rle_ctx_set_label_type(rle_ctx, rle_hdr->header.head.b.label_type); // TODO
+	rle_ctx_set_qos_tag(rle_ctx, 0); // TODO
 
 	return C_OK;
 }
 
-void encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
+int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
 		void *data_buffer, size_t data_length)
 {
 	if (encap_check_pdu_validity(data_buffer) == C_ERROR)
-		return;
+		return C_ERROR;
 
-	create_header(rle_ctx);
+	if (create_header(rle_ctx, data_buffer, data_length) == C_ERROR)
+		return C_ERROR;
+
+	return C_OK;
 }
 
 int encap_check_pdu_validity(void *data_buffer)
 {
 	struct iphdr *ip_hdr = (struct iphdr *)data_buf;
 
-	int ip_len = ntohs(ip_hdr->tot_len);
+	int ip_len = ntohs(ip_hdr->tot_len); // TODO use data_length ?
 
 	/* check PDU size */
 	if (ip_len > RLE_MAX_PDU_SIZE) {

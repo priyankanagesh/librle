@@ -1,7 +1,6 @@
 /**
  * @file   rle_transmitter.h
  * @author Aurelien Castanie
- * @date   Mon Aug  6 09:27:35 CEST 2012
  *
  * @brief  Definition of RLE transmitter context and status structure, functions and variables
  *

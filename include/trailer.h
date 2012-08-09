@@ -1,7 +1,6 @@
 /**
  * @file   trailer.h
  * @author Aurelien Castanie
- * @date   Thu Aug  2 14:49:38 CEST 2012
  *
  * @brief  Definition of RLE trailer constants, functions and variables
  *

@@ -1,7 +1,6 @@
 /**
  * @file   header.h
  * @author Aurelien Castanie
- * @date   Thu Aug  2 14:49:38 CEST 2012
  *
  * @brief  Definition of RLE header constants, functions and variables
  *

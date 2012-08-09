@@ -22,13 +22,13 @@ static void init(struct transmitter_module *_this)
 	}
 
 	/* all frag_id are set to idle */
-	_this->free_ctx = 0;
+	set_free_all_frag_ctx(_this);
 }
 
 static int get_first_free_frag_ctx(struct transmitter_module *_this)
 {
 	for (int i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		if ((_this->free_ctx >> i) == 0)
+		if (((_this->free_ctx >> i) & 0x1) != 0)
 			return i;
 	}
 
@@ -41,6 +41,16 @@ static void set_nonfree_frag_ctx(struct transmitter_module *_this,
 	_this->free_ctx = (1 << index);
 }
 
+static void set_free_frag_ctx(struct transmitter_module *_this,
+				int index)
+{
+	_this->free_ctx = (0 << index);
+}
+
+static void set_free_all_frag_ctx(struct transmitter_module *_this)
+{
+	_this->free_ctx = 0;
+}
 
 struct transmitter_module *rle_transmitter_new(void)
 {
@@ -61,6 +71,8 @@ void rle_transmitter_destroy(struct transmitter_module *_this)
 {
 	for (int i = 0; i < RLE_MAX_FRAG_NUMBER; i++)
 		rle_ctx_destroy(_this->rle_ctx_man[i]);
+
+	set_free_all_frag_ctx(_this);
 
 	free(_this);
 	_this = NULL;
@@ -95,6 +107,12 @@ void rle_transmitter_encap_data(struct transmitter_module *_this,
 	set_nonfree_frag_ctx(_this, index_ctx);
 
 	/* encap data if found */
-	encap_encapsulate_pdu(_this->rle_ctx_man[index_ctx], data_buffer, data_length);
+	if (encap_encapsulate_pdu(_this->rle_ctx_man[index_ctx], data_buffer, data_length)
+			== C_ERROR) {
+		set_free_frag_ctx(_this, index_ctx);
+		printf("ERROR %s:%s:%d: transmitter module is invalid\n",
+				__FILE__, __func__, __LINE__);
+		return;
+	}
 }
 

@@ -1,7 +1,6 @@
 /**
  * @file   rle_ctx.h
  * @author Aurelien Castanie
- * @date   Mon Aug  6 09:27:35 CEST 2012
  *
  * @brief  Definition of RLE context and status structure, functions and variables
  *
@@ -37,6 +36,9 @@ struct rle_ctx_management {
 	/** Buffer containing PDU refs and
 	 * headers/trailer */
 	void *buf;
+	/** End address of last fragment
+	 * constructed in buffer */
+	int *end_addr;
 	/** number of errors drop PDU or fragments */
 	int error_nb;
 	/** specify error */
@@ -82,6 +84,8 @@ int rle_ctx_destroy(struct rle_ctx_management *_this);
  */
 void rle_ctx_set_frag_id(struct rle_ctx_management *_this, uint8_t val);
 
+uint8_t rle_ctx_get_frag_id(struct rle_ctx_management *_this);
+
 /**
  *  @brief
  *
@@ -120,6 +124,8 @@ void rle_ctx_set_is_fragmented(struct rle_ctx_management *_this, bool val);
  *  @ingroup
  */
 void rle_ctx_set_frag_counter(struct rle_ctx_management *_this, uint8_t val);
+
+void rle_ctx_incr_frag_counter(struct rle_ctx_management *_this);
 
 /**
  *  @brief
@@ -160,6 +166,8 @@ void rle_ctx_set_use_crc(struct rle_ctx_management *_this, bool val);
  */
 void rle_ctx_set_pdu_length(struct rle_ctx_management *_this, uint32_t val);
 
+uint32_t rle_ctx_get_pdu_length(struct rle_ctx_management *_this);
+
 /**
  *  @brief
  *
@@ -199,6 +207,8 @@ void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val);
  */
 void rle_ctx_set_proto_type(struct rle_ctx_management *_this, uint16_t val);
 
+uint16_t rle_ctx_get_proto_type(struct rle_ctx_management *_this);
+
 /**
  *  @brief
  *
@@ -211,5 +221,22 @@ void rle_ctx_set_proto_type(struct rle_ctx_management *_this, uint16_t val);
  *  @ingroup
  */
 void rle_ctx_set_label_type(struct rle_ctx_management *_this, uint8_t val);
+
+uint8_t rle_ctx_get_label_type(struct rle_ctx_management *_this);
+
+/**
+ *  @brief
+ *
+ *  @warning
+ *
+ *  @param
+ *
+ *  @return
+ *
+ *  @ingroup
+ */
+void rle_ctx_set_end_address(struct rle_ctx_management *_this, int *addr);
+
+int *rle_ctx_get_end_address(struct rle_ctx_management *_this);
 
 #endif /* _RLE_CTX_H */

@@ -1,7 +1,6 @@
 /**
  * @file   zc_buffer.h
  * @author Aurelien Castanie
- * @date   Fri Aug  3 10:49:38 CEST 2012
  *
  * @brief  Definition of RLE trailer constants, functions and variables
  *
