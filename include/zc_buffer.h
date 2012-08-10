@@ -17,7 +17,7 @@
 		(RLE_MAX_SEQ_NO * RLE_CONT_HEADER_SIZE) +	\
 	       	RLE_END_HEADER_SIZE +				\
 		RLE_CRC32_FIELD_SIZE +				\
-		(RLE_MAX_SEQ_NO * sizeof(int *))
+		(RLE_MAX_SEQ_NO * sizeof(int *)))
 
 /**
  * Structure of pair or pointers

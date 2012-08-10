@@ -49,7 +49,7 @@
 union rle_header_all {
 	uint16_t all;
 	struct {
-#if defined (__LITTLE_ENDIAN_BITFIELD)
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 		uint16_t start_ind:1;
 		uint16_t end_ind:1;
 		uint16_t rle_packet_length:11;
@@ -62,7 +62,7 @@ union rle_header_all {
 		union {
 			uint16_t frag_id:3;
 		};
-#elif defined (__BIG_ENDIAN_BITFIELD)
+#elif __BYTE_ORDER == __BIG_ENDIAN
 		union {
 			uint16_t frag_id:3;
 		};
@@ -86,11 +86,11 @@ union rle_header_all {
 union rle_header_start_packet {
 	uint16_t all;
 	struct {
-#if defined (__LITTLE_ENDIAN_BITFIELD)
+#if __BYTE_ORDER == __LITTLE_ENDIAN
 		uint16_t total_length:13;
 		uint16_t label_type:2; /* LT for fragmented packet */
 		uint16_t proto_type_supp:1; /* T for fragmented packet */
-#if defined (__BIG_ENDIAN_BITFIELD)
+#elif __BYTE_ORDER == __BIG_ENDIAN
 		uint16_t proto_type_supp:1;
 		uint16_t label_type:2;
 		uint16_t total_length:13;
@@ -102,26 +102,26 @@ union rle_header_start_packet {
 
 /* RLE packet header
  * for complete PDU */
-struct {
+struct rle_header_complete {
 	union rle_header_all head;
 	uint16_t proto_type;
-} __attribute__ ((packed)) rle_header_complete;
+} __attribute__ ((packed));
 
 /* RLE START packet header
  * for fragmented
  * PDU */
-struct {
+struct rle_header_start {
 	union rle_header_all head;
 	union rle_header_start_packet head_start;
 	uint16_t proto_type;
-} __attribute__ ((packed)) rle_header_start;
+} __attribute__ ((packed));
 
 /* RLE CONTINUATION & END packet header
  * for fragmented
  * PDU */
-struct {
+struct rle_header_cont_end {
 	union rle_header_all head;
-} __attribute__ ((packed)) rle_header_cont_end;
+} __attribute__ ((packed));
 
 /** Type of payload in RLE packet */
 enum {

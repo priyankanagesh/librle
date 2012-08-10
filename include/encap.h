@@ -10,6 +10,8 @@
 #ifndef _ENCAP_H
 #define _ENCAP_H
 
+#include "rle_ctx.h"
+
 /**
  *  @brief encapsulate data into an rle packet
  *

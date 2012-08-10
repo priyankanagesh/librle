@@ -10,6 +10,8 @@
 
 #include <netinet/ip.h>
 #include <arpa/inet.h>
+#include <stdlib.h>
+#include <stdio.h>
 #include "encap.h"
 #include "constants.h"
 #include "rle_ctx.h"
@@ -19,9 +21,9 @@ static int create_header(struct rle_ctx_management *rle_ctx,
 			void *data_buffer, size_t data_length)
 {
 	/* map RLE header to the already allocated buffer */
-	zc_rle_header_complete *rle_hdr = (zc_rle_header_complete *)rle_ctx->buf;
-	rle_hdr->ptrs->start = NULL;
-	rle_hdr->ptrs->end = NULL;
+	struct zc_rle_header_complete *rle_hdr = (struct zc_rle_header_complete *)rle_ctx->buf;
+	rle_hdr->ptrs.start = NULL;
+	rle_hdr->ptrs.end = NULL;
 
 	/* fill RLE complete header */
 	rle_hdr->header.head.b.start_ind = 1;
@@ -32,12 +34,12 @@ static int create_header(struct rle_ctx_management *rle_ctx,
 	rle_hdr->header.proto_type = RLE_PROTO_TYPE_IP; // TODO set the good T from NCC, if pb C_ERROR
 
 	/* set start & end PDU data pointers */
-	rle_hdr->ptrs->start = (int *)data_buffer;
-	rle_hdr->ptrs->end = (int *)(data_buffer + data_length);
+	rle_hdr->ptrs.start = (int *)data_buffer;
+	rle_hdr->ptrs.end = (int *)(data_buffer + data_length);
 
 	/* update rle context */
 	rle_ctx_set_end_address(rle_ctx,
-				(int *)(rle_hdr->ptrs->end + sizeof(int *)));
+				(int *)(rle_hdr->ptrs.end + sizeof(int *)));
 	rle_ctx_set_is_fragmented(rle_ctx, C_FALSE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
 	rle_ctx_set_use_crc(rle_ctx, C_FALSE);
@@ -68,7 +70,7 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
 
 int encap_check_pdu_validity(void *data_buffer)
 {
-	struct iphdr *ip_hdr = (struct iphdr *)data_buf;
+	struct iphdr *ip_hdr = (struct iphdr *)data_buffer;
 
 	int ip_len = ntohs(ip_hdr->tot_len); // TODO use data_length ?
 

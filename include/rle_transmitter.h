@@ -10,7 +10,9 @@
 #ifndef _RLE_TRANSMITTER_H
 #define _RLE_TRANSMITTER_H
 
+#include <stddef.h>
 #include "rle_ctx.h"
+#include "header.h"
 
 /**
  * RLE transmitter module used

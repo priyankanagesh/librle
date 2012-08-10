@@ -9,8 +9,13 @@
  */
 
 #include <errno.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "rle_ctx.h"
 #include "constants.h"
+#include "zc_buffer.h"
 
 static void flush(struct rle_ctx_management *_this)
 {
@@ -27,7 +32,7 @@ static void flush(struct rle_ctx_management *_this)
 	_this->label_type		= 0xff;
 	_this->error_nb			= 0;
 	_this->error_type		= 0;
-	_this->end_addr			= NULL;
+	_this->end_address		= NULL;
 }
 
 int rle_ctx_init(struct rle_ctx_management *_this)
@@ -56,7 +61,7 @@ int rle_ctx_init(struct rle_ctx_management *_this)
 
 	/* set useful data end address pointing
 	 * to the buffer start address */
-	_this->end_addr = (int *)_this->buf;
+	_this->end_address = (int *)_this->buf;
 
 	/* set all buffer memory to zero */
 	memset(_this->buf, 0, ZC_BUFFER_MAX_SIZE);
@@ -108,7 +113,7 @@ void rle_ctx_incr_seq_nb(struct rle_ctx_management *_this)
 	_this->next_seq_nb++;
 }
 
-void rle_ctx_set_is_fragmented(struct rle_ctx_management *_this, bool val)
+void rle_ctx_set_is_fragmented(struct rle_ctx_management *_this, int val)
 {
 	_this->is_fragmented = val;
 }
@@ -128,7 +133,7 @@ void rle_ctx_set_qos_tag(struct rle_ctx_management *_this, uint32_t val)
 	_this->qos_tag = val;
 }
 
-void rle_ctx_set_use_crc(struct rle_ctx_management *_this, bool val)
+void rle_ctx_set_use_crc(struct rle_ctx_management *_this, int val)
 {
 	_this->use_crc = val;
 }
@@ -158,6 +163,11 @@ void rle_ctx_set_remaining_pdu_length(struct rle_ctx_management *_this, uint32_t
 	}
 
 	_this->remaining_pdu_length = val;
+}
+
+uint32_t rle_ctx_get_remaining_pdu_length(struct rle_ctx_management *_this)
+{
+	return(_this->remaining_pdu_length);
 }
 
 void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val)

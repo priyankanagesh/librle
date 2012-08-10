@@ -10,19 +10,21 @@
 #ifndef _RLE_CTX_H
 #define _RLE_CTX_H
 
+#include <stdint.h>
+
 struct rle_ctx_management {
 	/** specify fragment id the structure belongs to */
 	uint8_t frag_id;
 	/** next sequence number for frag_id */
 	uint8_t next_seq_nb;
 	/** PDU fragmentation status */
-	bool is_fragmented;
+	int is_fragmented;
 	/** current number of fragments present in queue */
 	uint8_t frag_counter;
 	/** specify PDU QoS tag */
 	uint32_t qos_tag;
 	/** CRC32 trailer usage status */
-	bool use_crc;
+	int use_crc;
 	/** size of received PDU or PDU to send */
 	uint32_t pdu_length;
 	/** size of remaining data to send or to receive */
@@ -38,7 +40,7 @@ struct rle_ctx_management {
 	void *buf;
 	/** End address of last fragment
 	 * constructed in buffer */
-	int *end_addr;
+	int *end_address;
 	/** number of errors drop PDU or fragments */
 	int error_nb;
 	/** specify error */
@@ -110,7 +112,7 @@ void rle_ctx_set_seq_nb(struct rle_ctx_management *_this, uint8_t val);
  *
  *  @ingroup
  */
-void rle_ctx_set_is_fragmented(struct rle_ctx_management *_this, bool val);
+void rle_ctx_set_is_fragmented(struct rle_ctx_management *_this, int val);
 
 /**
  *  @brief
@@ -151,7 +153,7 @@ void rle_ctx_set_qos_tag(struct rle_ctx_management *_this, uint32_t val);
  *
  *  @ingroup
  */
-void rle_ctx_set_use_crc(struct rle_ctx_management *_this, bool val);
+void rle_ctx_set_use_crc(struct rle_ctx_management *_this, int val);
 
 /**
  *  @brief
@@ -180,6 +182,8 @@ uint32_t rle_ctx_get_pdu_length(struct rle_ctx_management *_this);
  *  @ingroup
  */
 void rle_ctx_set_remaining_pdu_length(struct rle_ctx_management *_this, uint32_t val);
+
+uint32_t rle_ctx_get_remaining_pdu_length(struct rle_ctx_management *_this);
 
 /**
  *  @brief

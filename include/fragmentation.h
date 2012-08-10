@@ -10,6 +10,9 @@
 #ifndef _FRAGMENTATION_H
 #define _FRAGMENTATION_H
 
+#include <stddef.h>
+#include "rle_ctx.h"
+
 /**
  *  @brief Split encapsulated PDU into fragments
  *
