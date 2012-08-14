@@ -101,6 +101,10 @@ uint8_t rle_ctx_get_frag_id(struct rle_ctx_management *_this);
  */
 void rle_ctx_set_seq_nb(struct rle_ctx_management *_this, uint8_t val);
 
+uint8_t rle_ctx_get_seq_nb(struct rle_ctx_management *_this);
+
+void rle_ctx_incr_seq_nb(struct rle_ctx_management *_this);
+
 /**
  *  @brief
  *
@@ -242,5 +246,7 @@ uint8_t rle_ctx_get_label_type(struct rle_ctx_management *_this);
 void rle_ctx_set_end_address(struct rle_ctx_management *_this, int *addr);
 
 int *rle_ctx_get_end_address(struct rle_ctx_management *_this);
+
+void rle_ctx_dump(struct rle_ctx_management *_this);
 
 #endif /* _RLE_CTX_H */

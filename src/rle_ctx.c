@@ -108,6 +108,11 @@ void rle_ctx_set_seq_nb(struct rle_ctx_management *_this, uint8_t val)
 	_this->next_seq_nb = val;
 }
 
+uint8_t rle_ctx_get_seq_nb(struct rle_ctx_management *_this)
+{
+	return(_this->next_seq_nb);
+}
+
 void rle_ctx_incr_seq_nb(struct rle_ctx_management *_this)
 {
 	_this->next_seq_nb++;
@@ -194,7 +199,7 @@ uint16_t rle_ctx_get_proto_type(struct rle_ctx_management *_this)
 
 void rle_ctx_set_label_type(struct rle_ctx_management *_this, uint8_t val)
 {
-	if ((val != RLE_LT_IMPLICIT_PROTO_TYPE) || (val != RLE_LT_PROTO_SIGNAL)) {
+	if ((val != RLE_LT_IMPLICIT_PROTO_TYPE) && (val != RLE_LT_PROTO_SIGNAL)) {
 		printf("ERROR %s:%s:%d: Invalid Label_type value [%d]\n",
 				__FILE__, __func__, __LINE__, val);
 		return;
@@ -224,3 +229,44 @@ int *rle_ctx_get_end_address(struct rle_ctx_management *_this)
 	return(_this->end_address);
 }
 
+void rle_ctx_dump(struct rle_ctx_management *_this)
+{
+	printf("\n-------------------DUMP RLE CTX-------------------\n");
+	printf("\tfrag_id		\t\t= [0x%0x]\n", _this->frag_id);
+	printf("\tnext_seq_nb		\t= [0x%0x]\n", _this->next_seq_nb);
+	printf("\tis_fragmented		\t= [%d]\n", _this->is_fragmented);
+	printf("\tfrag_counter		\t= [%d]\n", _this->frag_counter);
+	printf("\tqos_tag		\t\t= [%d]\n", _this->qos_tag);
+	printf("\tuse_crc		\t\t= [%d]\n", _this->use_crc);
+	printf("\tpdu_length		\t= [%d] Bytes\n", _this->pdu_length);
+	printf("\tremaining_pdu_length	\t= [%d] Bytes\n", _this->remaining_pdu_length);
+	printf("\tlast rle_length	\t\t= [%d] Bytes\n", _this->rle_length);
+	printf("\tproto_type		\t= [0x%0x]\n", _this->proto_type);
+	printf("\tlabel_type		\t= [0x%0x]\n", _this->label_type);
+	printf("\terror_nb		\t= [%d]\n", _this->error_nb);
+	printf("\terror_type		\t= [%d]\n", _this->error_type);
+	printf("\tend address		\t= [0x%0x]\n", *_this->end_address);
+	/* RLE packet dump TODO CONT & END + TRL */
+	struct zc_rle_header_complete *hdr = _this->buf;
+	printf("| SE |  RLEPL  |  LT |  T  |  PTYPE |\n");
+	printf("| %d%d |   %d   | 0x%0x | 0x%0x |  0x%0x  |\n",
+			hdr->header.head.b.start_ind,
+			hdr->header.head.b.end_ind,
+			hdr->header.head.b.rle_packet_length,
+			hdr->header.head.b.label_type,
+			hdr->header.head.b.proto_type_supp,
+			hdr->header.proto_type);
+	int i = 0;
+	int *i_ptr = hdr->ptrs.start;
+
+	printf("|  \t\t  PAYLOAD  \t\t  |\n");
+	for (i = 0; i < _this->pdu_length; i++) {
+		int data = *(i_ptr + (4*i));
+		printf(" 0x%0x ", data);
+	}
+
+	printf("\n@ start %p\n", hdr->ptrs.start);
+	printf("@ end %p\n", hdr->ptrs.end);
+
+	printf("\n--------------------------------------------------\n");
+}
