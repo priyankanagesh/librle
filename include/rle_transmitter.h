@@ -77,7 +77,9 @@ void rle_transmitter_destroy(struct transmitter_module *_this);
  *
  *  @ingroup
  */
-void rle_transmitter_encap_data(struct transmitter_module *_this,
+int rle_transmitter_encap_data(struct transmitter_module *_this,
 				void *data_buffer, size_t data_length);
+
+void rle_transmitter_dump(struct transmitter_module *_this);
 
 #endif /* _RLE_TRANSMITTER_H */
