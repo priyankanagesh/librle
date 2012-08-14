@@ -13,6 +13,7 @@
 #include "constants.h"
 #include "rle_ctx.h"
 #include "zc_buffer.h"
+#include "crc.h"
 
 static int is_complete_pdu(struct rle_ctx_management *rle_ctx)
 {
@@ -132,6 +133,87 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	return C_OK;
 }
 
+static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx,
+		void *data_buffer)
+{
+	uint32_t crc32 = 0;
+	uint16_t field_value = 0;
+	size_t length = 0;
+
+	/* first compute proto_type CRC */
+	length = RLE_PROTO_TYPE_FIELD_SIZE;
+	field_value = (rle_ctx_get_proto_type(rle_ctx));
+	crc32 = compute_crc((unsigned char *)&field_value, length, RLE_CRC_INIT);
+
+	/* then compute PDU CRC */
+	length = rle_ctx_get_pdu_length(rle_ctx);
+	crc32 = compute_crc((unsigned char *)data_buffer, length, crc32);
+
+	return crc32;
+}
+
+static void add_trailer(struct rle_ctx_management *rle_ctx,
+		void *data_buffer, size_t burst_payload_length)
+{
+	/* retrieve address beyond
+	 * the last end addr pointer
+	 * to map a trailer */
+	struct zc_rle_trailer *rle_trl =
+		(struct zc_rle_trailer *)rle_ctx_get_end_address(rle_ctx);
+
+	if (!rle_ctx->use_crc) {
+		/* fill next seq number field */
+		rle_ctx_incr_seq_nb(rle_ctx);
+		rle_trl->trailer.seq_no = rle_ctx_get_seq_nb(rle_ctx);
+	} else {
+		/* crc32 is computed by using protocol type
+		 * and the PDU */
+		rle_trl->trailer.crc = compute_crc32(rle_ctx, data_buffer);
+	}
+}
+
+static int get_fragment_type(struct rle_ctx_management *rle_ctx, size_t burst_payload_length)
+{
+	int frag_type = RLE_START_PACKET;
+	uint32_t remaining_pdu_len = rle_ctx_get_remaining_pdu_length(rle_ctx);
+
+	if (is_complete_pdu(rle_ctx)) {
+		/* not all PDU data has been sent, so
+		 * it's a CONT or END packet */
+		if (remaining_pdu_len > burst_payload_length)
+			frag_type = RLE_CONT_PACKET;
+		else
+			frag_type = RLE_END_PACKET;
+	}
+
+	return frag_type;
+}
+
+int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
+		void *data_buffer, size_t burst_payload_length, int frag_type)
+{
+	int ret = C_OK;
+
+	if (frag_type == RLE_START_PACKET) {
+		/* clear old RLE header */
+		struct zc_rle_header_start *rle_hdr = (struct zc_rle_header_start *)rle_ctx->buf;
+		memset((void *)rle_hdr, 0, sizeof(struct zc_rle_header_start));
+	}
+
+	if (fragmentation_add_header(rle_ctx, data_buffer, burst_payload_length, frag_type) !=
+			C_OK) {
+			printf("ERROR %s:%s:%d: PDU fragmentation process failed\n",
+					__FILE__, __func__, __LINE__);
+			ret = C_ERROR;
+			return ret;
+	}
+
+	if (frag_type == RLE_END_PACKET)
+		add_trailer(rle_ctx, data_buffer, burst_payload_length);
+
+	return ret;
+}
+
 int fragmentation_is_needed(struct rle_ctx_management *rle_ctx, size_t burst_payload_length)
 {
 	if (rle_ctx->rle_length > burst_payload_length)
@@ -143,20 +225,28 @@ int fragmentation_is_needed(struct rle_ctx_management *rle_ctx, size_t burst_pay
 int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 		void *data_buffer, size_t burst_payload_length)
 {
+	int ret = C_ERROR;
+
 	if (!rle_ctx) {
 		printf("ERROR %s:%s:%d: RLE context is NULL\n",
 				 __FILE__, __func__, __LINE__);
-		return C_ERROR;
+		goto return_ret;
 	}
 
-	/* modify RLE header if packet is carrying a
-	 * complete PDU */
-	if (is_complete_pdu(rle_ctx))
-		fragmentation_modify_header(rle_ctx, data_buffer, burst_payload_length);
+	if (!fragmentation_is_needed(rle_ctx, burst_payload_length)) {
+		/* no frag needed, complete PDU is already RLEified
+		 * and can be sent as is */
+		ret = C_OK;
+		goto return_ret;
+	}
 
-	/* TODO construct fragment */
+	int frag_type = get_fragment_type(rle_ctx, burst_payload_length);
 
-	return C_OK;
+	/* RLE fragment creation */
+	ret = fragmentation_create_frag(rle_ctx, data_buffer, burst_payload_length, frag_type);
+
+return_ret:
+	return ret;
 }
 
 int fragmentation_add_header(struct rle_ctx_management *rle_ctx,
@@ -174,39 +264,10 @@ int fragmentation_add_header(struct rle_ctx_management *rle_ctx,
 			ret = add_cont_end_header(rle_ctx, data_buffer, burst_payload_length, type_rle_frag);
 			break;
 		default:
-			printf("ERROR %s:%s:%d: Header type unknown [%d]\n",
+			printf("ERROR %s:%s:%d: RLE fragment type unknown [%d]\n",
 					__FILE__, __func__, __LINE__, type_rle_frag);
 			break;
 	}
 
 	return ret;
 }
-
-int fragmentation_modify_header(struct rle_ctx_management *rle_ctx,
-		void *data_buffer, size_t burst_payload_length)
-{
-	int ret = C_OK;
-
-	/* clear old data */
-	struct zc_rle_header_start *rle_hdr = (struct zc_rle_header_start *)rle_ctx->buf;
-	memset((void *)rle_hdr, 0, sizeof(struct zc_rle_header_start));
-
-	/* add new RLE header - START packet */
-	if (fragmentation_add_header(rle_ctx, data_buffer, burst_payload_length, RLE_PDU_START_FRAG) !=
-			C_OK) {
-			printf("ERROR %s:%s:%d: PDU fragmentation process failed\n",
-					__FILE__, __func__, __LINE__);
-			ret = C_ERROR;
-	}
-
-	return ret;
-}
-
-int fragmentation_add_trailer(struct rle_ctx_management *rle_ctx,
-		void *data_buffer, size_t burst_payload_length)
-{
-	int ret = C_OK;
-
-	return ret;
-}
-
