@@ -39,6 +39,6 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
  *
  *  @ingroup
  */
-int encap_check_pdu_validity(void *data_buffer);
+int encap_check_pdu_validity(void *data_buffer, size_t data_length);
 
 #endif /* _ENCAP_H */

@@ -59,7 +59,7 @@ static int create_header(struct rle_ctx_management *rle_ctx,
 int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
 		void *data_buffer, size_t data_length)
 {
-	if (encap_check_pdu_validity(data_buffer) == C_ERROR)
+	if (encap_check_pdu_validity(data_buffer, data_length) == C_ERROR)
 		return C_ERROR;
 
 	if (create_header(rle_ctx, data_buffer, data_length) == C_ERROR)
@@ -68,23 +68,24 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
 	return C_OK;
 }
 
-int encap_check_pdu_validity(void *data_buffer)
+int encap_check_pdu_validity(void *data_buffer, size_t data_length)
 {
-	struct iphdr *ip_hdr = (struct iphdr *)data_buffer;
+/*        struct iphdr *ip_hdr = (struct iphdr *)data_buffer;*/
+	struct ip *ip = (struct ip *)data_buffer;
 
-	int ip_len = ntohs(ip_hdr->tot_len); // TODO use data_length ?
+/*        int ip_len = ntohs(ip->ip_len); // TODO use data_length ?*/
 
 	/* check PDU size */
-	if (ip_len > RLE_MAX_PDU_SIZE) {
+	if (data_length > RLE_MAX_PDU_SIZE) {
 		printf("ERROR %s:%s:%d: PDU too large for RLE encapsulation, size [%d]\n",
-				__FILE__, __func__, __LINE__, ip_hdr->tot_len);
+				__FILE__, __func__, __LINE__, ip->ip_len);
 		return C_ERROR;
 	}
 
 	/* check ip version validity */
-	if ((ip_hdr->version != IP_VERSION_4) && (ip_hdr->version != IP_VERSION_6)) {
+	if ((ip->ip_v != IP_VERSION_4) && (ip->ip_v != IP_VERSION_6)) {
 		printf("ERROR %s:%s:%d: expecting IP version 4 or 6, version [%d] not supported\n",
-				__FILE__, __func__, __LINE__, ip_hdr->version);
+				__FILE__, __func__, __LINE__, ip->ip_v);
 		return C_ERROR;
 	}
 
