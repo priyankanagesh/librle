@@ -30,7 +30,7 @@ struct rle_trailer {
 	};
 	/* for CRC32 usage in trailer */
 	union {
-		uint32_t crc;
+		uint32_t crc:32;
 	};
 };
 
