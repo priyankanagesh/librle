@@ -32,6 +32,6 @@ struct rle_trailer {
 	union {
 		uint32_t crc:32;
 	};
-};
+} __attribute__ ((packed));
 
 #endif /* _TRAILER_H */
