@@ -51,6 +51,7 @@ int rle_ctx_init(struct rle_ctx_management *_this)
 
 	/* allocate enough memory space
 	 * for the worst case of fragmentation */
+	/* TODO see for receiver buffer size */
 	_this->buf = malloc(ZC_BUFFER_MAX_SIZE);
 	if (!_this->buf) {
 		printf("ERROR %s:%s:%d: allocating ZC buffer failed [%s]\n",
@@ -85,6 +86,22 @@ int rle_ctx_destroy(struct rle_ctx_management *_this)
 	}
 
 	return C_OK;
+}
+
+void rle_ctx_invalid_ctx(struct rle_ctx_management *_this)
+{
+	_this->is_fragmented		= C_FALSE;
+	_this->frag_counter		= 0;
+	_this->qos_tag			= 0xffffffff;
+	_this->use_crc			= C_FALSE;
+	_this->pdu_length		= 0;
+	_this->remaining_pdu_length	= 0;
+	_this->rle_length		= 0;
+	_this->proto_type		= 0xffff;
+	_this->label_type		= 0xff;
+	_this->error_nb			= 0;
+	_this->error_type		= 0;
+	_this->end_address		= NULL;
 }
 
 void rle_ctx_set_frag_id(struct rle_ctx_management *_this, uint8_t val)
@@ -141,6 +158,11 @@ void rle_ctx_set_qos_tag(struct rle_ctx_management *_this, uint32_t val)
 void rle_ctx_set_use_crc(struct rle_ctx_management *_this, int val)
 {
 	_this->use_crc = val;
+}
+
+int rle_ctx_get_use_crc(struct rle_ctx_management *_this)
+{
+	return(_this->use_crc);
 }
 
 void rle_ctx_set_pdu_length(struct rle_ctx_management *_this, uint32_t val)

@@ -1,7 +1,6 @@
 /**
  * @file   rle_transmitter.c
  * @author Aurelien Castanie
- * @date   Mon Aug  6 09:27:35 CEST 2012
  *
  * @brief  RLE transmitter functions
  *

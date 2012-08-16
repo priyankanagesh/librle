@@ -84,6 +84,19 @@ int rle_ctx_destroy(struct rle_ctx_management *_this);
  *
  *  @ingroup
  */
+void rle_ctx_invalid_ctx(struct rle_ctx_management *_this);
+
+/**
+ *  @brief
+ *
+ *  @warning
+ *
+ *  @param
+ *
+ *  @return
+ *
+ *  @ingroup
+ */
 void rle_ctx_set_frag_id(struct rle_ctx_management *_this, uint8_t val);
 
 uint8_t rle_ctx_get_frag_id(struct rle_ctx_management *_this);
@@ -158,6 +171,8 @@ void rle_ctx_set_qos_tag(struct rle_ctx_management *_this, uint32_t val);
  *  @ingroup
  */
 void rle_ctx_set_use_crc(struct rle_ctx_management *_this, int val);
+
+int rle_ctx_get_use_crc(struct rle_ctx_management *_this);
 
 /**
  *  @brief
