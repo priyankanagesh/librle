@@ -17,6 +17,29 @@
 #include "constants.h"
 #include "zc_buffer.h"
 
+/************************************************************************
+ *									*
+ * Prototypes private functions						*
+ *									*
+ ************************************************************************/
+/**
+ *  @brief	Flush all data and pointer of a RLE context structure
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @return
+ *
+ *  @ingroup
+ */
+static void flush(struct rle_ctx_management *_this);
+
+/************************************************************************
+ *									*
+ * Private functions							*
+ *									*
+ ************************************************************************/
 static void flush(struct rle_ctx_management *_this)
 {
 	_this->frag_id			= 0xff;
@@ -35,6 +58,11 @@ static void flush(struct rle_ctx_management *_this)
 	_this->end_address		= NULL;
 }
 
+/************************************************************************
+ *									*
+ * Public functions							*
+ *									*
+ ************************************************************************/
 int rle_ctx_init(struct rle_ctx_management *_this)
 {
 	if (!_this) {
