@@ -22,6 +22,7 @@ SET(SRC
 	src/reassembly.c
 	src/rle_ctx.c
 	src/rle_transmitter.c
+	src/rle_receiver.c
 )
 
 SET(CMAKE_C_FLAGS "-g -Wall -Werror")
