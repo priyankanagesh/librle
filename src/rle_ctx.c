@@ -1,7 +1,6 @@
 /**
  * @file   rle_ctx.c
  * @author Aurelien Castanie
- * @date   Mon Aug  6 16:43:44 CEST 2012
  *
  * @brief  RLE transmitter functions
  *
@@ -80,7 +79,7 @@ int rle_ctx_init(struct rle_ctx_management *_this)
 	/* allocate enough memory space
 	 * for the worst case of fragmentation */
 	/* TODO see for receiver buffer size */
-	_this->buf = malloc(ZC_BUFFER_MAX_SIZE);
+	_this->buf = MALLOC(ZC_BUFFER_MAX_SIZE);
 	if (!_this->buf) {
 		printf("ERROR %s:%s:%d: allocating ZC buffer failed [%s]\n",
 				 __FILE__, __func__, __LINE__,
@@ -109,7 +108,7 @@ int rle_ctx_destroy(struct rle_ctx_management *_this)
 	flush(_this);
 
 	if (_this->buf) {
-		free(_this->buf);
+		FREE(_this->buf);
 		_this->buf = NULL;
 	}
 
@@ -279,6 +278,16 @@ int *rle_ctx_get_end_address(struct rle_ctx_management *_this)
 	return(_this->end_address);
 }
 
+union print_bytes {
+	uint32_t all;
+	struct {
+		uint32_t B3:8;
+		uint32_t B2:8;
+		uint32_t B1:8;
+		uint32_t B0:8;
+	} B;
+};
+
 void rle_ctx_dump(struct rle_ctx_management *_this)
 {
 	printf("\n-------------------DUMP RLE CTX-------------------\n");
@@ -308,11 +317,14 @@ void rle_ctx_dump(struct rle_ctx_management *_this)
 			hdr->header.proto_type);
 	int i = 0;
 	int *i_ptr = hdr->ptrs.start;
+	union print_bytes data;
 
 	printf("|  \t\t  PAYLOAD  \t\t  |\n");
-	for (i = 0; i < _this->pdu_length; i++) {
-		int data = *(i_ptr + (4*i));
-		printf(" 0x%0x ", data);
+	for (i = 0; (i_ptr + i) < hdr->ptrs.end; i++) {
+		data.all = ntohl(*(i_ptr +  i));
+		printf("@ %p = %02x %02x %02x %02x \n", (uint32_t *)(i_ptr + i),
+				data.B.B0, data.B.B1,
+				data.B.B2, data.B.B3);
 	}
 
 	printf("\n@ start %p\n", hdr->ptrs.start);
@@ -320,3 +332,8 @@ void rle_ctx_dump(struct rle_ctx_management *_this)
 
 	printf("\n--------------------------------------------------\n");
 }
+
+#ifdef __KERNEL__
+EXPORT_SYMBOL(rle_ctx_init);
+EXPORT_SYMBOL(rle_ctx_destroy);
+#endif
