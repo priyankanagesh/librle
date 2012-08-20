@@ -25,7 +25,7 @@ static int check_complete_length(struct rle_ctx_management *rle_ctx,
 	size_t recv_packet_length = (data_length - sizeof(union rle_header_all));
 
 	if (head->b.rle_packet_length != recv_packet_length) {
-		printf("ERROR %s:%s:%d: invalid packet length,"
+		PRINT("ERROR %s:%s:%d: invalid packet length,"
 			       " received size [%d] computed size [%zu]\n",
 				__FILE__, __func__, __LINE__,
 				head->b.rle_packet_length,
@@ -58,7 +58,7 @@ static int check_fragmented_length(struct rle_ctx_management *rle_ctx,
 	size_t remaining_size = rle_ctx_get_remaining_pdu_length(rle_ctx);
 
 	if (remaining_size != recv_pkt_length) {
-		printf("ERROR %s:%s:%d: invalid packet length,"
+		PRINT("ERROR %s:%s:%d: invalid packet length,"
 			       " received size [%zu] awaited size [%zu]\n",
 				__FILE__, __func__, __LINE__,
 				recv_pkt_length, remaining_size);
@@ -80,7 +80,7 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx,
 			(data_length - RLE_SEQ_NO_FIELD_SIZE));
 
 	if (trl->seq_no != rle_ctx->next_seq_nb) {
-		printf("ERROR %s:%s:%d: sequence number inconsistency,"
+		PRINT("ERROR %s:%s:%d: sequence number inconsistency,"
 			       " received [%d] expected [%d]\n",
 			       __FILE__, __func__, __LINE__,
 			       trl->seq_no, rle_ctx->next_seq_nb);
@@ -119,7 +119,7 @@ static int check_fragmented_crc(struct rle_ctx_management *rle_ctx,
 	uint32_t crc = compute_crc32(rle_ctx);
 
 	if (trl->crc != crc) {
-		printf("ERROR %s:%s:%d: CRC error,"
+		PRINT("ERROR %s:%s:%d: CRC error,"
 			       " received [%0x] expected [%0x]\n",
 			       __FILE__, __func__, __LINE__,
 			       trl->crc, crc);
@@ -234,7 +234,7 @@ static void update_ctx_fragmented(struct rle_ctx_management *rle_ctx,
 			update_ctx_end(rle_ctx, data_buffer);
 			break;
 		default:
-			printf("ERROR %s:%s:%d: invalid fragment type [%d]\n",
+			PRINT("ERROR %s:%s:%d: invalid fragment type [%d]\n",
 					__FILE__, __func__, __LINE__, frag_type);
 			break;
 	}
@@ -259,7 +259,7 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 			hdr_offset = sizeof(struct rle_header_cont_end);
 			break;
 		default:
-			printf("ERROR %s:%s:%d: invalid fragment type [%d]\n",
+			PRINT("ERROR %s:%s:%d: invalid fragment type [%d]\n",
 					__FILE__, __func__, __LINE__, frag_type);
 			goto ret_val;
 			break;

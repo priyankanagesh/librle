@@ -63,11 +63,11 @@ struct transmitter_module *rle_transmitter_new(void)
 {
 	struct transmitter_module *_this = NULL;
 
-	_this = malloc(sizeof(struct transmitter_module));
+	_this = MALLOC(sizeof(struct transmitter_module));
 
 
 	if (!_this) {
-		printf("ERROR %s:%s:%d: allocating transmitter module failed\n",
+		PRINT("ERROR %s:%s:%d: allocating transmitter module failed\n",
 				__FILE__, __func__, __LINE__);
 		return NULL;
 	}
@@ -85,7 +85,7 @@ void rle_transmitter_destroy(struct transmitter_module *_this)
 
 	set_free_all_frag_ctx(_this);
 
-	free(_this);
+	FREE(_this);
 	_this = NULL;
 }
 
@@ -96,13 +96,13 @@ int rle_transmitter_encap_data(struct transmitter_module *_this,
 	int ret = C_ERROR;
 
 	if (!data_buffer) {
-		printf("ERROR %s:%s:%d: data buffer is invalid\n",
+		PRINT("ERROR %s:%s:%d: data buffer is invalid\n",
 				__FILE__, __func__, __LINE__);
 		return ret;
 	}
 
 	if (!_this) {
-		printf("ERROR %s:%s:%d: transmitter module is invalid\n",
+		PRINT("ERROR %s:%s:%d: transmitter module is invalid\n",
 				__FILE__, __func__, __LINE__);
 		return ret;
 	}
@@ -110,7 +110,7 @@ int rle_transmitter_encap_data(struct transmitter_module *_this,
 	/* get first free frag context */
 	int index_ctx = get_first_free_frag_ctx(_this);
 	if (index_ctx < 0) {
-		printf("ERROR %s:%s:%d: no free fragmentation context available "
+		PRINT("ERROR %s:%s:%d: no free fragmentation context available "
 				"for encapsulation\n",
 				__FILE__, __func__, __LINE__);
 		return ret;
@@ -122,7 +122,7 @@ int rle_transmitter_encap_data(struct transmitter_module *_this,
 	if (encap_encapsulate_pdu(&_this->rle_ctx_man[index_ctx], data_buffer, data_length)
 			== C_ERROR) {
 		set_free_frag_ctx(_this, index_ctx);
-		printf("ERROR %s:%s:%d: cannot encapsulate data\n",
+		PRINT("ERROR %s:%s:%d: cannot encapsulate data\n",
 				__FILE__, __func__, __LINE__);
 		return ret;
 	}
@@ -131,6 +131,14 @@ int rle_transmitter_encap_data(struct transmitter_module *_this,
 	return ret;
 }
 
+/*void *rle_transmitter_get_packet(struct transmitter_module *_this,*/
+/*                void *data_buffer,*/
+/*                size_t data_length,*/
+/*                uint8_t fragment_id)*/
+/*{*/
+/*        return(_this->rle_ctx_man[fragment_id]->buf);*/
+/*}*/
+
 void rle_transmitter_dump(struct transmitter_module *_this)
 {
 	int i;
@@ -138,5 +146,13 @@ void rle_transmitter_dump(struct transmitter_module *_this)
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		rle_ctx_dump(&_this->rle_ctx_man[i]);
 	}
-	printf("-------> Free context [0x%0x]\n", _this->free_ctx);
+	PRINT("-------> Free context [0x%0x]\n", _this->free_ctx);
 }
+
+#ifdef __KERNEL__
+EXPORT_SYMBOL(rle_transmitter_new);
+EXPORT_SYMBOL(rle_transmitter_init);
+EXPORT_SYMBOL(rle_transmitter_destroy);
+EXPORT_SYMBOL(rle_transmitter_encap_data);
+EXPORT_SYMBOL(rle_transmitter_dump);
+#endif

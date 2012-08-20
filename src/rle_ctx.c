@@ -65,7 +65,7 @@ static void flush(struct rle_ctx_management *_this)
 int rle_ctx_init(struct rle_ctx_management *_this)
 {
 	if (!_this) {
-		printf("ERROR %s:%s:%d: RLE context is NULL\n",
+		PRINT("ERROR %s:%s:%d: RLE context is NULL\n",
 				 __FILE__, __func__, __LINE__);
 		return C_ERROR;
 	}
@@ -81,7 +81,7 @@ int rle_ctx_init(struct rle_ctx_management *_this)
 	/* TODO see for receiver buffer size */
 	_this->buf = MALLOC(ZC_BUFFER_MAX_SIZE);
 	if (!_this->buf) {
-		printf("ERROR %s:%s:%d: allocating ZC buffer failed [%s]\n",
+		PRINT("ERROR %s:%s:%d: allocating ZC buffer failed [%s]\n",
 				 __FILE__, __func__, __LINE__,
 				strerror(errno));
 		return C_ERROR;
@@ -100,7 +100,7 @@ int rle_ctx_init(struct rle_ctx_management *_this)
 int rle_ctx_destroy(struct rle_ctx_management *_this)
 {
 	if (!_this) {
-		printf("ERROR %s:%s:%d: RLE context is NULL\n",
+		PRINT("ERROR %s:%s:%d: RLE context is NULL\n",
 				 __FILE__, __func__, __LINE__);
 		return C_ERROR;
 	}
@@ -134,7 +134,7 @@ void rle_ctx_invalid_ctx(struct rle_ctx_management *_this)
 void rle_ctx_set_frag_id(struct rle_ctx_management *_this, uint8_t val)
 {
 	if (val > RLE_MAX_FRAG_ID) {
-		printf("ERROR %s:%s:%d: Invalid fragment id [%d]\n",
+		PRINT("ERROR %s:%s:%d: Invalid fragment id [%d]\n",
 				 __FILE__, __func__, __LINE__, val);
 		return;
 	}
@@ -195,7 +195,7 @@ int rle_ctx_get_use_crc(struct rle_ctx_management *_this)
 void rle_ctx_set_pdu_length(struct rle_ctx_management *_this, uint32_t val)
 {
 	if (val > RLE_MAX_PDU_SIZE) {
-		printf("ERROR %s:%s:%d: Invalid PDU length [%d]\n",
+		PRINT("ERROR %s:%s:%d: Invalid PDU length [%d]\n",
 				__FILE__, __func__, __LINE__, val);
 		return;
 	}
@@ -211,7 +211,7 @@ uint32_t rle_ctx_get_pdu_length(struct rle_ctx_management *_this)
 void rle_ctx_set_remaining_pdu_length(struct rle_ctx_management *_this, uint32_t val)
 {
 	if (val > RLE_MAX_PDU_SIZE) {
-		printf("ERROR %s:%s:%d: Invalid remaining RLE length [%d]\n",
+		PRINT("ERROR %s:%s:%d: Invalid remaining RLE length [%d]\n",
 				__FILE__, __func__, __LINE__, val);
 		return;
 	}
@@ -227,7 +227,7 @@ uint32_t rle_ctx_get_remaining_pdu_length(struct rle_ctx_management *_this)
 void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val)
 {
 	if (val > RLE_MAX_PDU_SIZE) {
-		printf("ERROR %s:%s:%d: Invalid RLE length [%d]\n",
+		PRINT("ERROR %s:%s:%d: Invalid RLE length [%d]\n",
 				__FILE__, __func__, __LINE__, val);
 		return;
 	}
@@ -249,7 +249,7 @@ uint16_t rle_ctx_get_proto_type(struct rle_ctx_management *_this)
 void rle_ctx_set_label_type(struct rle_ctx_management *_this, uint8_t val)
 {
 	if ((val != RLE_LT_IMPLICIT_PROTO_TYPE) && (val != RLE_LT_PROTO_SIGNAL)) {
-		printf("ERROR %s:%s:%d: Invalid Label_type value [%d]\n",
+		PRINT("ERROR %s:%s:%d: Invalid Label_type value [%d]\n",
 				__FILE__, __func__, __LINE__, val);
 		return;
 	}
@@ -265,7 +265,7 @@ uint8_t rle_ctx_get_label_type(struct rle_ctx_management *_this)
 void rle_ctx_set_end_address(struct rle_ctx_management *_this, int *addr)
 {
 	if (!addr) {
-		printf("ERROR %s:%s:%d: Useful data end address NULL\n",
+		PRINT("ERROR %s:%s:%d: Useful data end address NULL\n",
 				__FILE__, __func__, __LINE__);
 		return;
 	}
@@ -290,25 +290,25 @@ union print_bytes {
 
 void rle_ctx_dump(struct rle_ctx_management *_this)
 {
-	printf("\n-------------------DUMP RLE CTX-------------------\n");
-	printf("\tfrag_id		\t\t= [0x%0x]\n", _this->frag_id);
-	printf("\tnext_seq_nb		\t= [0x%0x]\n", _this->next_seq_nb);
-	printf("\tis_fragmented		\t= [%d]\n", _this->is_fragmented);
-	printf("\tfrag_counter		\t= [%d]\n", _this->frag_counter);
-	printf("\tqos_tag		\t\t= [%d]\n", _this->qos_tag);
-	printf("\tuse_crc		\t\t= [%d]\n", _this->use_crc);
-	printf("\tpdu_length		\t= [%d] Bytes\n", _this->pdu_length);
-	printf("\tremaining_pdu_length	\t= [%d] Bytes\n", _this->remaining_pdu_length);
-	printf("\tlast rle_length	\t\t= [%d] Bytes\n", _this->rle_length);
-	printf("\tproto_type		\t= [0x%0x]\n", _this->proto_type);
-	printf("\tlabel_type		\t= [0x%0x]\n", _this->label_type);
-	printf("\terror_nb		\t= [%d]\n", _this->error_nb);
-	printf("\terror_type		\t= [%d]\n", _this->error_type);
-	printf("\tend address		\t= [0x%0x]\n", *_this->end_address);
+	PRINT("\n-------------------DUMP RLE CTX-------------------\n");
+	PRINT("\tfrag_id		\t\t= [0x%0x]\n", _this->frag_id);
+	PRINT("\tnext_seq_nb		\t= [0x%0x]\n", _this->next_seq_nb);
+	PRINT("\tis_fragmented		\t= [%d]\n", _this->is_fragmented);
+	PRINT("\tfrag_counter		\t= [%d]\n", _this->frag_counter);
+	PRINT("\tqos_tag		\t\t= [%d]\n", _this->qos_tag);
+	PRINT("\tuse_crc		\t\t= [%d]\n", _this->use_crc);
+	PRINT("\tpdu_length		\t= [%d] Bytes\n", _this->pdu_length);
+	PRINT("\tremaining_pdu_length	\t= [%d] Bytes\n", _this->remaining_pdu_length);
+	PRINT("\tlast rle_length	\t\t= [%d] Bytes\n", _this->rle_length);
+	PRINT("\tproto_type		\t= [0x%0x]\n", _this->proto_type);
+	PRINT("\tlabel_type		\t= [0x%0x]\n", _this->label_type);
+	PRINT("\terror_nb		\t= [%d]\n", _this->error_nb);
+	PRINT("\terror_type		\t= [%d]\n", _this->error_type);
+	PRINT("\tend address		\t= [%p]\n", _this->end_address);
 	/* RLE packet dump TODO CONT & END + TRL */
 	struct zc_rle_header_complete *hdr = _this->buf;
-	printf("| SE |  RLEPL  |  LT |  T  |  PTYPE |\n");
-	printf("| %d%d |   %d   | 0x%0x | 0x%0x |  0x%0x  |\n",
+	PRINT("| SE |  RLEPL  |  LT |  T  |  PTYPE |\n");
+	PRINT("| %d%d |   %d   | 0x%0x | 0x%0x |  0x%0x  |\n",
 			hdr->header.head.b.start_ind,
 			hdr->header.head.b.end_ind,
 			hdr->header.head.b.rle_packet_length,
@@ -319,18 +319,18 @@ void rle_ctx_dump(struct rle_ctx_management *_this)
 	int *i_ptr = hdr->ptrs.start;
 	union print_bytes data;
 
-	printf("|  \t\t  PAYLOAD  \t\t  |\n");
+	PRINT("|  \t\t  PAYLOAD  \t\t  |\n");
 	for (i = 0; (i_ptr + i) < hdr->ptrs.end; i++) {
 		data.all = ntohl(*(i_ptr +  i));
-		printf("@ %p = %02x %02x %02x %02x \n", (uint32_t *)(i_ptr + i),
+		PRINT("@ %p = %02x %02x %02x %02x \n", (uint32_t *)(i_ptr + i),
 				data.B.B0, data.B.B1,
 				data.B.B2, data.B.B3);
 	}
 
-	printf("\n@ start %p\n", hdr->ptrs.start);
-	printf("@ end %p\n", hdr->ptrs.end);
+	PRINT("\n@ start %p\n", hdr->ptrs.start);
+	PRINT("@ end %p\n", hdr->ptrs.end);
 
-	printf("\n--------------------------------------------------\n");
+	PRINT("\n--------------------------------------------------\n");
 }
 
 #ifdef __KERNEL__

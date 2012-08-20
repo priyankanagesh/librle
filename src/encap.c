@@ -39,7 +39,7 @@ static int create_header(struct rle_ctx_management *rle_ctx,
 
 	/* update rle context */
 	rle_ctx_set_end_address(rle_ctx,
-				(int *)(rle_hdr->ptrs.end + sizeof(int *)));
+				(int *)(rle_ctx->buf + sizeof(struct zc_rle_header_complete)));
 	rle_ctx_set_is_fragmented(rle_ctx, C_FALSE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
 	rle_ctx_set_use_crc(rle_ctx, C_FALSE);
@@ -77,16 +77,16 @@ int encap_check_pdu_validity(void *data_buffer, size_t data_length)
 
 	/* check PDU size */
 	if (data_length > RLE_MAX_PDU_SIZE) {
-		printf("ERROR %s:%s:%d: PDU too large for RLE encapsulation, size [%d]\n",
+		PRINT("ERROR %s:%s:%d: PDU invalid length for RLE, size [%d]\n",
 				__FILE__, __func__, __LINE__, ip->ip_len);
 		return C_ERROR;
 	}
 
 	/* check ip version validity */
 	if ((ip->ip_v != IP_VERSION_4) && (ip->ip_v != IP_VERSION_6)) {
-		printf("ERROR %s:%s:%d: expecting IP version 4 or 6, version [%d] not supported\n",
+		PRINT("ERROR %s:%s:%d: expecting IP version 4 or 6, version [%d] not supported\n",
 				__FILE__, __func__, __LINE__, ip->ip_v);
-		return C_ERROR;
+/*                return C_ERROR;*/
 	}
 
 	return C_OK;
