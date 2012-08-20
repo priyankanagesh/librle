@@ -33,7 +33,7 @@ ADD_LIBRARY(rle SHARED ${SRC})
 #	pthread
 #)
 
-ADD_SUBDIRECTORY(tests)
+#ADD_SUBDIRECTORY(tests)
 
 # FROM libsach
 macro(GET_OR_READ mycommand myvariable myfile)
