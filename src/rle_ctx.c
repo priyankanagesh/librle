@@ -45,6 +45,7 @@ static void flush(struct rle_ctx_management *_this)
 	_this->next_seq_nb		= 0xff;
 	_this->is_fragmented		= C_FALSE;
 	_this->frag_counter		= 0;
+	_this->nb_frag_pdu		= 0;
 	_this->qos_tag			= 0xffffffff;
 	_this->use_crc			= C_FALSE;
 	_this->pdu_length		= 0;
@@ -115,10 +116,17 @@ int rle_ctx_destroy(struct rle_ctx_management *_this)
 	return C_OK;
 }
 
+void rle_ctx_flush_buffer(struct rle_ctx_management *_this)
+{
+	/* set all buffer memory to zero */
+	memset(_this->buf, 0, ZC_BUFFER_MAX_SIZE);
+}
+
 void rle_ctx_invalid_ctx(struct rle_ctx_management *_this)
 {
 	_this->is_fragmented		= C_FALSE;
 	_this->frag_counter		= 0;
+	_this->nb_frag_pdu		= 0;
 	_this->qos_tag			= 0xffffffff;
 	_this->use_crc			= C_FALSE;
 	_this->pdu_length		= 0;
@@ -175,6 +183,21 @@ void rle_ctx_set_frag_counter(struct rle_ctx_management *_this, uint8_t val)
 void rle_ctx_incr_frag_counter(struct rle_ctx_management *_this)
 {
 	_this->frag_counter++;
+}
+
+void rle_ctx_set_nb_frag_pdu(struct rle_ctx_management *_this, int val)
+{
+	_this->nb_frag_pdu = val;
+}
+
+void rle_ctx_incr_nb_frag_pdu(struct rle_ctx_management *_this)
+{
+	_this->nb_frag_pdu++;
+}
+
+int rle_ctx_get_nb_frag_pdu(struct rle_ctx_management *_this)
+{
+	return(_this->nb_frag_pdu);
 }
 
 void rle_ctx_set_qos_tag(struct rle_ctx_management *_this, uint32_t val)

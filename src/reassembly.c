@@ -30,7 +30,7 @@ static int check_complete_length(struct rle_ctx_management *rle_ctx,
 				__FILE__, __func__, __LINE__,
 				head->b.rle_packet_length,
 				recv_packet_length);
-		return C_ERROR;
+		return C_ERROR_DROP;
 	}
 
 	return C_OK;
@@ -62,7 +62,7 @@ static int check_fragmented_length(struct rle_ctx_management *rle_ctx,
 			       " received size [%zu] awaited size [%zu]\n",
 				__FILE__, __func__, __LINE__,
 				recv_pkt_length, remaining_size);
-		return C_ERROR;
+		return C_ERROR_DROP;
 	}
 
 	return C_OK;
@@ -84,7 +84,7 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx,
 			       " received [%d] expected [%d]\n",
 			       __FILE__, __func__, __LINE__,
 			       trl->seq_no, rle_ctx->next_seq_nb);
-		return C_ERROR;
+		return C_ERROR_DROP;
 	}
 
 	return C_OK;
@@ -123,7 +123,7 @@ static int check_fragmented_crc(struct rle_ctx_management *rle_ctx,
 			       " received [%0x] expected [%0x]\n",
 			       __FILE__, __func__, __LINE__,
 			       trl->crc, crc);
-		return C_ERROR;
+		return C_ERROR_DROP;
 	}
 
 	return C_OK;
@@ -153,6 +153,7 @@ static void update_ctx_complete(struct rle_ctx_management *rle_ctx,
 
 	rle_ctx_set_is_fragmented(rle_ctx, C_FALSE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
+	rle_ctx_set_nb_frag_pdu(rle_ctx, 0);
 	rle_ctx_set_use_crc(rle_ctx, C_FALSE);
 	/* set real size of PDU */
 	rle_ctx_set_pdu_length(rle_ctx, (data_length - sizeof(struct rle_header_complete)));
@@ -175,6 +176,7 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx,
 
 	rle_ctx_set_is_fragmented(rle_ctx, C_TRUE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
+	rle_ctx_set_nb_frag_pdu(rle_ctx, 1);
 	rle_ctx_set_use_crc(rle_ctx, C_FALSE); /* TODO */
 	/* set real size of PDU */
 	rle_ctx_set_pdu_length(rle_ctx, pdu_length);
@@ -198,6 +200,7 @@ static void update_ctx_cont(struct rle_ctx_management *rle_ctx,
 	size_t pdu_length = rle_ctx_get_pdu_length(rle_ctx);
 
 	rle_ctx_incr_frag_counter(rle_ctx);
+	rle_ctx_incr_nb_frag_pdu(rle_ctx);
 
 	/* it's a RLE continuation packet, so there is some data remaining
 	 * we can deduce from total length and previous packets length the
@@ -213,6 +216,7 @@ static void update_ctx_end(struct rle_ctx_management *rle_ctx,
 	struct rle_header_cont_end *hdr = (struct rle_header_cont_end *)data_buffer;
 
 	rle_ctx_incr_frag_counter(rle_ctx);
+	rle_ctx_incr_nb_frag_pdu(rle_ctx);
 
 	/* it's a RLE end packet, so there is no data remaining */
 	rle_ctx_set_remaining_pdu_length(rle_ctx, 0);
@@ -265,6 +269,16 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 			break;
 	}
 
+	/* check if the complete PDU is not fragmented
+	 * into more than 256 fragments, if not it's OK we continue,
+	 * otherwise drop fragment and all data of this frag_id */
+	if (rle_ctx_get_nb_frag_pdu(rle_ctx) >= RLE_MAX_SEQ_NO) {
+		PRINT("ERROR %s:%s:%d: waited too much fragments to reassemble packet\n",
+				__FILE__, __func__, __LINE__);
+		ret = C_ERROR_DROP;
+		goto ret_val;
+	}
+
 	/* the copy begins from the buffer end address
 	 * and the copied data are from a received RLE packet
 	 * plus RLE header length to get the payload only */
@@ -275,12 +289,14 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 	if (frag_type != RLE_PDU_COMPLETE) {
 		/* fragmentation case */
 		if (frag_type == RLE_PDU_END_FRAG) {
-			/* in case of end packet
+			/* in case of end packet,
 			 * length must be checked
 			 * and sequence number or CRC
 			 * must be checked too */
-			if(!check_fragmented_consistency(rle_ctx, data_buffer, data_length))
+			if(!check_fragmented_consistency(rle_ctx, data_buffer, data_length)) {
+				ret = C_ERROR_DROP;
 				goto error_frag;
+			}
 		}
 		update_ctx_fragmented(rle_ctx, data_buffer, frag_type);
 	} else {

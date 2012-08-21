@@ -22,6 +22,9 @@ struct rle_ctx_management {
 	int is_fragmented;
 	/** current number of fragments present in queue */
 	uint8_t frag_counter;
+	/** Fragment counter from the first START
+	 * frag of a fragmented PDU */
+	int nb_frag_pdu;
 	/** specify PDU QoS tag */
 	uint32_t qos_tag;
 	/** CRC32 trailer usage status */
@@ -77,6 +80,19 @@ int rle_ctx_init(struct rle_ctx_management *_this);
 int rle_ctx_destroy(struct rle_ctx_management *_this);
 
 /**
+ *  @brief	Set all buffered data to zero
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @return
+ *
+ *  @ingroup
+ */
+void rle_ctx_flush_buffer(struct rle_ctx_management *_this);
+
+/**
  *  @brief	Set RLE context variables to invalid values
  *
  *  @warning
@@ -95,7 +111,7 @@ void rle_ctx_invalid_ctx(struct rle_ctx_management *_this);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *		val	New fragment id value
+ *  @param	val	New fragment id value
  *
  *  @return
  *
@@ -122,7 +138,7 @@ uint8_t rle_ctx_get_frag_id(struct rle_ctx_management *_this);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *		val	New sequence number value
+ *  @param	val	New sequence number value
  *
  *  @return
  *
@@ -162,7 +178,7 @@ void rle_ctx_incr_seq_nb(struct rle_ctx_management *_this);
  *  @warning
  *
  *  @param	_this	Pointer to the RLE context structure
- *		val	Boolean representing fragmentation status
+ *  @param	val	Boolean representing fragmentation status
  *
  *  @return
  *
@@ -176,7 +192,7 @@ void rle_ctx_set_is_fragmented(struct rle_ctx_management *_this, int val);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *		val	New fragment number counter value
+ *  @param	val	New fragment number counter value
  *
  *  @return
  *
@@ -198,12 +214,52 @@ void rle_ctx_set_frag_counter(struct rle_ctx_management *_this, uint8_t val);
 void rle_ctx_incr_frag_counter(struct rle_ctx_management *_this);
 
 /**
+ *  @brief	Set new PDU fragment counter
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *  @param	val	New value of PDU fragment counter
+ *
+ *  @return
+ *
+ *  @ingroup
+ */
+void rle_ctx_set_nb_frag_pdu(struct rle_ctx_management *_this, int val);
+
+/**
+ *  @brief	Increment current PDU fragment counter
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @return
+ *
+ *  @ingroup
+ */
+void rle_ctx_incr_nb_frag_pdu(struct rle_ctx_management *_this);
+
+/**
+ *  @brief	Get current PDU fragment counter
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @return	Current PDU fragment counter value
+ *
+ *  @ingroup
+ */
+int rle_ctx_get_nb_frag_pdu(struct rle_ctx_management *_this);
+
+/**
  *  @brief	Set QoS tag for a specific RLE context
  *
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *		val	New QoS tag value
+ *  @param	val	New QoS tag value
  *
  *  @return
  *
@@ -217,7 +273,7 @@ void rle_ctx_set_qos_tag(struct rle_ctx_management *_this, uint32_t val);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *		val	New boolean value representing CRC usage
+ *  @param	val	New boolean value representing CRC usage
  *
  *  @return
  *
@@ -244,7 +300,7 @@ int rle_ctx_get_use_crc(struct rle_ctx_management *_this);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *		val	New PDU length
+ *  @param	val	New PDU length
  *
  *  @return
  *
@@ -271,7 +327,7 @@ uint32_t rle_ctx_get_pdu_length(struct rle_ctx_management *_this);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *		val	New remaining PDU length
+ *  @param	val	New remaining PDU length
  *
  *  @return
  *
@@ -298,7 +354,7 @@ uint32_t rle_ctx_get_remaining_pdu_length(struct rle_ctx_management *_this);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *		val     New RLE packet length
+ *  @param	val     New RLE packet length
  *
  *  @return
  *
@@ -312,7 +368,7 @@ void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *		val	New Protocol Type value
+ *  @param	val	New Protocol Type value
  *
  *  @return
  *
@@ -366,7 +422,7 @@ uint8_t rle_ctx_get_label_type(struct rle_ctx_management *_this);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *		addr	Pointer to the last data added in buffer
+ *  @param	addr	Pointer to the last data added in buffer
  *
  *  @return
  *

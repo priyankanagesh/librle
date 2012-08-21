@@ -29,8 +29,9 @@
 #define C_TRUE		1
 #define C_FALSE		0
 
-#define C_ERROR		-1
 #define C_OK		0
+#define C_ERROR		-1
+#define C_ERROR_DROP	-2
 
 #define IP_VERSION_4	4
 #define IP_VERSION_6	6

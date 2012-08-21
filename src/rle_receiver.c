@@ -213,12 +213,15 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
 	set_nonfree_frag_ctx(_this, index_ctx);
 
 	/* reassemble all fragments */
-	if (reassembly_reassemble_pdu(&_this->rle_ctx_man[index_ctx],
-				data_buffer,
-				data_length,
-				frag_type) != C_OK) {
+	ret = reassembly_reassemble_pdu(&_this->rle_ctx_man[index_ctx],
+			data_buffer,
+			data_length,
+			frag_type);
+	if (ret != C_OK) {
 		/* received RLE packet is invalid,
-		 * we have to flush all status info */
+		 * we have to flush related context
+		 * for this frag_id */
+		rle_ctx_flush_buffer(&_this->rle_ctx_man[index_ctx]);
 		rle_ctx_invalid_ctx(&_this->rle_ctx_man[index_ctx]);
 		set_free_frag_ctx(_this, index_ctx);
 		PRINT("ERROR %s:%s:%d: cannot reassemble data\n",
