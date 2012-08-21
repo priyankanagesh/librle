@@ -13,6 +13,7 @@
 #include "rle_ctx.h"
 #include "constants.h"
 #include "encap.h"
+#include "fragmentation.h"
 
 
 static int get_first_free_frag_ctx(struct transmitter_module *_this)
@@ -131,13 +132,17 @@ int rle_transmitter_encap_data(struct transmitter_module *_this,
 	return ret;
 }
 
-/*void *rle_transmitter_get_packet(struct transmitter_module *_this,*/
-/*                void *data_buffer,*/
-/*                size_t data_length,*/
-/*                uint8_t fragment_id)*/
-/*{*/
-/*        return(_this->rle_ctx_man[fragment_id]->buf);*/
-/*}*/
+int rle_transmitter_get_packet(struct transmitter_module *_this,
+		void *burst_buffer,
+		size_t burst_length,
+		uint8_t fragment_id)
+{
+	/* call fragmentation module */
+	int ret = fragmentation_fragment_pdu(&_this->rle_ctx_man[fragment_id],
+			burst_buffer, burst_length);
+
+	return ret;
+}
 
 void rle_transmitter_dump(struct transmitter_module *_this)
 {

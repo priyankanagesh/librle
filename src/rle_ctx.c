@@ -55,6 +55,7 @@ static void flush(struct rle_ctx_management *_this)
 	_this->label_type		= 0xff;
 	_this->error_nb			= 0;
 	_this->error_type		= 0;
+	_this->pdu_buf			= NULL;
 	_this->end_address		= NULL;
 }
 
@@ -136,6 +137,7 @@ void rle_ctx_invalid_ctx(struct rle_ctx_management *_this)
 	_this->label_type		= 0xff;
 	_this->error_nb			= 0;
 	_this->error_type		= 0;
+	_this->pdu_buf			= NULL;
 	_this->end_address		= NULL;
 }
 

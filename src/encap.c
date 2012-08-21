@@ -65,6 +65,9 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
 	if (create_header(rle_ctx, data_buffer, data_length) == C_ERROR)
 		return C_ERROR;
 
+	/* set PDU buffer address to the rle_ctx ptr */
+	rle_ctx->pdu_buf = data_buffer;
+
 	return C_OK;
 }
 

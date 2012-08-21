@@ -39,6 +39,8 @@ struct rle_ctx_management {
 	uint16_t proto_type;
 	/** PDU Label type */
 	uint8_t label_type;
+	/** Pointer to PDU buffer */
+	void *pdu_buf;
 	/** Buffer containing PDU refs and
 	 * headers/trailer */
 	void *buf;
