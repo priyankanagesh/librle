@@ -19,15 +19,29 @@
 /** Type field - protocol type not supressed */
 #define RLE_T_PROTO_TYPE_NO_SUPP	0
 /** Protocol type for signalling compressed */
-#define RLE_PROTO_TYPE_SIGNAL		0x42
+#define RLE_PROTO_TYPE_SIGNAL_COMP	0x42
 /** Protocol type for signalling non compressed */
 #define RLE_PROTO_TYPE_SIGNAL_UNCOMP	0x0082
-/** Protocol type for IPv4/v6 */
-#define RLE_PROTO_TYPE_IP		0x30
+/** Protocol type for ARP */
+#define RLE_PROTO_TYPE_ARP		0x0806
+/** Protocol type compressed for IPv4/v6 */
+#define RLE_PROTO_TYPE_IP_COMP		0x30
+/** Protocol type uncompressed for IPv4 */
+#define RLE_PROTO_TYPE_IPV4_UNCOMP	0x0800
+/** Protocol type uncompressed for IPv6 */
+#define RLE_PROTO_TYPE_IPV6_UNCOMP	0x86dd
+/** Protocol type uncompressed for SACH
+ * TODO modify */
+#define RLE_PROTO_TYPE_SACH_UNCOMP	RLE_PROTO_TYPE_IPV4_UNCOMP
+/** Protocol type compressed for SACH
+ * TODO modify */
+#define RLE_PROTO_TYPE_SACH_COMP	RLE_PROTO_TYPE_IPV4_COMP
 /** Max size of input packet (PDU) in Bytes */
 #define RLE_MAX_PDU_SIZE		4096
-/** Size of Protocol Type field in Bytes */
-#define RLE_PROTO_TYPE_FIELD_SIZE	2
+/** Size of Protocol Type uncompressed field in Bytes */
+#define RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP	2
+/** Size of Protocol Type compressed field in Bytes */
+#define RLE_PROTO_TYPE_FIELD_SIZE_COMP	1
 /** Size of mandatory fields in a start packet in Bytes */
 #define RLE_START_MANDATORY_HEADER_SIZE	4
 /** Size of fields in a start packet in Bytes */
