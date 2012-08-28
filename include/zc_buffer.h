@@ -37,6 +37,11 @@ struct zc_ptrs_data {
  * by a pair of pointers
  * for the PDU
  * */
+struct zc_rle_header_complete_w_ptype {
+	struct rle_header_complete_w_ptype header;
+	struct zc_ptrs_data ptrs;
+};
+
 struct zc_rle_header_complete {
 	struct rle_header_complete header;
 	struct zc_ptrs_data ptrs;
