@@ -148,4 +148,32 @@ int rle_conf_set_ptype_suppression(struct rle_configuration *_this,
  */
 int rle_conf_get_ptype_suppression(struct rle_configuration *_this);
 
+/**
+ *  @brief	Set the use-CRC check flag
+ *
+ *  @warning
+ *
+ *  @param	enable_crc_check use-CRC in trailer flag
+ *
+ *  @return	C_ERROR enable_crc_check is an invalid flag
+ *		C_OK	Otherwise
+ *
+ *  @ingroup
+ */
+int rle_conf_set_crc_check(struct rle_configuration *_this,
+				int enable_crc_check);
+
+/**
+ *  @brief	Get current use-CRC check flag
+ *
+ *  @warning
+ *
+ *  @param
+ *
+ *  @return	Current use-CRC check flag
+ *
+ *  @ingroup
+ */
+int rle_conf_get_crc_check(struct rle_configuration *_this);
+
 #endif /* _RLE_CONF_H */

@@ -11,6 +11,7 @@
 #define _ENCAP_H
 
 #include "rle_ctx.h"
+#include "rle_conf.h"
 
 /**
  *  @brief encapsulate data into an rle packet
@@ -26,7 +27,9 @@
  *  @ingroup
  */
 int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
-		void *data_buffer, size_t data_length);
+		struct rle_configuration *rle_conf,
+		void *data_buffer, size_t data_length,
+		uint16_t protocol_type);
 /**
  *  @brief Check validity of input PDU
  *

@@ -16,6 +16,7 @@ struct rle_configuration {
 	uint16_t default_ptype;
 	int enable_ptype_compressed;
 	int enable_ptype_suppressed;
+	int enable_crc_check;
 };
 
 struct rle_configuration *rle_conf_new(struct rle_configuration *_this)
@@ -53,6 +54,7 @@ void rle_conf_init(struct rle_configuration *_this)
 	_this->default_ptype		= RLE_CONF_DEFAULT_PTYPE;
 	_this->enable_ptype_compressed	= RLE_CONF_COMPRESS_PTYPE;
 	_this->enable_ptype_suppressed	= RLE_CONF_SUPPRESS_PTYPE;
+	_this->enable_crc_check		= C_FALSE;
 }
 
 int rle_conf_set_default_ptype(struct rle_configuration *_this,
@@ -111,3 +113,23 @@ int rle_conf_get_ptype_suppression(struct rle_configuration *_this)
 {
 	return(_this->enable_ptype_suppressed);
 }
+
+int rle_conf_set_crc_check(struct rle_configuration *_this,
+				int enable_crc_check)
+{
+	if (IS_NOT_A_BOOLEAN(enable_crc_check)) {
+		PRINT("ERROR %s:%s:%d: invalid use-CRC flag\n",
+				__FILE__, __func__, __LINE__);
+		return C_ERROR;
+	}
+
+	_this->enable_crc_check = enable_crc_check;
+
+	return C_OK;
+}
+
+int rle_conf_get_crc_check(struct rle_configuration *_this)
+{
+	return(_this->enable_crc_check);
+}
+
