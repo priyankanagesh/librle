@@ -37,7 +37,7 @@
 #define RLE_PROTO_TYPE_SACH_UNCOMP		RLE_PROTO_TYPE_IPV4_UNCOMP
 /** Protocol type compressed for SACH
  * TODO modify */
-#define RLE_PROTO_TYPE_SACH_COMP		RLE_PROTO_TYPE_IPV4_COMP
+#define RLE_PROTO_TYPE_SACH_COMP		RLE_PROTO_TYPE_IP_COMP
 /** Max size of input packet (PDU) in Bytes */
 #define RLE_MAX_PDU_SIZE			4096
 /** Size of Protocol Type uncompressed field in Bytes */
