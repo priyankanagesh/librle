@@ -15,10 +15,14 @@
 #include <stdlib.h>
 #include <malloc.h>
 #include <arpa/inet.h>
+#include <netinet/ip.h>
+#include <netinet/ip6.h>
 
 #else
 
 #include <linux/vmalloc.h>
+#include <linux/ip.h>
+#include <linux/ipv6.h>
 
 #endif
 
