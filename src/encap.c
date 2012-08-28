@@ -8,8 +8,6 @@
  *
  */
 
-#include <netinet/ip.h>
-#include <arpa/inet.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include "encap.h"
@@ -98,44 +96,103 @@ static int create_header(struct rle_ctx_management *rle_ctx,
 
 int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
 		struct rle_configuration *rle_conf,
-		void *data_buffer, size_t data_length,
+		void *pdu_buffer, size_t pdu_length,
 		uint16_t protocol_type)
 {
-	if (encap_check_pdu_validity(data_buffer, data_length) == C_ERROR)
+	if (encap_check_pdu_validity(pdu_buffer,
+				pdu_length,
+				protocol_type) == C_ERROR)
 		return C_ERROR;
 
 	if (create_header(rle_ctx, rle_conf,
-			data_buffer, data_length,
+			pdu_buffer, pdu_length,
 			protocol_type) == C_ERROR)
 		return C_ERROR;
 
 	/* set PDU buffer address to the rle_ctx ptr */
-	rle_ctx->pdu_buf = data_buffer;
+	rle_ctx->pdu_buf = pdu_buffer;
 
 	return C_OK;
 }
 
-int encap_check_pdu_validity(void *data_buffer, size_t data_length)
+int encap_check_pdu_validity(void *pdu_buffer,
+		size_t pdu_length,
+		uint16_t protocol_type)
 {
-/*        struct iphdr *ip_hdr = (struct iphdr *)data_buffer;*/
-	struct ip *ip = (struct ip *)data_buffer;
+	if ((protocol_type == RLE_PROTO_TYPE_ARP) ||
+			(protocol_type == RLE_PROTO_TYPE_SIGNAL_COMP) ||
+			(protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP))
+		return C_OK;
 
-/*        int ip_len = ntohs(ip->ip_len); // TODO use data_length ?*/
+	uint16_t total_length = 0;
 
-	/* check PDU size */
-	if (data_length > RLE_MAX_PDU_SIZE) {
-		PRINT("ERROR %s:%s:%d: PDU invalid length for RLE, size [%d]\n",
-				__FILE__, __func__, __LINE__, ip->ip_len);
-		return C_ERROR;
+	if ((protocol_type == RLE_PROTO_TYPE_IP_COMP) ||
+			(protocol_type == RLE_PROTO_TYPE_IPV4_UNCOMP)) {
+		/* PDU is IPv4 packet */
+		struct iphdr *ip_hdr = (struct iphdr *)pdu_buffer;
+
+		/* check ip version validity */
+		if (ip_hdr->version != IP_VERSION_4) {
+			PRINT("ERROR %s:%s:%d: expecting IP version 4, version [%d] not supported\n",
+					__FILE__, __func__, __LINE__, ip_hdr->version);
+			return C_ERROR;
+		}
+
+		/* check PDU size */
+		total_length = ntohs(ip_hdr->tot_len);
+
+		if (pdu_length != total_length) {
+			PRINT("ERROR %s:%s:%d: PDU length inconherency, size [%d] given size [%zu]\n",
+					__FILE__, __func__, __LINE__, total_length, pdu_length);
+			return C_ERROR;
+		}
+
+		if (total_length > RLE_MAX_PDU_SIZE) {
+			PRINT("ERROR %s:%s:%d: PDU too large for RL Encapsulation, size [%d]\n",
+					__FILE__, __func__, __LINE__, total_length);
+			return C_ERROR;
+		}
+
+		return C_OK;
 	}
 
-	/* check ip version validity */
-	if ((ip->ip_v != IP_VERSION_4) && (ip->ip_v != IP_VERSION_6)) {
-		PRINT("ERROR %s:%s:%d: expecting IP version 4 or 6, version [%d] not supported\n",
-				__FILE__, __func__, __LINE__, ip->ip_v);
-		return C_ERROR;
+	if (protocol_type == RLE_PROTO_TYPE_IPV6_UNCOMP) {
+		/* PDU is IPv6 packet */
+		struct ip6_hdr *ip_hdr = (struct ip6_hdr *)pdu_buffer;
+
+		uint8_t ip_version = (ip_hdr->ip6_ctlun.ip6_un1.ip6_un1_flow >> 28);
+
+		/* check ip version validity */
+		if (ip_version != IP_VERSION_6) {
+			PRINT("ERROR %s:%s:%d: expecting IP version 6, version [%d] not supported\n",
+					__FILE__, __func__, __LINE__, ip_version);
+			return C_ERROR;
+		}
+
+		/* check PDU size */
+		total_length = (ntohs(ip_hdr->ip6_ctlun.ip6_un1.ip6_un1_plen) + 4);
+
+		if (pdu_length != total_length) {
+			PRINT("ERROR %s:%s:%d: PDU length inconherency, size [%d] given size [%zu]\n",
+					__FILE__, __func__, __LINE__, total_length, pdu_length);
+			return C_ERROR;
+		}
+
+		return C_OK;
 	}
 
-	return C_OK;
+	if ((protocol_type == RLE_PROTO_TYPE_SACH_COMP) ||
+			(protocol_type == RLE_PROTO_TYPE_SACH_UNCOMP)) {
+		/* PDU is a compressed IP-SACH packet */
+
+		/* TODO */
+
+		/* check PDU size */
+		return C_OK;
+	}
+
+	PRINT("ERROR %s:%s:%d: Unknown PDU type [0x%0x]\n",
+			__FILE__, __func__, __LINE__, protocol_type);
+
+	return C_ERROR;
 }
-
