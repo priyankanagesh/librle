@@ -11,6 +11,7 @@
 #define _RLE_TRANSMITTER_H
 
 #include <stddef.h>
+#include <pthread.h>
 #include "rle_ctx.h"
 #include "header.h"
 
@@ -18,10 +19,17 @@
  * RLE transmitter module used
  * for encapsulation & fragmentation.
  * Provides a context structure for each
- * fragment_id.
+ * fragment_id, with a list of contexts
+ * free to use and with a configuration
+ * structure.
+ * A mutex is used for synchronize
+ * access to free contexts.
+ *
  */
 struct transmitter_module {
 	struct rle_ctx_management rle_ctx_man[RLE_MAX_FRAG_NUMBER];
+	struct rle_configuration *rle_conf;
+	pthread_mutex_t ctx_mutex;
 	uint8_t free_ctx;
 };
 
@@ -79,6 +87,28 @@ void rle_transmitter_destroy(struct transmitter_module *_this);
  */
 int rle_transmitter_encap_data(struct transmitter_module *_this,
 				void *data_buffer, size_t data_length);
+
+/**
+ *  @brief Fill burst payload with an RLE packet
+ *
+ *  @warning
+ *
+ *  @param _this		The transmitter module to use for encapsulation
+ *  @param burst_buffer		Burst buffer's address to fill
+ *  @param burst_length		Burst length available
+ *  @param fragment_id		Fragment id to use
+ *  @param protocol_type	Protocol type to use in proto_type field
+ *
+ *  @return
+ *
+ *  @ingroup
+ */
+int rle_transmitter_get_packet(struct transmitter_module *_this,
+		void *burst_buffer,
+		size_t burst_length,
+		uint8_t fragment_id,
+		uint16_t protocol_type);
+
 
 void rle_transmitter_dump(struct transmitter_module *_this);
 
