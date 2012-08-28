@@ -30,9 +30,9 @@ SET(CMAKE_C_FLAGS "-g -Wall -Werror")
 
 ADD_LIBRARY(rle SHARED ${SRC})
 
-#TARGET_LINK_LIBRARIES(librle
-#	pthread
-#)
+TARGET_LINK_LIBRARIES(rle
+	pthread
+)
 
 #ADD_SUBDIRECTORY(tests)
 
