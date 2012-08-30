@@ -11,6 +11,7 @@
 #define _RLE_RECEIVER_H
 
 #include <stddef.h>
+#include <pthread.h>
 #include "rle_ctx.h"
 #include "header.h"
 
@@ -22,6 +23,8 @@
  */
 struct receiver_module {
 	struct rle_ctx_management rle_ctx_man[RLE_MAX_FRAG_NUMBER];
+	struct rle_configuration *rle_conf[RLE_MAX_FRAG_NUMBER];
+	pthread_mutex_t ctx_mutex;
 	uint8_t free_ctx;
 };
 

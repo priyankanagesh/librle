@@ -11,6 +11,7 @@
 #define _RLE_CTX_H
 
 #include <stdint.h>
+#include "rle_conf.h"
 
 /** RLE context management structure */
 struct rle_ctx_management {
@@ -187,6 +188,19 @@ void rle_ctx_incr_seq_nb(struct rle_ctx_management *_this);
  *  @ingroup
  */
 void rle_ctx_set_is_fragmented(struct rle_ctx_management *_this, int val);
+
+/**
+ *  @brief	Get fragmentation status flag
+ *
+ *  @warning
+ *
+ *  @param	_this	Pointer to the RLE context structure
+ *
+ *  @return	Current fragmentation status flag
+ *
+ *  @ingroup
+ */
+int rle_ctx_get_is_fragmented(struct rle_ctx_management *_this);
 
 /**
  *  @brief	Set fragment number counter
@@ -456,6 +470,7 @@ int *rle_ctx_get_end_address(struct rle_ctx_management *_this);
  *
  *  @ingroup
  */
-void rle_ctx_dump(struct rle_ctx_management *_this);
+void rle_ctx_dump(struct rle_ctx_management *_this,
+		struct rle_configuration *rle_conf);
 
 #endif /* _RLE_CTX_H */

@@ -96,10 +96,12 @@ static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx)
 	uint16_t field_value = 0;
 	size_t length = 0;
 
-	/* first compute CRC of the header field p_type */
-	length = RLE_PROTO_TYPE_FIELD_SIZE;
+	/* first compute CRC of the header field p_type
+	 * whatever it's compressed or suppressed, we must
+	 * use the original two bytes ptype */
 	field_value = (rle_ctx_get_proto_type(rle_ctx));
-	crc32 = compute_crc((unsigned char *)&field_value, length, RLE_CRC_INIT);
+	crc32 = compute_crc((unsigned char *)&field_value,
+			RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP, RLE_CRC_INIT);
 
 	/* compute PDU CRC */
 	length = rle_ctx_get_pdu_length(rle_ctx);
@@ -146,38 +148,142 @@ static int check_fragmented_consistency(struct rle_ctx_management *rle_ctx,
 	return ret;
 }
 
+static size_t get_header_size(struct rle_ctx_management *rle_ctx,
+		struct rle_configuration *rle_conf,
+		void *data_buffer,
+		int frag_type)
+{
+	size_t header_size = 0;
+
+	switch (frag_type) {
+		case RLE_PDU_COMPLETE:
+			header_size = RLE_COMPLETE_HEADER_SIZE;
+			break;
+		case RLE_PDU_START_FRAG:
+			header_size = RLE_START_MANDATORY_HEADER_SIZE;
+			break;
+		case RLE_PDU_CONT_FRAG:
+		case RLE_PDU_END_FRAG:
+			header_size = sizeof(struct rle_header_cont_end);
+			goto return_hdr_size;
+			break;
+		default:
+			/* it cannot happen */
+			goto return_hdr_size;
+			break;
+	}
+
+	/* get ptype compression status from NCC and
+	 * protocol type suppressed field value */
+	int is_compressed = rle_conf_get_ptype_compression(rle_conf);
+	int is_suppressed = 0xff;
+
+	if (frag_type == RLE_PDU_COMPLETE) {
+		struct rle_header_complete *hdr =
+		(struct rle_header_complete *)data_buffer;
+		is_suppressed = hdr->head.b.proto_type_supp;
+	} else {
+		struct rle_header_start *hdr =
+		(struct rle_header_start *)data_buffer;
+		is_suppressed = hdr->head.b.proto_type_supp;
+	}
+
+	if (is_suppressed != RLE_T_PROTO_TYPE_SUPP) {
+		if (is_compressed)
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+		else
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
+	}
+
+return_hdr_size:
+	return header_size;
+}
+
 static void update_ctx_complete(struct rle_ctx_management *rle_ctx,
-		void * data_buffer, size_t data_length)
+		struct rle_configuration *rle_conf,
+		void *data_buffer, size_t data_length)
 {
 	struct rle_header_complete *hdr = (struct rle_header_complete *)data_buffer;
+	uint16_t protocol_type = 0;
+	size_t header_size = RLE_COMPLETE_HEADER_SIZE;
+	/* get ptype compression status from NCC */
+	int is_compressed = rle_conf_get_ptype_compression(rle_conf);
+
+	if ((hdr->head.b.proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
+			(hdr->head.b.label_type == RLE_LT_IMPLICIT_PROTO_TYPE)) {
+		protocol_type = rle_conf_get_default_ptype(rle_conf);
+	} else if (hdr->head.b.label_type == RLE_LT_PROTO_SIGNAL) {
+		protocol_type = RLE_PROTO_TYPE_SIGNAL_UNCOMP;
+	}
+
+	if (hdr->head.b.proto_type_supp != RLE_T_PROTO_TYPE_SUPP) {
+		struct rle_header_complete_w_ptype *hdr_pt =
+		(struct rle_header_complete_w_ptype *)data_buffer;
+		if (is_compressed) {
+			protocol_type = hdr_pt->ptype_c_s.proto_type;
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+		} else {
+			protocol_type = ntohs(hdr_pt->ptype_u_s.proto_type);
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
+		}
+	}
 
 	rle_ctx_set_is_fragmented(rle_ctx, C_FALSE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
 	rle_ctx_set_nb_frag_pdu(rle_ctx, 0);
 	rle_ctx_set_use_crc(rle_ctx, C_FALSE);
 	/* set real size of PDU */
-	rle_ctx_set_pdu_length(rle_ctx, (data_length - sizeof(struct rle_header_complete)));
+	rle_ctx_set_pdu_length(rle_ctx, (data_length - header_size));
 	/* it's a RLE complete packet, so there is no data remaining */
 	rle_ctx_set_remaining_pdu_length(rle_ctx, 0);
 	/* RLE packet length is the sum of packet label, protocol type & payload length */
 	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length);
-	rle_ctx_set_proto_type(rle_ctx, hdr->proto_type); // TODO
-	rle_ctx_set_label_type(rle_ctx, hdr->head.b.label_type); // TODO
+	rle_ctx_set_proto_type(rle_ctx, protocol_type);
+	rle_ctx_set_label_type(rle_ctx, hdr->head.b.label_type);
+
 	rle_ctx_set_qos_tag(rle_ctx, 0); // TODO
 }
 
 static void update_ctx_start(struct rle_ctx_management *rle_ctx,
+		struct rle_configuration *rle_conf,
 		void *data_buffer)
 {
 	struct rle_header_start *hdr = (struct rle_header_start *)data_buffer;
 	/* real size of PDU,
 	 * total length = PDU length + proto_type field */
-	size_t pdu_length = (hdr->head_start.b.total_length - RLE_PROTO_TYPE_FIELD_SIZE);
+	uint16_t protocol_type = 0;
+	size_t header_size = RLE_START_MANDATORY_HEADER_SIZE;
+
+	/* get ptype compression status from NCC
+	 * and CRC usage from user */
+	int is_compressed = rle_conf_get_ptype_compression(rle_conf);
+	int is_crc_used = rle_conf_get_crc_check(rle_conf);
+
+	if ((hdr->head.b.proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
+			(hdr->head.b.label_type == RLE_LT_IMPLICIT_PROTO_TYPE)) {
+		protocol_type = rle_conf_get_default_ptype(rle_conf);
+	} else if (hdr->head.b.label_type == RLE_LT_PROTO_SIGNAL) {
+		protocol_type = RLE_PROTO_TYPE_SIGNAL_UNCOMP;
+	}
+
+	if (hdr->head.b.proto_type_supp != RLE_T_PROTO_TYPE_SUPP) {
+		struct rle_header_start_w_ptype *hdr_pt =
+		(struct rle_header_start_w_ptype *)data_buffer;
+		if (is_compressed) {
+			protocol_type = hdr_pt->ptype_c_s.proto_type;
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+		} else {
+			protocol_type = ntohs(hdr_pt->ptype_u_s.proto_type);
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
+		}
+	}
+
+	size_t pdu_length = (hdr->head_start.b.total_length - header_size);
 
 	rle_ctx_set_is_fragmented(rle_ctx, C_TRUE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
 	rle_ctx_set_nb_frag_pdu(rle_ctx, 1);
-	rle_ctx_set_use_crc(rle_ctx, C_FALSE); /* TODO */
+	rle_ctx_set_use_crc(rle_ctx, is_crc_used);
 	/* set real size of PDU */
 	rle_ctx_set_pdu_length(rle_ctx, pdu_length);
 	/* it's a RLE start packet, so there is some data remaining
@@ -187,12 +293,14 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx,
 			(hdr->head_start.b.total_length - hdr->head.b.rle_packet_length));
 	/* RLE packet length is the sum of packet label, protocol type & payload length */
 	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length);
-	rle_ctx_set_proto_type(rle_ctx, hdr->proto_type); // TODO
-	rle_ctx_set_label_type(rle_ctx, hdr->head.b.label_type); // TODO
+	rle_ctx_set_proto_type(rle_ctx, protocol_type);
+	rle_ctx_set_label_type(rle_ctx, hdr->head.b.label_type);
+
 	rle_ctx_set_qos_tag(rle_ctx, 0); // TODO
 }
 
 static void update_ctx_cont(struct rle_ctx_management *rle_ctx,
+		struct rle_configuration *rle_conf,
 		void *data_buffer)
 {
 	struct rle_header_cont_end *hdr = (struct rle_header_cont_end *)data_buffer;
@@ -211,6 +319,7 @@ static void update_ctx_cont(struct rle_ctx_management *rle_ctx,
 }
 
 static void update_ctx_end(struct rle_ctx_management *rle_ctx,
+		struct rle_configuration *rle_conf,
 		void *data_buffer)
 {
 	struct rle_header_cont_end *hdr = (struct rle_header_cont_end *)data_buffer;
@@ -225,17 +334,24 @@ static void update_ctx_end(struct rle_ctx_management *rle_ctx,
 }
 
 static void update_ctx_fragmented(struct rle_ctx_management *rle_ctx,
+		struct rle_configuration *rle_conf,
 		void *data_buffer, int frag_type)
 {
 	switch (frag_type) {
 		case RLE_PDU_START_FRAG:
-			update_ctx_start(rle_ctx, data_buffer);
+			update_ctx_start(rle_ctx,
+					rle_conf,
+					data_buffer);
 			break;
 		case RLE_PDU_CONT_FRAG:
-			update_ctx_cont(rle_ctx, data_buffer);
+			update_ctx_cont(rle_ctx,
+				       rle_conf,
+			       	       data_buffer);
 			break;
 		case RLE_PDU_END_FRAG:
-			update_ctx_end(rle_ctx, data_buffer);
+			update_ctx_end(rle_ctx,
+				       rle_conf,
+			       	       data_buffer);
 			break;
 		default:
 			PRINT("ERROR %s:%s:%d: invalid fragment type [%d]\n",
@@ -245,6 +361,7 @@ static void update_ctx_fragmented(struct rle_ctx_management *rle_ctx,
 }
 
 int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
+		struct rle_configuration *rle_conf,
 		void *data_buffer, size_t data_length, int frag_type)
 {
 	size_t hdr_offset = 0;
@@ -253,17 +370,16 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 	/* retrieve header length to strip it during memory copy */
 	switch (frag_type) {
 		case RLE_PDU_COMPLETE:
-			hdr_offset = sizeof(struct rle_header_complete);
-			break;
 		case RLE_PDU_START_FRAG:
-			hdr_offset = sizeof(struct rle_header_start);
-			break;
 		case RLE_PDU_CONT_FRAG:
 		case RLE_PDU_END_FRAG:
-			hdr_offset = sizeof(struct rle_header_cont_end);
+			hdr_offset = get_header_size(rle_ctx,
+					rle_conf,
+					data_buffer,
+					frag_type);
 			break;
 		default:
-			PRINT("ERROR %s:%s:%d: invalid fragment type [%d]\n",
+			PRINT("ERROR %s:%s:%d: invalid fragment type [%d] to reassemble\n",
 					__FILE__, __func__, __LINE__, frag_type);
 			goto ret_val;
 			break;
@@ -298,13 +414,15 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 				goto error_frag;
 			}
 		}
-		update_ctx_fragmented(rle_ctx, data_buffer, frag_type);
+		update_ctx_fragmented(rle_ctx, rle_conf,
+				data_buffer, frag_type);
 	} else {
 		/* no fragmentation case */
 		ret = check_complete_length(rle_ctx, data_buffer, data_length);
 		if (ret == C_OK)
 			/* update ctx status structure if length checking is OK */
-			update_ctx_complete(rle_ctx, data_buffer, data_length);
+			update_ctx_complete(rle_ctx, rle_conf,
+					data_buffer, data_length);
 		else
 			goto error_frag;
 	}
@@ -320,6 +438,11 @@ error_frag:
 	/* discard all data */
 	memset((void *)(rle_ctx->end_address),
 			0, (data_length - hdr_offset));
+
+	/* TODO call a callback which must be
+	 * specific to each protocol type supported
+	 * and give it the final reassembled packet */
+
 ret_val:
 	return ret;
 }

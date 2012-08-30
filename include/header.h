@@ -11,6 +11,7 @@
 #define _HEADER_H
 
 #include <endian.h>
+#include <stdint.h>
 
 /** Label Type for implicit protocol type */
 #define RLE_LT_IMPLICIT_PROTO_TYPE		2

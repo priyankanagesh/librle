@@ -133,8 +133,9 @@ int encap_check_pdu_validity(void *pdu_buffer,
 
 		/* check ip version validity */
 		if (ip_hdr->version != IP_VERSION_4) {
-			PRINT("ERROR %s:%s:%d: expecting IP version 4, version [%d] not supported\n",
-					__FILE__, __func__, __LINE__, ip_hdr->version);
+			PRINT("ERROR %s:%s:%d: expecting IP version 4, version [%d] not supported ihl [%d]\n",
+					__FILE__, __func__, __LINE__, ip_hdr->version,
+					ip_hdr->ihl);
 			return C_ERROR;
 		}
 

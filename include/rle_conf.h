@@ -10,6 +10,8 @@
 #ifndef _RLE_CONF_H
 #define _RLE_CONF_H
 
+#include "header.h"
+
 /** Default protocol type */
 #define RLE_CONF_DEFAULT_PTYPE	RLE_PROTO_TYPE_IPV4_UNCOMP
 /** Default protocol type compression flag */

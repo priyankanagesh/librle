@@ -12,12 +12,13 @@
 
 #include "header.h"
 #include "trailer.h"
+#include "constants.h"
 
-#define ZC_BUFFER_MAX_SIZE (RLE_START_HEADER_SIZE +		\
+#define ZC_BUFFER_MAX_SIZE ((RLE_START_MANDATORY_HEADER_SIZE + RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP) +	\
 		(RLE_MAX_SEQ_NO * RLE_CONT_HEADER_SIZE) +	\
 	       	RLE_END_HEADER_SIZE +				\
 		RLE_CRC32_FIELD_SIZE +				\
-		(RLE_MAX_SEQ_NO * sizeof(int *)))
+		(RLE_MAX_SEQ_NO * SIZEOF_PTR))
 
 /**
  * Structure of pair or pointers

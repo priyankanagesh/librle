@@ -40,6 +40,8 @@
 #define IP_VERSION_4	4
 #define IP_VERSION_6	6
 
+#define SIZEOF_PTR	sizeof(int *)
+
 enum rle_packet_type {
 	RLE_COMPLETE_PACKET = 0,
 	RLE_START_PACKET,

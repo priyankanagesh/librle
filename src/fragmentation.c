@@ -17,12 +17,18 @@
 
 static int is_complete_pdu(struct rle_ctx_management *rle_ctx)
 {
+	PRINT("DEBUG %s:%s:%d:\n",
+			__FILE__, __func__, __LINE__);
+
 	return rle_ctx->is_fragmented;
 }
 
 static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx,
 		struct rle_configuration *rle_conf)
 {
+	PRINT("DEBUG %s:%s:%d:\n",
+			__FILE__, __func__, __LINE__);
+
 	/* CRC must be computed on PDU data and the
 	 * original two bytes protocol type field
 	 * whatever it is suppressed or compressed */
@@ -47,6 +53,9 @@ static void add_trailer(struct rle_ctx_management *rle_ctx,
 		void *burst_payload_buffer,
 		size_t burst_payload_length)
 {
+	PRINT("DEBUG %s:%s:%d:\n",
+			__FILE__, __func__, __LINE__);
+
 	/* retrieve address beyond
 	 * the last end addr pointer
 	 * to map a trailer */
@@ -82,6 +91,9 @@ static int add_start_header(struct rle_ctx_management *rle_ctx,
 		void *burst_payload_buffer, size_t burst_payload_length,
 		uint16_t protocol_type)
 {
+	PRINT("DEBUG %s:%s:%d:\n",
+			__FILE__, __func__, __LINE__);
+
 	size_t size_header = RLE_START_MANDATORY_HEADER_SIZE;
 
 	/* Robustness: test if available burst payload is smaller
@@ -194,6 +206,9 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 		int type_rle_frag,
 		uint16_t protocol_type)
 {
+	PRINT("DEBUG %s:%s:%d:\n",
+			__FILE__, __func__, __LINE__);
+
 	/* Robustness: test if available burst payload is smaller
 	 * than an RLE CONT or END packet header */
 	if ((burst_payload_length - RLE_CONT_HEADER_SIZE) <= 0) {
@@ -235,13 +250,16 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	int new_remaining_val = 0;
 	new_remaining_val =
 		rle_ctx_get_remaining_pdu_length(rle_ctx) - (burst_payload_length - RLE_CONT_HEADER_SIZE);
-	if ((type_rle_frag == RLE_END_PACKET) && (new_remaining_val != 0)) {
+	if ((type_rle_frag == RLE_END_PACKET) && (new_remaining_val > 0)) {
 		PRINT("ERROR %s:%s:%d: Invalid remaining data size"
 			       " while building an RLE END packet [%d]\n",
 				__FILE__, __func__, __LINE__,
 				new_remaining_val);
 		return C_ERROR;
 	}
+
+	if (new_remaining_val < 0)
+		new_remaining_val = 0;
 
 	rle_ctx_set_remaining_pdu_length(rle_ctx, new_remaining_val);
 	rle_ctx_set_rle_length(rle_ctx,
@@ -268,6 +286,9 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 
 static int get_fragment_type(struct rle_ctx_management *rle_ctx, size_t burst_payload_length)
 {
+	PRINT("DEBUG %s:%s:%d:\n",
+			__FILE__, __func__, __LINE__);
+
 	int frag_type = RLE_START_PACKET;
 	uint32_t remaining_pdu_len = rle_ctx_get_remaining_pdu_length(rle_ctx);
 
@@ -290,6 +311,9 @@ int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
 		void *burst_payload_buffer, size_t burst_payload_length,
 		int frag_type, uint16_t protocol_type)
 {
+	PRINT("DEBUG %s:%s:%d:\n",
+			__FILE__, __func__, __LINE__);
+
 	int ret = C_OK;
 
 	if (frag_type == RLE_START_PACKET) {
@@ -308,14 +332,22 @@ int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
 	}
 
 /*        if (frag_type == RLE_END_PACKET)*/
-/*                add_trailer(rle_ctx, burst_payload_buffer, burst_payload_length);*/
+/*                add_trailer(rle_ctx,*/
+/*                                rle_conf,*/
+/*                                burst_payload_buffer,*/
+/*                                burst_payload_length);*/
 
 	return ret;
 }
 
 int fragmentation_is_needed(struct rle_ctx_management *rle_ctx, size_t burst_payload_length)
 {
-	if (rle_ctx->rle_length > burst_payload_length)
+	PRINT("DEBUG %s:%s:%d: RLE length [%d] burst length [%zu]\n",
+			__FILE__, __func__, __LINE__,
+			rle_ctx->remaining_pdu_length,
+			burst_payload_length);
+
+	if (rle_ctx->remaining_pdu_length > burst_payload_length)
 		return C_TRUE;
 
 	return C_FALSE;
@@ -326,6 +358,9 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 		void *burst_payload_buffer, size_t burst_payload_length,
 		uint16_t protocol_type)
 {
+	PRINT("DEBUG %s:%s:%d:\n",
+			__FILE__, __func__, __LINE__);
+
 	int ret = C_ERROR;
 
 	if (!rle_ctx) {
@@ -334,12 +369,13 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 		goto return_ret;
 	}
 
-	if (!fragmentation_is_needed(rle_ctx, burst_payload_length)) {
-		/* no frag needed, complete PDU is already RLEified
-		 * and can be sent as is */
-		ret = C_OK;
-		goto return_ret;
-	}
+	if (!rle_ctx_get_is_fragmented(rle_ctx))
+		if (!fragmentation_is_needed(rle_ctx, burst_payload_length)) {
+			/* no frag needed, complete PDU is already RLEified
+			 * and can be sent as is */
+			ret = C_OK;
+			goto return_ret;
+		}
 
 	int frag_type = get_fragment_type(rle_ctx, burst_payload_length);
 
@@ -358,6 +394,9 @@ int fragmentation_add_header(struct rle_ctx_management *rle_ctx,
 		void *burst_payload_buffer, size_t burst_payload_length,
 		int type_rle_frag, uint16_t protocol_type)
 {
+	PRINT("DEBUG %s:%s:%d:\n",
+			__FILE__, __func__, __LINE__);
+
 	int ret = C_ERROR;
 
 	switch (type_rle_frag) {

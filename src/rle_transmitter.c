@@ -20,8 +20,10 @@ static int get_first_free_frag_ctx(struct transmitter_module *_this)
 	int i;
 	pthread_mutex_lock(&_this->ctx_mutex);
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		if (((_this->free_ctx >> i) & 0x1) == 0)
+		if (((_this->free_ctx >> i) & 0x1) == 0) {
+			pthread_mutex_unlock(&_this->ctx_mutex);
 			return i;
+		}
 	}
 	pthread_mutex_unlock(&_this->ctx_mutex);
 
@@ -63,7 +65,8 @@ static void init(struct transmitter_module *_this)
 		rle_ctx_set_seq_nb(&_this->rle_ctx_man[i], 0);
 	}
 
-	_this->ctx_mutex = PTHREAD_MUTEX_INITIALIZER;
+	pthread_mutex_init(&_this->ctx_mutex, NULL);
+/*        _this->ctx_mutex = PTHREAD_MUTEX_INITIALIZER;*/
 
 	/* all frag_id are set to idle */
 	set_free_all_frag_ctx(_this);
@@ -83,7 +86,7 @@ struct transmitter_module *rle_transmitter_new(void)
 	}
 
 	/* allocate a new RLE configuration structure */
-	_this->rle_conf = rle_conf_new();
+	_this->rle_conf = rle_conf_new(_this->rle_conf);
 
 	if (!_this->rle_conf) {
 		PRINT("ERROR %s:%s:%d: allocating RLE configuration failed\n",
@@ -121,7 +124,8 @@ void rle_transmitter_destroy(struct transmitter_module *_this)
 
 
 int rle_transmitter_encap_data(struct transmitter_module *_this,
-				void *data_buffer, size_t data_length)
+				void *data_buffer, size_t data_length,
+				uint16_t protocol_type)
 {
 	int ret = C_ERROR;
 
@@ -150,8 +154,9 @@ int rle_transmitter_encap_data(struct transmitter_module *_this,
 	set_nonfree_frag_ctx(_this, index_ctx);
 
 	if (encap_encapsulate_pdu(&_this->rle_ctx_man[index_ctx],
-				&_this->rle_conf,
-				data_buffer, data_length)
+				_this->rle_conf,
+				data_buffer, data_length,
+				protocol_type)
 			== C_ERROR) {
 		set_free_frag_ctx(_this, index_ctx);
 		PRINT("ERROR %s:%s:%d: cannot encapsulate data\n",
@@ -171,7 +176,7 @@ int rle_transmitter_get_packet(struct transmitter_module *_this,
 {
 	/* call fragmentation module */
 	int ret = fragmentation_fragment_pdu(&_this->rle_ctx_man[fragment_id],
-			&_this->rle_conf,
+			_this->rle_conf,
 			burst_buffer, burst_length,
 			protocol_type);
 
@@ -183,7 +188,8 @@ void rle_transmitter_dump(struct transmitter_module *_this)
 	int i;
 
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		rle_ctx_dump(&_this->rle_ctx_man[i]);
+		rle_ctx_dump(&_this->rle_ctx_man[i],
+				_this->rle_conf);
 	}
 	PRINT("-------> Free context [0x%0x]\n", _this->free_ctx);
 }

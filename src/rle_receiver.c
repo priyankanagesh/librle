@@ -20,10 +20,13 @@
 static int get_first_free_frag_ctx(struct receiver_module *_this)
 {
 	int i;
+	pthread_mutex_lock(&_this->ctx_mutex);
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		if (((_this->free_ctx >> i) & 0x1) == 0)
+			pthread_mutex_unlock(&_this->ctx_mutex);
 			return i;
 	}
+	pthread_mutex_unlock(&_this->ctx_mutex);
 
 	return C_ERROR;
 }
@@ -31,18 +34,24 @@ static int get_first_free_frag_ctx(struct receiver_module *_this)
 static void set_nonfree_frag_ctx(struct receiver_module *_this,
 				int index)
 {
+	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx |= (1 << index);
+	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static void set_free_frag_ctx(struct receiver_module *_this,
 				int index)
 {
+	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx = (0 << index) & 0xff;
+	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static void set_free_all_frag_ctx(struct receiver_module *_this)
 {
+	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx = 0;
+	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static int get_fragment_type(void *data_buffer)
@@ -116,9 +125,12 @@ static void init(struct receiver_module *_this)
 	 * fragment id */
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		rle_ctx_init(&_this->rle_ctx_man[i]);
+		rle_conf_init(_this->rle_conf[i]);
 		rle_ctx_set_frag_id(&_this->rle_ctx_man[i], i);
 		rle_ctx_set_seq_nb(&_this->rle_ctx_man[i], 0);
 	}
+
+	pthread_mutex_init(&_this->ctx_mutex, NULL);
 
 	/* all frag_id are set to idle */
 	set_free_all_frag_ctx(_this);
@@ -134,6 +146,17 @@ struct receiver_module *rle_receiver_new(void)
 		PRINT("ERROR %s:%s:%d: allocating receiver module failed\n",
 				__FILE__, __func__, __LINE__);
 		return NULL;
+	}
+
+	int i;
+
+	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+		_this->rle_conf[i] = rle_conf_new(_this->rle_conf[i]);
+		if (!_this->rle_conf[i]) {
+			PRINT("ERROR %s:%s:%d: allocating receiver module configuration failed\n",
+					__FILE__, __func__, __LINE__);
+			return NULL;
+		}
 	}
 
 	init(_this);
@@ -214,6 +237,7 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
 
 	/* reassemble all fragments */
 	ret = reassembly_reassemble_pdu(&_this->rle_ctx_man[index_ctx],
+			_this->rle_conf[index_ctx],
 			data_buffer,
 			data_length,
 			frag_type);
@@ -238,7 +262,8 @@ void rle_receiver_dump(struct receiver_module *_this)
 	int i;
 
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		rle_ctx_dump(&_this->rle_ctx_man[i]);
+		rle_ctx_dump(&_this->rle_ctx_man[i],
+				_this->rle_conf[i]);
 	}
 	PRINT("-------> Free context [0x%0x]\n", _this->free_ctx);
 }

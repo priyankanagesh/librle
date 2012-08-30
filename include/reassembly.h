@@ -11,6 +11,7 @@
 #define _REASSEMBLY_H
 
 #include "rle_ctx.h"
+#include "rle_conf.h"
 
 /**
  *  @brief Reassemble fragmented RLE packet to get the PDU
@@ -26,6 +27,7 @@
  *  @ingroup
  */
 int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
+		struct rle_configuration *rle_conf,
 		void *data_buffer, size_t data_length, int frag_type);
 
 /**
@@ -42,8 +44,8 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
  *
  *  @ingroup
  */
-int reassembly_remove_header(struct rle_ctx_management *rle_ctx,
-		void *data_buffer, int type_rle_header);
+//int reassembly_remove_header(struct rle_ctx_management *rle_ctx,
+//                void *data_buffer, int type_rle_header);
 
 /**
  *  @brief Modify RLE header to reassemble
@@ -58,8 +60,8 @@ int reassembly_remove_header(struct rle_ctx_management *rle_ctx,
  *
  *  @ingroup
  */
-int reassembly_modify_header(struct rle_ctx_management *rle_ctx,
-		void *data_buffer);
+//int reassembly_modify_header(struct rle_ctx_management *rle_ctx,
+//                void *data_buffer);
 
 /**
  *  @brief Compute RLE packet length
@@ -74,8 +76,8 @@ int reassembly_modify_header(struct rle_ctx_management *rle_ctx,
  *
  *  @ingroup
  */
-int reassembly_compute_packet_length(struct rle_ctx_management *rle_ctx,
-		void *data_buffer);
+//int reassembly_compute_packet_length(struct rle_ctx_management *rle_ctx,
+//                void *data_buffer);
 
 /**
  *  @brief Check RLE reassembled packet validity with seq nb or CRC
@@ -90,7 +92,7 @@ int reassembly_compute_packet_length(struct rle_ctx_management *rle_ctx,
  *
  *  @ingroup
  */
-int reassembly_check_packet_validity(struct rle_ctx_management *rle_ctx,
-		void *data_buffer);
+//int reassembly_check_packet_validity(struct rle_ctx_management *rle_ctx,
+//                void *data_buffer);
 
 #endif /* _REASSEMBLY_H */

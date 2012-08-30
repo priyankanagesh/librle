@@ -24,7 +24,7 @@ struct rle_configuration *rle_conf_new(struct rle_configuration *_this)
 	_this = MALLOC(sizeof(struct rle_configuration));
 
 	if (!_this) {
-		PRINT("ERROR %s:%s:%d: allocation for RLE configuration failed\n"\n
+		PRINT("ERROR %s:%s:%d: allocation for RLE configuration failed\n",
 				__FILE__, __func__, __LINE__);
 		return NULL;
 	}
@@ -34,10 +34,10 @@ struct rle_configuration *rle_conf_new(struct rle_configuration *_this)
 	return _this;
 }
 
-int rle_configuration rle_conf_destroy(struct rle_configuration *_this)
+int rle_conf_destroy(struct rle_configuration *_this)
 {
 	if (!_this) {
-		PRINT("ERROR %s:%s:%d: RLE configuration is NULL\n"\n
+		PRINT("ERROR %s:%s:%d: RLE configuration is NULL\n",
 				__FILE__, __func__, __LINE__);
 		return C_ERROR;
 	}

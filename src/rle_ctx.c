@@ -177,6 +177,11 @@ void rle_ctx_set_is_fragmented(struct rle_ctx_management *_this, int val)
 	_this->is_fragmented = val;
 }
 
+int rle_ctx_get_is_fragmented(struct rle_ctx_management *_this)
+{
+	return(_this->is_fragmented);
+}
+
 void rle_ctx_set_frag_counter(struct rle_ctx_management *_this, uint8_t val)
 {
 	_this->frag_counter = val;
@@ -313,7 +318,8 @@ union print_bytes {
 	} B;
 };
 
-void rle_ctx_dump(struct rle_ctx_management *_this)
+void rle_ctx_dump(struct rle_ctx_management *_this,
+		struct rle_configuration *rle_conf)
 {
 	PRINT("\n-------------------DUMP RLE CTX-------------------\n");
 	PRINT("\tfrag_id		\t\t= [0x%0x]\n", _this->frag_id);
@@ -330,30 +336,57 @@ void rle_ctx_dump(struct rle_ctx_management *_this)
 	PRINT("\terror_nb		\t= [%d]\n", _this->error_nb);
 	PRINT("\terror_type		\t= [%d]\n", _this->error_type);
 	PRINT("\tend address		\t= [%p]\n", _this->end_address);
+
 	/* RLE packet dump TODO CONT & END + TRL */
-	struct zc_rle_header_complete *hdr = _this->buf;
+
+	/* get ptype compression status from NCC */
+	struct zc_rle_header_complete *zc_buf = (struct zc_rle_header_complete *)_this->buf;
+	struct rle_header_complete *hdr = &zc_buf->header;
+	int is_compressed = rle_conf_get_ptype_compression(rle_conf);
+	int protocol_type = 0;
+	size_t header_size = RLE_COMPLETE_HEADER_SIZE;
+
+	if ((hdr->head.b.proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
+			(hdr->head.b.label_type == RLE_LT_IMPLICIT_PROTO_TYPE)) {
+		protocol_type = rle_conf_get_default_ptype(rle_conf);
+	} else if (hdr->head.b.label_type == RLE_LT_PROTO_SIGNAL) {
+		protocol_type = RLE_PROTO_TYPE_SIGNAL_UNCOMP;
+	}
+
+	if (hdr->head.b.proto_type_supp != RLE_T_PROTO_TYPE_SUPP) {
+		struct rle_header_complete_w_ptype *hdr_pt =
+		(struct rle_header_complete_w_ptype *)&zc_buf->header;
+		if (is_compressed) {
+			protocol_type = hdr_pt->ptype_c_s.proto_type;
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+		} else {
+			protocol_type = ntohs(hdr_pt->ptype_u_s.proto_type);
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
+		}
+	}
+
 	PRINT("| SE |  RLEPL  |  LT |  T  |  PTYPE |\n");
 	PRINT("| %d%d |   %d   | 0x%0x | 0x%0x |  0x%0x  |\n",
-			hdr->header.head.b.start_ind,
-			hdr->header.head.b.end_ind,
-			hdr->header.head.b.rle_packet_length,
-			hdr->header.head.b.label_type,
-			hdr->header.head.b.proto_type_supp,
-			hdr->header.proto_type);
+			zc_buf->header.head.b.start_ind,
+			zc_buf->header.head.b.end_ind,
+			zc_buf->header.head.b.rle_packet_length,
+			zc_buf->header.head.b.label_type,
+			zc_buf->header.head.b.proto_type_supp,
+			protocol_type);
 	int i = 0;
-	int *i_ptr = hdr->ptrs.start;
+	int *i_ptr = zc_buf->ptrs.start;
 	union print_bytes data;
 
 	PRINT("|  \t\t  PAYLOAD  \t\t  |\n");
-	for (i = 0; (i_ptr + i) < hdr->ptrs.end; i++) {
+	for (i = 0; (i_ptr + i) < zc_buf->ptrs.end; i++) {
 		data.all = ntohl(*(i_ptr +  i));
 		PRINT("@ %p = %02x %02x %02x %02x \n", (uint32_t *)(i_ptr + i),
 				data.B.B0, data.B.B1,
 				data.B.B2, data.B.B3);
 	}
 
-	PRINT("\n@ start %p\n", hdr->ptrs.start);
-	PRINT("@ end %p\n", hdr->ptrs.end);
+	PRINT("\n@ start %p\n", zc_buf->ptrs.start);
+	PRINT("@ end %p\n", zc_buf->ptrs.end);
 
 	PRINT("\n--------------------------------------------------\n");
 }
