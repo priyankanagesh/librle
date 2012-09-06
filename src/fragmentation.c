@@ -191,6 +191,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx,
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: ptrs.start %p ptrs.end %p\n",
 			MODULE_NAME,
+			__FILE__, __func__, __LINE__,
 			rle_s_hdr->ptrs.start, rle_s_hdr->ptrs.end);
 #endif
 
