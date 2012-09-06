@@ -164,12 +164,13 @@ static int add_start_header(struct rle_ctx_management *rle_ctx,
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: Set total length to %d "
-			"ptype %zu size_header %zu\n",
+			"ptype %zu size_header %zu proto_type suppressed %d\n",
 			MODULE_NAME,
 			__FILE__, __func__, __LINE__,
 			rle_s_hdr->header.head_start.b.total_length,
 			ptype_length,
-			size_header);
+			size_header,
+			proto_type_supp);
 #endif
 
 	/* fill label_type field accordingly to the
