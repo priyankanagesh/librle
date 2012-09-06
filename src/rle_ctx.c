@@ -264,7 +264,7 @@ uint32_t rle_ctx_get_pdu_length(struct rle_ctx_management *_this)
 void rle_ctx_set_remaining_pdu_length(struct rle_ctx_management *_this, uint32_t val)
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d val = %u\n",
+	PRINT("DEBUG %s %s:%s:%d val = %d\n",
 			MODULE_NAME,
 			__FILE__, __func__, __LINE__, val);
 #endif
