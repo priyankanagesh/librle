@@ -40,14 +40,15 @@
 #define IP_VERSION_4	4
 #define IP_VERSION_6	6
 
-#define SIZEOF_PTR	sizeof(int *)
+#define SIZEOF_PTR	sizeof(char *)
 
-enum rle_packet_type {
-	RLE_COMPLETE_PACKET = 0,
-	RLE_START_PACKET,
-	RLE_CONT_PACKET,
-	RLE_END_PACKET
-};
+/** Type of payload in RLE packet */
+enum {
+	RLE_PDU_COMPLETE,    /** Complete PDU */
+	RLE_PDU_START_FRAG,  /** START packet/fragment of PDU */
+	RLE_PDU_CONT_FRAG,   /** CONTINUATION packet/fragment of PDU */
+	RLE_PDU_END_FRAG,   /** END packet/fragment of PDU */
+} rle_payload_type;
 
 #ifndef __KERNEL__
 
