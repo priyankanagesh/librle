@@ -47,8 +47,6 @@
 #define RLE_PROTO_TYPE_FIELD_SIZE_COMP		1
 /** Size of mandatory fields in a start packet in Bytes */
 #define RLE_START_MANDATORY_HEADER_SIZE		4
-/** Size of fields in a start packet in Bytes */
-//#define RLE_START_HEADER_SIZE			(RLE_PROTO_TYPE_FIELD_SIZE + RLE_START_MANDATORY_HEADER_SIZE)
 /** Size of fields in a continuation packet in Bytes */
 #define RLE_CONT_HEADER_SIZE			2
 /** Size of fields in a end packet in Bytes */
@@ -60,6 +58,46 @@
 #define RLE_MAX_FRAG_ID				7
 /**  Max number of fragment id */
 #define RLE_MAX_FRAG_NUMBER			(RLE_MAX_FRAG_ID + 1)
+
+/** Macros to set Label Type,
+ *  Protocol Type Suppressed
+ *  and Fragment ID
+ *  on a union rle_header_all */
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+
+#define SET_LABEL_TYPE(_y,_x)  do {				\
+			(_y) = ((_y & 0x1) ^ (_x << 1));	\
+		} while (0)
+
+#define GET_LABEL_TYPE(_y) ((_y) >> 1)
+
+#define SET_PROTO_TYPE_SUPP(_y,_x) do {			\
+			(_y) = ((_y & 0x6) ^ (_x));	\
+		} while (0)
+
+#define GET_PROTO_TYPE_SUPP(_y) ((_y) & 0x1)
+
+#elif __BYTE_ORDER == __BIG_ENDIAN
+
+#define SET_LABEL_TYPE(_y,_x)  do {			\
+			(_y) = ((_y & 0x4) ^ (_x));	\
+		} while (0)
+
+#define GET_LABEL_TYPE(_y) ((_y) & 0x7)
+
+#define SET_PROTO_TYPE_SUPP(_y,_x) do {				\
+			(_y) = ((_y & 0x3) ^ (_x << 2));	\
+		} while (0)
+
+#define GET_PROTO_TYPE_SUPP(_y) ((_y) >> 2)
+
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+
+#define SET_FRAG_ID(_y,_x) do {				\
+			(_y) = (_x);			\
+		} while(0)
 
 /*
  * common RLE packet header
@@ -73,23 +111,9 @@ union rle_header_all {
 		uint16_t start_ind:1;
 		uint16_t end_ind:1;
 		uint16_t rle_packet_length:11;
-		/* for start packet header */
-		union {
-			uint16_t label_type:2; /* LT for complete packet */
-			uint16_t proto_type_supp:1; /* T for complete packet */
-		};
-		/* for continuation and end packet header */
-		union {
-			uint16_t frag_id:3;
-		};
+		uint16_t LT_T_FID:3;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-		union {
-			uint16_t frag_id:3;
-		};
-		union {
-			uint16_t proto_type_supp:1;
-			uint16_t label_type:2;
-		};
+		uint16_t LT_T_FID:3;
 		uint16_t rle_packet_length:11;
 		uint16_t end_ind:1;
 		uint16_t start_ind:1;
@@ -178,14 +202,5 @@ struct rle_header_start {
 struct rle_header_cont_end {
 	union rle_header_all head;
 } __attribute__ ((packed));
-
-/** Type of payload in RLE packet */
-enum {
-	RLE_PDU_COMPLETE,    /** Complete PDU */
-	RLE_PDU_START_FRAG,  /** START packet/fragment of PDU */
-	RLE_PDU_CONT_FRAG,   /** CONTINUATION packet/fragment of PDU */
-	RLE_PDU_END_FRAG,   /** END packet/fragment of PDU */
-} rle_payload_type;
-
 
 #endif /* _HEADER_H */

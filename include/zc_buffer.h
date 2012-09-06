@@ -26,8 +26,8 @@
  * of PDU data (complete or fragment)
  * */
 struct zc_ptrs_data {
-	int *start;
-	int *end;
+	char *start;
+	char *end;
 };
 
 /**
@@ -56,6 +56,11 @@ struct zc_rle_header_complete {
  * by a pair of pointers
  * for the fragment of pdu
  * */
+struct zc_rle_header_start_w_ptype {
+	struct rle_header_start_w_ptype header;
+	struct zc_ptrs_data ptrs;
+};
+
 struct zc_rle_header_start {
 	struct rle_header_start header;
 	struct zc_ptrs_data ptrs;

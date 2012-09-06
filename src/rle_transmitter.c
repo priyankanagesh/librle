@@ -15,6 +15,8 @@
 #include "encap.h"
 #include "fragmentation.h"
 
+#define MODULE_NAME "TRANSMITTER"
+
 static int get_first_free_frag_ctx(struct transmitter_module *_this)
 {
 	int i;
@@ -55,6 +57,11 @@ static void set_free_all_frag_ctx(struct transmitter_module *_this)
 
 static void init(struct transmitter_module *_this)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	int i;
 	/* allocating buffer for each frag_id
 	 * and initialize sequence number and
@@ -66,7 +73,6 @@ static void init(struct transmitter_module *_this)
 	}
 
 	pthread_mutex_init(&_this->ctx_mutex, NULL);
-/*        _this->ctx_mutex = PTHREAD_MUTEX_INITIALIZER;*/
 
 	/* all frag_id are set to idle */
 	set_free_all_frag_ctx(_this);
@@ -74,6 +80,11 @@ static void init(struct transmitter_module *_this)
 
 struct transmitter_module *rle_transmitter_new(void)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	struct transmitter_module *_this = NULL;
 
 	/* allocate a new RLE transmitter */
@@ -108,6 +119,11 @@ struct transmitter_module *rle_transmitter_new(void)
 
 void rle_transmitter_destroy(struct transmitter_module *_this)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	int i;
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++)
 		rle_ctx_destroy(&_this->rle_ctx_man[i]);
@@ -127,6 +143,11 @@ int rle_transmitter_encap_data(struct transmitter_module *_this,
 				void *data_buffer, size_t data_length,
 				uint16_t protocol_type)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	int ret = C_ERROR;
 
 	if (!data_buffer) {
@@ -174,6 +195,11 @@ int rle_transmitter_get_packet(struct transmitter_module *_this,
 		uint8_t fragment_id,
 		uint16_t protocol_type)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	/* call fragmentation module */
 	int ret = fragmentation_fragment_pdu(&_this->rle_ctx_man[fragment_id],
 			_this->rle_conf,
@@ -181,6 +207,24 @@ int rle_transmitter_get_packet(struct transmitter_module *_this,
 			protocol_type);
 
 	return ret;
+}
+
+int rle_transmitter_get_queue_state(struct transmitter_module *_this,
+		uint8_t fragment_id)
+{
+	/* get info from rle context */
+	if (rle_ctx_get_remaining_pdu_length(&_this->rle_ctx_man[fragment_id])
+			== 0)
+		return C_TRUE;
+
+	return C_FALSE;
+}
+
+uint32_t rle_transmitter_get_queue_size(struct transmitter_module *_this,
+		uint8_t fragment_id)
+{
+	/* get info from rle context */
+	return (rle_ctx_get_remaining_pdu_length(&_this->rle_ctx_man[fragment_id]));
 }
 
 void rle_transmitter_dump(struct transmitter_module *_this)
@@ -191,7 +235,6 @@ void rle_transmitter_dump(struct transmitter_module *_this)
 		rle_ctx_dump(&_this->rle_ctx_man[i],
 				_this->rle_conf);
 	}
-	PRINT("-------> Free context [0x%0x]\n", _this->free_ctx);
 }
 
 #ifdef __KERNEL__
@@ -200,5 +243,7 @@ EXPORT_SYMBOL(rle_transmitter_init);
 EXPORT_SYMBOL(rle_transmitter_destroy);
 EXPORT_SYMBOL(rle_transmitter_encap_data);
 EXPORT_SYMBOL(rle_transmitter_get_packet);
+EXPORT_SYMBOL(rle_transmitter_get_queue_state);
+EXPORT_SYMBOL(rle_transmitter_get_queue_size);
 EXPORT_SYMBOL(rle_transmitter_dump);
 #endif

@@ -110,7 +110,46 @@ int rle_transmitter_get_packet(struct transmitter_module *_this,
 		uint8_t fragment_id,
 		uint16_t protocol_type);
 
+/**
+ *  @brief Get a queue (frag_id) state, filled or empty
+ *
+ *  @warning
+ *
+ *  @param _this		The transmitter module
+ *  @param fragment_id		Fragment id to use
+ *
+ *  @return	C_TRUE if the queue is empty
+ *		C_FALSE if the queue is full or has remaining PDU data
+ *
+ *  @ingroup
+ */
+int rle_transmitter_get_queue_state(struct transmitter_module *_this,
+		uint8_t fragment_id);
 
+/**
+ *  @brief Get occupied size of a queue (frag_id)
+ *
+ *  @warning
+ *
+ *  @param _this		The transmitter module
+ *  @param fragment_id		Fragment id to use
+ *
+ *  @return	Number of Bytes present in a queue
+ *
+ *  @ingroup
+ */
+uint32_t rle_transmitter_get_queue_size(struct transmitter_module *_this,
+		uint8_t fragment_id);
+
+/**
+ *  @brief Dump all frag_id contents
+ *
+ *  @warning
+ *
+ *  @param _this		The transmitter module
+ *
+ *  @ingroup
+ */
 void rle_transmitter_dump(struct transmitter_module *_this);
 
 #endif /* _RLE_TRANSMITTER_H */

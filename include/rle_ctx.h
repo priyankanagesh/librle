@@ -47,7 +47,7 @@ struct rle_ctx_management {
 	void *buf;
 	/** End address of last fragment
 	 * constructed in buffer */
-	int *end_address;
+	char *end_address;
 	/** number of errors drop PDU or fragments */
 	int error_nb;
 	/** specify error */
@@ -444,7 +444,7 @@ uint8_t rle_ctx_get_label_type(struct rle_ctx_management *_this);
  *
  *  @ingroup
  */
-void rle_ctx_set_end_address(struct rle_ctx_management *_this, int *addr);
+void rle_ctx_set_end_address(struct rle_ctx_management *_this, char *addr);
 
 /**
  *  @brief	Get current buffer useful data end address
@@ -457,7 +457,7 @@ void rle_ctx_set_end_address(struct rle_ctx_management *_this, int *addr);
  *
  *  @ingroup
  */
-int *rle_ctx_get_end_address(struct rle_ctx_management *_this);
+char *rle_ctx_get_end_address(struct rle_ctx_management *_this);
 
 /**
  *  @brief	Dump & print to stdout the content of a specific RLE context

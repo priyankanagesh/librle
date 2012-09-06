@@ -17,6 +17,8 @@
 #include "deencap.h"
 #include "reassembly.h"
 
+#define MODULE_NAME "RECEIVER"
+
 static int get_first_free_frag_ctx(struct receiver_module *_this)
 {
 	int i;
@@ -59,6 +61,13 @@ static int get_fragment_type(void *data_buffer)
 	union rle_header_all *head = (union rle_header_all *)data_buffer;
 	int type_rle_frag = C_ERROR;
 
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d: RLE packet S %d E %d \n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__,
+			head->b.start_ind, head->b.end_ind);
+#endif
+
 	switch (head->b.start_ind) {
 		case 0x0:
 			if (head->b.end_ind == 0x0)
@@ -73,7 +82,9 @@ static int get_fragment_type(void *data_buffer)
 				type_rle_frag = RLE_PDU_COMPLETE;
 			break;
 		default:
-			PRINT("ERROR %s:%s:%d: invalid/unknown RLE fragment type S [%x] E [%x]\n",
+			PRINT("ERROR %s %s:%s:%d: invalid/unknown RLE fragment"
+					" type S [%x] E [%x]\n",
+					MODULE_NAME,
 					__FILE__, __func__, __LINE__,
 					head->b.start_ind, head->b.end_ind);
 			break;
@@ -86,7 +97,7 @@ static uint16_t get_fragment_id(void *data_buffer)
 {
 	union rle_header_all *head = (union rle_header_all *)data_buffer;
 
-	return head->b.frag_id;
+	return head->b.LT_T_FID;
 }
 
 /* provided data_buffer pointer needs
@@ -119,6 +130,12 @@ static uint16_t get_rle_packet_length(void *data_buffer)
 
 static void init(struct receiver_module *_this)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	int i;
 	/* allocating buffer for each frag_id
 	 * and initialize sequence number and
@@ -138,12 +155,19 @@ static void init(struct receiver_module *_this)
 
 struct receiver_module *rle_receiver_new(void)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	struct receiver_module *_this = NULL;
 
 	_this = MALLOC(sizeof(struct receiver_module));
 
 	if (!_this) {
-		PRINT("ERROR %s:%s:%d: allocating receiver module failed\n",
+		PRINT("ERROR %s %s:%s:%d: allocating receiver module failed\n",
+				MODULE_NAME,
 				__FILE__, __func__, __LINE__);
 		return NULL;
 	}
@@ -153,7 +177,9 @@ struct receiver_module *rle_receiver_new(void)
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		_this->rle_conf[i] = rle_conf_new(_this->rle_conf[i]);
 		if (!_this->rle_conf[i]) {
-			PRINT("ERROR %s:%s:%d: allocating receiver module configuration failed\n",
+			PRINT("ERROR %s %s:%s:%d: allocating receiver module"
+				       " configuration failed\n",
+					MODULE_NAME,
 					__FILE__, __func__, __LINE__);
 			return NULL;
 		}
@@ -166,6 +192,12 @@ struct receiver_module *rle_receiver_new(void)
 
 void rle_receiver_destroy(struct receiver_module *_this)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	int i;
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++)
 		rle_ctx_destroy(&_this->rle_ctx_man[i]);
@@ -177,24 +209,34 @@ void rle_receiver_destroy(struct receiver_module *_this)
 int rle_receiver_deencap_data(struct receiver_module *_this,
 				void *data_buffer, size_t data_length)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	int ret = C_ERROR;
 
 	if (!data_buffer) {
-		PRINT("ERROR %s:%s:%d: data buffer is invalid\n",
+		PRINT("ERROR %s %s:%s:%d: data buffer is invalid\n",
+				MODULE_NAME,
 				__FILE__, __func__, __LINE__);
 		return ret;
 	}
 
 	if (!_this) {
-		PRINT("ERROR %s:%s:%d: receiver module is invalid\n",
+		PRINT("ERROR %s %s:%s:%d: receiver module is invalid\n",
+				MODULE_NAME,
 				__FILE__, __func__, __LINE__);
 		return ret;
 	}
 
 	/* check PPDU validity */
 	if (data_length > RLE_MAX_PDU_SIZE) {
-		PRINT("ERROR %s:%s:%d: Packet too long [%zu]\n",
-				__FILE__, __func__, __LINE__, data_length);
+		PRINT("ERROR %s %s:%s:%d: Packet too long [%zu]\n",
+				MODULE_NAME,
+				__FILE__, __func__, __LINE__,
+				data_length);
 		return ret;
 	}
 
@@ -209,8 +251,9 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
 		case RLE_PDU_COMPLETE:
 			index_ctx = get_first_free_frag_ctx(_this);
 			if (index_ctx < 0) {
-				PRINT("ERROR %s:%s:%d: no free reassembly context available "
+				PRINT("ERROR %s %s:%s:%d: no free reassembly context available "
 						"for deencapsulation\n",
+						MODULE_NAME,
 						__FILE__, __func__, __LINE__);
 				return C_ERROR;
 			}
@@ -219,9 +262,17 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
 		case RLE_PDU_CONT_FRAG:
 		case RLE_PDU_END_FRAG:
 			index_ctx = get_fragment_id(data_buffer);
+#ifdef DEBUG
+			PRINT("DEBUG %s %s:%s:%d: fragment_id 0x%0x frag type %d\n",
+					MODULE_NAME,
+					__FILE__, __func__, __LINE__,
+					index_ctx, frag_type);
+#endif
 			if ((index_ctx < 0) || (index_ctx > RLE_MAX_FRAG_ID)) {
-				PRINT("ERROR %s:%s:%d: invalid fragment id [%d]\n",
-						__FILE__, __func__, __LINE__, index_ctx);
+				PRINT("ERROR %s %s:%s:%d: invalid fragment id [%d]\n",
+						MODULE_NAME,
+						__FILE__, __func__, __LINE__,
+						index_ctx);
 				return C_ERROR;
 			}
 			break;
@@ -248,7 +299,8 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
 		rle_ctx_flush_buffer(&_this->rle_ctx_man[index_ctx]);
 		rle_ctx_invalid_ctx(&_this->rle_ctx_man[index_ctx]);
 		set_free_frag_ctx(_this, index_ctx);
-		PRINT("ERROR %s:%s:%d: cannot reassemble data\n",
+		PRINT("ERROR %s %s:%s:%d: cannot reassemble data\n",
+				MODULE_NAME,
 				__FILE__, __func__, __LINE__);
 		return ret;
 	}
@@ -265,7 +317,6 @@ void rle_receiver_dump(struct receiver_module *_this)
 		rle_ctx_dump(&_this->rle_ctx_man[i],
 				_this->rle_conf[i]);
 	}
-	PRINT("-------> Free context [0x%0x]\n", _this->free_ctx);
 }
 
 #ifdef __KERNEL__

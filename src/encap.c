@@ -16,11 +16,19 @@
 #include "zc_buffer.h"
 #include "rle_conf.h"
 
+#define MODULE_NAME "ENCAP"
+
 static int create_header(struct rle_ctx_management *rle_ctx,
 			struct rle_configuration *rle_conf,
 			void *data_buffer, size_t data_length,
 			uint16_t protocol_type)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	size_t size_header = RLE_COMPLETE_HEADER_SIZE;
 	size_t ptype_length = 0;
 	uint8_t proto_type_supp = RLE_T_PROTO_TYPE_NO_SUPP;
@@ -61,23 +69,23 @@ static int create_header(struct rle_ctx_management *rle_ctx,
 	rle_hdr->header.head.b.start_ind		= 1;
 	rle_hdr->header.head.b.end_ind			= 1;
 	rle_hdr->header.head.b.rle_packet_length	= data_length;
-	rle_hdr->header.head.b.proto_type_supp		= proto_type_supp;
+	SET_PROTO_TYPE_SUPP(rle_hdr->header.head.b.LT_T_FID, proto_type_supp);
 
 	/* fill label_type field accordingly to the
 	 * given protocol type (signal or implicit/indicated
 	 * by the NCC */
 	if ((protocol_type == RLE_PROTO_TYPE_SIGNAL_COMP) ||
 			(protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP))
-		rle_hdr->header.head.b.label_type = RLE_LT_PROTO_SIGNAL; /* RCS2 requirement */
+		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_LT_PROTO_SIGNAL); /* RCS2 requirement */
 	else
-		rle_hdr->header.head.b.label_type = RLE_LT_IMPLICIT_PROTO_TYPE;
+		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_LT_IMPLICIT_PROTO_TYPE);
 
 	/* set start & end PDU data pointers */
-	rle_hdr->ptrs.start = (int *)data_buffer;
-	rle_hdr->ptrs.end = (int *)(data_buffer + data_length);
+	rle_hdr->ptrs.start = (char *)data_buffer;
+	rle_hdr->ptrs.end = (char *)(data_buffer + data_length);
 	/* update rle context */
 	rle_ctx_set_end_address(rle_ctx,
-				(int *)(rle_ctx->buf + size_header));
+				(char *)(rle_ctx->buf + size_header));
 	rle_ctx_set_is_fragmented(rle_ctx, C_FALSE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
 	rle_ctx_set_use_crc(rle_ctx, C_FALSE);
@@ -88,7 +96,8 @@ static int create_header(struct rle_ctx_management *rle_ctx,
 	rle_ctx_set_rle_length(rle_ctx,
 				(data_length + ptype_length));
 	rle_ctx_set_proto_type(rle_ctx, protocol_type);
-	rle_ctx_set_label_type(rle_ctx, rle_hdr->header.head.b.label_type);
+	uint8_t label_type = GET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID);
+	rle_ctx_set_label_type(rle_ctx, label_type);
 	rle_ctx_set_qos_tag(rle_ctx, 0); // TODO update
 
 	return C_OK;
@@ -99,6 +108,12 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
 		void *pdu_buffer, size_t pdu_length,
 		uint16_t protocol_type)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	if (encap_check_pdu_validity(pdu_buffer,
 				pdu_length,
 				protocol_type) == C_ERROR)
@@ -119,6 +134,12 @@ int encap_check_pdu_validity(void *pdu_buffer,
 		size_t pdu_length,
 		uint16_t protocol_type)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	if ((protocol_type == RLE_PROTO_TYPE_ARP) ||
 			(protocol_type == RLE_PROTO_TYPE_SIGNAL_COMP) ||
 			(protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP))
@@ -133,8 +154,11 @@ int encap_check_pdu_validity(void *pdu_buffer,
 
 		/* check ip version validity */
 		if (ip_hdr->version != IP_VERSION_4) {
-			PRINT("ERROR %s:%s:%d: expecting IP version 4, version [%d] not supported ihl [%d]\n",
-					__FILE__, __func__, __LINE__, ip_hdr->version,
+			PRINT("ERROR %s %s:%s:%d: expecting IP version 4,"
+				       " version [%d] not supported ihl [%d]\n",
+					MODULE_NAME,
+					__FILE__, __func__, __LINE__,
+					ip_hdr->version,
 					ip_hdr->ihl);
 			return C_ERROR;
 		}
@@ -143,14 +167,20 @@ int encap_check_pdu_validity(void *pdu_buffer,
 		total_length = ntohs(ip_hdr->tot_len);
 
 		if (pdu_length != total_length) {
-			PRINT("ERROR %s:%s:%d: PDU length inconherency, size [%d] given size [%zu]\n",
-					__FILE__, __func__, __LINE__, total_length, pdu_length);
+			PRINT("ERROR %s %s:%s:%d: PDU length inconherency,"
+				       " size [%d] given size [%zu]\n",
+				       MODULE_NAME,
+					__FILE__, __func__, __LINE__,
+					total_length, pdu_length);
 			return C_ERROR;
 		}
 
 		if (total_length > RLE_MAX_PDU_SIZE) {
-			PRINT("ERROR %s:%s:%d: PDU too large for RL Encapsulation, size [%d]\n",
-					__FILE__, __func__, __LINE__, total_length);
+			PRINT("ERROR %s %s:%s:%d: PDU too large for RL Encapsulation,"
+				       " size [%d]\n",
+					MODULE_NAME,
+					__FILE__, __func__, __LINE__,
+					total_length);
 			return C_ERROR;
 		}
 
@@ -165,8 +195,11 @@ int encap_check_pdu_validity(void *pdu_buffer,
 
 		/* check ip version validity */
 		if (ip_version != IP_VERSION_6) {
-			PRINT("ERROR %s:%s:%d: expecting IP version 6, version [%d] not supported\n",
-					__FILE__, __func__, __LINE__, ip_version);
+			PRINT("ERROR %s %s:%s:%d: expecting IP version 6,"
+					" version [%d] not supported\n",
+					MODULE_NAME,
+					__FILE__, __func__, __LINE__,
+					ip_version);
 			return C_ERROR;
 		}
 
@@ -174,8 +207,11 @@ int encap_check_pdu_validity(void *pdu_buffer,
 		total_length = (ntohs(ip_hdr->ip6_ctlun.ip6_un1.ip6_un1_plen) + 4);
 
 		if (pdu_length != total_length) {
-			PRINT("ERROR %s:%s:%d: PDU length inconherency, size [%d] given size [%zu]\n",
-					__FILE__, __func__, __LINE__, total_length, pdu_length);
+			PRINT("ERROR %s %s:%s:%d: PDU length inconherency,"
+					" size [%d] given size [%zu]\n",
+					MODULE_NAME,
+					__FILE__, __func__, __LINE__,
+					total_length, pdu_length);
 			return C_ERROR;
 		}
 
@@ -188,12 +224,13 @@ int encap_check_pdu_validity(void *pdu_buffer,
 
 		/* TODO */
 
-		/* check PDU size */
 		return C_OK;
 	}
 
-	PRINT("ERROR %s:%s:%d: Unknown PDU type [0x%0x]\n",
-			__FILE__, __func__, __LINE__, protocol_type);
+	PRINT("ERROR %s %s:%s:%d: Unknown PDU type [0x%0x]\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__,
+			protocol_type);
 
 	return C_ERROR;
 }

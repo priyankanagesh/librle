@@ -10,6 +10,8 @@
 #include "rle_conf.h"
 #include "constants.h"
 
+#define MODULE_NAME "RLE CONF"
+
 #define IS_NOT_A_BOOLEAN(x) ((x) < C_FALSE || (x) > C_TRUE)
 
 struct rle_configuration {
@@ -21,10 +23,17 @@ struct rle_configuration {
 
 struct rle_configuration *rle_conf_new(struct rle_configuration *_this)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	_this = MALLOC(sizeof(struct rle_configuration));
 
 	if (!_this) {
-		PRINT("ERROR %s:%s:%d: allocation for RLE configuration failed\n",
+		PRINT("ERROR %s %s:%s:%d: allocation for RLE configuration failed\n",
+				MODULE_NAME,
 				__FILE__, __func__, __LINE__);
 		return NULL;
 	}
@@ -36,8 +45,15 @@ struct rle_configuration *rle_conf_new(struct rle_configuration *_this)
 
 int rle_conf_destroy(struct rle_configuration *_this)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	if (!_this) {
-		PRINT("ERROR %s:%s:%d: RLE configuration is NULL\n",
+		PRINT("ERROR %s %s:%s:%d: RLE configuration is NULL\n",
+				MODULE_NAME,
 				__FILE__, __func__, __LINE__);
 		return C_ERROR;
 	}
@@ -50,6 +66,12 @@ int rle_conf_destroy(struct rle_configuration *_this)
 
 void rle_conf_init(struct rle_configuration *_this)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
 	/* set default values */
 	_this->default_ptype		= RLE_CONF_DEFAULT_PTYPE;
 	_this->enable_ptype_compressed	= RLE_CONF_COMPRESS_PTYPE;
@@ -61,8 +83,11 @@ int rle_conf_set_default_ptype(struct rle_configuration *_this,
 				uint16_t protocol_type)
 {
 	if ((_this->enable_ptype_compressed && protocol_type > 0xff)) {
-		PRINT("ERROR %s:%s:%d: invalid protocol type [0x%0x] for uncompressed field\n",
-				__FILE__, __func__, __LINE__, protocol_type);
+		PRINT("ERROR %s %s:%s:%d: invalid protocol type [0x%0x]"
+				" for uncompressed field\n",
+				MODULE_NAME,
+				__FILE__, __func__, __LINE__,
+				protocol_type);
 		return C_ERROR;
 	}
 
@@ -80,7 +105,8 @@ int rle_conf_set_ptype_compression(struct rle_configuration *_this,
 				int enable_ptype_compression)
 {
 	if (IS_NOT_A_BOOLEAN(enable_ptype_compression)) {
-		PRINT("ERROR %s:%s:%d: invalid protocol type compression flag\n",
+		PRINT("ERROR %s %s:%s:%d: invalid protocol type compression flag\n",
+				MODULE_NAME,
 				__FILE__, __func__, __LINE__);
 		return C_ERROR;
 	}
@@ -99,7 +125,8 @@ int rle_conf_set_ptype_suppression(struct rle_configuration *_this,
 				int enable_ptype_suppression)
 {
 	if (IS_NOT_A_BOOLEAN(enable_ptype_suppression)) {
-		PRINT("ERROR %s:%s:%d: invalid protocol type suppression flag\n",
+		PRINT("ERROR %s %s:%s:%d: invalid protocol type suppression flag\n",
+				MODULE_NAME,
 				__FILE__, __func__, __LINE__);
 		return C_ERROR;
 	}
@@ -118,7 +145,8 @@ int rle_conf_set_crc_check(struct rle_configuration *_this,
 				int enable_crc_check)
 {
 	if (IS_NOT_A_BOOLEAN(enable_crc_check)) {
-		PRINT("ERROR %s:%s:%d: invalid use-CRC flag\n",
+		PRINT("ERROR %s %s:%s:%d: invalid use-CRC flag\n",
+				MODULE_NAME,
 				__FILE__, __func__, __LINE__);
 		return C_ERROR;
 	}
