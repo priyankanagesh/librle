@@ -80,6 +80,9 @@ static int create_header(struct rle_ctx_management *rle_ctx,
 	else
 		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_LT_IMPLICIT_PROTO_TYPE);
 
+	/* update rle configuration */
+	rle_conf_set_ptype_suppression(rle_conf, proto_type_supp);
+
 	/* set start & end PDU data pointers */
 	rle_hdr->ptrs.start = (char *)data_buffer;
 	rle_hdr->ptrs.end = (char *)(data_buffer + data_length);
