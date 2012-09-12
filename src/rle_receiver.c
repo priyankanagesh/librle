@@ -107,7 +107,7 @@ static uint8_t get_seq_no(void *data_buffer)
 {
 	struct rle_trailer *trl = (struct rle_trailer *)data_buffer;
 
-	return trl->seq_no;
+	return trl->b.seq_no;
 }
 
 /* provided data_buffer pointer needs

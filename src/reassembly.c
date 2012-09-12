@@ -61,12 +61,12 @@ static int check_fragmented_length(struct rle_ctx_management *rle_ctx,
 	size_t trailer_size = 0;
 
 	if (rle_ctx_get_use_crc(rle_ctx) == C_TRUE)
-		trailer_size = RLE_CRC32_FIELD_SIZE;
+		trailer_size += RLE_CRC32_FIELD_SIZE;
 	else
-		trailer_size = RLE_SEQ_NO_FIELD_SIZE;
+		trailer_size += RLE_SEQ_NO_FIELD_SIZE;
 
 	size_t recv_pkt_length = (data_length -
-			(sizeof(union rle_header_all) + trailer_size));
+			(sizeof(struct rle_header_cont_end) + trailer_size));
 
 	/* for each fragment received, remaining data size is updated,
 	 * so if everything is okay remaining size must be equal
@@ -83,9 +83,10 @@ static int check_fragmented_length(struct rle_ctx_management *rle_ctx,
 
 	if (remaining_size != recv_pkt_length) {
 		PRINT("ERROR %s %s:%s:%d: invalid packet length,"
-				" received size [%zu] awaited size [%d]\n",
+				"total received size [%zu] PDU received size [%zu] awaited PDU size [%d]\n",
 				MODULE_NAME,
 				__FILE__, __func__, __LINE__,
+				data_length,
 				recv_pkt_length, remaining_size);
 		ret = C_ERROR_DROP;
 	}
@@ -110,12 +111,12 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx,
 	struct rle_trailer *trl = (struct rle_trailer *)(data_buffer +
 			(data_length - RLE_SEQ_NO_FIELD_SIZE));
 
-	if (trl->seq_no != rle_ctx->next_seq_nb) {
+	if (trl->b.seq_no != rle_ctx->next_seq_nb) {
 		PRINT("ERROR %s %s:%s:%d: sequence number inconsistency,"
 			       " received [%d] expected [%d]\n",
 			       MODULE_NAME,
 			       __FILE__, __func__, __LINE__,
-			       trl->seq_no, rle_ctx->next_seq_nb);
+			       trl->b.seq_no, rle_ctx->next_seq_nb);
 		return C_ERROR_DROP;
 	}
 
@@ -322,6 +323,7 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx,
 	 * total length = PDU length + proto_type field */
 	uint16_t protocol_type = 0;
 	size_t header_size = 0;
+	size_t trailer_size = 0;
 
 	/* get ptype compression status from NCC
 	 * and CRC usage from user */
@@ -349,7 +351,13 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx,
 		}
 	}
 
-	size_t pdu_length = (hdr->head_start.b.total_length - header_size);
+	if (is_crc_used)
+		trailer_size += RLE_CRC32_FIELD_SIZE;
+	else
+		trailer_size += RLE_SEQ_NO_FIELD_SIZE;
+
+	size_t pdu_length = (hdr->head_start.b.total_length -
+			header_size);
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: RLE head_start.b.total_length %d label_type 0x%x"
@@ -362,7 +370,8 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx,
 #endif
 
 	rle_ctx_set_pdu_length(rle_ctx, pdu_length);
-	rle_ctx_set_remaining_pdu_length(rle_ctx, (pdu_length - hdr->head.b.rle_packet_length));
+	rle_ctx_set_remaining_pdu_length(rle_ctx, (pdu_length -
+				hdr->head.b.rle_packet_length));
 	rle_ctx_set_is_fragmented(rle_ctx, C_TRUE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
 	rle_ctx_set_nb_frag_pdu(rle_ctx, 1);
@@ -439,7 +448,6 @@ static void update_ctx_end(struct rle_ctx_management *rle_ctx,
 
 	rle_ctx_incr_frag_counter(rle_ctx);
 	rle_ctx_incr_nb_frag_pdu(rle_ctx);
-
 	/* RLE packet length is the sum of packet label, protocol type & payload length */
 	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length);
 }

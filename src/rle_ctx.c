@@ -590,11 +590,11 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 				if (hdr->head.b.end_ind == 0x1) {
 					/* print trailer */
 					PRINT("----------- END TRAILER ------------\n");
-					i_ptr = (char *)(&(zc_ce_buf->ptrs.end) + SIZEOF_PTR);
+					i_ptr = (char *)(&(zc_ce_buf->ptrs.end) + 1);
 					struct rle_trailer *trl = (struct rle_trailer *)i_ptr;
 
 					if (!use_crc) {
-						PRINT("\t SeqNo 0x%0x\n", trl->seq_no);
+						PRINT("\t SeqNo 0x%0x\n", trl->b.seq_no);
 					} else {
 						PRINT("\t CRC32 0x%0x\n", trl->crc);
 					}
