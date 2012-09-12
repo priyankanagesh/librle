@@ -22,15 +22,15 @@
  * for multi frag context
  * */
 struct rle_trailer {
-	/* for sequence number
-	 * usage in trailer */
 	union {
-		uint32_t seq_no:8;
-		uint32_t :24; /* unused */
-	};
-	/* for CRC32 usage in trailer */
-	union {
-		uint32_t crc:32;
+		/* for sequence number
+		 * usage in trailer */
+		struct {
+			uint32_t seq_no:8;
+			uint32_t :24;
+		} b;
+		/* for CRC32 usage in trailer */
+		uint32_t crc;
 	};
 } __attribute__ ((packed));
 
