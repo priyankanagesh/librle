@@ -34,8 +34,10 @@
 #define C_FALSE		0
 
 #define C_OK		0
+#define C_REASSEMBLY_OK 1
 #define C_ERROR		-1
 #define C_ERROR_DROP	-2
+#define C_ERROR_BUF	-3
 
 #define IP_VERSION_4	4
 #define IP_VERSION_6	6
@@ -54,7 +56,9 @@ enum {
 
 #define MALLOC(size_bytes)	malloc(size_bytes);
 #define FREE(buf_addr)		free(buf_addr);
-#define PRINT(x...)		printf(x);
+#define PRINT(x...)	do { \
+				printf(x); \
+			} while(0)
 
 #else
 
