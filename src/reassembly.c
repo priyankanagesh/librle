@@ -188,13 +188,16 @@ static int check_fragmented_consistency(struct rle_ctx_management *rle_ctx,
 		if(!rle_ctx_get_use_crc(rle_ctx)) {
 			ret = check_fragmented_sequence(rle_ctx,
 					data_buffer, data_length);
-			if (ret == C_OK)
-				rle_ctx_incr_seq_nb(rle_ctx);
 		} else {
 			ret = check_fragmented_crc(rle_ctx,
 					data_buffer, data_length);
 		}
 	}
+
+
+	/* we have to increment whatever fragment sequence
+	 * is OK or not */
+	rle_ctx_incr_seq_nb(rle_ctx);
 
 	return ret;
 }
