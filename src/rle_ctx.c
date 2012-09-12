@@ -141,8 +141,10 @@ void rle_ctx_flush_buffer(struct rle_ctx_management *_this)
 			__FILE__, __func__, __LINE__);
 #endif
 
-	/* set all buffer memory to zero */
+	/* set all buffer memory to zero
+	 * and reset buffer end addr */
 	memset(_this->buf, 0, ZC_BUFFER_MAX_SIZE);
+	_this->end_address = (char *)_this->buf;
 }
 
 void rle_ctx_invalid_ctx(struct rle_ctx_management *_this)
@@ -349,16 +351,6 @@ char *rle_ctx_get_end_address(struct rle_ctx_management *_this)
 	return(_this->end_address);
 }
 
-union print_bytes {
-	uint32_t all;
-	struct {
-		uint32_t B3:8;
-		uint32_t B2:8;
-		uint32_t B1:8;
-		uint32_t B0:8;
-	} B;
-};
-
 void rle_ctx_dump(struct rle_ctx_management *_this,
 		struct rle_configuration *rle_conf)
 {
@@ -378,12 +370,16 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 	PRINT("\terror_type		\t= [%d]\n", _this->error_type);
 	PRINT("\tend address		\t= [%p]\n", _this->end_address);
 
-	/* RLE packet dump TODO CONT & END + TRL */
+
+	if (_this->frag_counter == 0) {
+		PRINT("\n--------------------------------------------------\n");
+		return;
+	}
 
 	/* get ptype compression status from NCC */
 	int is_compressed = rle_conf_get_ptype_compression(rle_conf);
 	int protocol_type = 0;
-	int *i_ptr = NULL;
+	char *i_ptr = NULL;
 
 	if (!_this->is_fragmented) {
 		/* COMPLETE RLE packet */
@@ -422,23 +418,32 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 				protocol_type);
 
 		if (header_size <= RLE_COMPLETE_HEADER_SIZE) {
-			i_ptr = (int *)zc_buf->ptrs.start;
+			i_ptr = (char *)zc_buf->ptrs.start;
 		} else {
 			struct zc_rle_header_complete_w_ptype *zc_buf_tmp =
 				(struct zc_rle_header_complete_w_ptype *)_this->buf;
-			i_ptr = (int *)zc_buf_tmp->ptrs.start;
+			i_ptr = (char *)zc_buf_tmp->ptrs.start;
 		}
 
 		int i = 0;
-		union print_bytes data;
+		int j = 0;
+		uint8_t data;
 
 		PRINT("|  \t\t  PAYLOAD  \t\t  |\n");
 		for (i = 0; (char *)(i_ptr + i) < zc_buf->ptrs.end; i++) {
-			data.all = ntohl(*(i_ptr +  i));
-			PRINT("@ %p = %02x %02x %02x %02x \n", (uint32_t *)(i_ptr + i),
-					data.B.B0, data.B.B1,
-					data.B.B2, data.B.B3);
+			data = ntohl(*(i_ptr +  i));
+
+			PRINT(" %02x ", data);
+			if (j == 3) {
+				PRINT("\n");
+				j = 0;
+			} else {
+				j++;
+			}
 		}
+
+		if (j != 0)
+			PRINT("\n");
 	} else {
 		union rle_header_all *header = _this->buf;
 		int start_bit = header->b.start_ind;
@@ -471,7 +476,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 			}
 
 			if (header_size == RLE_START_MANDATORY_HEADER_SIZE) {
-				i_ptr = (int *)zc_buf->ptrs.start;
+				i_ptr = (char *)zc_buf->ptrs.start;
 #ifdef DEBUG
 				PRINT("DEBUG ptrs start %p end %p i_ptr %p\n",
 						zc_buf->ptrs.start,
@@ -481,7 +486,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 			} else {
 				struct zc_rle_header_start_w_ptype *zc_buf_tmp =
 					(struct zc_rle_header_start_w_ptype *)_this->buf;
-				i_ptr = (int *)zc_buf_tmp->ptrs.start;
+				i_ptr = (char *)zc_buf_tmp->ptrs.start;
 #ifdef DEBUG
 				PRINT("DEBUG w_ptype ptrs start %p end %p i_ptr %p\n",
 						zc_buf_tmp->ptrs.start,
@@ -503,14 +508,28 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 					zc_buf->header.head_start.b.proto_type_supp,
 					protocol_type);
 			int i = 0;
-			union print_bytes data;
+			int j = 0;
+			uint8_t data = 0;
+
 			PRINT("|  \t\t  PAYLOAD  \t\t  |\n");
 			for (i = 0; (char *)(i_ptr + i) < zc_buf->ptrs.end; i++) {
-				data.all = ntohl(*(i_ptr +  i));
-				PRINT("@ %p = %02x %02x %02x %02x \n", (uint32_t *)(i_ptr + i),
-						data.B.B0, data.B.B1,
-						data.B.B2, data.B.B3);
+				data = (*(i_ptr +  i));
+				PRINT(" %02x ", data);
+
+				if (j == 3) {
+					PRINT("\n");
+					j = 0;
+				} else {
+					j++;
+				}
 			}
+
+			if (j != 0)
+				PRINT("\n");
+#ifdef DEBUG
+			//DEBUG
+			PRINT("zc_buf->ptrs.end %p \n", zc_buf->ptrs.end);
+#endif
 
 			void *ptr_to_next_frag = &(zc_buf->ptrs.end);
 
@@ -541,8 +560,9 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 						zc_ce_buf->header.head.b.LT_T_FID);
 
 				int i = 0;
-				i_ptr = (int *)zc_ce_buf->ptrs.start;
-				union print_bytes data;
+				int j = 0;
+				i_ptr = (char *)zc_ce_buf->ptrs.start;
+				uint8_t data = 0;
 #ifdef DEBUG
 				PRINT("DEBUG ptrs start %p end %p i_ptr %p\n",
 						zc_ce_buf->ptrs.start,
@@ -550,19 +570,27 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 						i_ptr);
 #endif
 
-
 				PRINT("|  \t\t  PAYLOAD  \t\t  |\n");
 				for (i = 0; (char *)(i_ptr + i) < zc_ce_buf->ptrs.end; i++) {
-					data.all = ntohl(*(i_ptr +  i));
-					PRINT("@ %p = %02x %02x %02x %02x \n", (uint32_t *)(i_ptr + i),
-							data.B.B0, data.B.B1,
-							data.B.B2, data.B.B3);
+					data = (*(i_ptr +  i));
+
+					PRINT(" %02x ", data);
+
+					if (j == 3) {
+						PRINT("\n");
+						j = 0;
+					} else {
+						j++;
+					}
 				}
+
+				if (j != 0)
+					PRINT("\n");
 
 				if (hdr->head.b.end_ind == 0x1) {
 					/* print trailer */
 					PRINT("----------- END TRAILER ------------\n");
-					i_ptr = (int *)(&(zc_ce_buf->ptrs.end) + SIZEOF_PTR);
+					i_ptr = (char *)(&(zc_ce_buf->ptrs.end) + SIZEOF_PTR);
 					struct rle_trailer *trl = (struct rle_trailer *)i_ptr;
 
 					if (!use_crc) {
@@ -570,6 +598,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 					} else {
 						PRINT("\t CRC32 0x%0x\n", trl->crc);
 					}
+					PRINT("------------------------------------\n");
 				}
 
 				start_bit = hdr->head.b.start_ind;
