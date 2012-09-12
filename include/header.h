@@ -19,7 +19,7 @@
 #define RLE_LT_PROTO_SIGNAL			3
 /** Type field - protocol type not supressed */
 #define RLE_T_PROTO_TYPE_NO_SUPP		0
-/** Type field - protocol type not supressed */
+/** Type field - protocol type supressed */
 #define RLE_T_PROTO_TYPE_SUPP			1
 /** Protocol type for signalling compressed */
 #define RLE_PROTO_TYPE_SIGNAL_COMP		0x42
