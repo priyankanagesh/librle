@@ -292,20 +292,45 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
 			data_buffer,
 			data_length,
 			frag_type);
-	if (ret != C_OK) {
+
+	if ((ret != C_OK) && (ret != C_REASSEMBLY_OK)) {
 		/* received RLE packet is invalid,
 		 * we have to flush related context
 		 * for this frag_id */
 		rle_ctx_flush_buffer(&_this->rle_ctx_man[index_ctx]);
 		rle_ctx_invalid_ctx(&_this->rle_ctx_man[index_ctx]);
 		set_free_frag_ctx(_this, index_ctx);
-		PRINT("ERROR %s %s:%s:%d: cannot reassemble data\n",
+		PRINT("ERROR %s %s:%s:%d: cannot reassemble data, error type %d\n",
 				MODULE_NAME,
-				__FILE__, __func__, __LINE__);
-		return ret;
+				__FILE__, __func__, __LINE__,
+				ret);
 	}
 
-	ret = C_OK;
+	return ret;
+}
+
+int rle_receiver_get_packet(struct receiver_module *_this,
+			uint8_t fragment_id,
+			void *pdu_buffer,
+			int *pdu_proto_type,
+			uint32_t *pdu_length)
+{
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
+	int ret = reassembly_get_pdu(&_this->rle_ctx_man[fragment_id],
+			pdu_buffer,
+			pdu_proto_type,
+			pdu_length);
+
+/*        if (ret == C_OK) {*/
+/*                |+ reset buffer content +|*/
+/*                rle_ctx_flush_buffer(&_this->rle_ctx_man[fragment_id]);*/
+/*                set_free_frag_ctx(_this, fragment_id);*/
+/*        }*/
+
 	return ret;
 }
 
@@ -324,5 +349,6 @@ EXPORT_SYMBOL(rle_receiver_new);
 EXPORT_SYMBOL(rle_receiver_init);
 EXPORT_SYMBOL(rle_receiver_destroy);
 EXPORT_SYMBOL(rle_receiver_deencap_data);
+EXPORT_SYMBOL(rle_receiver_get_packet);
 EXPORT_SYMBOL(rle_receiver_dump);
 #endif
