@@ -34,7 +34,7 @@ TARGET_LINK_LIBRARIES(rle
 	pthread
 )
 
-#ADD_SUBDIRECTORY(tests)
+ADD_SUBDIRECTORY(tests)
 
 # FROM libsach
 macro(GET_OR_READ mycommand myvariable myfile)
