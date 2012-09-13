@@ -34,6 +34,24 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 		uint16_t protocol_type);
 
 /**
+ *  @brief Copy encapsulated PDU into burst
+ *
+ *  @warning
+ *
+ *  @param rle_ctx			the rle fragment context
+ *  @param burst_payload_buffer		data buffer's address to encapsulate
+ *  @param burst_payload_length	payload length available
+ *
+ *  @return	C_ERROR in case of error
+ *		C_OK otherwise
+ *
+ *  @ingroup
+ */
+int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
+		struct rle_configuration *rle_conf,
+		void *burst_payload_buffer, size_t burst_payload_length);
+
+/**
  *  @brief Add RLE header to fragment
  *
  *  @warning

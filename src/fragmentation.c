@@ -364,6 +364,50 @@ static int get_fragment_type(struct rle_ctx_management *rle_ctx, size_t burst_pa
 	return frag_type;
 }
 
+int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
+		struct rle_configuration *rle_conf,
+		void *burst_payload_buffer, size_t burst_payload_length)
+{
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+	struct zc_rle_header_complete *zc_buf =
+		(struct zc_rle_header_complete *)rle_ctx->buf;
+	size_t size_header = RLE_COMPLETE_HEADER_SIZE;
+	size_t pdu_length = rle_ctx_get_pdu_length(rle_ctx);
+	size_t data_length = rle_ctx_get_rle_length(rle_ctx);
+	size_t ptype_length = data_length - pdu_length;
+
+	size_header += ptype_length;
+
+	uint8_t proto_type_supp = GET_PROTO_TYPE_SUPP(zc_buf->header.head.b.LT_T_FID);
+	if (proto_type_supp != RLE_T_PROTO_TYPE_SUPP) {
+		struct rle_header_complete_w_ptype *rle_cp_hdr =
+			(struct rle_header_complete_w_ptype *)&zc_buf->header;
+		/* copy header region */
+		memcpy(burst_payload_buffer, rle_cp_hdr, size_header);
+	} else {
+		struct rle_header_complete *rle_c_hdr =
+			(struct rle_header_complete *)&zc_buf->header;
+		/* copy header region */
+		memcpy(burst_payload_buffer, rle_c_hdr, size_header);
+	}
+
+	/* copy PDU */
+	memcpy((void*)(burst_payload_buffer + size_header),
+			zc_buf->ptrs.start,
+			pdu_length);
+
+	/* update some values in RLE context */
+	rle_ctx_set_remaining_pdu_length(rle_ctx, 0);
+	rle_ctx_set_rle_length(rle_ctx,
+			(pdu_length + ptype_length));
+
+	return C_OK;
+}
+
 int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
 		struct rle_configuration *rle_conf,
 		void *burst_payload_buffer, size_t burst_payload_length,
@@ -436,7 +480,10 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 		if (!fragmentation_is_needed(rle_ctx, burst_payload_length)) {
 			/* no frag needed, complete PDU is already RLEified
 			 * and can be sent as is */
-			ret = C_OK;
+			ret = fragmentation_copy_complete_frag(rle_ctx,
+					rle_conf,
+					burst_payload_buffer,
+					burst_payload_length);
 			goto return_ret;
 		}
 
