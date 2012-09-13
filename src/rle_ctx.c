@@ -305,6 +305,11 @@ void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val)
 	_this->rle_length = val;
 }
 
+uint32_t rle_ctx_get_rle_length(struct rle_ctx_management *_this)
+{
+	return(_this->rle_length);
+}
+
 void rle_ctx_set_proto_type(struct rle_ctx_management *_this, uint16_t val)
 {
 	_this->proto_type = val;
@@ -381,7 +386,10 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 	int protocol_type = 0;
 	char *i_ptr = NULL;
 
-	if (!_this->is_fragmented) {
+	/* just get the first bits of RLE packet */
+	union rle_header_all *header = _this->buf;
+
+	if ((header->b.start_ind == 1) && (header->b.end_ind == 1)) {
 		/* COMPLETE RLE packet */
 		struct zc_rle_header_complete *zc_buf = (struct zc_rle_header_complete *)_this->buf;
 		struct rle_header_complete *hdr = &zc_buf->header;
@@ -408,6 +416,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 			}
 		}
 
+		PRINT("--------- COMPLETE PACKET ------------\n");
 		PRINT("| SE |  RLEPL  |  LT |  T  |  PTYPE |\n");
 		PRINT("| %d%d |   %d   | 0x%0x | 0x%0x |  0x%0x  |\n",
 				zc_buf->header.head.b.start_ind,
@@ -427,11 +436,11 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 
 		int i = 0;
 		int j = 0;
-		uint8_t data;
+		uint8_t data = 0;
 
 		PRINT("|  \t\t  PAYLOAD  \t\t  |\n");
 		for (i = 0; (char *)(i_ptr + i) < zc_buf->ptrs.end; i++) {
-			data = ntohl(*(i_ptr +  i));
+			data = (*(i_ptr +  i));
 
 			PRINT(" %02x ", data);
 			if (j == 3) {

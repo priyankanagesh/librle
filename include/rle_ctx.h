@@ -379,6 +379,19 @@ uint32_t rle_ctx_get_remaining_pdu_length(struct rle_ctx_management *_this);
 void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val);
 
 /**
+ *  @brief	Get RLE packet length
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @return	Current RLE packet length
+ *
+ *  @ingroup
+ */
+uint32_t rle_ctx_get_rle_length(struct rle_ctx_management *_this);
+
+/**
  *  @brief	Set Protocol Type value
  *
  *  @warning
