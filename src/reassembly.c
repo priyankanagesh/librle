@@ -600,12 +600,14 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 	} else {
 		/* no fragmentation case */
 		ret = check_complete_length(rle_ctx, data_buffer, data_length);
-		if (ret == C_OK)
+		if (ret == C_OK) {
 			/* update ctx status structure if length checking is OK */
 			update_ctx_complete(rle_ctx, rle_conf,
 					data_buffer, data_length);
-		else
+			goto ret_val;
+		} else {
 			goto error_frag;
+		}
 	}
 
 	/* update rle pointer to data end address */

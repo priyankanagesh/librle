@@ -24,9 +24,10 @@ static int get_first_free_frag_ctx(struct receiver_module *_this)
 	int i;
 	pthread_mutex_lock(&_this->ctx_mutex);
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		if (((_this->free_ctx >> i) & 0x1) == 0)
+		if (((_this->free_ctx >> i) & 0x1) == 0) {
 			pthread_mutex_unlock(&_this->ctx_mutex);
 			return i;
+		}
 	}
 	pthread_mutex_unlock(&_this->ctx_mutex);
 
