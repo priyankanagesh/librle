@@ -12,16 +12,26 @@
 
 #endif
 
-
 #include "constants.h"
 #include "rle_ctx.h"
 #include "rle_transmitter.h"
 #include "rle_receiver.h"
-
-static struct transmitter_module *transmitter = NULL;
-static struct receiver_module *receiver = NULL;
+#include "header.h"
+#include "trailer.h"
 
 #define LINUX_COOKED_HDR_LEN  16
+#define FAKE_BURST_MAX_SIZE 4096
+#define DISABLE_FRAGMENTATION 0
+#define ENABLE_FRAGMENTATION 1
+#define DISABLE_CRC 0
+#define ENABLE_CRC 1
+
+/* burst payload size */
+static int burst_size = 0;
+
+/* RLE modules */
+static struct transmitter_module *transmitter = NULL;
+static struct receiver_module *receiver = NULL;
 
 void compare_packets(char *pkt1, char *pkt2, int size1, int size2)
 {
@@ -74,10 +84,21 @@ void compare_packets(char *pkt1, char *pkt2, int size1, int size2)
 	}
 }
 
-int test_1(char *pcap_file_name)
+int test_1(char *pcap_file_name, int nb_fragment_id, int use_crc)
 {
 	if (pcap_file_name == NULL)
 		return C_ERROR;
+
+	char trailer_type[64];
+	PRINT("INFO: TEST FRAGMENTATION WITH %d FRAG_ID\n",
+			nb_fragment_id);
+
+	if (use_crc == ENABLE_CRC)
+		snprintf(trailer_type, 64, "%s", "CRC32 trailer\n");
+	else
+		snprintf(trailer_type, 64, "%s", "Next Sequence Number trailer\n");
+
+	PRINT("INFO: %s", trailer_type);
 
 	char errbuf[PCAP_ERRBUF_SIZE];
 	pcap_t *handle;
@@ -105,6 +126,7 @@ int test_1(char *pcap_file_name)
 	unsigned long pdu_counter;
 	void *buffer[RLE_MAX_FRAG_NUMBER];
 	int ret_recv = C_ERROR;
+	int test_retval = C_ERROR;
 
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		buffer[i] = malloc(RLE_MAX_PDU_SIZE);
@@ -114,11 +136,7 @@ int test_1(char *pcap_file_name)
 		}
 	}
 
-	/* burst payload size */
-	int burst_size = 52;
-	int remaining_burst = 0;
-
-	unsigned char *burst_buffer = malloc(burst_size);
+	unsigned char *burst_buffer = malloc(FAKE_BURST_MAX_SIZE);
 	if (burst_buffer == NULL) {
 		PRINT("Error while allocating memory for burst\n");
 		return -1;
@@ -138,10 +156,10 @@ int test_1(char *pcap_file_name)
 			link_layer_type_src != DLT_LINUX_SLL &&
 			link_layer_type_src != DLT_RAW)
 	{
-/*                DEBUG(verbose, "link layer type %d not supported in source dump (supported = "*/
-/*                                "%d, %d, %d)\n", link_layer_type_src, DLT_EN10MB, DLT_LINUX_SLL,*/
-/*                                DLT_RAW);*/
-/*                goto close_input;*/
+		PRINT("link layer type %d not supported in source dump (supported = "
+				"%d, %d, %d)\n", link_layer_type_src, DLT_EN10MB, DLT_LINUX_SLL,
+				DLT_RAW);
+		goto close_input;
 		return -1;
 	}
 
@@ -152,41 +170,20 @@ int test_1(char *pcap_file_name)
 	else /* DLT_RAW */
 		link_len_src = 0;
 
-	/* open the comparison dump file */
-/*        cmp_handle = pcap_open_offline(filename, errbuf);*/
-/*        if(cmp_handle == NULL)*/
-/*        {*/
-/*                DEBUG(verbose, "failed to open the comparison pcap file: %s\n", errbuf);*/
-/*                goto close_input;*/
-/*                return -1;*/
-/*        }*/
-
-	/* link layer in the comparison dump must be supported */
-	link_layer_type_cmp = pcap_datalink(cmp_handle);
-	if(link_layer_type_cmp != DLT_EN10MB &&
-			link_layer_type_cmp != DLT_LINUX_SLL &&
-			link_layer_type_cmp != DLT_RAW)
-	{
-/*                DEBUG(verbose, "link layer type %d not supported in comparison dump "*/
-/*                                "(supported = %d, %d, %d)\n", link_layer_type_cmp, DLT_EN10MB,*/
-/*                                DLT_LINUX_SLL, DLT_RAW);*/
-/*                goto close_comparison;*/
-/*                return -1;*/
-	}
-
-/*        if(link_layer_type_cmp == DLT_EN10MB)*/
-/*                link_len_cmp = ETHER_HDR_LEN;*/
-/*        else if(link_layer_type_cmp == DLT_LINUX_SLL)*/
-/*                link_len_cmp = LINUX_COOKED_HDR_LEN;*/
-/*        else |+ DLT_RAW +|*/
-/*                link_len_cmp = 0;*/
-
 	/* for each packet in the dump */
 	counter = 0;
 	pdu_counter = 0;
 	int nb_frag_id = 0;
-/*        while(((packet = (unsigned char *)pcap_next(handle, &header)) != NULL) && nb_frag_id < RLE_MAX_FRAG_NUMBER)*/
-	while(((packet = (unsigned char *)pcap_next(handle, &header)) != NULL) && nb_frag_id < 2)
+
+	size_t size_end_header = RLE_END_HEADER_SIZE;
+	size_t size_trailer = 0;
+
+	if (use_crc == ENABLE_CRC)
+		size_trailer = RLE_CRC32_FIELD_SIZE;
+	else
+		size_trailer = RLE_SEQ_NO_FIELD_SIZE;
+
+	while(((packet = (unsigned char *)pcap_next(handle, &header)) != NULL) && nb_frag_id < nb_fragment_id)
 	{
 		unsigned char *in_packet;
 		unsigned char *out_packet;
@@ -194,62 +191,40 @@ int test_1(char *pcap_file_name)
 		uint32_t out_pkt_length = 0;
 		size_t in_size;
 
-
 		counter++;
 
 		/* check Ethernet frame length */
-		if(header.len <= link_len_src || header.len != header.caplen)
-		{
-/*                        DEBUG(verbose, "packet #%lu: bad PCAP packet (len = %d, caplen = %d)\n",*/
-/*                                        counter, header.len, header.caplen);*/
-/*                        goto release_lib;*/
+		if(header.len <= link_len_src || header.len != header.caplen) {
+			PRINT("ERROR Packet #%lu: bad PCAP packet (len = %d, caplen = %d)\n",
+					counter, header.len, header.caplen);
+			goto close_input;
 		}
 
 		in_packet = packet + link_len_src;
 		in_size = header.len - link_len_src;
 		out_packet = malloc(in_size);
 
-		/* Encapsulate the input packets, use in_packet and in_size as
-		   input */
-		for(i=0 ; i<6 ; i++)
-			label[i] = i;
+		/* Set trailer type to use: Next Sequence Number or CRC32 */
+		rle_conf_set_crc_check(transmitter->rle_conf, use_crc);
+		rle_conf_set_crc_check(receiver->rle_conf[nb_frag_id], use_crc);
 
-		rle_conf_set_crc_check(transmitter->rle_conf, C_TRUE);
-		rle_conf_set_crc_check(receiver->rle_conf[nb_frag_id], C_TRUE);
+		/* arbitrary burst payload size */
+		/* add a little bit a randomness for
+		 * burst available length */
+		int r = rand() % 20;
+		burst_size = 50 + r;
 
 		uint16_t protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP;
 		if (rle_transmitter_encap_data(transmitter, in_packet, in_size, protocol_type) == C_ERROR) {
 			PRINT("ERROR while encapsulating data\n");
 		}
 
-		/* recopy RLE packet from zc buffer to a normal buffer, we know it's a complete packet */
-		/* map and copy header to normal buffer */
-/*                struct rle_header_complete *rle_header = (struct rle_header_complete *)transmitter->rle_ctx_man[nb_frag_id].buf;*/
-/*                memcpy((void *)buffer[nb_frag_id], (const void *)rle_header, sizeof(struct rle_header_complete));*/
-/*                |+ copy RLE packet data +|*/
-/*                int header_offset = sizeof(struct rle_header_complete);*/
-/*                size_t rle_packet_length = rle_header->head.b.rle_packet_length;*/
-/*                void *ptr_to_payload = (void *)(transmitter->rle_ctx_man[nb_frag_id].buf + header_offset);*/
-/*                memcpy((void *)(buffer[nb_frag_id] + header_offset), (const void *)(ptr_to_payload), rle_packet_length);*/
-
-/*                |+ for testing purpose, remap header of buffer +|*/
-/*                struct rle_header_complete *rle_header_test = (struct rle_header_complete *)buffer[nb_frag_id];*/
-
-/*                uint8_t label_type = GET_LABEL_TYPE(rle_header_test->head.b.LT_T_FID);*/
-/*                uint8_t proto_type_supp = GET_LABEL_TYPE(rle_header_test->head.b.LT_T_FID);*/
-/*                PRINT("DEBUG -> buffer[%d] header S [%d] E [%d] RLE_PL [%d] LT [%d] T [%d] PTYPE []\n",*/
-/*                                nb_frag_id,*/
-/*                                rle_header_test->head.b.start_ind, rle_header_test->head.b.end_ind,*/
-/*                                rle_header_test->head.b.rle_packet_length,*/
-/*                                label_type,*/
-/*                                proto_type_supp);*/
-
 		/* test fragmentation */
 		size_t original_pdu_size = in_size;
 		int remaining_pdu_size = in_size;
 		size_t sent_pdu_size = 0;
 
-		PRINT("INFO PDU size = %d\n", in_size);
+		PRINT("INFO: PDU size to send = %5d\n", in_size);
 
 		for (;;) {
 			if (rle_transmitter_get_queue_state(transmitter, nb_frag_id) == C_TRUE)
@@ -264,7 +239,9 @@ int test_1(char *pcap_file_name)
 				remaining_pdu_size = rle_transmitter_get_queue_size(transmitter, nb_frag_id);
 
 			if (burst_size > remaining_pdu_size) {
-				burst_size = remaining_pdu_size + 2 + 4; //HDR + TRL END
+				burst_size = remaining_pdu_size +
+					size_end_header +
+					size_trailer; //HDR + TRL END
 			}
 
 			if (rle_transmitter_get_packet(transmitter, burst_buffer, burst_size, nb_frag_id, protocol_type)
@@ -273,8 +250,7 @@ int test_1(char *pcap_file_name)
 				break;
 			}
 
-
-			PRINT("DEBUG Remaining size to send = [%d] burst size = [%d] burst addr [%p]\n", remaining_pdu_size, burst_size, burst_buffer);
+			PRINT("INFO: Remaining PDU size to send = [%5d] burst size = [%4d]\n", remaining_pdu_size, burst_size);
 
 			ret_recv = rle_receiver_deencap_data(receiver, burst_buffer, burst_size);
 
@@ -284,19 +260,21 @@ int test_1(char *pcap_file_name)
 
 		if (ret_recv != C_ERROR) {
 			/* retrieve reassembled PDU */
-			rle_receiver_get_packet(receiver, nb_frag_id,
+			test_retval = rle_receiver_get_packet(receiver, nb_frag_id,
 					out_packet, &out_ptype, &out_pkt_length);
 		}
 
-		PRINT("\nin_size %zu out_pkt_length %u\n", in_size, out_pkt_length);
+		PRINT("INFO: Size PDU sent [%zu]  Size PDU refragmented [%u]\n", in_size, out_pkt_length);
 		if (in_size == out_pkt_length && memcmp(in_packet, out_packet, in_size) == 0) {
-			PRINT("\n-------------- Packets are EQUALS --------------\n");
+			PRINT("INFO: Packets are EQUALS\n");
+			test_retval = C_OK;
+			rle_ctx_dump(&transmitter->rle_ctx_man[nb_frag_id],
+					transmitter->rle_conf);
 		} else {
-			PRINT("\n-------------- Packets are differents --------------\n");
+			PRINT("INFO: Packets are DIFFERENTS\n");
 			compare_packets((char *)in_packet, (char *)out_packet, in_size, out_pkt_length);
+			test_retval = C_ERROR;
 		}
-
-		burst_size = 50;
 
 		nb_frag_id++;
 
@@ -304,17 +282,31 @@ int test_1(char *pcap_file_name)
 		out_packet = NULL;
 	}
 
-/*        for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {*/
-/*                free((void *)buffer[i]);*/
-/*                buffer[i] = NULL;*/
-/*        }*/
+close_input:
+	pcap_close(handle);
+close_rle:
+	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+		free((void *)buffer[i]);
+		buffer[i] = NULL;
+	}
+close_fake_burst:
+	free(burst_buffer);
+	burst_buffer = NULL;
+return_ret:
 
-/*        free(burst_buffer);*/
-/*        burst_buffer = NULL;*/
+	PRINT("INFO: TEST WITH %d FRAG_ID\n",
+			nb_fragment_id);
+
+	if (test_retval == C_OK)
+		PRINT("SUCCESS\n");
+	else
+		PRINT("FAILURE\n");
+
+	return test_retval;
 }
 
 
-int test_encap_deencap(char *pcap_file_name)
+int test_frag_rea(char *pcap_file_name, int nb_fragment_id, int use_crc)
 {
 	transmitter = rle_transmitter_new();
 
@@ -330,10 +322,10 @@ int test_encap_deencap(char *pcap_file_name)
 		return -1;
 	}
 
-	if (!test_1(pcap_file_name)) {
+	int ret = test_1(pcap_file_name, nb_fragment_id, use_crc);
+
+	if (ret != C_OK) {
 		PRINT("ERROR in test rle\n");
-	} else {
-		rle_transmitter_dump(transmitter);
 	}
 
 	rle_transmitter_destroy(transmitter);
@@ -353,7 +345,28 @@ int main(int argc, char *argv[])
 		goto exit_ret;
 	} else {
 		file_name = argv[1];
-		ret = test_encap_deencap(file_name);
+		/* Test with Next Sequence Number
+		 * trailer */
+		ret = test_frag_rea(file_name,
+				1,
+				DISABLE_CRC);
+
+		if (ret == C_OK) {
+			/* Test on multiple queue
+			 * with Next Sequence Number
+			 * trailer */
+			ret = test_frag_rea(file_name,
+					RLE_MAX_FRAG_NUMBER,
+					DISABLE_CRC);
+
+			if (ret == C_OK) {
+				/* Test on multiple queue
+				 * with CRC32 trailer */
+				ret = test_frag_rea(file_name,
+						RLE_MAX_FRAG_NUMBER,
+						ENABLE_CRC);
+			}
+		}
 	}
 
 exit_ret:

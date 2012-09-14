@@ -296,8 +296,6 @@ int test_1(char *pcap_file_name, int nb_fragment_id)
 			/* retrieve reassembled PDU */
 			test_retval = rle_receiver_get_packet(receiver, nb_frag_id,
 					out_packet, &out_ptype, &out_pkt_length);
-			PRINT("INFO rle_receiver_get_packet returned %d\n",
-					test_retval);
 		}
 
 		PRINT("DEBUG in_size %zu out_pkt_length %u\n", in_size, out_pkt_length);
