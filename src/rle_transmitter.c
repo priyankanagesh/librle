@@ -9,6 +9,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef TIME_DEBUG
+#include <sys/time.h>
+#endif
 #include "rle_transmitter.h"
 #include "rle_ctx.h"
 #include "constants.h"
@@ -148,6 +151,13 @@ int rle_transmitter_encap_data(struct transmitter_module *_this,
 			__FILE__, __func__, __LINE__);
 #endif
 
+#ifdef TIME_DEBUG
+	struct timeval tv_start = { .tv_sec = 0L, .tv_usec = 0L };
+	struct timeval tv_end = { .tv_sec = 0L, .tv_usec = 0L };
+	gettimeofday(&tv_start, NULL);
+#endif
+
+
 	int ret = C_ERROR;
 
 	if (!data_buffer) {
@@ -185,6 +195,17 @@ int rle_transmitter_encap_data(struct transmitter_module *_this,
 		return ret;
 	}
 
+#ifdef TIME_DEBUG
+	struct timeval tv_delta;
+	gettimeofday(&tv_end, NULL);
+	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
+	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
+	PRINT("DEBUG %s %s:%s:%d: duration [%04ld.%06ld]\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__,
+			tv_delta.tv_sec, tv_delta.tv_usec);
+#endif
+
 	ret = C_OK;
 	return ret;
 }
@@ -200,11 +221,28 @@ int rle_transmitter_get_packet(struct transmitter_module *_this,
 			__FILE__, __func__, __LINE__);
 #endif
 
+#ifdef TIME_DEBUG
+	struct timeval tv_start = { .tv_sec = 0L, .tv_usec = 0L };
+	struct timeval tv_end = { .tv_sec = 0L, .tv_usec = 0L };
+	gettimeofday(&tv_start, NULL);
+#endif
+
 	/* call fragmentation module */
 	int ret = fragmentation_fragment_pdu(&_this->rle_ctx_man[fragment_id],
 			_this->rle_conf,
 			burst_buffer, burst_length,
 			protocol_type);
+
+#ifdef TIME_DEBUG
+	struct timeval tv_delta;
+	gettimeofday(&tv_end, NULL);
+	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
+	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
+	PRINT("DEBUG %s %s:%s:%d: duration [%04ld.%06ld]\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__,
+			tv_delta.tv_sec, tv_delta.tv_usec);
+#endif
 
 	return ret;
 }

@@ -9,6 +9,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#ifdef TIME_DEBUG
+#include <sys/time.h>
+#endif
 #include "rle_receiver.h"
 #include "rle_ctx.h"
 #include "constants.h"
@@ -216,6 +219,12 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
 			__FILE__, __func__, __LINE__);
 #endif
 
+#ifdef TIME_DEBUG
+	struct timeval tv_start = { .tv_sec = 0L, .tv_usec = 0L };
+	struct timeval tv_end = { .tv_sec = 0L, .tv_usec = 0L };
+	gettimeofday(&tv_start, NULL);
+#endif
+
 	int ret = C_ERROR;
 
 	if (!data_buffer) {
@@ -307,6 +316,17 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
 				ret);
 	}
 
+#ifdef TIME_DEBUG
+	struct timeval tv_delta;
+	gettimeofday(&tv_end, NULL);
+	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
+	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
+	PRINT("DEBUG %s %s:%s:%d: duration [%04ld.%06ld]\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__,
+			tv_delta.tv_sec, tv_delta.tv_usec);
+#endif
+
 	return ret;
 }
 
@@ -321,6 +341,12 @@ int rle_receiver_get_packet(struct receiver_module *_this,
 			__FILE__, __func__, __LINE__);
 #endif
 
+#ifdef TIME_DEBUG
+	struct timeval tv_start = { .tv_sec = 0L, .tv_usec = 0L };
+	struct timeval tv_end = { .tv_sec = 0L, .tv_usec = 0L };
+	gettimeofday(&tv_start, NULL);
+#endif
+
 	int ret = reassembly_get_pdu(&_this->rle_ctx_man[fragment_id],
 			pdu_buffer,
 			pdu_proto_type,
@@ -331,6 +357,17 @@ int rle_receiver_get_packet(struct receiver_module *_this,
 /*                rle_ctx_flush_buffer(&_this->rle_ctx_man[fragment_id]);*/
 /*                set_free_frag_ctx(_this, fragment_id);*/
 /*        }*/
+
+#ifdef TIME_DEBUG
+	struct timeval tv_delta;
+	gettimeofday(&tv_end, NULL);
+	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
+	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
+	PRINT("DEBUG %s %s:%s:%d: duration [%04ld.%06ld]\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__,
+			tv_delta.tv_sec, tv_delta.tv_usec);
+#endif
 
 	return ret;
 }
