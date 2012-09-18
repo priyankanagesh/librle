@@ -110,7 +110,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx,
 
 	/* Robustness: test if available burst payload is smaller
 	 * than an RLE START packet header */
-	if ((burst_payload_length - size_header) <= 0) {
+	if ((burst_payload_length - size_header) < 0) {
 		PRINT("ERROR %s %s:%s:%d: Available burst payload size [%zu]"
 				" is not enough to carry data\n",
 				MODULE_NAME,
@@ -206,6 +206,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx,
 
 	rle_ctx_set_is_fragmented(rle_ctx, C_TRUE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
+	rle_ctx_set_nb_frag_pdu(rle_ctx, 1);
 	rle_ctx_set_use_crc(rle_ctx, rle_conf_get_crc_check(rle_conf));
 	rle_ctx_set_remaining_pdu_length(rle_ctx,
 			(rle_ctx_get_pdu_length(rle_ctx) - offset_payload));
@@ -241,7 +242,8 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 
 	/* Robustness: test if available burst payload is smaller
 	 * than an RLE CONT or END packet header */
-	if ((burst_payload_length - RLE_CONT_HEADER_SIZE) <= 0) {
+	if ((type_rle_frag == RLE_PDU_CONT_FRAG) &&
+			(burst_payload_length - RLE_CONT_HEADER_SIZE) <= 0) {
 		PRINT("ERROR %s:%s:%d: Available burst payload size [%zu]"
 				" is not enough to carry data\n",
 				__FILE__, __func__, __LINE__,
@@ -294,8 +296,10 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	rle_ctx_set_end_address(rle_ctx,
 		(char *)(&(rle_c_e_hdr->ptrs.end) + 1));
 
-	/* increment fragment counter */
+	/* increment queue fragment counter and
+	 * nb of fragments for this PDU */
 	rle_ctx_incr_frag_counter(rle_ctx);
+	rle_ctx_incr_nb_frag_pdu(rle_ctx);
 
 	/* if we are building a END packet,
 	 * remaining PDU data size must be equal
@@ -333,8 +337,12 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 			 sizeof(struct rle_header_cont_end) +
 			 pdu_size_payload),
 			burst_payload_length);
-	}
 
+		/* Last fragment of a complete packet
+		 * is being sent so increment status link
+		 * successfully sent packet counter */
+		rle_ctx_incr_counter_ok(rle_ctx);
+	}
 
 	return C_OK;
 }
@@ -355,9 +363,9 @@ static int get_fragment_type(struct rle_ctx_management *rle_ctx, size_t burst_pa
 			(rle_ctx_get_use_crc(rle_ctx) == C_FALSE) ? RLE_SEQ_NO_FIELD_SIZE : RLE_CRC32_FIELD_SIZE;
 		/* not all PDU data has been sent, so
 		 * it's a CONT or END packet */
-		if ((remaining_pdu_len + RLE_CONT_HEADER_SIZE) > burst_payload_length)
+		if ((remaining_pdu_len + RLE_CONT_HEADER_SIZE) >= burst_payload_length)
 			frag_type = RLE_PDU_CONT_FRAG;
-		else if ((remaining_pdu_len + RLE_CONT_HEADER_SIZE + trailer_size) <= burst_payload_length)
+		else if ((RLE_END_HEADER_SIZE + trailer_size) <= burst_payload_length)
 			frag_type = RLE_PDU_END_FRAG;
 	}
 
@@ -405,6 +413,9 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
 	rle_ctx_set_rle_length(rle_ctx,
 			(pdu_length + ptype_length));
 
+	/* update status value */
+	rle_ctx_incr_counter_ok(rle_ctx);
+
 	return C_OK;
 }
 
@@ -440,7 +451,8 @@ int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
 	return ret;
 }
 
-int fragmentation_is_needed(struct rle_ctx_management *rle_ctx, size_t burst_payload_length)
+int fragmentation_is_needed(struct rle_ctx_management *rle_ctx,
+		size_t burst_payload_length)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: RLE length [%d] burst length [%zu]\n",
@@ -449,8 +461,10 @@ int fragmentation_is_needed(struct rle_ctx_management *rle_ctx, size_t burst_pay
 			rle_ctx->remaining_pdu_length,
 			burst_payload_length);
 #endif
+	size_t total_rle_length = RLE_COMPLETE_HEADER_SIZE +
+				rle_ctx_get_rle_length(rle_ctx);
 
-	if (rle_ctx->remaining_pdu_length > burst_payload_length)
+	if (total_rle_length > burst_payload_length)
 		return C_TRUE;
 
 	return C_FALSE;
@@ -472,7 +486,7 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 	if (!rle_ctx) {
 		PRINT("ERROR %s %s:%s:%d: RLE context is NULL\n",
 				MODULE_NAME,
-				 __FILE__, __func__, __LINE__);
+				__FILE__, __func__, __LINE__);
 		goto return_ret;
 	}
 
@@ -488,6 +502,14 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 		}
 
 	int frag_type = get_fragment_type(rle_ctx, burst_payload_length);
+
+	if ((frag_type == RLE_PDU_START_FRAG) &&
+			(burst_payload_length < RLE_START_MANDATORY_HEADER_SIZE)) {
+		PRINT("ERROR %s %s:%s:%d: Burst payload too small for START fragment\n",
+				MODULE_NAME,
+				__FILE__, __func__, __LINE__);
+		goto return_ret;
+	}
 
 	/* RLE fragment creation */
 	ret = fragmentation_create_frag(rle_ctx, rle_conf,

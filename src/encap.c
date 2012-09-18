@@ -91,6 +91,7 @@ static int create_header(struct rle_ctx_management *rle_ctx,
 				(char *)(rle_ctx->buf + size_header));
 	rle_ctx_set_is_fragmented(rle_ctx, C_FALSE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
+	rle_ctx_set_nb_frag_pdu(rle_ctx, 1);
 	rle_ctx_set_use_crc(rle_ctx, C_FALSE);
 	rle_ctx_set_pdu_length(rle_ctx, data_length);
 	rle_ctx_set_remaining_pdu_length(rle_ctx, data_length);
@@ -119,13 +120,17 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
 
 	if (encap_check_pdu_validity(pdu_buffer,
 				pdu_length,
-				protocol_type) == C_ERROR)
+				protocol_type) == C_ERROR) {
+		rle_ctx_incr_counter_dropped(rle_ctx);
 		return C_ERROR;
+	}
 
 	if (create_header(rle_ctx, rle_conf,
 			pdu_buffer, pdu_length,
-			protocol_type) == C_ERROR)
+			protocol_type) == C_ERROR) {
+		rle_ctx_incr_counter_dropped(rle_ctx);
 		return C_ERROR;
+	}
 
 	/* set PDU buffer address to the rle_ctx ptr */
 	rle_ctx->pdu_buf = pdu_buffer;

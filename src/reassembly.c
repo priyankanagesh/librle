@@ -39,6 +39,7 @@ static int check_complete_length(struct rle_ctx_management *rle_ctx,
 				__FILE__, __func__, __LINE__,
 				head->b.rle_packet_length,
 				recv_packet_length);
+		rle_ctx_incr_counter_dropped(rle_ctx);
 		return C_ERROR_DROP;
 	}
 
@@ -88,6 +89,7 @@ static int check_fragmented_length(struct rle_ctx_management *rle_ctx,
 				__FILE__, __func__, __LINE__,
 				data_length,
 				recv_pkt_length, remaining_size);
+		rle_ctx_incr_counter_dropped(rle_ctx);
 		ret = C_ERROR_DROP;
 	}
 
@@ -117,8 +119,23 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx,
 			       MODULE_NAME,
 			       __FILE__, __func__, __LINE__,
 			       trl->b.seq_no, rle_ctx->next_seq_nb);
+		/* update sequence with received one
+		 * and increment it to resynchronize
+		 * with sender sequence */
+		rle_ctx_set_seq_nb(rle_ctx, trl->b.seq_no);
+		rle_ctx_incr_seq_nb(rle_ctx);
+		/* we must update lost frag counter:
+		 * at least 2 frags are lost,
+		 * an END and a START fragment */
+		uint64_t lost_frag = rle_ctx_get_counter_lost(rle_ctx);
+		lost_frag += 2;
+		rle_ctx_set_counter_lost(rle_ctx, lost_frag);
+		rle_ctx_incr_counter_dropped(rle_ctx);
+
 		return C_ERROR_DROP;
 	}
+
+	rle_ctx_incr_seq_nb(rle_ctx);
 
 	return C_OK;
 }
@@ -165,6 +182,7 @@ static int check_fragmented_crc(struct rle_ctx_management *rle_ctx,
 			       MODULE_NAME,
 			       __FILE__, __func__, __LINE__,
 			       trl->crc, crc);
+		rle_ctx_incr_counter_dropped(rle_ctx);
 		return C_ERROR_DROP;
 	}
 
@@ -194,11 +212,6 @@ static int check_fragmented_consistency(struct rle_ctx_management *rle_ctx,
 					data_buffer, data_length);
 		}
 	}
-
-
-	/* we have to increment whatever fragment sequence
-	 * is OK or not */
-	rle_ctx_incr_seq_nb(rle_ctx);
 
 	return ret;
 }
@@ -294,7 +307,7 @@ static void update_ctx_complete(struct rle_ctx_management *rle_ctx,
 
 	rle_ctx_set_is_fragmented(rle_ctx, C_FALSE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
-	rle_ctx_set_nb_frag_pdu(rle_ctx, 0);
+	rle_ctx_set_nb_frag_pdu(rle_ctx, 1);
 	rle_ctx_set_use_crc(rle_ctx, C_FALSE);
 	/* set real size of PDU */
 	rle_ctx_set_pdu_length(rle_ctx, (data_length - header_size));
@@ -562,11 +575,11 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 	/* check if the complete PDU is not fragmented
 	 * into more than 256 fragments, if not it's OK we continue,
 	 * otherwise drop fragment and all data of this frag_id */
-	if (rle_ctx_get_nb_frag_pdu(rle_ctx) >= RLE_MAX_SEQ_NO) {
+	if (rle_ctx_get_nb_frag_pdu(rle_ctx) > RLE_MAX_SEQ_NO) {
 		PRINT("ERROR %s %s:%s:%d: waited too much fragments to reassemble packet\n",
 				MODULE_NAME,
 				__FILE__, __func__, __LINE__);
-		ret = C_ERROR_DROP;
+		ret = C_ERROR_TOO_MUCH_FRAG;
 		goto ret_val;
 	}
 
@@ -593,6 +606,7 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 
 			/* Tell user that
 			 * reassembly is complete */
+			rle_ctx_incr_counter_ok(rle_ctx);
 			ret = C_REASSEMBLY_OK;
 		} else {
 			ret = C_OK;
@@ -604,6 +618,7 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 			/* update ctx status structure if length checking is OK */
 			update_ctx_complete(rle_ctx, rle_conf,
 					data_buffer, data_length);
+			rle_ctx_incr_counter_ok(rle_ctx);
 			goto ret_val;
 		} else {
 			goto error_frag;
