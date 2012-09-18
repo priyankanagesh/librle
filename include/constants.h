@@ -38,6 +38,7 @@
 #define C_ERROR		-1
 #define C_ERROR_DROP	-2
 #define C_ERROR_BUF	-3
+#define C_ERROR_TOO_MUCH_FRAG -4
 
 #define IP_VERSION_4	4
 #define IP_VERSION_6	6

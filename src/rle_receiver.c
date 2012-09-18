@@ -179,7 +179,7 @@ struct receiver_module *rle_receiver_new(void)
 	int i;
 
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		_this->rle_conf[i] = rle_conf_new(_this->rle_conf[i]);
+		_this->rle_conf[i] = rle_conf_new();
 		if (!_this->rle_conf[i]) {
 			PRINT("ERROR %s %s:%s:%d: allocating receiver module"
 				       " configuration failed\n",
@@ -203,8 +203,10 @@ void rle_receiver_destroy(struct receiver_module *_this)
 #endif
 
 	int i;
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++)
+	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		rle_ctx_destroy(&_this->rle_ctx_man[i]);
+		rle_conf_destroy(_this->rle_conf[i]);
+	}
 
 	FREE(_this);
 	_this = NULL;

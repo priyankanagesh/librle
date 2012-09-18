@@ -36,7 +36,7 @@ struct rle_configuration;
  *
  *  @ingroup
  */
-struct rle_configuration *rle_conf_new(struct rle_configuration *_this);
+struct rle_configuration *rle_conf_new(void);
 
 /**
  *  @brief	Free memory used for a RLE configuration

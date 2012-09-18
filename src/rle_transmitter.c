@@ -17,6 +17,7 @@
 #include "constants.h"
 #include "encap.h"
 #include "fragmentation.h"
+#include "trailer.h"
 
 #define MODULE_NAME "TRANSMITTER"
 
@@ -100,7 +101,7 @@ struct transmitter_module *rle_transmitter_new(void)
 	}
 
 	/* allocate a new RLE configuration structure */
-	_this->rle_conf = rle_conf_new(_this->rle_conf);
+	_this->rle_conf = rle_conf_new();
 
 	if (!_this->rle_conf) {
 		PRINT("ERROR %s:%s:%d: allocating RLE configuration failed\n",
@@ -190,6 +191,7 @@ int rle_transmitter_encap_data(struct transmitter_module *_this,
 				protocol_type)
 			== C_ERROR) {
 		set_free_frag_ctx(_this, index_ctx);
+		rle_ctx_incr_counter_dropped(&_this->rle_ctx_man[index_ctx]);
 		PRINT("ERROR %s:%s:%d: cannot encapsulate data\n",
 				__FILE__, __func__, __LINE__);
 		return ret;
@@ -227,8 +229,22 @@ int rle_transmitter_get_packet(struct transmitter_module *_this,
 	gettimeofday(&tv_start, NULL);
 #endif
 
+	uint16_t number_frags = _this->rle_ctx_man[fragment_id].nb_frag_pdu;
+	int ret = C_ERROR;
+
+	if (number_frags >= RLE_MAX_SEQ_NO) {
+		PRINT("ERROR %s %s:%s:%d: fragment_id [%d] Packet too much fragmented\n",
+				MODULE_NAME,
+				__FILE__, __func__, __LINE__,
+				fragment_id);
+		ret = C_ERROR_TOO_MUCH_FRAG;
+		rle_ctx_incr_counter_dropped(&_this->rle_ctx_man[fragment_id]);
+		set_free_frag_ctx(_this, fragment_id);
+		goto return_val;
+	}
+
 	/* call fragmentation module */
-	int ret = fragmentation_fragment_pdu(&_this->rle_ctx_man[fragment_id],
+	ret = fragmentation_fragment_pdu(&_this->rle_ctx_man[fragment_id],
 			_this->rle_conf,
 			burst_buffer, burst_length,
 			protocol_type);
@@ -244,6 +260,7 @@ int rle_transmitter_get_packet(struct transmitter_module *_this,
 			tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
+return_val:
 	return ret;
 }
 

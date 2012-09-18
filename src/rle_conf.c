@@ -21,7 +21,7 @@ struct rle_configuration {
 	int enable_crc_check;
 };
 
-struct rle_configuration *rle_conf_new(struct rle_configuration *_this)
+struct rle_configuration *rle_conf_new(void)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
@@ -29,7 +29,7 @@ struct rle_configuration *rle_conf_new(struct rle_configuration *_this)
 			__FILE__, __func__, __LINE__);
 #endif
 
-	_this = MALLOC(sizeof(struct rle_configuration));
+	struct rle_configuration *_this = MALLOC(sizeof(struct rle_configuration));
 
 	if (!_this) {
 		PRINT("ERROR %s %s:%s:%d: allocation for RLE configuration failed\n",
