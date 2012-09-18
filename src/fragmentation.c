@@ -81,6 +81,8 @@ static void add_trailer(struct rle_ctx_management *rle_ctx,
 
 		/* copy trailer to burst payload */
 		memcpy(burst_payload_buffer, &seq_no, RLE_SEQ_NO_FIELD_SIZE);
+
+		rle_ctx_incr_seq_nb(rle_ctx);
 	} else {
 		/* crc32 is computed by using protocol type
 		 * and the PDU */
@@ -92,8 +94,6 @@ static void add_trailer(struct rle_ctx_management *rle_ctx,
 		/* copy trailer to burst payload */
 		memcpy(burst_payload_buffer, &rle_trl->trailer.crc, RLE_CRC32_FIELD_SIZE);
 	}
-
-	rle_ctx_incr_seq_nb(rle_ctx);
 }
 
 static int add_start_header(struct rle_ctx_management *rle_ctx,
