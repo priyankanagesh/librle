@@ -266,15 +266,6 @@ int test_1(char *pcap_file_name, int nb_fragment_id)
 			if (remaining_pdu_size <= 0)
 				break;
 
-/*                        if ((remaining_pdu_size - burst_size) < 0)*/
-/*                                burst_size = remaining_pdu_size;*/
-/*                        else*/
-				remaining_pdu_size = rle_transmitter_get_queue_size(transmitter, nb_frag_id);
-
-/*                        if (burst_size > remaining_pdu_size) {*/
-/*                                burst_size = remaining_pdu_size + 2 + 4; //HDR + TRL END*/
-/*                        }*/
-
 			if (rle_transmitter_get_packet(transmitter, burst_buffer, burst_size, nb_frag_id, protocol_type)
 					!= C_OK) {
 				PRINT("ERROR while creating RLE fragment\n");
@@ -290,6 +281,8 @@ int test_1(char *pcap_file_name, int nb_fragment_id)
 				PRINT("ERROR while receiving RLE\n");
 			else
 				break;
+
+			remaining_pdu_size = rle_transmitter_get_queue_size(transmitter, nb_frag_id);
 		}
 
 		if (ret_recv != C_ERROR) {
@@ -309,8 +302,6 @@ int test_1(char *pcap_file_name, int nb_fragment_id)
 			compare_packets((char *)in_packet, (char *)out_packet, in_size, out_pkt_length);
 			test_retval = C_ERROR;
 		}
-
-		burst_size = 50;
 
 		nb_frag_id++;
 
