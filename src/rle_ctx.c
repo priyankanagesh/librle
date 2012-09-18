@@ -16,7 +16,7 @@
 #include "constants.h"
 #include "zc_buffer.h"
 
-#define MODULE_NAME "RLE_CTX"
+#define MODULE_NAME "RLE CTX"
 
 /************************************************************************
  *									*
@@ -55,10 +55,11 @@ static void flush(struct rle_ctx_management *_this)
 	_this->rle_length		= 0;
 	_this->proto_type		= 0xffff;
 	_this->label_type		= 0xff;
-	_this->error_nb			= 0;
-	_this->error_type		= 0;
 	_this->pdu_buf			= NULL;
 	_this->end_address		= NULL;
+	_this->lk_status.counter_ok	= 0;
+	_this->lk_status.counter_dropped	= 0;
+	_this->lk_status.counter_lost		= 0;
 }
 
 /************************************************************************
@@ -125,7 +126,7 @@ int rle_ctx_destroy(struct rle_ctx_management *_this)
 
 	flush(_this);
 
-	if (_this->buf) {
+	if (_this->buf != NULL) {
 		FREE(_this->buf);
 		_this->buf = NULL;
 	}
@@ -159,10 +160,11 @@ void rle_ctx_invalid_ctx(struct rle_ctx_management *_this)
 	_this->rle_length		= 0;
 	_this->proto_type		= 0xffff;
 	_this->label_type		= 0xff;
-	_this->error_nb			= 0;
-	_this->error_type		= 0;
 	_this->pdu_buf			= NULL;
 	_this->end_address		= NULL;
+	_this->lk_status.counter_ok		= 0;
+	_this->lk_status.counter_dropped	= 0;
+	_this->lk_status.counter_lost		= 0;
 }
 
 void rle_ctx_set_frag_id(struct rle_ctx_management *_this, uint8_t val)
@@ -356,6 +358,54 @@ char *rle_ctx_get_end_address(struct rle_ctx_management *_this)
 	return(_this->end_address);
 }
 
+/*********************************
+ * Link status getters & setters *
+ *********************************/
+void rle_ctx_set_counter_ok(struct rle_ctx_management *_this, uint64_t val)
+{
+	_this->lk_status.counter_ok = val;
+}
+
+void rle_ctx_incr_counter_ok(struct rle_ctx_management *_this)
+{
+	_this->lk_status.counter_ok++;
+}
+
+uint64_t rle_ctx_get_counter_ok(struct rle_ctx_management *_this)
+{
+	return(_this->lk_status.counter_ok);
+}
+
+void rle_ctx_set_counter_dropped(struct rle_ctx_management *_this, uint64_t val)
+{
+	_this->lk_status.counter_dropped = val;
+}
+
+void rle_ctx_incr_counter_dropped(struct rle_ctx_management *_this)
+{
+	_this->lk_status.counter_dropped++;
+}
+
+uint64_t rle_ctx_get_counter_dropped(struct rle_ctx_management *_this)
+{
+	return(_this->lk_status.counter_dropped);
+}
+
+void rle_ctx_set_counter_lost(struct rle_ctx_management *_this, uint64_t val)
+{
+	_this->lk_status.counter_lost = val;
+}
+
+void rle_ctx_incr_counter_lost(struct rle_ctx_management *_this)
+{
+	_this->lk_status.counter_lost++;
+}
+
+uint64_t rle_ctx_get_counter_lost(struct rle_ctx_management *_this)
+{
+	return(_this->lk_status.counter_lost);
+}
+
 void rle_ctx_dump(struct rle_ctx_management *_this,
 		struct rle_configuration *rle_conf)
 {
@@ -371,9 +421,11 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 	PRINT("\tlast rle_length	\t\t= [%d] Bytes\n", _this->rle_length);
 	PRINT("\tproto_type		\t= [0x%0x]\n", _this->proto_type);
 	PRINT("\tlabel_type		\t= [0x%0x]\n", _this->label_type);
-	PRINT("\terror_nb		\t= [%d]\n", _this->error_nb);
-	PRINT("\terror_type		\t= [%d]\n", _this->error_type);
 	PRINT("\tend address		\t= [%p]\n", _this->end_address);
+	PRINT("\tLink Status:\n");
+	PRINT("\tPackets sent/received	\t= [%lu]\n", _this->lk_status.counter_ok);
+	PRINT("\tPackets lost		\t= [%lu]\n", _this->lk_status.counter_lost);
+	PRINT("\tPackets dropped	\t\t= [%lu]\n", _this->lk_status.counter_dropped);
 
 
 	if (_this->frag_counter == 0) {
