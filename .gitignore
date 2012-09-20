@@ -1,0 +1,13 @@
+cscope.out
+cscope.files
+build/
+VERSION
+*~
+*.o
+*.o.cmd
+*.deb
+*.dsc
+*.tar.gz
+*.changes
+*.o.d
+.*sw*
