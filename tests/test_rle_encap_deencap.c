@@ -95,28 +95,11 @@ int test_1(char *pcap_file_name, int nb_fragment_id)
 
 	char errbuf[PCAP_ERRBUF_SIZE];
 	pcap_t *handle;
-	pcap_t *cmp_handle;
 	int link_layer_type_src;
-	int link_layer_type_cmp;
 	uint32_t link_len_src;
-	uint32_t link_len_cmp;
 	struct pcap_pkthdr header;
-	struct pcap_pkthdr cmp_header;
 	unsigned char *packet;
-	unsigned char *cmp_packet;
-	int is_failure = 1;
-	unsigned long counter;
-	int pkt_nbr = 0;
-	int rcv_pkt_nbr = 0;
-	uint8_t label[6];
-	uint8_t rcv_label[6];
-	uint8_t label_type;
-	uint16_t protocol;
 	int i;
-	int qos_idx;
-	int status;
-	uint8_t qos = 0;
-	unsigned long pdu_counter;
 	void *buffer[RLE_MAX_FRAG_NUMBER];
 	int ret_recv = C_ERROR;
 	int test_retval = C_ERROR;
@@ -191,8 +174,6 @@ int test_1(char *pcap_file_name, int nb_fragment_id)
 /*                link_len_cmp = 0;*/
 
 	/* for each packet in the dump */
-	counter = 0;
-	pdu_counter = 0;
 	int nb_frag_id = 0;
 	while(((packet = (unsigned char *)pcap_next(handle, &header)) != NULL) && nb_frag_id < nb_fragment_id)
 	{
@@ -201,8 +182,6 @@ int test_1(char *pcap_file_name, int nb_fragment_id)
 		int out_ptype = 0;
 		uint32_t out_pkt_length = 0;
 		size_t in_size;
-
-		counter++;
 
 		/* check Ethernet frame length */
 /*                if(header.len <= link_len_src || header.len != header.caplen) {*/
@@ -215,15 +194,12 @@ int test_1(char *pcap_file_name, int nb_fragment_id)
 		in_size = header.len - link_len_src;
 		out_packet = malloc(in_size);
 
-		/* Encapsulate the input packets, use in_packet and in_size as
-		   input */
-		for(i=0 ; i<6 ; i++)
-			label[i] = i;
-
 		rle_conf_set_crc_check(transmitter->rle_conf, C_TRUE);
 		rle_conf_set_crc_check(receiver->rle_conf[nb_frag_id], C_TRUE);
 
 		uint16_t protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP;
+		/* Encapsulate the input packets, use in_packet and in_size as
+		   input */
 		if (rle_transmitter_encap_data(transmitter, in_packet, in_size, protocol_type) == C_ERROR) {
 			PRINT("ERROR while encapsulating data\n");
 		}
@@ -251,13 +227,11 @@ int test_1(char *pcap_file_name, int nb_fragment_id)
 /*                                proto_type_supp);*/
 
 		/* test fragmentation */
-		size_t original_pdu_size = in_size;
 		int remaining_pdu_size = in_size;
-		size_t sent_pdu_size = 0;
 
 		burst_size = in_size + RLE_COMPLETE_HEADER_SIZE;
 
-		PRINT("INFO PDU size = %d burst size = %d\n", in_size, burst_size);
+		PRINT("INFO PDU size = %zu burst size = %d\n", in_size, burst_size);
 
 		for (;;) {
 			if (rle_transmitter_get_queue_state(transmitter, nb_frag_id) == C_TRUE)

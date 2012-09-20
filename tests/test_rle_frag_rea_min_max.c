@@ -102,31 +102,16 @@ int test_1(char *pcap_file_name, int nb_fragment_id, int use_crc)
 
 	char errbuf[PCAP_ERRBUF_SIZE];
 	pcap_t *handle;
-	pcap_t *cmp_handle;
 	int link_layer_type_src;
-	int link_layer_type_cmp;
 	uint32_t link_len_src;
-	uint32_t link_len_cmp;
 	struct pcap_pkthdr header;
-	struct pcap_pkthdr cmp_header;
 	unsigned char *packet;
-	unsigned char *cmp_packet;
-	int is_failure = 1;
-	unsigned long counter;
-	int pkt_nbr = 0;
-	int rcv_pkt_nbr = 0;
-	uint8_t label[6];
-	uint8_t rcv_label[6];
-	uint8_t label_type;
-	uint16_t protocol;
 	int i;
-	int qos_idx;
-	int status;
-	uint8_t qos = 0;
-	unsigned long pdu_counter;
+	long unsigned int counter;
 	void *buffer[RLE_MAX_FRAG_NUMBER];
 	int ret_recv = C_ERROR;
 	int test_retval = C_ERROR;
+
 
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		buffer[i] = malloc(RLE_MAX_PDU_SIZE);
@@ -172,7 +157,6 @@ int test_1(char *pcap_file_name, int nb_fragment_id, int use_crc)
 
 	/* for each packet in the dump */
 	counter = 0;
-	pdu_counter = 0;
 	int nb_frag_id = 0;
 
 	size_t size_end_header = RLE_END_HEADER_SIZE;
@@ -214,11 +198,9 @@ int test_1(char *pcap_file_name, int nb_fragment_id, int use_crc)
 		}
 
 		/* test fragmentation */
-		size_t original_pdu_size = in_size;
 		int remaining_pdu_size = in_size;
-		size_t sent_pdu_size = 0;
 
-		PRINT("INFO: PDU size to send = %5d\n", in_size);
+		PRINT("INFO: PDU size to send = %zu\n", in_size);
 
 		/* STEP 1: START packet payload size = 0
 		 * -> TEST OPTIONAL DATA FIELD */
