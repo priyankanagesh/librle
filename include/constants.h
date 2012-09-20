@@ -63,9 +63,10 @@ enum {
 
 #else
 
+#define MOD_NAME		"RLE: "
 /* vmalloc allocates size with 4K modulo so for 8*2565 = 20520B it would alloc 24K
  * kmalloc allocates size with power of two so for 20520B it would alloc 32K */
-#define MALLOC(size_bytes)	kmalloc(size_bytes); /* vmalloc(size_bytes); */
+#define MALLOC(size_bytes)	kmalloc(size_bytes, GFP_KERNEL); /* vmalloc(size_bytes); */
 #define FREE(buf_addr)		kfree(buf_addr); /* vfree(buf_addr); */
 #define PRINT(x...)		printk(x);
 
