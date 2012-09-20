@@ -68,7 +68,9 @@ void rle_receiver_init(struct receiver_module *_this);
 void rle_receiver_destroy(struct receiver_module *_this);
 
 /**
- *  @brief Deencapsulate data from an RLE packet
+ *  @brief Deencapsulate RLE fragment from a buffer
+ *		and bufferize/reassemble it while waiting for remaining data
+ *		to be received
  *
  *  @warning
  *
@@ -76,7 +78,31 @@ void rle_receiver_destroy(struct receiver_module *_this);
  *  @param data_buffer	Data buffer's address to deencapsulate
  *  @param data_length	Data length to deencapsulate
  *
- *  @return
+ *  @return	C_ERROR		if error occured while reassembling PDU
+ *		C_ERROR_TOO_MUCH_FRAG	if the PDU was too fragmented (> 256 fragments)
+ *		C_REASSEMBLY_OK	if PDU is completely reassembled
+ *		C_OK		if deencapsulation and reassembly is successfull
+ *
+ *  @ingroup
+ */
+int rle_receiver_deencap_data(struct receiver_module *_this,
+				void *data_buffer, size_t data_length);
+
+/**
+ *  @brief Retrieve reassembled PDU data and copy it
+ *		to a buffer
+ *
+ *  @warning
+ *
+ *  @param _this	The receiver module to use for deencapsulation
+ *  @param fragment_id	Fragmentation context to use to get the PDU
+ *  @param pdu_buffer	Destination of reassembled PDU
+ *  @param pdu_proto_type	Reassembled PDU protocol type
+ *  @param pdu_length	Reassembled PDU length
+ *
+ *  @return	C_ERROR		if error occured while retrieving PDU
+ *		C_ERROR_BUF	if given buffer (PDU, protocol type or PDU length) is invalid
+ *		C_OK		otherwise
  *
  *  @ingroup
  */
