@@ -124,12 +124,9 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx,
 		 * with sender sequence */
 		rle_ctx_set_seq_nb(rle_ctx, trl->b.seq_no);
 		rle_ctx_incr_seq_nb(rle_ctx);
-		/* we must update lost frag counter:
-		 * at least 2 frags are lost,
-		 * an END and a START fragment */
-		uint64_t lost_frag = rle_ctx_get_counter_lost(rle_ctx);
-		lost_frag += 2;
-		rle_ctx_set_counter_lost(rle_ctx, lost_frag);
+		/* we must update lost & dropped packet
+		 * counter and */
+		rle_ctx_incr_counter_lost(rle_ctx);
 		rle_ctx_incr_counter_dropped(rle_ctx);
 
 		return C_ERROR_DROP;
@@ -528,6 +525,9 @@ int reassembly_get_pdu(struct rle_ctx_management *rle_ctx,
 	*pdu_proto_type = rle_ctx_get_proto_type(rle_ctx);
 	*pdu_length = rle_ctx_get_pdu_length(rle_ctx);
 
+	/* update rle pointer to data end address */
+	rle_ctx_set_end_address(rle_ctx, (char *)(rle_ctx->buf));
+
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: Copy PDU %d Bytes\n",
 			MODULE_NAME,
@@ -619,6 +619,11 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 			update_ctx_complete(rle_ctx, rle_conf,
 					data_buffer, data_length);
 			rle_ctx_incr_counter_ok(rle_ctx);
+
+			/* update link status */
+			rle_ctx_set_counter_bytes(rle_ctx,
+					data_length);
+
 			goto ret_val;
 		} else {
 			goto error_frag;
@@ -628,6 +633,10 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 	/* update rle pointer to data end address */
 	rle_ctx_set_end_address(rle_ctx, (char *)(rle_ctx->end_address +
 				(data_length - hdr_offset)));
+
+	/* update link status */
+	rle_ctx_set_counter_bytes(rle_ctx,
+			data_length);
 
 	goto ret_val;
 

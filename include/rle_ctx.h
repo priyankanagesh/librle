@@ -11,16 +11,25 @@
 #define _RLE_CTX_H
 
 #include <stdint.h>
+#include <pthread.h>
 #include "rle_conf.h"
 
-/** RLE link status counters */
+/** RLE link status counters
+ * and associated mutexes */
 struct link_status {
-	/** Number of */
+	/** Number of packets sent/received
+	 * successfully */
 	uint64_t counter_ok;
-	/** Number of dropped fragments */
+	pthread_mutex_t ctr_ok_mutex;
+	/** Number of dropped packets */
 	uint64_t counter_dropped;
-	/** Number of lost fragments */
+	pthread_mutex_t ctr_dropped_mutex;
+	/** Number of lost packets */
 	uint64_t counter_lost;
+	pthread_mutex_t ctr_lost_mutex;
+	/** Number of bytes sent/received */
+	uint64_t counter_bytes;
+	pthread_mutex_t ctr_bytes_mutex;
 };
 
 /** RLE context management structure */
@@ -173,7 +182,7 @@ void rle_ctx_set_seq_nb(struct rle_ctx_management *_this, uint8_t val);
 uint8_t rle_ctx_get_seq_nb(struct rle_ctx_management *_this);
 
 /**
- *  @brief	Increment current sequence number
+ *  @brief	Increment by one current sequence number
  *
  *  @warning
  *
@@ -227,7 +236,7 @@ int rle_ctx_get_is_fragmented(struct rle_ctx_management *_this);
 void rle_ctx_set_frag_counter(struct rle_ctx_management *_this, uint8_t val);
 
 /**
- *  @brief	Increment current fragment counter
+ *  @brief	Increment by one current fragment counter
  *
  *  @warning
  *
@@ -254,7 +263,7 @@ void rle_ctx_incr_frag_counter(struct rle_ctx_management *_this);
 void rle_ctx_set_nb_frag_pdu(struct rle_ctx_management *_this, int val);
 
 /**
- *  @brief	Increment current PDU fragment counter
+ *  @brief	Increment by one current PDU fragment counter
  *
  *  @warning
  *
@@ -497,7 +506,8 @@ char *rle_ctx_get_end_address(struct rle_ctx_management *_this);
 void rle_ctx_set_counter_ok(struct rle_ctx_management *_this, uint64_t val);
 
 /**
- *  @brief	Increment PDU successfully transmitted/received counter value
+ *  @brief	Increment by one number of PDU successfully transmitted/received
+ *		counter value
  *
  *  @warning
  *
@@ -537,7 +547,7 @@ uint64_t rle_ctx_get_counter_ok(struct rle_ctx_management *_this);
 void rle_ctx_set_counter_dropped(struct rle_ctx_management *_this, uint64_t val);
 
 /**
- *  @brief	Increment dropped PDU counter value
+ *  @brief	Increment by one dropped PDU counter value
  *
  *  @warning
  *
@@ -577,7 +587,7 @@ uint64_t rle_ctx_get_counter_dropped(struct rle_ctx_management *_this);
 void rle_ctx_set_counter_lost(struct rle_ctx_management *_this, uint64_t val);
 
 /**
- *  @brief	Increment lost PDU counter value
+ *  @brief	Increment by one lost PDU counter value
  *
  *  @warning
  *
@@ -601,6 +611,47 @@ void rle_ctx_incr_counter_lost(struct rle_ctx_management *_this);
  *  @ingroup
  */
 uint64_t rle_ctx_get_counter_lost(struct rle_ctx_management *_this);
+
+/**
+ *  @brief	Set successfully sent/received number of Bytes
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *  @param	val	New counter value
+ *
+ *  @return
+ *
+ *  @ingroup
+ */
+void rle_ctx_set_counter_bytes(struct rle_ctx_management *_this, uint64_t val);
+
+/**
+ *  @brief	Increment by given value lost PDU counter value
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *  @param	val	Number of Bytes to add to the current Bytes counter
+ *
+ *  @return
+ *
+ *  @ingroup
+ */
+void rle_ctx_incr_counter_bytes(struct rle_ctx_management *_this, uint32_t val);
+
+/**
+ *  @brief	Get current number of sent/received Bytes
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @return	Number of sent/received Bytes
+ *
+ *  @ingroup
+ */
+uint64_t rle_ctx_get_counter_bytes(struct rle_ctx_management *_this);
 
 /**
  *  @brief	Dump & print to stdout the content of a specific RLE context

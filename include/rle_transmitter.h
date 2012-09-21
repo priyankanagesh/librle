@@ -15,6 +15,21 @@
 #include "rle_ctx.h"
 #include "header.h"
 
+/** RLE transmitter link status
+ * holds the sum of all statistics
+ * of each fragment_id */
+struct transmitter_link_status {
+	/** Total number of packets sent/received
+	 * successfully */
+	uint64_t counter_ok;
+	/** Total number of dropped packets */
+	uint64_t counter_dropped;
+	/** Total number of lost packets */
+	uint64_t counter_lost;
+	/** Total number of bytes sent/received */
+	uint64_t counter_bytes;
+};
+
 /**
  * RLE transmitter module used
  * for encapsulation & fragmentation.
@@ -110,6 +125,10 @@ int rle_transmitter_get_packet(struct transmitter_module *_this,
 		uint8_t fragment_id,
 		uint16_t protocol_type);
 
+
+void rle_transmitter_free_context(struct transmitter_module *_this,
+		uint8_t fragment_id);
+
 /**
  *  @brief Get a queue (frag_id) state, filled or empty
  *
@@ -140,6 +159,59 @@ int rle_transmitter_get_queue_state(struct transmitter_module *_this,
  */
 uint32_t rle_transmitter_get_queue_size(struct transmitter_module *_this,
 		uint8_t fragment_id);
+
+/**
+ *  @brief Get total number of successfully
+ *  sent/received packets
+ *
+ *  @warning
+ *
+ *  @param _this		The transmitter module
+ *
+ *  @return	Number of packets sent/received successfully
+ *
+ *  @ingroup
+ */
+uint64_t rle_transmitter_get_counter_ok(struct transmitter_module *_this);
+
+/**
+ *  @brief Get total number of dropped packets
+ *
+ *  @warning
+ *
+ *  @param _this		The transmitter module
+ *
+ *  @return	Number of dropped packets
+ *
+ *  @ingroup
+ */
+uint64_t rle_transmitter_get_counter_dropped(struct transmitter_module *_this);
+
+/**
+ *  @brief Get total number of lost packets
+ *
+ *  @warning
+ *
+ *  @param _this		The transmitter module
+ *
+ *  @return	Number of lost packets
+ *
+ *  @ingroup
+ */
+uint64_t rle_transmitter_get_counter_lost(struct transmitter_module *_this);
+
+/**
+ *  @brief Get total number of sent/received Bytes
+ *
+ *  @warning
+ *
+ *  @param _this		The transmitter module
+ *
+ *  @return	Number of Bytes sent/received
+ *
+ *  @ingroup
+ */
+uint64_t rle_transmitter_get_counter_bytes(struct transmitter_module *_this);
 
 /**
  *  @brief Dump all frag_id contents

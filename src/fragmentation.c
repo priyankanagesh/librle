@@ -518,6 +518,11 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 			protocol_type);
 
 return_ret:
+	/* update link status */
+	if (ret == C_OK)
+		rle_ctx_incr_counter_bytes(rle_ctx,
+				burst_payload_length);
+
 	return ret;
 }
 

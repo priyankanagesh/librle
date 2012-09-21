@@ -57,9 +57,9 @@ static void flush(struct rle_ctx_management *_this)
 	_this->label_type		= 0xff;
 	_this->pdu_buf			= NULL;
 	_this->end_address		= NULL;
-	_this->lk_status.counter_ok	= 0;
-	_this->lk_status.counter_dropped	= 0;
-	_this->lk_status.counter_lost		= 0;
+	_this->lk_status.counter_ok		= 0L;
+	_this->lk_status.counter_dropped	= 0L;
+	_this->lk_status.counter_lost		= 0L;
 }
 
 /************************************************************************
@@ -86,6 +86,12 @@ int rle_ctx_init(struct rle_ctx_management *_this)
 	/* set to zero or invalid values
 	 * all variables */
 	flush(_this);
+
+	/* initialize all link status
+	 * mutexes */
+	pthread_mutex_init(&_this->lk_status.ctr_ok_mutex, NULL);
+	pthread_mutex_init(&_this->lk_status.ctr_dropped_mutex, NULL);
+	pthread_mutex_init(&_this->lk_status.ctr_bytes_mutex, NULL);
 
 	/* allocate enough memory space
 	 * for the worst case of fragmentation */
@@ -123,6 +129,12 @@ int rle_ctx_destroy(struct rle_ctx_management *_this)
 				__FILE__, __func__, __LINE__);
 		return C_ERROR;
 	}
+
+	/* destroy all link status
+	 * mutexes */
+	pthread_mutex_destroy(&_this->lk_status.ctr_ok_mutex);
+	pthread_mutex_destroy(&_this->lk_status.ctr_dropped_mutex);
+	pthread_mutex_destroy(&_this->lk_status.ctr_bytes_mutex);
 
 	flush(_this);
 
@@ -162,9 +174,9 @@ void rle_ctx_invalid_ctx(struct rle_ctx_management *_this)
 	_this->label_type		= 0xff;
 	_this->pdu_buf			= NULL;
 	_this->end_address		= NULL;
-	_this->lk_status.counter_ok		= 0;
-	_this->lk_status.counter_dropped	= 0;
-	_this->lk_status.counter_lost		= 0;
+	_this->lk_status.counter_ok		= 0L;
+	_this->lk_status.counter_dropped	= 0L;
+	_this->lk_status.counter_lost		= 0L;
 }
 
 void rle_ctx_set_frag_id(struct rle_ctx_management *_this, uint8_t val)
@@ -363,47 +375,103 @@ char *rle_ctx_get_end_address(struct rle_ctx_management *_this)
  *********************************/
 void rle_ctx_set_counter_ok(struct rle_ctx_management *_this, uint64_t val)
 {
+	pthread_mutex_lock(&_this->lk_status.ctr_ok_mutex);
 	_this->lk_status.counter_ok = val;
+	pthread_mutex_unlock(&_this->lk_status.ctr_ok_mutex);
 }
 
 void rle_ctx_incr_counter_ok(struct rle_ctx_management *_this)
 {
+	pthread_mutex_lock(&_this->lk_status.ctr_ok_mutex);
 	_this->lk_status.counter_ok++;
+	pthread_mutex_unlock(&_this->lk_status.ctr_ok_mutex);
 }
 
 uint64_t rle_ctx_get_counter_ok(struct rle_ctx_management *_this)
 {
-	return(_this->lk_status.counter_ok);
+	uint64_t ctr_packets_ok = 0L;
+
+	pthread_mutex_lock(&_this->lk_status.ctr_ok_mutex);
+	ctr_packets_ok = _this->lk_status.counter_ok;
+	pthread_mutex_unlock(&_this->lk_status.ctr_ok_mutex);
+
+	return(ctr_packets_ok);
 }
 
 void rle_ctx_set_counter_dropped(struct rle_ctx_management *_this, uint64_t val)
 {
+	pthread_mutex_lock(&_this->lk_status.ctr_dropped_mutex);
 	_this->lk_status.counter_dropped = val;
+	pthread_mutex_unlock(&_this->lk_status.ctr_dropped_mutex);
 }
 
 void rle_ctx_incr_counter_dropped(struct rle_ctx_management *_this)
 {
+	pthread_mutex_lock(&_this->lk_status.ctr_dropped_mutex);
 	_this->lk_status.counter_dropped++;
+	pthread_mutex_unlock(&_this->lk_status.ctr_dropped_mutex);
 }
 
 uint64_t rle_ctx_get_counter_dropped(struct rle_ctx_management *_this)
 {
-	return(_this->lk_status.counter_dropped);
+	uint64_t ctr_packets_dropped = 0L;
+
+	pthread_mutex_lock(&_this->lk_status.ctr_dropped_mutex);
+	ctr_packets_dropped = _this->lk_status.counter_dropped;
+	pthread_mutex_unlock(&_this->lk_status.ctr_dropped_mutex);
+
+	return(ctr_packets_dropped);
 }
 
 void rle_ctx_set_counter_lost(struct rle_ctx_management *_this, uint64_t val)
 {
+	pthread_mutex_lock(&_this->lk_status.ctr_lost_mutex);
 	_this->lk_status.counter_lost = val;
+	pthread_mutex_unlock(&_this->lk_status.ctr_lost_mutex);
 }
 
 void rle_ctx_incr_counter_lost(struct rle_ctx_management *_this)
 {
+	pthread_mutex_lock(&_this->lk_status.ctr_lost_mutex);
 	_this->lk_status.counter_lost++;
+	pthread_mutex_unlock(&_this->lk_status.ctr_lost_mutex);
 }
 
 uint64_t rle_ctx_get_counter_lost(struct rle_ctx_management *_this)
 {
-	return(_this->lk_status.counter_lost);
+	uint64_t ctr_packets_lost = 0L;
+
+	pthread_mutex_lock(&_this->lk_status.ctr_lost_mutex);
+	ctr_packets_lost = _this->lk_status.counter_lost;
+	pthread_mutex_unlock(&_this->lk_status.ctr_lost_mutex);
+
+	return(ctr_packets_lost);
+}
+
+void rle_ctx_set_counter_bytes(struct rle_ctx_management *_this, uint64_t val)
+{
+	pthread_mutex_lock(&_this->lk_status.ctr_bytes_mutex);
+	_this->lk_status.counter_bytes = val;
+	pthread_mutex_unlock(&_this->lk_status.ctr_bytes_mutex);
+}
+
+void rle_ctx_incr_counter_bytes(struct rle_ctx_management *_this, uint32_t val)
+{
+
+	pthread_mutex_lock(&_this->lk_status.ctr_bytes_mutex);
+	_this->lk_status.counter_bytes += val;
+	pthread_mutex_unlock(&_this->lk_status.ctr_bytes_mutex);
+}
+
+uint64_t rle_ctx_get_counter_bytes(struct rle_ctx_management *_this)
+{
+	uint64_t ctr_packets_bytes = 0L;
+
+	pthread_mutex_lock(&_this->lk_status.ctr_bytes_mutex);
+	ctr_packets_bytes = _this->lk_status.counter_bytes;
+	pthread_mutex_unlock(&_this->lk_status.ctr_bytes_mutex);
+
+	return(ctr_packets_bytes);
 }
 
 void rle_ctx_dump(struct rle_ctx_management *_this,
@@ -426,6 +494,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 	PRINT("\tPackets sent/received	\t= [%lu]\n", _this->lk_status.counter_ok);
 	PRINT("\tPackets lost		\t= [%lu]\n", _this->lk_status.counter_lost);
 	PRINT("\tPackets dropped	\t\t= [%lu]\n", _this->lk_status.counter_dropped);
+	PRINT("\tBytes sent/received	\t= [%lu]\n", _this->lk_status.counter_bytes);
 
 
 	if (_this->frag_counter == 0) {

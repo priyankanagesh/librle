@@ -112,6 +112,8 @@ int rle_receiver_get_packet(struct receiver_module *_this,
 			int *pdu_proto_type,
 			uint32_t *pdu_length);
 
+void rle_receiver_free_context(struct receiver_module *_this,
+		uint8_t fragment_id);
 
 void rle_receiver_dump(struct receiver_module *_this);
 

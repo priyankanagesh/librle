@@ -374,6 +374,14 @@ int rle_receiver_get_packet(struct receiver_module *_this,
 	return ret;
 }
 
+void rle_receiver_free_context(struct receiver_module *_this,
+		uint8_t fragment_id)
+{
+	/* set to idle this fragmentation context */
+	set_free_frag_ctx(_this, fragment_id);
+}
+
+
 void rle_receiver_dump(struct receiver_module *_this)
 {
 	int i;
