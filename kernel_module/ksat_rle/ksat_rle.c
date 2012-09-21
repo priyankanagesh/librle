@@ -11,6 +11,7 @@
 #include <linux/init.h>
 #include <linux/errno.h>
 #include <satdrv.h>
+#include "constants.h"
 
 int ksat_rle_tx_new(struct transmitter_module *_tx_rle)
 {
@@ -26,6 +27,8 @@ int ksat_rle_tx_new(struct transmitter_module *_tx_rle)
 		goto fail;
 	}
 
+	/* TODO init create_sysfs_tree */
+
 	_tx_rle = tx_rle;
 	PRINT(KERN_INFO MOD_NAME "RLE module initialized\n");
 
@@ -38,9 +41,20 @@ fail:
 }
 EXPORT_SYMBOL_GPL(ksat_rle_tx_new);
 
-int ksat_rle_tx_delete(struct transmitter_module *tx_rle)
+void ksat_rle_tx_delete(struct transmitter_module *_tx_rle)
 {
+	int ret_val = 0;
+	struct transmitter_module *tx_rle = NULL;
 
+	PRINT(KERN_INFO MOD_NAME "Removing RLE module\n");
+	tx_rle = _tx_rle;
+
+	/* TODO remove_sysfs_tree */
+
+	rle_transmitter_destroy(tx_rle);
+
+	module_put(THIS_MODULE);
+	PRINT(KERN_INFO MOD_NAME "RLE module removed\n");
 }
 EXPORT_SYMBOL_GPL(ksat_rle_tx_delete);
 
