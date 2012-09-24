@@ -19,7 +19,7 @@
 #define MODULE_NAME "REASSEMBLY"
 
 static int check_complete_length(struct rle_ctx_management *rle_ctx,
-		void *data_buffer, size_t data_length)
+		void *data_buffer, size_t data_length, size_t header_size)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
@@ -30,15 +30,16 @@ static int check_complete_length(struct rle_ctx_management *rle_ctx,
 	/* map the complete packet header */
 	union rle_header_all *head = (union rle_header_all *)data_buffer;
 	/* rle packet length is the sum of proto_type and payload size */
-	size_t recv_packet_length = (data_length - sizeof(union rle_header_all));
+	size_t recv_packet_length = (data_length - header_size);
 
 	if (head->b.rle_packet_length != recv_packet_length) {
 		PRINT("ERROR %s %s:%s:%d: invalid packet length,"
-				" received size [%d] computed size [%zu]\n",
+				" received size [%d] computed size [%zu] header [%zu]\n",
 				MODULE_NAME,
 				__FILE__, __func__, __LINE__,
 				head->b.rle_packet_length,
-				recv_packet_length);
+				recv_packet_length,
+				header_size);
 		rle_ctx_incr_counter_dropped(rle_ctx);
 		return C_ERROR_DROP;
 	}
@@ -255,19 +256,20 @@ static size_t get_header_size(struct rle_ctx_management *rle_ctx,
 	if (frag_type == RLE_PDU_COMPLETE) {
 		struct rle_header_complete *hdr =
 		(struct rle_header_complete *)data_buffer;
+
 		is_suppressed = GET_PROTO_TYPE_SUPP(hdr->head.b.LT_T_FID);
 	} else {
 		struct rle_header_start *hdr =
 		(struct rle_header_start *)data_buffer;
 
 		is_suppressed = hdr->head_start.b.proto_type_supp;
+	}
 
-		if (is_suppressed != RLE_T_PROTO_TYPE_SUPP) {
-			if (is_compressed)
-				header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
-			else
-				header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
-		}
+	if (is_suppressed != RLE_T_PROTO_TYPE_SUPP) {
+		if (is_compressed)
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+		else
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 	}
 
 return_hdr_size:
@@ -546,6 +548,7 @@ int reassembly_get_pdu(struct rle_ctx_management *rle_ctx,
 
 	/* update rle pointer to data end address */
 	rle_ctx_set_end_address(rle_ctx, (char *)(rle_ctx->buf));
+	rle_ctx_set_remaining_pdu_length(rle_ctx, 0);
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: Copy PDU %d Bytes\n",
@@ -632,7 +635,7 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 		}
 	} else {
 		/* no fragmentation case */
-		ret = check_complete_length(rle_ctx, data_buffer, data_length);
+		ret = check_complete_length(rle_ctx, data_buffer, data_length, hdr_offset);
 		if (ret == C_OK) {
 			/* update ctx status structure if length checking is OK */
 			update_ctx_complete(rle_ctx, rle_conf,
