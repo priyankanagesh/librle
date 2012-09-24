@@ -152,7 +152,16 @@ static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx)
 
 	/* compute PDU CRC */
 	length = rle_ctx_get_pdu_length(rle_ctx);
+
 	crc32 = compute_crc((unsigned char *)(rle_ctx->buf), length, crc32);
+
+
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d: with PDU length %zu & protocol type 0x%x\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__,
+			length, field_value);
+#endif
 
 	return crc32;
 }
@@ -297,7 +306,7 @@ static void update_ctx_complete(struct rle_ctx_management *rle_ctx,
 			protocol_type = hdr_pt->ptype_c_s.proto_type;
 			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 		} else {
-			protocol_type = ntohs(hdr_pt->ptype_u_s.proto_type);
+			protocol_type = hdr_pt->ptype_u_s.proto_type;
 			header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 		}
 	}
@@ -348,15 +357,13 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx,
 	}
 
 	if (hdr->head_start.b.proto_type_supp != RLE_T_PROTO_TYPE_SUPP) {
-		header_size = RLE_START_MANDATORY_HEADER_SIZE;
-
 		struct rle_header_start_w_ptype *hdr_pt =
 		(struct rle_header_start_w_ptype *)data_buffer;
 		if (is_compressed) {
 			protocol_type = hdr_pt->ptype_c_s.proto_type;
 			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 		} else {
-			protocol_type = ntohs(hdr_pt->ptype_u_s.proto_type);
+			protocol_type = hdr_pt->ptype_u_s.proto_type;
 			header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 		}
 	}
@@ -370,17 +377,18 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx,
 			header_size);
 
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d: RLE head_start.b.total_length %d label_type 0x%x"
-			" proto_type_supp 0x%x\n",
+	PRINT("DEBUG %s %s:%s:%d: RLE head_start.b.total_length %d PDU length %zu"
+			" label_type 0x%x proto_type_supp 0x%x\n",
 			MODULE_NAME,
 			__FILE__, __func__, __LINE__,
 			hdr->head_start.b.total_length,
+			pdu_length,
 			hdr->head_start.b.label_type,
 			hdr->head_start.b.proto_type_supp);
 #endif
 
 	rle_ctx_set_pdu_length(rle_ctx, pdu_length);
-	rle_ctx_set_remaining_pdu_length(rle_ctx, (pdu_length -
+	rle_ctx_set_remaining_pdu_length(rle_ctx, (hdr->head_start.b.total_length -
 				hdr->head.b.rle_packet_length));
 	rle_ctx_set_is_fragmented(rle_ctx, C_TRUE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
@@ -442,6 +450,17 @@ static void update_ctx_cont(struct rle_ctx_management *rle_ctx,
 	rle_ctx_set_remaining_pdu_length(rle_ctx,
 			(remaining_pdu_length - hdr->head.b.rle_packet_length));
 	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length);
+
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d: RLE head_cont RLE length %d previous remaining PDU length %zu"
+			" new remaining PDU length %zu\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__,
+			hdr->head.b.rle_packet_length,
+			remaining_pdu_length,
+			(remaining_pdu_length - hdr->head.b.rle_packet_length));
+#endif
+
 }
 
 static void update_ctx_end(struct rle_ctx_management *rle_ctx,
