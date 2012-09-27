@@ -17,7 +17,7 @@
 
 #define MODULE_NAME "FRAGMENTATION"
 
-static int is_complete_pdu(struct rle_ctx_management *rle_ctx)
+static int is_fragmented_pdu(struct rle_ctx_management *rle_ctx)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME,
@@ -27,14 +27,8 @@ static int is_complete_pdu(struct rle_ctx_management *rle_ctx)
 	return rle_ctx->is_fragmented;
 }
 
-static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx,
-		struct rle_configuration *rle_conf)
+static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx)
 {
-#ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME,
-			__FILE__, __func__, __LINE__);
-#endif
-
 	/* CRC must be computed on PDU data and the
 	 * original two bytes protocol type field
 	 * whatever it is suppressed or compressed */
@@ -50,6 +44,13 @@ static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx,
 	/* compute PDU CRC */
 	length = rle_ctx_get_pdu_length(rle_ctx);
 	crc32 = compute_crc((unsigned char *)rle_ctx->pdu_buf, length, crc32);
+
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d: with PDU length %zu & protocol type 0x%x CRC %x\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__,
+			length, field_value, crc32);
+#endif
 
 	return crc32;
 }
@@ -86,7 +87,7 @@ static void add_trailer(struct rle_ctx_management *rle_ctx,
 	} else {
 		/* crc32 is computed by using protocol type
 		 * and the PDU */
-		rle_trl->trailer.crc = compute_crc32(rle_ctx, rle_conf);
+		rle_trl->trailer.crc = compute_crc32(rle_ctx);
 
 		rle_ctx_set_end_address(rle_ctx,
 			(char *)(buf_last_addr  + RLE_CRC32_FIELD_SIZE));
@@ -107,18 +108,6 @@ static int add_start_header(struct rle_ctx_management *rle_ctx,
 #endif
 
 	size_t size_header = RLE_START_MANDATORY_HEADER_SIZE;
-
-	/* Robustness: test if available burst payload is smaller
-	 * than an RLE START packet header */
-	if ((burst_payload_length - size_header) < 0) {
-		PRINT("ERROR %s %s:%s:%d: Available burst payload size [%zu]"
-				" is not enough to carry data\n",
-				MODULE_NAME,
-				__FILE__, __func__, __LINE__,
-				burst_payload_length);
-		return C_ERROR;
-	}
-
 	size_t ptype_length = 0;
 	uint8_t proto_type_supp = RLE_T_PROTO_TYPE_NO_SUPP;
 
@@ -149,6 +138,17 @@ static int add_start_header(struct rle_ctx_management *rle_ctx,
 	} else {
 		/* no protocol type in this packet */
 		proto_type_supp = RLE_T_PROTO_TYPE_SUPP;
+	}
+
+	/* Robustness: test if available burst payload is smaller
+	 * than an RLE START packet header */
+	if (burst_payload_length < size_header) {
+		PRINT("ERROR %s %s:%s:%d: Available burst payload size [%zu]"
+				" is not enough to carry data\n",
+				MODULE_NAME,
+				__FILE__, __func__, __LINE__,
+				burst_payload_length);
+		return C_ERROR;
 	}
 
 	/* fill RLE start header */
@@ -307,7 +307,8 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	int new_remaining_val = 0;
 	new_remaining_val =
 		rle_ctx_get_remaining_pdu_length(rle_ctx) - pdu_size_payload;
-	if ((type_rle_frag == RLE_PDU_END_FRAG) && (new_remaining_val > 0)) {
+	if (((type_rle_frag == RLE_PDU_END_FRAG) && (new_remaining_val > 0)) ||
+			(new_remaining_val < 0)) {
 		PRINT("ERROR %s %s:%s:%d: Invalid remaining data size"
 			       " while building an RLE END packet [%d]\n",
 			       MODULE_NAME,
@@ -315,9 +316,6 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 				new_remaining_val);
 		return C_ERROR;
 	}
-
-	if (new_remaining_val < 0)
-		new_remaining_val = 0;
 
 	rle_ctx_set_remaining_pdu_length(rle_ctx, new_remaining_val);
 	rle_ctx_set_rle_length(rle_ctx,
@@ -338,7 +336,7 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 			 pdu_size_payload),
 			burst_payload_length);
 
-		/* Last fragment of a complete packet
+		/* Last fragment of a PDU
 		 * is being sent so increment status link
 		 * successfully sent packet counter */
 		rle_ctx_incr_counter_ok(rle_ctx);
@@ -358,15 +356,15 @@ static int get_fragment_type(struct rle_ctx_management *rle_ctx, size_t burst_pa
 	int frag_type = RLE_PDU_START_FRAG;
 	uint32_t remaining_pdu_len = rle_ctx_get_remaining_pdu_length(rle_ctx);
 
-	if (is_complete_pdu(rle_ctx)) {
+	if (is_fragmented_pdu(rle_ctx)) {
 		size_t trailer_size =
 			(rle_ctx_get_use_crc(rle_ctx) == C_FALSE) ? RLE_SEQ_NO_FIELD_SIZE : RLE_CRC32_FIELD_SIZE;
 		/* not all PDU data has been sent, so
 		 * it's a CONT or END packet */
-		if ((remaining_pdu_len + RLE_CONT_HEADER_SIZE) >= burst_payload_length)
-			frag_type = RLE_PDU_CONT_FRAG;
-		else if ((RLE_END_HEADER_SIZE + trailer_size) <= burst_payload_length)
+		if ((remaining_pdu_len + RLE_END_HEADER_SIZE + trailer_size) <= burst_payload_length)
 			frag_type = RLE_PDU_END_FRAG;
+		else
+			frag_type = RLE_PDU_CONT_FRAG;
 	}
 
 	return frag_type;
