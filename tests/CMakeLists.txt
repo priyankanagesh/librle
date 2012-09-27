@@ -1,4 +1,5 @@
-INCLUDE_DIRECTORIES(include)
+INCLUDE_DIRECTORIES(include ../include)
+LINK_DIRECTORIES(../../build)
 
 SET(CMAKE_C_FLAGS "-g -Wall")
 
