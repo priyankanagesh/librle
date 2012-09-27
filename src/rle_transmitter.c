@@ -190,8 +190,8 @@ int rle_transmitter_encap_data(struct transmitter_module *_this,
 				data_buffer, data_length,
 				protocol_type)
 			== C_ERROR) {
-		set_free_frag_ctx(_this, index_ctx);
 		rle_ctx_incr_counter_dropped(&_this->rle_ctx_man[index_ctx]);
+		set_free_frag_ctx(_this, index_ctx);
 		PRINT("ERROR %s:%s:%d: cannot encapsulate data\n",
 				__FILE__, __func__, __LINE__);
 		return ret;
@@ -238,8 +238,6 @@ int rle_transmitter_get_packet(struct transmitter_module *_this,
 				__FILE__, __func__, __LINE__,
 				fragment_id);
 		ret = C_ERROR_TOO_MUCH_FRAG;
-		rle_ctx_incr_counter_dropped(&_this->rle_ctx_man[fragment_id]);
-		set_free_frag_ctx(_this, fragment_id);
 		goto return_val;
 	}
 
@@ -261,6 +259,11 @@ int rle_transmitter_get_packet(struct transmitter_module *_this,
 #endif
 
 return_val:
+	if (ret != C_OK) {
+		rle_ctx_incr_counter_dropped(&_this->rle_ctx_man[fragment_id]);
+		set_free_frag_ctx(_this, fragment_id);
+	}
+
 	return ret;
 }
 
