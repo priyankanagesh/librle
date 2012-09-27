@@ -153,15 +153,13 @@ static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx)
 
 	/* compute PDU CRC */
 	length = rle_ctx_get_pdu_length(rle_ctx);
-
-	crc32 = compute_crc((unsigned char *)(rle_ctx->buf), length, crc32);
-
+	crc32 = compute_crc((unsigned char *)rle_ctx->buf, length, crc32);
 
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d: with PDU length %zu & protocol type 0x%x\n",
+	PRINT("DEBUG %s %s:%s:%d: with PDU length %zu & protocol type 0x%x CRC %x\n",
 			MODULE_NAME,
 			__FILE__, __func__, __LINE__,
-			length, field_value);
+			length, field_value, crc32);
 #endif
 
 	return crc32;
@@ -452,17 +450,6 @@ static void update_ctx_cont(struct rle_ctx_management *rle_ctx,
 	rle_ctx_set_remaining_pdu_length(rle_ctx,
 			(remaining_pdu_length - hdr->head.b.rle_packet_length));
 	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length);
-
-#ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d: RLE head_cont RLE length %d previous remaining PDU length %zu"
-			" new remaining PDU length %zu\n",
-			MODULE_NAME,
-			__FILE__, __func__, __LINE__,
-			hdr->head.b.rle_packet_length,
-			remaining_pdu_length,
-			(remaining_pdu_length - hdr->head.b.rle_packet_length));
-#endif
-
 }
 
 static void update_ctx_end(struct rle_ctx_management *rle_ctx,
@@ -643,7 +630,7 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 			rle_ctx_incr_counter_ok(rle_ctx);
 
 			/* update link status */
-			rle_ctx_set_counter_bytes(rle_ctx,
+			rle_ctx_incr_counter_bytes(rle_ctx,
 					data_length);
 
 			goto ret_val;
@@ -657,7 +644,7 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 				(data_length - hdr_offset)));
 
 	/* update link status */
-	rle_ctx_set_counter_bytes(rle_ctx,
+	rle_ctx_incr_counter_bytes(rle_ctx,
 			data_length);
 
 	goto ret_val;
