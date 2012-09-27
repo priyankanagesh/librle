@@ -14,6 +14,7 @@
 
 #include <stdlib.h>
 #include <malloc.h>
+#include <stdio.h>
 #include <arpa/inet.h>
 #include <netinet/ip.h>
 #include <netinet/ip6.h>
