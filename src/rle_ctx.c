@@ -60,6 +60,7 @@ static void flush(struct rle_ctx_management *_this)
 	_this->lk_status.counter_ok		= 0L;
 	_this->lk_status.counter_dropped	= 0L;
 	_this->lk_status.counter_lost		= 0L;
+	_this->lk_status.counter_bytes		= 0L;
 }
 
 /************************************************************************
@@ -177,6 +178,7 @@ void rle_ctx_invalid_ctx(struct rle_ctx_management *_this)
 	_this->lk_status.counter_ok		= 0L;
 	_this->lk_status.counter_dropped	= 0L;
 	_this->lk_status.counter_lost		= 0L;
+	_this->lk_status.counter_bytes		= 0L;
 }
 
 void rle_ctx_set_frag_id(struct rle_ctx_management *_this, uint8_t val)
@@ -286,7 +288,7 @@ void rle_ctx_set_remaining_pdu_length(struct rle_ctx_management *_this, uint32_t
 #endif
 
 	if (val > RLE_MAX_PDU_SIZE) {
-		PRINT("ERROR %s:%s:%d: Invalid remaining RLE length [%d]\n",
+		PRINT("WARNING %s:%s:%d: Invalid remaining PDU length [%d]\n",
 				__FILE__, __func__, __LINE__, val);
 		return;
 	}
@@ -580,6 +582,12 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 		int end_bit = header->b.end_ind;
 		int use_crc = rle_conf_get_crc_check(rle_conf);
 
+		/* to avoid seg fault while dumping
+		 * erroneous fragments, we must
+		 * compare each new last fragment address
+		 * with ZC buffer end address */
+		void *end_buffer_pointer = (unsigned char *)(_this->buf + ZC_BUFFER_MAX_SIZE);
+
 		if ((start_bit == 0x1) && (end_bit == 0x0)) {
 			/* dump START packet */
 			struct zc_rle_header_start *zc_buf = (struct zc_rle_header_start *)_this->buf;
@@ -671,6 +679,12 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 					(struct zc_rle_header_cont_end *)(ptr_to_next_frag + 8);
 
 				ptr_to_next_frag = &(zc_ce_buf->ptrs.end);
+
+				/* We must stop dumping now cause
+				 * we are going to dump
+				 * beyond the buffer address space */
+				if (ptr_to_next_frag >= end_buffer_pointer)
+					break;
 
 				struct rle_header_cont_end *hdr = &zc_ce_buf->header;
 
