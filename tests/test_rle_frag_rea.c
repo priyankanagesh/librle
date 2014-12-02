@@ -126,23 +126,22 @@ int test_1(char *pcap_file_name, uint32_t param_ptype,
 	struct pcap_pkthdr header;
 	unsigned char *packet;
 	int i;
-	void *buffer[RLE_MAX_FRAG_NUMBER];
+	void *buffer[RLE_MAX_FRAG_NUMBER] = { NULL };
 	int ret_recv = C_ERROR;
 	int test_retval = C_ERROR;
 
+	unsigned char *burst_buffer = malloc(FAKE_BURST_MAX_SIZE);
+	if (burst_buffer == NULL) {
+		PRINT("Error while allocating memory for burst\n");
+		return C_ERROR;
+	}
 
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		buffer[i] = malloc(RLE_MAX_PDU_SIZE);
 		if (buffer[i] == NULL) {
 			PRINT("Error while allocating memory\n");
-			return -1;
+			goto close_fake_burst;
 		}
-	}
-
-	unsigned char *burst_buffer = malloc(FAKE_BURST_MAX_SIZE);
-	if (burst_buffer == NULL) {
-		PRINT("Error while allocating memory for burst\n");
-		return -1;
 	}
 
 	/* open the source dump file */
@@ -150,7 +149,7 @@ int test_1(char *pcap_file_name, uint32_t param_ptype,
 	if(handle == NULL)
 	{
 		PRINT("failed to open the source pcap file\n");
-		return -1;
+		goto close_rle;
 	}
 
 	/* link layer in the source dump must be supported */
@@ -163,7 +162,6 @@ int test_1(char *pcap_file_name, uint32_t param_ptype,
 				"%d, %d, %d)\n", link_layer_type_src, DLT_EN10MB, DLT_LINUX_SLL,
 				DLT_RAW);
 		goto close_input;
-		return -1;
 	}
 
 	if(link_layer_type_src == DLT_EN10MB)
@@ -322,7 +320,7 @@ close_rle:
 close_fake_burst:
 	free(burst_buffer);
 	burst_buffer = NULL;
-return_ret:
+
 	PRINT("INFO: TEST WITH %d FRAG_ID\n",
 			nb_fragment_id);
 	PRINT("INFO: Test status from PCAP file:\n"
