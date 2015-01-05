@@ -85,10 +85,10 @@ static int create_header(struct rle_ctx_management *rle_ctx,
 
 	/* set start & end PDU data pointers */
 	rle_hdr->ptrs.start = (char *)data_buffer;
-	rle_hdr->ptrs.end = (char *)(data_buffer + data_length);
+	rle_hdr->ptrs.end = (char *)((char *)data_buffer + data_length);
 	/* update rle context */
 	rle_ctx_set_end_address(rle_ctx,
-				(char *)(rle_ctx->buf + size_header));
+				(char *)((char *)rle_ctx->buf + size_header));
 	rle_ctx_set_is_fragmented(rle_ctx, C_FALSE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
 	rle_ctx_set_nb_frag_pdu(rle_ctx, 1);

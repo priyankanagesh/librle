@@ -577,7 +577,6 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 		if (j != 0)
 			PRINT("\n");
 	} else {
-		union rle_header_all *header = _this->buf;
 		int start_bit = header->b.start_ind;
 		int end_bit = header->b.end_ind;
 		int use_crc = rle_conf_get_crc_check(rle_conf);
@@ -586,7 +585,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 		 * erroneous fragments, we must
 		 * compare each new last fragment address
 		 * with ZC buffer end address */
-		void *end_buffer_pointer = (unsigned char *)(_this->buf + ZC_BUFFER_MAX_SIZE);
+		void *end_buffer_pointer = (unsigned char *)((unsigned char *)_this->buf + ZC_BUFFER_MAX_SIZE);
 
 		if ((start_bit == 0x1) && (end_bit == 0x0)) {
 			/* dump START packet */
@@ -676,7 +675,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 			while ((end_bit != 1)) {
 				/* update current address in RLE zc buffer */
 				struct zc_rle_header_cont_end *zc_ce_buf =
-					(struct zc_rle_header_cont_end *)(ptr_to_next_frag + 8);
+					(struct zc_rle_header_cont_end *)((unsigned char *)ptr_to_next_frag + 8);
 
 				ptr_to_next_frag = &(zc_ce_buf->ptrs.end);
 
@@ -686,11 +685,11 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 				if (ptr_to_next_frag >= end_buffer_pointer)
 					break;
 
-				struct rle_header_cont_end *hdr = &zc_ce_buf->header;
+				struct rle_header_cont_end *hdr_ce = &zc_ce_buf->header;
 
 
 				/* then dump CONTINUATION & END packet */
-				if (hdr->head.b.end_ind == 0x1) {
+				if (hdr_ce->head.b.end_ind == 0x1) {
 					PRINT("----------- END PACKET ------------\n");
 				} else {
 
@@ -703,10 +702,10 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 						zc_ce_buf->header.head.b.rle_packet_length,
 						zc_ce_buf->header.head.b.LT_T_FID);
 
-				int i = 0;
-				int j = 0;
+				int k = 0;
+				int l = 0;
 				i_ptr = (char *)zc_ce_buf->ptrs.start;
-				uint8_t data = 0;
+				uint8_t _data = 0;
 #ifdef DEBUG
 				PRINT("DEBUG ptrs start %p end %p i_ptr %p\n",
 						zc_ce_buf->ptrs.start,
@@ -715,23 +714,23 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 #endif
 
 				PRINT("|  \t\t  PAYLOAD  \t\t  |\n");
-				for (i = 0; (char *)(i_ptr + i) < zc_ce_buf->ptrs.end; i++) {
-					data = (*(i_ptr +  i));
+				for (k = 0; (char *)(i_ptr + k) < zc_ce_buf->ptrs.end; k++) {
+					_data = (*(i_ptr +  k));
 
-					PRINT(" %02x ", data);
+					PRINT(" %02x ", _data);
 
-					if (j == 3) {
+					if (l == 3) {
 						PRINT("\n");
-						j = 0;
+						l = 0;
 					} else {
-						j++;
+						l++;
 					}
 				}
 
-				if (j != 0)
+				if (l != 0)
 					PRINT("\n");
 
-				if (hdr->head.b.end_ind == 0x1) {
+				if (hdr_ce->head.b.end_ind == 0x1) {
 					/* print trailer */
 					PRINT("----------- END TRAILER ------------\n");
 					i_ptr = (char *)(&(zc_ce_buf->ptrs.end) + 1);
@@ -745,12 +744,12 @@ void rle_ctx_dump(struct rle_ctx_management *_this,
 					PRINT("------------------------------------\n");
 				}
 
-				start_bit = hdr->head.b.start_ind;
-				end_bit = hdr->head.b.end_ind;
+				start_bit = hdr_ce->head.b.start_ind;
+				end_bit = hdr_ce->head.b.end_ind;
 #ifdef DEBUG
 				PRINT("DEBUG start_bit %d end_bit %d start_ind %d end_ind %d\n",
 						start_bit, end_bit,
-						hdr->head.b.start_ind, hdr->head.b.end_ind);
+						hdr_ce->head.b.start_ind, hdr_ce->head.b.end_ind);
 #endif
 			}
 		}

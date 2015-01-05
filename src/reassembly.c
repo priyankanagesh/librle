@@ -111,7 +111,7 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx,
 	 * Trailer addr is buffer addr + offset
 	 * offset is equal to the length of received data
 	 * - size of seq_no field */
-	struct rle_trailer *trl = (struct rle_trailer *)(data_buffer +
+	struct rle_trailer *trl = (struct rle_trailer *)((char *)data_buffer +
 			(data_length - RLE_SEQ_NO_FIELD_SIZE));
 
 	if (trl->b.seq_no != rle_ctx->next_seq_nb) {
@@ -176,7 +176,7 @@ static int check_fragmented_crc(struct rle_ctx_management *rle_ctx,
 
 	/* We must compute CRC using all PDU data
 	 * and the compare it to the received CRC32 value */
-	struct rle_trailer *trl = (struct rle_trailer *)(data_buffer +
+	struct rle_trailer *trl = (struct rle_trailer *)((char *)data_buffer +
 			(data_length - RLE_CRC32_FIELD_SIZE));
 
 	uint32_t crc = compute_crc32(rle_ctx);
@@ -221,7 +221,7 @@ static int check_fragmented_consistency(struct rle_ctx_management *rle_ctx,
 	return ret;
 }
 
-static size_t get_header_size(struct rle_ctx_management *rle_ctx,
+static size_t get_header_size(struct rle_ctx_management *rle_ctx __attribute__ ((unused)),
 		struct rle_configuration *rle_conf,
 		void *data_buffer,
 		int frag_type)
@@ -428,7 +428,7 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx,
 }
 
 static void update_ctx_cont(struct rle_ctx_management *rle_ctx,
-		struct rle_configuration *rle_conf,
+		struct rle_configuration *rle_conf __attribute__ ((unused)),
 		void *data_buffer)
 {
 #ifdef DEBUG
@@ -453,7 +453,7 @@ static void update_ctx_cont(struct rle_ctx_management *rle_ctx,
 }
 
 static void update_ctx_end(struct rle_ctx_management *rle_ctx,
-		struct rle_configuration *rle_conf,
+		struct rle_configuration *rle_conf __attribute__ ((unused)),
 		void *data_buffer)
 {
 #ifdef DEBUG
@@ -596,7 +596,7 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 	 * and the copied data are from a received RLE packet
 	 * plus RLE header length to get the payload only */
 	memcpy((void *)(rle_ctx->end_address),
-		(const void *)(data_buffer + hdr_offset),
+		(const void *)((char *)data_buffer + hdr_offset),
 		(data_length - hdr_offset));
 
 	if (frag_type != RLE_PDU_COMPLETE) {

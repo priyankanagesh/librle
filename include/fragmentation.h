@@ -57,8 +57,11 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
  *  @warning
  *
  *  @param rle_ctx		the rle fragment context
+ *  @param rle_conf		the rle configuration
  *  @param burst_payload_buffer		data buffer's address to encapsulate
  *  @param burst_payload_length	payload length available
+ *  @param type_rle_header	RLE header type to add
+ *  @param protocol_type	protocol type
  *
  *  @return	C_ERROR in case of error
  *		C_OK otherwise
@@ -103,6 +106,28 @@ int fragmentation_modify_header(struct rle_ctx_management *rle_ctx,
  */
 int fragmentation_add_trailer(struct rle_ctx_management *rle_ctx,
 		void *burst_payload_buffer, size_t burst_payload_length);
+
+/**
+ *  @brief Create a RLE fragment, reset memory if it's a START packet
+ *
+ *  @warning
+ *
+ *  @param rle_ctx		the rle fragment context
+ *  @param rle_conf		the rle configuration
+ *  @param burst_payload_buffer		data buffer's address to encapsulate
+ *  @param burst_payload_length	payload length available
+ *  @param frag_type		RLE fragment type to create
+ *  @param protocol_type	protocol type
+ *
+ *  @return	C_ERROR in case of error
+ *		C_OK otherwise
+ *
+ *  @ingroup
+ */
+int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
+		struct rle_configuration *rle_conf,
+		void *burst_payload_buffer, size_t burst_payload_length,
+		int frag_type, uint16_t protocol_type);
 
 /**
  *  @brief Add RLE trailer to the last fragment

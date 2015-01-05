@@ -56,9 +56,9 @@ static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx)
 }
 
 static void add_trailer(struct rle_ctx_management *rle_ctx,
-		struct rle_configuration *rle_conf,
+		struct rle_configuration *rle_conf __attribute__ ((unused)),
 		void *burst_payload_buffer,
-		size_t burst_payload_length)
+		size_t burst_payload_length __attribute__ ((unused)))
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME,
@@ -189,7 +189,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx,
 	/* set start & end PDU data pointers */
 	size_t offset_payload = burst_payload_length - size_header;
 	rle_s_hdr->ptrs.start = (char *)rle_ctx->pdu_buf;
-	rle_s_hdr->ptrs.end = (char *)(rle_ctx->pdu_buf + offset_payload);
+	rle_s_hdr->ptrs.end = (char *)((char *)rle_ctx->pdu_buf + offset_payload);
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: ptrs.start %p ptrs.end %p\n",
@@ -220,7 +220,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx,
 	 * second copy PDU region */
 	struct rle_header_start *RLE_HEADER = &(rle_s_hdr->header);
 	memcpy(burst_payload_buffer, RLE_HEADER, size_header);
-	memcpy((void*)(burst_payload_buffer + size_header),
+	memcpy((void*)((char *)burst_payload_buffer + size_header),
 			rle_s_hdr->ptrs.start,
 			offset_payload);
 
@@ -232,7 +232,7 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 		void *burst_payload_buffer,
 		size_t burst_payload_length,
 		int type_rle_frag,
-		uint16_t protocol_type)
+		uint16_t protocol_type __attribute__ ((unused)))
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
@@ -289,8 +289,8 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 		rle_ctx_get_pdu_length(rle_ctx) - rle_ctx_get_remaining_pdu_length(rle_ctx);
 	size_t pdu_size_payload = burst_payload_length - (RLE_CONT_HEADER_SIZE + trailer_size);
 
-	rle_c_e_hdr->ptrs.start = (char *)(rle_ctx->pdu_buf + offset_new_fragment);
-	rle_c_e_hdr->ptrs.end = (char *)(rle_ctx->pdu_buf + offset_new_fragment + pdu_size_payload);
+	rle_c_e_hdr->ptrs.start = (char *)((char *)rle_ctx->pdu_buf + offset_new_fragment);
+	rle_c_e_hdr->ptrs.end = (char *)((char *)rle_ctx->pdu_buf + offset_new_fragment + pdu_size_payload);
 
 	/* update rle context */
 	rle_ctx_set_end_address(rle_ctx,
@@ -325,13 +325,13 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	 * first copy RLE header
 	 * second copy PDU region */
 	memcpy(burst_payload_buffer, rle_c_e_hdr, sizeof(struct rle_header_cont_end));
-	memcpy((burst_payload_buffer + sizeof(struct rle_header_cont_end)),
+	memcpy((void *)((char *)burst_payload_buffer + sizeof(struct rle_header_cont_end)),
 			rle_c_e_hdr->ptrs.start, pdu_size_payload);
 
 	if (type_rle_frag == RLE_PDU_END_FRAG) {
 		add_trailer(rle_ctx,
 			rle_conf,
-			(burst_payload_buffer +
+			((char *)burst_payload_buffer +
 			 sizeof(struct rle_header_cont_end) +
 			 pdu_size_payload),
 			burst_payload_length);
@@ -371,8 +371,9 @@ static int get_fragment_type(struct rle_ctx_management *rle_ctx, size_t burst_pa
 }
 
 int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
-		struct rle_configuration *rle_conf,
-		void *burst_payload_buffer, size_t burst_payload_length)
+		struct rle_configuration *rle_conf __attribute__ ((unused)),
+		void *burst_payload_buffer __attribute__ ((unused)),
+		size_t burst_payload_length __attribute__ ((unused)))
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
@@ -402,7 +403,7 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
 	}
 
 	/* copy PDU */
-	memcpy((void*)(burst_payload_buffer + size_header),
+	memcpy((void*)((char *)burst_payload_buffer + size_header),
 			zc_buf->ptrs.start,
 			pdu_length);
 
