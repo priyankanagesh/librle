@@ -6,6 +6,7 @@ INCLUDE(${INFRA_PREFIX}deps/infra/cmake/a9780.cmake)
 # Options
 #
 OPTION(BUILD_TESTS "Build simple tests" OFF)
+OPTION(TIME_DEBUG "Print encapsulation and deencapsulation durations" OFF)
 
 INCLUDE_DIRECTORIES(include)
 
