@@ -12,6 +12,7 @@
 
 #endif
 
+#include "test_common.h"
 #include "constants.h"
 #include "rle_ctx.h"
 #include "rle_transmitter.h"
@@ -26,65 +27,17 @@
 #define DISABLE_CRC 0
 #define ENABLE_CRC 1
 
+static int test_1(char *pcap_file_name, int nb_fragment_id, int use_crc);
+static int test_frag_rea(char *pcap_file_name, int nb_fragment_id, int use_crc);
+
 /* burst payload size */
-static int burst_size = 0;
+static uint32_t burst_size = 0;
 
 /* RLE modules */
 static struct transmitter_module *transmitter = NULL;
 static struct receiver_module *receiver = NULL;
 
-void compare_packets(char *pkt1, char *pkt2, int size1, int size2)
-{
-	int j = 0;
-	int i = 0;
-	int k = 0;
-	char str1[4][7], str2[4][7];
-	char sep1, sep2;
-
-	for(i = 0; i < size1; i++)
-	{
-		if(pkt1[i] != pkt2[i])
-		{
-			sep1 = '#';
-			sep2 = '#';
-		}
-		else
-		{
-			sep1 = '[';
-			sep2 = ']';
-		}
-
-		sprintf(str1[j], "%c0x%.2x%c", sep1, pkt1[i], sep2);
-		sprintf(str2[j], "%c0x%.2x%c", sep1, pkt2[i], sep2);
-
-		/* make the output human readable */
-		if(j >= 3 || (i + 1) >= size1)
-		{
-			for(k = 0; k < 4; k++)
-			{
-				if(k < (j + 1))
-					PRINT("-> %s  ", str1[k]);
-				else /* fill the line with blanks if nothing to print */
-					PRINT("        ");
-			}
-
-			PRINT("      ");
-
-			for(k = 0; k < (j + 1); k++)
-				PRINT("--> %s  ", str2[k]);
-
-			PRINT("\n");
-
-			j = 0;
-		}
-		else
-		{
-			j++;
-		}
-	}
-}
-
-int test_1(char *pcap_file_name, int nb_fragment_id, int use_crc)
+static int test_1(char *pcap_file_name, int nb_fragment_id, int use_crc)
 {
 	if (pcap_file_name == NULL)
 		return C_ERROR;
@@ -301,8 +254,7 @@ close_fake_burst:
 	return test_retval;
 }
 
-
-int test_frag_rea(char *pcap_file_name, int nb_fragment_id, int use_crc)
+static int test_frag_rea(char *pcap_file_name, int nb_fragment_id, int use_crc)
 {
 	transmitter = rle_transmitter_new();
 

@@ -14,6 +14,7 @@
 
 #endif
 
+#include "test_common.h"
 #include "constants.h"
 #include "rle_ctx.h"
 #include "rle_transmitter.h"
@@ -23,6 +24,14 @@
 
 #define LINUX_COOKED_HDR_LEN  16
 #define FAKE_BURST_MAX_SIZE 512
+
+static int test_1(char *pcap_file_name, uint32_t param_ptype,
+		uint16_t param_bsize,
+		int nb_fragment_id, int trailer_mode);
+
+static int test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
+		uint16_t param_bsize,
+		int nb_fragment_id, int use_crc);
 
 enum options {
 	DISABLE_FRAGMENTATION = 0,
@@ -34,7 +43,7 @@ enum options {
 };
 
 /* burst payload size */
-static int burst_size = 0;
+static uint32_t burst_size = 0;
 static int crc_flag = 0;
 static int seq_flag = 0;
 static uint64_t test_pcap_counter = 0L;
@@ -50,58 +59,7 @@ static int verbose = C_FALSE;
 static struct transmitter_module *transmitter = NULL;
 static struct receiver_module *receiver = NULL;
 
-void compare_packets(char *pkt1, char *pkt2, int size1, int size2)
-{
-	int j = 0;
-	int i = 0;
-	int k = 0;
-	char str1[4][7], str2[4][7];
-	char sep1, sep2;
-
-	for(i = 0; i < size1; i++)
-	{
-		if(pkt1[i] != pkt2[i])
-		{
-			sep1 = '#';
-			sep2 = '#';
-		}
-		else
-		{
-			sep1 = '[';
-			sep2 = ']';
-		}
-
-		sprintf(str1[j], "%c0x%.2x%c", sep1, pkt1[i], sep2);
-		sprintf(str2[j], "%c0x%.2x%c", sep1, pkt2[i], sep2);
-
-		/* make the output human readable */
-		if(j >= 3 || (i + 1) >= size1)
-		{
-			for(k = 0; k < 4; k++)
-			{
-				if(k < (j + 1))
-					PRINT("-> %s  ", str1[k]);
-				else /* fill the line with blanks if nothing to print */
-					PRINT("        ");
-			}
-
-			PRINT("      ");
-
-			for(k = 0; k < (j + 1); k++)
-				PRINT("--> %s  ", str2[k]);
-
-			PRINT("\n");
-
-			j = 0;
-		}
-		else
-		{
-			j++;
-		}
-	}
-}
-
-int test_1(char *pcap_file_name, uint32_t param_ptype,
+static int test_1(char *pcap_file_name, uint32_t param_ptype,
 		uint16_t param_bsize,
 		int nb_fragment_id, int trailer_mode)
 {
@@ -220,7 +178,7 @@ int test_1(char *pcap_file_name, uint32_t param_ptype,
 		}
 
 		/* test fragmentation */
-		int remaining_pdu_size = in_size;
+		uint32_t remaining_pdu_size = in_size;
 
 		if (verbose)
 			PRINT("INFO: PDU number %zu size to send = %zu\n", test_pcap_counter, in_size);
@@ -357,7 +315,7 @@ close_fake_burst:
 }
 
 
-int test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
+static int test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
 		uint16_t param_bsize,
 		int nb_fragment_id, int use_crc)
 {
