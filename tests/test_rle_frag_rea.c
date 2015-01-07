@@ -17,8 +17,6 @@
 #include "test_common.h"
 #include "constants.h"
 #include "rle_ctx.h"
-#include "rle_transmitter.h"
-#include "rle_receiver.h"
 #include "header.h"
 #include "trailer.h"
 
@@ -54,10 +52,6 @@ static uint64_t TX_total_lost_pkt = 0L;
 static uint64_t TX_total_drop_pkt = 0L;
 
 static int verbose = C_FALSE;
-
-/* RLE modules */
-static struct transmitter_module *transmitter = NULL;
-static struct receiver_module *receiver = NULL;
 
 static int test_1(char *pcap_file_name, uint32_t param_ptype,
 		uint16_t param_bsize,
@@ -319,21 +313,14 @@ static int test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
 		uint16_t param_bsize,
 		int nb_fragment_id, int use_crc)
 {
-	transmitter = rle_transmitter_new();
+	int ret = 0;
 
-	if (transmitter == NULL) {
-		PRINT("ERROR while creating a new RLE transmitter\n");
-		return -1;
-	}
+	ret = create_rle_modules();
 
-	receiver = rle_receiver_new();
+	if (ret != 0)
+		return ret;
 
-	if (receiver == NULL) {
-		PRINT("ERROR while creating a new RLE receiver\n");
-		return -1;
-	}
-
-	int ret = test_1(pcap_file_name, param_ptype,
+	ret = test_1(pcap_file_name, param_ptype,
 			param_bsize,
 			nb_fragment_id, use_crc);
 
@@ -341,10 +328,9 @@ static int test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
 		PRINT("ERROR in test rle\n");
 	}
 
-	rle_transmitter_destroy(transmitter);
-	rle_receiver_destroy(receiver);
+	destroy_rle_modules();
 
-	return 0;
+	return ret;
 }
 
 static void print_usage(char *basename)

@@ -2,6 +2,40 @@
 #include "constants.h"
 #include "test_common.h"
 
+struct transmitter_module *transmitter = NULL;
+struct receiver_module *receiver = NULL;
+
+int create_rle_modules(void)
+{
+	transmitter = rle_transmitter_new();
+
+	if (transmitter == NULL) {
+		PRINT("ERROR while creating a new RLE transmitter\n");
+		return -1;
+	}
+
+	receiver = rle_receiver_new();
+
+	if (receiver == NULL) {
+		PRINT("ERROR while creating a new RLE receiver\n");
+		rle_transmitter_destroy(transmitter);
+		return -1;
+	}
+
+	return 0;
+}
+
+int destroy_rle_modules(void)
+{
+	if (transmitter != NULL)
+		rle_transmitter_destroy(transmitter);
+
+	if (receiver != NULL)
+		rle_receiver_destroy(receiver);
+
+	return 0;
+}
+
 void compare_packets(char *pkt1, char *pkt2, int size1, int size2 __attribute__ ((unused)))
 {
 	int j = 0;

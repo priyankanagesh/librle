@@ -15,8 +15,6 @@
 #include "test_common.h"
 #include "constants.h"
 #include "rle_ctx.h"
-#include "rle_transmitter.h"
-#include "rle_receiver.h"
 #include "header.h"
 #include "trailer.h"
 
@@ -32,10 +30,6 @@ static int test_frag_rea(char *pcap_file_name, int nb_fragment_id, int use_crc);
 
 /* burst payload size */
 static uint32_t burst_size = 0;
-
-/* RLE modules */
-static struct transmitter_module *transmitter = NULL;
-static struct receiver_module *receiver = NULL;
 
 static int test_1(char *pcap_file_name, int nb_fragment_id, int use_crc)
 {
@@ -256,29 +250,20 @@ close_fake_burst:
 
 static int test_frag_rea(char *pcap_file_name, int nb_fragment_id, int use_crc)
 {
-	transmitter = rle_transmitter_new();
+	int ret = 0;
 
-	if (transmitter == NULL) {
-		PRINT("ERROR while creating a new RLE transmitter\n");
-		return -1;
-	}
+	ret = create_rle_modules();
 
-	receiver = rle_receiver_new();
+	if (ret != 0)
+		return ret;
 
-	if (receiver == NULL) {
-		PRINT("ERROR while creating a new RLE receiver\n");
-		rle_transmitter_destroy(transmitter);
-		return -1;
-	}
-
-	int ret = test_1(pcap_file_name, nb_fragment_id, use_crc);
+	ret = test_1(pcap_file_name, nb_fragment_id, use_crc);
 
 	if (ret != C_OK) {
 		PRINT("ERROR in test rle\n");
 	}
 
-	rle_transmitter_destroy(transmitter);
-	rle_receiver_destroy(receiver);
+	destroy_rle_modules();
 
 	return ret;
 }
