@@ -93,6 +93,7 @@ int rle_ctx_init(struct rle_ctx_management *_this)
 	pthread_mutex_init(&_this->lk_status.ctr_ok_mutex, NULL);
 	pthread_mutex_init(&_this->lk_status.ctr_dropped_mutex, NULL);
 	pthread_mutex_init(&_this->lk_status.ctr_bytes_mutex, NULL);
+	pthread_mutex_init(&_this->lk_status.ctr_lost_mutex, NULL);
 
 	/* allocate enough memory space
 	 * for the worst case of fragmentation */
