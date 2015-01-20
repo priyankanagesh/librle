@@ -1,20 +1,18 @@
 INCLUDE_DIRECTORIES(include ${CMAKE_SOURCE_DIR}/include)
 LINK_DIRECTORIES(${CMAKE_BINARY_DIR})
 
-SET(CMAKE_C_FLAGS "-g -O2 -Wall")
+INCLUDE_DIRECTORIES(include)
 
-ADD_EXECUTABLE(test_rle_encap_deencap test_common.c test_rle_encap_deencap.c)
+SET(SRC_LIBRLE_TEST
+	test_common.c
+	test_rle_encap_deencap.c
+	test_rle_frag_rea.c
+	test_rle_frag_rea_min_max.c)
 
-ADD_EXECUTABLE(test_rle_frag_rea test_common.c test_rle_frag_rea.c)
+ADD_LIBRARY(rle_test SHARED ${SRC_LIBRLE_TEST})
 
-ADD_EXECUTABLE(test_rle_frag_rea_min_max test_common.c test_rle_frag_rea_min_max.c)
+ADD_EXECUTABLE(test_rle test_main.c)
 
-TARGET_LINK_LIBRARIES(test_rle_encap_deencap
-	rle pcap)
-
-TARGET_LINK_LIBRARIES(test_rle_frag_rea
-	rle pcap)
-
-TARGET_LINK_LIBRARIES(test_rle_frag_rea_min_max
-	rle pcap)
+TARGET_LINK_LIBRARIES(test_rle
+	rle rle_test pcap)
 

@@ -12,33 +12,24 @@
 
 #endif
 
-
 #include "test_common.h"
 #include "constants.h"
 #include "rle_ctx.h"
 
-#define LINUX_COOKED_HDR_LEN  16
-#define FAKE_BURST_MAX_SIZE 4096
-#define DISABLE_FRAGMENTATION 0
-#define ENABLE_FRAGMENTATION 1
-
-static int test_1(char *pcap_file_name, int nb_fragment_id);
-static int test_encap_deencap(char *pcap_file_name, int nb_fragment_id);
+static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id);
 
 /* burst payload size */
 static int burst_size = 0;
 
-static int test_1(char *pcap_file_name, int nb_fragment_id)
+static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 {
 	if (pcap_file_name == NULL)
 		return C_ERROR;
 
-	PRINT("\n--------------------------------------------------\n");
-	PRINT("--------------------------------------------------\n");
-	PRINT("--- TEST ENCAPSULATION NO FRAG WITH %d FRAG_ID ---\n",
+	clear_stats();
+
+	PRINT("INFO: TEST ENCAPSULATION - DEENCAPSULATION WITH NO FRAGMENTATION, %d FRAG_ID\n",
 			nb_fragment_id);
-	PRINT("--------------------------------------------------\n");
-	PRINT("--------------------------------------------------\n");
 
 	char errbuf[PCAP_ERRBUF_SIZE];
 	pcap_t *handle;
@@ -57,7 +48,7 @@ static int test_1(char *pcap_file_name, int nb_fragment_id)
 		return C_ERROR;
 	}
 
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+	for (i = 0; i < nb_fragment_id; i++) {
 		buffer[i] = malloc(RLE_MAX_PDU_SIZE);
 		if (buffer[i] == NULL) {
 			PRINT("Error while allocating memory\n");
@@ -121,8 +112,7 @@ static int test_1(char *pcap_file_name, int nb_fragment_id)
 
 	/* for each packet in the dump */
 	int nb_frag_id = 0;
-	while(((packet = (unsigned char *)pcap_next(handle, &header)) != NULL) && nb_frag_id < nb_fragment_id)
-	{
+	while(((packet = (unsigned char *)pcap_next(handle, &header)) != NULL) && nb_frag_id < nb_fragment_id) {
 		unsigned char *in_packet;
 		unsigned char *out_packet;
 		int out_ptype = 0;
@@ -177,7 +167,8 @@ static int test_1(char *pcap_file_name, int nb_fragment_id)
 
 		burst_size = in_size + RLE_COMPLETE_HEADER_SIZE;
 
-		PRINT("INFO PDU size = %zu burst size = %d\n", in_size, burst_size);
+		if (opt_verbose_flag)
+			PRINT("INFO PDU size = %zu burst size = %d\n", in_size, burst_size);
 
 		for (;;) {
 			if (rle_transmitter_get_queue_state(transmitter, nb_frag_id) == C_TRUE)
@@ -192,8 +183,8 @@ static int test_1(char *pcap_file_name, int nb_fragment_id)
 				break;
 			}
 
-
-			PRINT("DEBUG Remaining size to send = [%d] burst size = [%d] burst addr [%p]\n", remaining_pdu_size, burst_size, burst_buffer);
+			if (opt_verbose_flag)
+				PRINT("DEBUG Remaining size to send = [%d] burst size = [%d] burst addr [%p]\n", remaining_pdu_size, burst_size, burst_buffer);
 
 			ret_recv = rle_receiver_deencap_data(receiver, burst_buffer, burst_size);
 
@@ -211,14 +202,21 @@ static int test_1(char *pcap_file_name, int nb_fragment_id)
 					out_packet, &out_ptype, &out_pkt_length);
 		}
 
-		PRINT("DEBUG in_size %zu out_pkt_length %u\n", in_size, out_pkt_length);
+		if (opt_verbose_flag)
+			PRINT("DEBUG in_size %zu out_pkt_length %u\n", in_size, out_pkt_length);
+
 		if (in_size == out_pkt_length && memcmp(in_packet, out_packet, in_size) == 0) {
-			PRINT("\n-------------- Packets are EQUALS ------------------\n");
+			if (opt_verbose_flag)
+				PRINT("Packets are equals\n");
+
 			test_retval = C_OK;
-			rle_ctx_dump(&transmitter->rle_ctx_man[nb_frag_id],
-					transmitter->rle_conf);
+			if (opt_verbose_flag)
+				rle_ctx_dump(&transmitter->rle_ctx_man[nb_frag_id],
+						transmitter->rle_conf);
 		} else {
-			PRINT("\n-------------- Packets are differents --------------\n");
+			if (opt_verbose_flag)
+				PRINT("Packets are differents\n");
+
 			compare_packets((char *)in_packet, (char *)out_packet, in_size, out_pkt_length);
 			test_retval = C_ERROR;
 		}
@@ -232,7 +230,7 @@ static int test_1(char *pcap_file_name, int nb_fragment_id)
 close_input:
 	pcap_close(handle);
 close_rle:
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+	for (i = 0; i < nb_fragment_id; i++) {
 		free((void *)buffer[i]);
 		buffer[i] = NULL;
 	}
@@ -240,21 +238,20 @@ close_fake_burst:
 	free(burst_buffer);
 	burst_buffer = NULL;
 
-	if (test_retval == C_OK) {
-		PRINT("\n--------------------------------------------------\n");
-		PRINT("--------------------------------------------------\n");
-		PRINT("--- TEST ENCAPSULATION NO FRAG WITH %d FRAG_ID ---\n",
-				nb_fragment_id);
-		PRINT("----------------        OK       -----------------\n");
-		PRINT("--------------------------------------------------\n");
-		PRINT("--------------------------------------------------\n");
-	}
+	print_stats();
+
+	if (test_retval == C_OK)
+		PRINT("SUCCESS\n");
+	else
+		PRINT("FAILURE\n");
+
+	PRINT("------------------------------------------------\n");
 
 	return test_retval;
 }
 
 
-static int test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
+int init_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 {
 	int ret = 0;
 
@@ -263,7 +260,7 @@ static int test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 	if (ret != 0)
 		return ret;
 
-	ret = test_1(pcap_file_name, nb_fragment_id);
+	ret = run_test_encap_deencap(pcap_file_name, nb_fragment_id);
 
 	if (ret != C_OK) {
 		PRINT("ERROR in test rle\n");
@@ -274,23 +271,3 @@ static int test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 	return ret;
 }
 
-
-int main(int argc, char *argv[])
-{
-	char *file_name = NULL;
-	int ret = C_ERROR;
-
-	if (argc < 2) {
-		PRINT("ERROR no test file provided\n");
-		goto exit_ret;
-	} else {
-		file_name = argv[1];
-		ret = test_encap_deencap(file_name, 1);
-
-		if (ret == C_OK)
-			ret = test_encap_deencap(file_name, RLE_MAX_FRAG_NUMBER);
-	}
-
-exit_ret:
-	return ret;
-}

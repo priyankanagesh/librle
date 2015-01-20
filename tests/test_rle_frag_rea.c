@@ -20,48 +20,27 @@
 #include "header.h"
 #include "trailer.h"
 
-#define LINUX_COOKED_HDR_LEN  16
-#define FAKE_BURST_MAX_SIZE 512
-
-static int test_1(char *pcap_file_name, uint32_t param_ptype,
+static int run_test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
 		uint16_t param_bsize,
 		int nb_fragment_id, int trailer_mode);
 
-static int test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
-		uint16_t param_bsize,
-		int nb_fragment_id, int use_crc);
-
-enum options {
-	DISABLE_FRAGMENTATION = 0,
-	ENABLE_FRAGMENTATION,
-	DISABLE_CRC,
-	ENABLE_CRC,
-	DISABLE_SEQ,
-	ENABLE_SEQ /* 5 */
-};
-
 /* burst payload size */
 static uint32_t burst_size = 0;
-static int crc_flag = 0;
-static int seq_flag = 0;
+/* stat counters */
 static uint64_t test_pcap_counter = 0L;
 static uint64_t test_pcap_total_sent_size = 0L;
-static uint64_t TX_total_sent_size = 0L;
-static uint64_t TX_total_sent_pkt = 0L;
-static uint64_t TX_total_lost_pkt = 0L;
-static uint64_t TX_total_drop_pkt = 0L;
 
-static int verbose = C_FALSE;
-
-static int test_1(char *pcap_file_name, uint32_t param_ptype,
+static int run_test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
 		uint16_t param_bsize,
 		int nb_fragment_id, int trailer_mode)
 {
 	if (pcap_file_name == NULL)
 		return C_ERROR;
 
+	clear_stats();
+
 	char trailer_type[64];
-	PRINT("INFO: TEST FRAGMENTATION WITH %d FRAG_ID\n",
+	PRINT("INFO: TEST FRAGMENTATION - REASSEMBLY WITH %d FRAG_ID\n",
 			nb_fragment_id);
 
 	if (trailer_mode == ENABLE_CRC)
@@ -88,7 +67,7 @@ static int test_1(char *pcap_file_name, uint32_t param_ptype,
 		return C_ERROR;
 	}
 
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+	for (i = 0; i < nb_fragment_id; i++) {
 		buffer[i] = malloc(RLE_MAX_PDU_SIZE);
 		if (buffer[i] == NULL) {
 			PRINT("Error while allocating memory\n");
@@ -140,8 +119,7 @@ static int test_1(char *pcap_file_name, uint32_t param_ptype,
 	}
 
 /*        while(((packet = (unsigned char *)pcap_next(handle, &header)) != NULL) && nb_frag_id < nb_fragment_id)*/
-	while(((packet = (unsigned char *)pcap_next(handle, &header)) != NULL))
-	{
+	while(((packet = (unsigned char *)pcap_next(handle, &header)) != NULL)) {
 		unsigned char *in_packet;
 		unsigned char *out_packet;
 		int out_ptype = 0;
@@ -174,13 +152,13 @@ static int test_1(char *pcap_file_name, uint32_t param_ptype,
 		/* test fragmentation */
 		uint32_t remaining_pdu_size = in_size;
 
-		if (verbose)
+		if (opt_verbose_flag)
 			PRINT("INFO: PDU number %zu size to send = %zu\n", test_pcap_counter, in_size);
 
 		for (;;) {
 			if ((rle_transmitter_get_queue_state(transmitter, nb_frag_id) == C_TRUE) &&
 					(ret_recv == C_REASSEMBLY_OK)) {
-				if (verbose)
+				if (opt_verbose_flag)
 					PRINT("INFO: Received all fragments of PDU number %zu\n",
 							test_pcap_counter);
 				rle_transmitter_free_context(transmitter, nb_frag_id);
@@ -191,7 +169,10 @@ static int test_1(char *pcap_file_name, uint32_t param_ptype,
 			/* add a little bit a randomness for
 			 * burst available length */
 			int r = rand() % 20;
-			burst_size = param_bsize + r;
+			if ((uint16_t)(param_bsize + r) >= burst_size)
+				burst_size = param_bsize;
+			else
+				burst_size = param_bsize + r;
 
 			/* burst size computation depends on remaining PDU size
 			 * to send, because it's not in libRLE role to pad burst unused space
@@ -220,7 +201,7 @@ static int test_1(char *pcap_file_name, uint32_t param_ptype,
 				break;
 			}
 
-			if (verbose)
+			if (opt_verbose_flag)
 				PRINT("INFO: Remaining PDU size to send = [%5d] burst size = [%4d]\n", remaining_pdu_size, burst_size);
 
 			ret_recv = rle_receiver_deencap_data(receiver, burst_buffer, burst_size);
@@ -237,22 +218,20 @@ static int test_1(char *pcap_file_name, uint32_t param_ptype,
 					out_packet, &out_ptype, &out_pkt_length);
 		}
 
-		if (verbose)
+		if (opt_verbose_flag)
 			PRINT("INFO: Size PDU sent [%zu]  Size PDU refragmented [%u]\n", in_size, out_pkt_length);
 
 		if (in_size == out_pkt_length && memcmp(in_packet, out_packet, in_size) == 0) {
 			test_retval = C_OK;
 			rle_receiver_free_context(receiver, nb_frag_id);
-			if (verbose) {
+			if (opt_verbose_flag) {
 				PRINT("INFO: Packets are EQUALS\n");
 				rle_ctx_dump(&transmitter->rle_ctx_man[nb_frag_id],
 						transmitter->rle_conf);
 			}
 		} else {
-			if (verbose) {
-				PRINT("INFO: Packets are DIFFERENTS\n");
-				compare_packets((char *)in_packet, (char *)out_packet, in_size, out_pkt_length);
-			}
+			PRINT("INFO: Packets are DIFFERENTS\n");
+			compare_packets((char *)in_packet, (char *)out_packet, in_size, out_pkt_length);
 			test_retval = C_ERROR;
 		}
 
@@ -265,7 +244,7 @@ static int test_1(char *pcap_file_name, uint32_t param_ptype,
 close_input:
 	pcap_close(handle);
 close_rle:
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+	for (i = 0; i < nb_fragment_id; i++) {
 		free((void *)buffer[i]);
 		buffer[i] = NULL;
 	}
@@ -283,33 +262,19 @@ close_fake_burst:
 		       test_pcap_counter,
 		       (float)(test_pcap_total_sent_size/test_pcap_counter));
 
-	TX_total_sent_size += rle_transmitter_get_counter_bytes(transmitter);
-	TX_total_sent_pkt += rle_transmitter_get_counter_ok(transmitter);
-	TX_total_lost_pkt += rle_transmitter_get_counter_lost(transmitter);
-	TX_total_drop_pkt += rle_transmitter_get_counter_dropped(transmitter);
-
-	PRINT("INFO: TX status:\n"
-			"\tTX total sent size \t\t\t%10lu\n"
-			"\tTX total sent packets \t\t\t%10lu\n"
-			"\tTX total lost packets \t\t\t%10lu\n"
-			"\tTX total dropped packets \t\t%10lu\n"
-			"\tTX average size per packet \t\t%10.2f\n",
-			TX_total_sent_size,
-			TX_total_sent_pkt,
-			TX_total_lost_pkt,
-			TX_total_drop_pkt,
-			(float)(TX_total_sent_size/TX_total_sent_pkt));
+	print_stats();
 
 	if (test_retval == C_OK)
 		PRINT("SUCCESS\n");
 	else
 		PRINT("FAILURE\n");
 
+	PRINT("------------------------------------------------\n");
+
 	return test_retval;
 }
 
-
-static int test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
+int init_test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
 		uint16_t param_bsize,
 		int nb_fragment_id, int use_crc)
 {
@@ -320,7 +285,7 @@ static int test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
 	if (ret != 0)
 		return ret;
 
-	ret = test_1(pcap_file_name, param_ptype,
+	ret = run_test_frag_rea(pcap_file_name, param_ptype,
 			param_bsize,
 			nb_fragment_id, use_crc);
 
@@ -333,111 +298,3 @@ static int test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
 	return ret;
 }
 
-static void print_usage(char *basename)
-{
-	PRINT("%s -v -b BURST_SIZE -p PROTOCOL_TYPE -f PCAP_FILENAME"
-			" -c -s\n",
-			basename);
-	PRINT("\t-v (verbose mode with RLE context dumps)\n"
-			"\t-b BURST_SIZE in Bytes (valid values between 4 and 512 Bytes)\n"
-			"\t-p PROTOCOL_TYPE (uncompressed protocol type in hexa)\n"
-			"\t-f PCAP_FILENAME (valid pcap file corresponding to PROTOCOL_TYPE)\n"
-			"\t-c (Use CRC32 trailer)\n"
-			"\t-s (Use Next Sequence Number trailer) - DEFAULT\n");
-}
-
-int main(int argc, char *argv[])
-{
-	char *param_file_name = NULL;
-	uint32_t param_protocol_type = 0;
-	uint16_t param_burst_size = 0;
-	int ret = C_ERROR;
-	int opt = 0;
-	crc_flag = DISABLE_CRC;
-	seq_flag = DISABLE_SEQ;
-	int trailer_opt = 0;
-
-	if (argc < 4) {
-		PRINT("ERROR missing parameters\n");
-		print_usage(argv[0]);
-		goto exit_ret;
-	} else {
-		while ((opt = getopt (argc, argv, "b:p:f:csv")) != -1) {
-			switch (opt) {
-			case 'b':
-				param_burst_size = atoi(optarg);
-				if ((param_burst_size > FAKE_BURST_MAX_SIZE) ||
-						(param_burst_size < RLE_START_MANDATORY_HEADER_SIZE)) {
-					PRINT("ERROR fake burst size parameter is invalid\n");
-					goto exit_ret;
-				}
-				break;
-			case 'p':
-				param_protocol_type = (uint32_t)strtol(optarg, NULL, 16);
-				if (param_protocol_type > 0xffff) {
-					PRINT("ERROR protocol type parameter is invalid\n");
-					goto exit_ret;
-				}
-				break;
-			case 'f':
-				param_file_name = optarg;
-				break;
-			case 'c':
-				crc_flag = ENABLE_CRC;
-				trailer_opt++;
-				break;
-			case 's':
-				seq_flag = ENABLE_SEQ;
-				trailer_opt++;
-				break;
-			case 'v':
-				verbose = C_TRUE;
-				break;
-			default:
-				print_usage(argv[0]);
-				ret = C_ERROR;
-				goto exit_ret;
-			}
-		}
-
-		/* trailer mode fallback */
-		if (crc_flag == DISABLE_CRC && seq_flag == DISABLE_SEQ) {
-			seq_flag = ENABLE_SEQ;
-			trailer_opt++;
-		}
-
-		PRINT("TEST with protocol type 0x%0x\n"
-				" burst size %d\n"
-				" pcap file %s\n",
-				param_protocol_type,
-				param_burst_size,
-				param_file_name);
-
-		int trailer_mode = 0;
-		/* tests not done */
-		int crc_test = C_FALSE;
-		int seq_test = C_FALSE;
-
-		while ((trailer_opt > 0) && ((crc_test != C_TRUE) || (seq_test != C_TRUE))) {
-			if (crc_flag == ENABLE_CRC && !crc_test) {
-				crc_test = C_TRUE;
-				trailer_mode = crc_flag;
-			} else if (seq_flag == ENABLE_SEQ && !seq_test) {
-				seq_test = C_TRUE;
-				trailer_mode = seq_flag;
-			}
-
-			/* Test on multiple queue */
-			ret = test_frag_rea(param_file_name,
-					param_protocol_type,
-					param_burst_size,
-					RLE_MAX_FRAG_NUMBER,
-					trailer_mode);
-
-			trailer_opt--;
-		}
-	}
-
-exit_ret:
-	return ret;
-}

@@ -87,3 +87,31 @@ void compare_packets(char *pkt1, char *pkt2, int size1, int size2 __attribute__ 
 	}
 }
 
+void clear_stats(void)
+{
+	TX_total_sent_size = 0L;
+	TX_total_sent_pkt = 0L;
+	TX_total_lost_pkt = 0L;
+	TX_total_drop_pkt = 0L;
+}
+
+void print_stats(void)
+{
+	TX_total_sent_size += rle_transmitter_get_counter_bytes(transmitter);
+	TX_total_sent_pkt += rle_transmitter_get_counter_ok(transmitter);
+	TX_total_lost_pkt += rle_transmitter_get_counter_lost(transmitter);
+	TX_total_drop_pkt += rle_transmitter_get_counter_dropped(transmitter);
+
+	PRINT("INFO: TX status:\n"
+			"\tTX total sent size \t\t\t%10lu\n"
+			"\tTX total sent packets \t\t\t%10lu\n"
+			"\tTX total lost packets \t\t\t%10lu\n"
+			"\tTX total dropped packets \t\t%10lu\n"
+			"\tTX average size per packet \t\t%10.2f\n",
+			TX_total_sent_size,
+			TX_total_sent_pkt,
+			TX_total_lost_pkt,
+			TX_total_drop_pkt,
+			(float)(TX_total_sent_size/TX_total_sent_pkt));
+}
+
