@@ -122,19 +122,19 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	PRINT("INFO: TEST with protocol type 0x%0x\n"
+			" burst size %d\n"
+			" pcap file %s\n",
+			param_protocol_type,
+			param_burst_size,
+			param_file_name);
+
 	/* Test RLE fragmentation and reassembly */
 	if (opt_frag_rea_test_flag == C_TRUE) {
 		if (opt_crc_flag != ENABLE_CRC && opt_seq_flag != ENABLE_SEQ) {
-			PRINT("No trailer specified, test only CRC trailer");
+			PRINT("No trailer specified, test only CRC trailer\n");
 			opt_crc_flag = ENABLE_CRC;
 		}
-
-		PRINT("INFO: TEST with protocol type 0x%0x\n"
-				" burst size %d\n"
-				" pcap file %s\n",
-				param_protocol_type,
-				param_burst_size,
-				param_file_name);
 
 		if (opt_crc_flag == ENABLE_CRC) {
 			/* Test on multiple queue */

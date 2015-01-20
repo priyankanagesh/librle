@@ -115,6 +115,59 @@ int rle_receiver_get_packet(struct receiver_module *_this,
 void rle_receiver_free_context(struct receiver_module *_this,
 		uint8_t fragment_id);
 
+/**
+ *  @brief Get total number of successfully
+ *  sent/received packets
+ *
+ *  @warning
+ *
+ *  @param _this		The receiver module
+ *
+ *  @return	Number of packets sent/received successfully
+ *
+ *  @ingroup
+ */
+uint64_t rle_receiver_get_counter_ok(struct receiver_module *_this);
+
+/**
+ *  @brief Get total number of dropped packets
+ *
+ *  @warning
+ *
+ *  @param _this		The receiver module
+ *
+ *  @return	Number of dropped packets
+ *
+ *  @ingroup
+ */
+uint64_t rle_receiver_get_counter_dropped(struct receiver_module *_this);
+
+/**
+ *  @brief Get total number of lost packets
+ *
+ *  @warning
+ *
+ *  @param _this		The receiver module
+ *
+ *  @return	Number of lost packets
+ *
+ *  @ingroup
+ */
+uint64_t rle_receiver_get_counter_lost(struct receiver_module *_this);
+
+/**
+ *  @brief Get total number of sent/received Bytes
+ *
+ *  @warning
+ *
+ *  @param _this		The receiver module
+ *
+ *  @return	Number of Bytes sent/received
+ *
+ *  @ingroup
+ */
+uint64_t rle_receiver_get_counter_bytes(struct receiver_module *_this);
+
 void rle_receiver_dump(struct receiver_module *_this);
 
 #endif /* _RLE_RECEIVER_H */

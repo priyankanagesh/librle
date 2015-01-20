@@ -87,7 +87,7 @@ void compare_packets(char *pkt1, char *pkt2, int size1, int size2 __attribute__ 
 	}
 }
 
-void clear_stats(void)
+void clear_tx_stats(void)
 {
 	TX_total_sent_size = 0L;
 	TX_total_sent_pkt = 0L;
@@ -95,7 +95,7 @@ void clear_stats(void)
 	TX_total_drop_pkt = 0L;
 }
 
-void print_stats(void)
+void print_tx_stats(void)
 {
 	TX_total_sent_size += rle_transmitter_get_counter_bytes(transmitter);
 	TX_total_sent_pkt += rle_transmitter_get_counter_ok(transmitter);
@@ -113,5 +113,33 @@ void print_stats(void)
 			TX_total_lost_pkt,
 			TX_total_drop_pkt,
 			(float)(TX_total_sent_size/TX_total_sent_pkt));
+}
+
+void clear_rx_stats(void)
+{
+	RX_total_received_size = 0L;
+	RX_total_received_pkt = 0L;
+	RX_total_lost_pkt = 0L;
+	RX_total_drop_pkt = 0L;
+}
+
+void print_rx_stats(void)
+{
+	RX_total_received_size += rle_receiver_get_counter_bytes(receiver);
+	RX_total_received_pkt += rle_receiver_get_counter_ok(receiver);
+	RX_total_lost_pkt += rle_receiver_get_counter_lost(receiver);
+	RX_total_drop_pkt += rle_receiver_get_counter_dropped(receiver);
+
+	PRINT("INFO: RX status:\n"
+			"\tRX total received size \t\t\t%10lu\n"
+			"\tRX total received packets \t\t%10lu\n"
+			"\tRX total lost packets \t\t\t%10lu\n"
+			"\tRX total dropped packets \t\t%10lu\n"
+			"\tRX average size per packet \t\t%10.2f\n",
+			RX_total_received_size,
+			RX_total_received_pkt,
+			RX_total_lost_pkt,
+			RX_total_drop_pkt,
+			(float)(RX_total_received_size/RX_total_received_pkt));
 }
 

@@ -381,6 +381,57 @@ void rle_receiver_free_context(struct receiver_module *_this,
 	set_free_frag_ctx(_this, fragment_id);
 }
 
+uint64_t rle_receiver_get_counter_ok(struct receiver_module *_this)
+{
+	int i;
+	uint64_t ctr_packet_ok = 0L;
+
+	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
+		ctr_packet_ok += rle_ctx_get_counter_ok(rle_ctx);
+	}
+
+	return ctr_packet_ok;
+}
+
+uint64_t rle_receiver_get_counter_dropped(struct receiver_module *_this)
+{
+	int i;
+	uint64_t ctr_packet_dropped = 0L;
+
+	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
+		ctr_packet_dropped += rle_ctx_get_counter_dropped(rle_ctx);
+	}
+
+	return ctr_packet_dropped;
+}
+
+uint64_t rle_receiver_get_counter_lost(struct receiver_module *_this)
+{
+	int i;
+	uint64_t ctr_packet_lost = 0L;
+
+	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
+		ctr_packet_lost += rle_ctx_get_counter_lost(rle_ctx);
+	}
+
+	return ctr_packet_lost;
+}
+
+uint64_t rle_receiver_get_counter_bytes(struct receiver_module *_this)
+{
+	int i;
+	uint64_t ctr_bytes = 0L;
+
+	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
+		ctr_bytes += rle_ctx_get_counter_bytes(rle_ctx);
+	}
+
+	return ctr_bytes;
+}
 
 void rle_receiver_dump(struct receiver_module *_this)
 {

@@ -27,13 +27,19 @@ uint64_t TX_total_sent_size;
 uint64_t TX_total_sent_pkt;
 uint64_t TX_total_lost_pkt;
 uint64_t TX_total_drop_pkt;
+uint64_t RX_total_received_size;
+uint64_t RX_total_received_pkt;
+uint64_t RX_total_lost_pkt;
+uint64_t RX_total_drop_pkt;
 
 int create_rle_modules(void);
 int destroy_rle_modules(void);
 void compare_packets(char *pkt1, char *pkt2, int size1, int size2 __attribute__ ((unused)));
 
-void clear_stats(void);
-void print_stats(void);
+void clear_tx_stats(void);
+void print_tx_stats(void);
+void clear_rx_stats(void);
+void print_rx_stats(void);
 
 /* Simple encapsulation/deencapsulation test */
 int init_test_encap_deencap(char *pcap_file_name, int nb_fragment_id);

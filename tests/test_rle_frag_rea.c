@@ -37,7 +37,8 @@ static int run_test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
 	if (pcap_file_name == NULL)
 		return C_ERROR;
 
-	clear_stats();
+	clear_tx_stats();
+	clear_rx_stats();
 
 	char trailer_type[64];
 	PRINT("INFO: TEST FRAGMENTATION - REASSEMBLY WITH %d FRAG_ID\n",
@@ -262,7 +263,8 @@ close_fake_burst:
 		       test_pcap_counter,
 		       (float)(test_pcap_total_sent_size/test_pcap_counter));
 
-	print_stats();
+	print_tx_stats();
+	print_rx_stats();
 
 	if (test_retval == C_OK)
 		PRINT("SUCCESS\n");

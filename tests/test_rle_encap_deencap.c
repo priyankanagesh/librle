@@ -26,7 +26,8 @@ static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 	if (pcap_file_name == NULL)
 		return C_ERROR;
 
-	clear_stats();
+	clear_tx_stats();
+	clear_rx_stats();
 
 	PRINT("INFO: TEST ENCAPSULATION - DEENCAPSULATION WITH NO FRAGMENTATION, %d FRAG_ID\n",
 			nb_fragment_id);
@@ -238,7 +239,8 @@ close_fake_burst:
 	free(burst_buffer);
 	burst_buffer = NULL;
 
-	print_stats();
+	print_tx_stats();
+	print_rx_stats();
 
 	if (test_retval == C_OK)
 		PRINT("SUCCESS\n");
