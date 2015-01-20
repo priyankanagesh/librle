@@ -43,8 +43,4 @@ ENDIF(TIME_DEBUG)
 INSTALL(TARGETS rle
 	DESTINATION lib/)
 
-#INSTALL(FILES
-#	include/libs2txdriver.h
-#	DESTINATION include)
-
 gen_pkg_config("rle" "${DESCRIPTION_SUMMARY}" "" "")
