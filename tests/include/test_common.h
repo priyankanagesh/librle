@@ -8,14 +8,14 @@
 
 #define FAKE_BURST_MAX_SIZE 4096
 
-#define DISABLE_FRAGMENTATION 0
-#define ENABLE_FRAGMENTATION 1
-
-#define DISABLE_CRC 0
-#define ENABLE_CRC 1
-
-#define DISABLE_SEQ 0
-#define ENABLE_SEQ 1
+enum options {
+	DISABLE_FRAGMENTATION = 0,
+	ENABLE_FRAGMENTATION,
+	DISABLE_CRC,
+	ENABLE_CRC,
+	DISABLE_SEQ,
+	ENABLE_SEQ /* 5 */
+};
 
 /* RLE modules */
 struct transmitter_module *transmitter;

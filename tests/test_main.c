@@ -18,9 +18,9 @@ static int opt_frag_rea_test_flag = C_FALSE;
 
 static struct option long_options[] =
 {
-	{"burst_size", required_argument, 0, 'b'},
-	{"ptype",      required_argument, 0, 'p'},
-	{"pcap_file",  required_argument, 0, 'f'},
+	{"burst_size", required_argument, NULL, 'b'},
+	{"ptype",      required_argument, NULL, 'p'},
+	{"pcap_file",  required_argument, NULL, 'f'},
 	{"enable_crc",    no_argument,    NULL, 'c'},
 	{"enable_seq",  no_argument, NULL, 's'},
 	{"verbose",  no_argument, NULL, 'v'},
@@ -34,7 +34,7 @@ static struct option long_options[] =
 
 static void print_usage(char *basename)
 {
-	PRINT("%s [-cselrah] [ -b BURST_SIZE ] [ -p PROTOCOL_TYPE ] [ -f PCAP_FILENAME ]\n",
+	PRINT("%s [-csvelrah] [ -b BURST_SIZE ] [ -p PROTOCOL_TYPE ] [ -f PCAP_FILENAME ]\n",
 			basename);
 	PRINT("\t-v (verbose mode with RLE context dumps)\n"
 			"\t-c enable CRC trailer (default)\n"
@@ -55,28 +55,22 @@ int main(int argc, char *argv[])
 	char *param_file_name = NULL;
 	uint32_t param_protocol_type = 0;
 	uint16_t param_burst_size = 0;
-	int ret = C_ERROR;
-	int c = 0;
+	int ret = C_OK;
+	int opt = 0;
+	int option_index = 0;
 
 	opt_verbose_flag = C_FALSE;
 
-	while(1) {
-		/* getopt_long stores the option index here. */
-		int option_index = 0;
+	while((opt = getopt_long(argc, argv, "csvelrah:b:p:f:",
+					long_options, &option_index)) != -1) {
 
-		c = getopt_long(argc, argv, "hacsvelr:b:p:f:",
-				long_options, &option_index);
-
-		/* Detect the end of the options. */
-		if (c == -1)
-			break;
-
-		switch(c) {
+		switch(opt) {
 			case 'b':
 				param_burst_size = atoi(optarg);
 				if ((param_burst_size > FAKE_BURST_MAX_SIZE) ||
 						(param_burst_size < RLE_START_MANDATORY_HEADER_SIZE)) {
 					PRINT("ERROR fake burst size parameter is invalid\n");
+					ret = C_ERROR;
 					goto exit_ret;
 				}
 				break;
@@ -84,6 +78,7 @@ int main(int argc, char *argv[])
 				param_protocol_type = (uint32_t)strtol(optarg, NULL, 16);
 				if (param_protocol_type > 0xffff) {
 					PRINT("ERROR protocol type parameter is invalid\n");
+					ret = C_ERROR;
 					goto exit_ret;
 				}
 				break;
@@ -122,6 +117,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	if (param_file_name == NULL) {
+		PRINT("ERROR: no file name provided\n");
+		goto exit_ret;
+	}
+
 	PRINT("INFO: TEST with protocol type 0x%0x\n"
 			" burst size %d\n"
 			" pcap file %s\n",
@@ -129,13 +129,14 @@ int main(int argc, char *argv[])
 			param_burst_size,
 			param_file_name);
 
+	/* fallback on valid trailer type to test */
+	if (opt_crc_flag != ENABLE_CRC && opt_seq_flag != ENABLE_SEQ) {
+		PRINT("No trailer specified, test only CRC trailer\n");
+		opt_crc_flag = ENABLE_CRC;
+	}
+
 	/* Test RLE fragmentation and reassembly */
 	if (opt_frag_rea_test_flag == C_TRUE) {
-		if (opt_crc_flag != ENABLE_CRC && opt_seq_flag != ENABLE_SEQ) {
-			PRINT("No trailer specified, test only CRC trailer\n");
-			opt_crc_flag = ENABLE_CRC;
-		}
-
 		if (opt_crc_flag == ENABLE_CRC) {
 			/* Test on multiple queue */
 			ret = init_test_frag_rea(param_file_name,
@@ -145,7 +146,7 @@ int main(int argc, char *argv[])
 					opt_crc_flag);
 		}
 
-		if (opt_seq_flag == ENABLE_SEQ) {
+		if (opt_seq_flag == ENABLE_SEQ && ret == C_OK) {
 			/* Test on multiple queue */
 			ret = init_test_frag_rea(param_file_name,
 					param_protocol_type,
@@ -157,27 +158,38 @@ int main(int argc, char *argv[])
 
 	/* Test RLE fragmentation and reassembly limits */
 	if (opt_frag_rea_min_max_test_flag == C_TRUE) {
-		/* Test with Next Sequence Number
-		 * trailer */
-		ret = init_test_frag_rea_min_max(param_file_name,
-				1,
-				DISABLE_CRC);
+		if (opt_crc_flag == ENABLE_CRC) {
+			/* Test with CRC on one queue
+			 * trailer */
+			ret = init_test_frag_rea_min_max(param_file_name,
+					1,
+					opt_crc_flag);
+		}
 
-		if (ret == C_OK) {
+		if (opt_crc_flag == ENABLE_CRC && ret == C_OK) {
 			/* Test on multiple queue
-			 * with Next Sequence Number
+			 * with CRC
 			 * trailer */
 			ret = init_test_frag_rea_min_max(param_file_name,
 					RLE_MAX_FRAG_NUMBER,
-					DISABLE_CRC);
+					opt_crc_flag);
 		}
 
-		if (ret == C_OK) {
+
+		if (opt_seq_flag == ENABLE_SEQ && ret == C_OK) {
+			/* Test with Next Sequence Number on one queue
+			 * trailer */
+			ret = init_test_frag_rea_min_max(param_file_name,
+					1,
+					opt_seq_flag);
+		}
+
+		if (opt_seq_flag == ENABLE_SEQ && ret == C_OK) {
 			/* Test on multiple queue
-			 * with CRC32 trailer */
+			 * with Next Sequence Number trailer */
 			ret = init_test_frag_rea_min_max(param_file_name,
 					RLE_MAX_FRAG_NUMBER,
-					ENABLE_CRC);
+					opt_seq_flag);
 		}
 	}
 

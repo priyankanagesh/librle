@@ -34,35 +34,45 @@ static int run_test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
 		uint16_t param_bsize,
 		int nb_fragment_id, int trailer_mode)
 {
-	if (pcap_file_name == NULL)
-		return C_ERROR;
-
-	clear_tx_stats();
-	clear_rx_stats();
-
-	char trailer_type[64];
-	PRINT("INFO: TEST FRAGMENTATION - REASSEMBLY WITH %d FRAG_ID\n",
-			nb_fragment_id);
-
-	if (trailer_mode == ENABLE_CRC)
-		snprintf(trailer_type, 64, "%s", "CRC32 trailer\n");
-	else if (trailer_mode == ENABLE_SEQ)
-		snprintf(trailer_type, 64, "%s", "Next Sequence Number trailer\n");
-
-	PRINT("INFO: %s", trailer_type);
-
 	char errbuf[PCAP_ERRBUF_SIZE];
-	pcap_t *handle;
+	pcap_t *handle = NULL;
 	int link_layer_type_src;
 	uint32_t link_len_src;
 	struct pcap_pkthdr header;
-	unsigned char *packet;
+	unsigned char *packet = NULL;
 	int i;
 	void *buffer[RLE_MAX_FRAG_NUMBER] = { NULL };
 	int ret_recv = C_ERROR;
 	int test_retval = C_ERROR;
+	/* for each packet in the dump */
+	int nb_frag_id = 0;
+	int use_crc = 0;
+	size_t size_end_header = RLE_END_HEADER_SIZE;
+	size_t size_trailer = 0;
+	char trailer_type[64];
+	unsigned char *burst_buffer = NULL;
 
-	unsigned char *burst_buffer = malloc(FAKE_BURST_MAX_SIZE);
+	clear_tx_stats();
+	clear_rx_stats();
+
+	PRINT("INFO: TEST FRAGMENTATION - REASSEMBLY WITH %d FRAG_ID\n",
+			nb_fragment_id);
+
+	/* Set trailer type to use: Next Sequence Number or CRC32 */
+	if (trailer_mode == ENABLE_CRC) {
+		snprintf(trailer_type, 64, "%s", "CRC32 trailer\n");
+		size_trailer = RLE_CRC32_FIELD_SIZE;
+		use_crc = C_TRUE;
+	} else if (trailer_mode == ENABLE_SEQ) {
+		snprintf(trailer_type, 64, "%s", "Next Sequence Number trailer\n");
+		size_trailer = RLE_SEQ_NO_FIELD_SIZE;
+		use_crc = C_FALSE;
+	}
+
+	PRINT("INFO: %s", trailer_type);
+
+
+	burst_buffer = malloc(FAKE_BURST_MAX_SIZE);
 	if (burst_buffer == NULL) {
 		PRINT("Error while allocating memory for burst\n");
 		return C_ERROR;
@@ -103,26 +113,10 @@ static int run_test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
 	else /* DLT_RAW */
 		link_len_src = 0;
 
-	/* for each packet in the dump */
-	int nb_frag_id = 0;
-	int use_crc = 0;
-
-	size_t size_end_header = RLE_END_HEADER_SIZE;
-	size_t size_trailer = 0;
-
-	/* Set trailer type to use: Next Sequence Number or CRC32 */
-	if (trailer_mode == ENABLE_CRC) {
-		size_trailer = RLE_CRC32_FIELD_SIZE;
-		use_crc = C_TRUE;
-	} else {
-		size_trailer = RLE_SEQ_NO_FIELD_SIZE;
-		use_crc = C_FALSE;
-	}
-
 /*        while(((packet = (unsigned char *)pcap_next(handle, &header)) != NULL) && nb_frag_id < nb_fragment_id)*/
 	while(((packet = (unsigned char *)pcap_next(handle, &header)) != NULL)) {
-		unsigned char *in_packet;
-		unsigned char *out_packet;
+		unsigned char *in_packet = NULL;
+		unsigned char *out_packet = NULL;
 		int out_ptype = 0;
 		uint32_t out_pkt_length = 0;
 		size_t in_size;
@@ -278,7 +272,7 @@ close_fake_burst:
 
 int init_test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
 		uint16_t param_bsize,
-		int nb_fragment_id, int use_crc)
+		int nb_fragment_id, int trailer_type)
 {
 	int ret = 0;
 
@@ -289,11 +283,15 @@ int init_test_frag_rea(char *pcap_file_name, uint32_t param_ptype,
 
 	ret = run_test_frag_rea(pcap_file_name, param_ptype,
 			param_bsize,
-			nb_fragment_id, use_crc);
+			nb_fragment_id, trailer_type);
 
 	if (ret != C_OK) {
 		PRINT("ERROR in test rle\n");
 	}
+
+	/* clear pcap stats */
+	test_pcap_counter = 0L;
+	test_pcap_total_sent_size = 0L;
 
 	destroy_rle_modules();
 

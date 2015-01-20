@@ -20,18 +20,12 @@ static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id);
 
 /* burst payload size */
 static int burst_size = 0;
+/* stat counters */
+static uint64_t test_pcap_counter = 0L;
+static uint64_t test_pcap_total_sent_size = 0L;
 
 static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 {
-	if (pcap_file_name == NULL)
-		return C_ERROR;
-
-	clear_tx_stats();
-	clear_rx_stats();
-
-	PRINT("INFO: TEST ENCAPSULATION - DEENCAPSULATION WITH NO FRAGMENTATION, %d FRAG_ID\n",
-			nb_fragment_id);
-
 	char errbuf[PCAP_ERRBUF_SIZE];
 	pcap_t *handle;
 	int link_layer_type_src;
@@ -42,8 +36,16 @@ static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 	void *buffer[RLE_MAX_FRAG_NUMBER] = { NULL };
 	int ret_recv = C_ERROR;
 	int test_retval = C_ERROR;
+	unsigned char *burst_buffer = NULL;
 
-	unsigned char *burst_buffer = malloc(FAKE_BURST_MAX_SIZE);
+	/* clear RLE statistics */
+	clear_tx_stats();
+	clear_rx_stats();
+
+	PRINT("INFO: TEST ENCAPSULATION - DEENCAPSULATION WITH NO FRAGMENTATION, %d FRAG_ID\n",
+			nb_fragment_id);
+
+	burst_buffer = malloc(FAKE_BURST_MAX_SIZE);
 	if (burst_buffer == NULL) {
 		PRINT("Error while allocating memory for burst\n");
 		return C_ERROR;
@@ -114,8 +116,8 @@ static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 	/* for each packet in the dump */
 	int nb_frag_id = 0;
 	while(((packet = (unsigned char *)pcap_next(handle, &header)) != NULL) && nb_frag_id < nb_fragment_id) {
-		unsigned char *in_packet;
-		unsigned char *out_packet;
+		unsigned char *in_packet = NULL;
+		unsigned char *out_packet = NULL;
 		int out_ptype = 0;
 		uint32_t out_pkt_length = 0;
 		size_t in_size;
@@ -267,6 +269,10 @@ int init_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 	if (ret != C_OK) {
 		PRINT("ERROR in test rle\n");
 	}
+
+	/* clear pcap stats */
+	test_pcap_counter = 0L;
+	test_pcap_total_sent_size = 0L;
 
 	destroy_rle_modules();
 
