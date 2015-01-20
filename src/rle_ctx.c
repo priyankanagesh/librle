@@ -137,6 +137,7 @@ int rle_ctx_destroy(struct rle_ctx_management *_this)
 	pthread_mutex_destroy(&_this->lk_status.ctr_ok_mutex);
 	pthread_mutex_destroy(&_this->lk_status.ctr_dropped_mutex);
 	pthread_mutex_destroy(&_this->lk_status.ctr_bytes_mutex);
+	pthread_mutex_destroy(&_this->lk_status.ctr_lost_mutex);
 
 	flush(_this);
 
