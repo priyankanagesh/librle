@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include "constants.h"
 #include "test_common.h"
 
@@ -38,52 +39,94 @@ int destroy_rle_modules(void)
 
 void compare_packets(char *pkt1, char *pkt2, int size1, int size2 __attribute__ ((unused)))
 {
-	int j = 0;
-	int i = 0;
-	int k = 0;
-	char str1[4][7], str2[4][7];
-	char sep1, sep2;
+	uint32_t j = 0;
+	uint32_t i = 0;
+	uint32_t k = 0;
+	uint8_t nb_bytes_print = 16;
+	uint32_t nb_bytes = nb_bytes_print;
+	uint32_t nb_lines = size1 / nb_bytes_print;
+	uint32_t remainder_bytes = size1 % nb_bytes_print;
+	int byte_diff = C_FALSE;
+	unsigned char str_pkt1[5 * nb_bytes_print];
+	unsigned char str_pkt2[5 * nb_bytes_print];
+	unsigned char str_byte1[8];
+	unsigned char str_byte2[8];
+	unsigned char str_sep[8];
+	unsigned char str_diff[nb_bytes_print];
 
-	for(i = 0; i < size1; i++)
-	{
-		if(pkt1[i] != pkt2[i])
-		{
-			sep1 = '#';
-			sep2 = '#';
-		}
-		else
-		{
-			sep1 = '[';
-			sep2 = ']';
-		}
+	memset((void *)str_pkt1, 0, (5 * nb_bytes_print));
+	memset((void *)str_pkt2, 0, (5 * nb_bytes_print));
 
-		sprintf(str1[j], "%c0x%.2x%c", sep1, pkt1[i], sep2);
-		sprintf(str2[j], "%c0x%.2x%c", sep1, pkt2[i], sep2);
+	sprintf((char *)str_sep, "\t|\t");
 
-		/* make the output human readable */
-		if(j >= 3 || (i + 1) >= size1)
-		{
-			for(k = 0; k < 4; k++)
-			{
-				if(k < (j + 1))
-					PRINT("-> %s  ", str1[k]);
-				else /* fill the line with blanks if nothing to print */
-					PRINT("        ");
-			}
+	/* print packets with nb_bytes_print bytes per line */
+	for (i = 0; i < nb_lines; i++) {
+		while (j < nb_bytes) {
+			if (pkt1[j] != pkt2[j])
+				byte_diff = C_TRUE;
 
-			PRINT("      ");
-
-			for(k = 0; k < (j + 1); k++)
-				PRINT("--> %s  ", str2[k]);
-
-			PRINT("\n");
-
-			j = 0;
-		}
-		else
-		{
+			sprintf((char *)str_byte1, " %.02x ", (unsigned char)pkt1[j]);
+			sprintf((char *)str_byte2, " %.02x ", (unsigned char)pkt2[j]);
+			strcat((char *)str_pkt1, (char *)str_byte1);
+			strcat((char *)str_pkt2, (char *)str_byte2);
 			j++;
 		}
+
+		if (byte_diff == C_TRUE)
+			sprintf((char *)str_diff, " # ");
+		else
+			sprintf((char *)str_diff, "   ");
+
+		PRINT("[0x%08x] ", i * nb_bytes_print);
+		PRINT("%s", str_diff);
+		PRINT("%s", str_pkt1);
+		PRINT("%s", str_sep);
+		PRINT("%s", str_pkt2);
+		PRINT("\n");
+
+		nb_bytes += nb_bytes_print;
+		byte_diff = C_FALSE;
+
+		memset((void *)str_pkt1, 0, (5 * nb_bytes_print));
+		memset((void *)str_pkt2, 0, (5 * nb_bytes_print));
+	}
+
+	/* print left over bytes */
+	if (remainder_bytes != 0) {
+		for (k = j; k < (j + remainder_bytes); k++) {
+			if (pkt1[k] != pkt2[k])
+				byte_diff = C_TRUE;
+
+			sprintf((char *)str_byte1, " %.02x ", (unsigned char)pkt1[k]);
+			sprintf((char *)str_byte2, " %.02x ", (unsigned char)pkt2[k]);
+			strcat((char *)str_pkt1, (char *)str_byte1);
+			strcat((char *)str_pkt2, (char *)str_byte2);
+		}
+
+		/* pad with whitespaces for missing bytes */
+		for (k = 0; k < (nb_bytes_print - remainder_bytes); k++) {
+			sprintf((char *)str_byte1, "    ");
+			sprintf((char *)str_byte2, "    ");
+			strcat((char *)str_pkt1, (char *)str_byte1);
+			strcat((char *)str_pkt2, (char *)str_byte2);
+		}
+
+		if (byte_diff == C_TRUE)
+			sprintf((char *)str_diff, " # ");
+		else
+			sprintf((char *)str_diff, "   ");
+
+		PRINT("[0x%08x] ", (i + 1) * nb_bytes_print);
+		PRINT("%s", str_diff);
+		PRINT("%s", str_pkt1);
+		PRINT("%s", str_sep);
+		PRINT("%s", str_pkt2);
+		PRINT("\n");
+
+		byte_diff = C_FALSE;
+
+		memset((void *)str_pkt1, 0, (5 * nb_bytes_print));
+		memset((void *)str_pkt2, 0, (5 * nb_bytes_print));
 	}
 }
 
