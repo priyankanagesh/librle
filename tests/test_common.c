@@ -140,10 +140,16 @@ void clear_tx_stats(void)
 
 void print_tx_stats(void)
 {
+	float avg_pkt_size = 0.0;
+
 	TX_total_sent_size += rle_transmitter_get_counter_bytes(transmitter);
 	TX_total_sent_pkt += rle_transmitter_get_counter_ok(transmitter);
 	TX_total_lost_pkt += rle_transmitter_get_counter_lost(transmitter);
 	TX_total_drop_pkt += rle_transmitter_get_counter_dropped(transmitter);
+
+	/* avoid division by 0 */
+	if (TX_total_sent_pkt != 0)
+		avg_pkt_size = (float)(TX_total_sent_size/TX_total_sent_pkt);
 
 	PRINT("INFO: TX status:\n"
 			"\tTX total sent size \t\t\t%10lu\n"
@@ -155,7 +161,7 @@ void print_tx_stats(void)
 			TX_total_sent_pkt,
 			TX_total_lost_pkt,
 			TX_total_drop_pkt,
-			(float)(TX_total_sent_size/TX_total_sent_pkt));
+			avg_pkt_size);
 }
 
 void clear_rx_stats(void)
@@ -168,10 +174,16 @@ void clear_rx_stats(void)
 
 void print_rx_stats(void)
 {
+	float avg_pkt_size = 0.0;
+
 	RX_total_received_size += rle_receiver_get_counter_bytes(receiver);
 	RX_total_received_pkt += rle_receiver_get_counter_ok(receiver);
 	RX_total_lost_pkt += rle_receiver_get_counter_lost(receiver);
 	RX_total_drop_pkt += rle_receiver_get_counter_dropped(receiver);
+
+	/* avoid division by 0 */
+	if (RX_total_received_pkt != 0)
+		avg_pkt_size = (float)(RX_total_received_size/RX_total_received_pkt);
 
 	PRINT("INFO: RX status:\n"
 			"\tRX total received size \t\t\t%10lu\n"
@@ -183,6 +195,6 @@ void print_rx_stats(void)
 			RX_total_received_pkt,
 			RX_total_lost_pkt,
 			RX_total_drop_pkt,
-			(float)(RX_total_received_size/RX_total_received_pkt));
+			avg_pkt_size);
 }
 
