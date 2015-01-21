@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 			case 'b':
 				param_burst_size = atoi(optarg);
 				if ((param_burst_size > FAKE_BURST_MAX_SIZE) ||
-						(param_burst_size < RLE_START_MANDATORY_HEADER_SIZE)) {
+						(param_burst_size < 15)) {
 					PRINT("ERROR fake burst size parameter is invalid\n");
 					ret = C_ERROR;
 					goto exit_ret;
