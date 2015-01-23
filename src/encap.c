@@ -118,7 +118,7 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
 			__FILE__, __func__, __LINE__);
 #endif
 
-	if (encap_check_pdu_validity(pdu_buffer,
+	if (encap_check_l3_pdu_validity(pdu_buffer,
 				pdu_length,
 				protocol_type) == C_ERROR) {
 		rle_ctx_incr_counter_dropped(rle_ctx);
@@ -138,7 +138,7 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
 	return C_OK;
 }
 
-int encap_check_pdu_validity(void *pdu_buffer,
+int encap_check_l3_pdu_validity(void *pdu_buffer,
 		size_t pdu_length,
 		uint16_t protocol_type)
 {

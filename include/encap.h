@@ -31,7 +31,7 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
 		void *data_buffer, size_t data_length,
 		uint16_t protocol_type);
 /**
- *  @brief Check validity of input PDU
+ *  @brief Check L3 validity of input PDU
  *
  *  @warning
  *
@@ -42,7 +42,7 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
  *
  *  @ingroup
  */
-int encap_check_pdu_validity(void *pdu_buffer,
+int encap_check_l3_pdu_validity(void *pdu_buffer,
 		size_t pdu_length,
 		uint16_t protocol_type);
 
