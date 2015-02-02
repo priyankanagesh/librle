@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <net/ethernet.h>
 #include "encap.h"
 #include "constants.h"
 #include "rle_ctx.h"
@@ -136,6 +137,80 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
 	rle_ctx->pdu_buf = pdu_buffer;
 
 	return C_OK;
+}
+
+int encap_check_l2_pdu_validity(void *pdu_buffer,
+		size_t pdu_length __attribute__ ((unused)),
+		uint16_t protocol_type)
+{
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n",
+			MODULE_NAME,
+			__FILE__, __func__, __LINE__);
+#endif
+
+	uint16_t ethertype2 = 0;
+	struct ether_header *eth_hdr = NULL;
+	int ret = C_ERROR;
+
+	eth_hdr = (struct ether_header *)pdu_buffer;
+
+	switch (protocol_type) {
+		case RLE_PROTO_TYPE_VLAN:
+			if (eth_hdr->ether_type != RLE_PROTO_TYPE_VLAN) {
+				PRINT("ERROR %s %s:%s:%d: expecting ethernet vlan [0x%0x],"
+					       " got [0x%0x]\n",
+						MODULE_NAME,
+						__FILE__, __func__, __LINE__,
+						RLE_PROTO_TYPE_VLAN,
+						eth_hdr->ether_type);
+			} else {
+				ret = C_OK;
+			}
+			break;
+		case RLE_PROTO_TYPE_VLAN_STACKING:
+			if (eth_hdr->ether_type != RLE_PROTO_TYPE_VLAN_STACKING) {
+				PRINT("ERROR %s %s:%s:%d: expecting ethernet vlan stacking [0x%0x],"
+					       " got [0x%0x]\n",
+						MODULE_NAME,
+						__FILE__, __func__, __LINE__,
+						RLE_PROTO_TYPE_VLAN_STACKING,
+						eth_hdr->ether_type);
+			} else {
+				ret = C_OK;
+			}
+			break;
+		case RLE_PROTO_TYPE_VLAN_QINQ:
+			if (eth_hdr->ether_type != RLE_PROTO_TYPE_VLAN_QINQ) {
+				PRINT("ERROR %s %s:%s:%d: expecting ethernet vlan Q-in-Q [0x%0x],"
+					       " got [0x%0x]\n",
+						MODULE_NAME,
+						__FILE__, __func__, __LINE__,
+						RLE_PROTO_TYPE_VLAN_QINQ,
+						eth_hdr->ether_type);
+				break;
+			}
+			ethertype2 = (uint16_t)*(unsigned char *)(eth_hdr + 4);
+			if (ethertype2 != RLE_PROTO_TYPE_VLAN) {
+				PRINT("ERROR %s %s:%s:%d: expecting double tagging [0x%0x],"
+						" got [0x%0x]\n",
+						MODULE_NAME,
+						__FILE__, __func__, __LINE__,
+						RLE_PROTO_TYPE_VLAN,
+						ethertype2);
+			} else {
+				ret = C_OK;
+			}
+			break;
+		default:
+			PRINT("ERROR %s %s:%s:%d: invalid given protocol type [0x%0x]\n",
+					MODULE_NAME,
+					__FILE__, __func__, __LINE__,
+					protocol_type);
+			break;
+	}
+
+	return ret;
 }
 
 int encap_check_l3_pdu_validity(void *pdu_buffer,

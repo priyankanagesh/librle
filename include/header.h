@@ -25,6 +25,12 @@
 #define RLE_PROTO_TYPE_SIGNAL_COMP		0x42
 /** Protocol type for signalling non compressed */
 #define RLE_PROTO_TYPE_SIGNAL_UNCOMP		0x0082
+/** Protocol type for VLAN 802.1q */
+#define RLE_PROTO_TYPE_VLAN			0x8100
+/** Protocol type for VLAN stacking 802.3ad */
+#define RLE_PROTO_TYPE_VLAN_STACKING		0x88a8
+/** Protocol type for VLAN Q-in-Q */
+#define RLE_PROTO_TYPE_VLAN_QINQ		0x9100
 /** Protocol type for ARP */
 #define RLE_PROTO_TYPE_ARP			0x0806
 /** Protocol type compressed for IPv4/v6 */
