@@ -85,8 +85,7 @@ void rle_receiver_destroy(struct receiver_module *_this);
  *
  *  @ingroup
  */
-int rle_receiver_deencap_data(struct receiver_module *_this,
-				void *data_buffer, size_t data_length);
+int rle_receiver_deencap_data(struct receiver_module *_this, void *data_buffer, size_t data_length);
 
 /**
  *  @brief Retrieve reassembled PDU data and copy it
@@ -106,14 +105,11 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
  *
  *  @ingroup
  */
-int rle_receiver_get_packet(struct receiver_module *_this,
-			uint8_t fragment_id,
-			void *pdu_buffer,
-			int *pdu_proto_type,
-			uint32_t *pdu_length);
+int rle_receiver_get_packet(struct receiver_module *_this, uint8_t fragment_id, void *pdu_buffer,
+                            int *pdu_proto_type,
+                            uint32_t *pdu_length);
 
-void rle_receiver_free_context(struct receiver_module *_this,
-		uint8_t fragment_id);
+void rle_receiver_free_context(struct receiver_module *_this, uint8_t fragment_id);
 
 /**
  *  @brief Get total number of successfully

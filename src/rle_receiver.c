@@ -25,6 +25,7 @@
 static int get_first_free_frag_ctx(struct receiver_module *_this)
 {
 	int i;
+
 	pthread_mutex_lock(&_this->ctx_mutex);
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		if (((_this->free_ctx >> i) & 0x1) == 0) {
@@ -37,16 +38,14 @@ static int get_first_free_frag_ctx(struct receiver_module *_this)
 	return C_ERROR;
 }
 
-static void set_nonfree_frag_ctx(struct receiver_module *_this,
-				int index)
+static void set_nonfree_frag_ctx(struct receiver_module *_this, int index)
 {
 	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx |= (1 << index);
 	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
-static void set_free_frag_ctx(struct receiver_module *_this,
-				int index)
+static void set_free_frag_ctx(struct receiver_module *_this, int index)
 {
 	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx = (0 << index) & 0xff;
@@ -67,31 +66,33 @@ static int get_fragment_type(void *data_buffer)
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: RLE packet S %d E %d \n",
-			MODULE_NAME,
-			__FILE__, __func__, __LINE__,
-			head->b.start_ind, head->b.end_ind);
+	      MODULE_NAME,
+	      __FILE__, __func__, __LINE__,
+	      head->b.start_ind, head->b.end_ind);
 #endif
 
 	switch (head->b.start_ind) {
-		case 0x0:
-			if (head->b.end_ind == 0x0)
-				type_rle_frag = RLE_PDU_CONT_FRAG;
-			else
-				type_rle_frag = RLE_PDU_END_FRAG;
-			break;
-		case 0x1:
-			if (head->b.end_ind == 0x0)
-				type_rle_frag = RLE_PDU_START_FRAG;
-			else
-				type_rle_frag = RLE_PDU_COMPLETE;
-			break;
-		default:
-			PRINT("ERROR %s %s:%s:%d: invalid/unknown RLE fragment"
-					" type S [%x] E [%x]\n",
-					MODULE_NAME,
-					__FILE__, __func__, __LINE__,
-					head->b.start_ind, head->b.end_ind);
-			break;
+	case 0x0:
+		if (head->b.end_ind == 0x0) {
+			type_rle_frag = RLE_PDU_CONT_FRAG;
+		} else {
+			type_rle_frag = RLE_PDU_END_FRAG;
+		}
+		break;
+	case 0x1:
+		if (head->b.end_ind == 0x0) {
+			type_rle_frag = RLE_PDU_START_FRAG;
+		} else {
+			type_rle_frag = RLE_PDU_COMPLETE;
+		}
+		break;
+	default:
+		PRINT("ERROR %s %s:%s:%d: invalid/unknown RLE fragment"
+		      " type S [%x] E [%x]\n",
+		      MODULE_NAME,
+		      __FILE__, __func__, __LINE__,
+		      head->b.start_ind, head->b.end_ind);
+		break;
 	}
 
 	return type_rle_frag;
@@ -136,8 +137,8 @@ static void init(struct receiver_module *_this)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
-			MODULE_NAME,
-			__FILE__, __func__, __LINE__);
+	      MODULE_NAME,
+	      __FILE__, __func__, __LINE__);
 #endif
 
 	int i;
@@ -161,8 +162,8 @@ struct receiver_module *rle_receiver_new(void)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
-			MODULE_NAME,
-			__FILE__, __func__, __LINE__);
+	      MODULE_NAME,
+	      __FILE__, __func__, __LINE__);
 #endif
 
 	struct receiver_module *_this = NULL;
@@ -171,8 +172,8 @@ struct receiver_module *rle_receiver_new(void)
 
 	if (!_this) {
 		PRINT("ERROR %s %s:%s:%d: allocating receiver module failed\n",
-				MODULE_NAME,
-				__FILE__, __func__, __LINE__);
+		      MODULE_NAME,
+		      __FILE__, __func__, __LINE__);
 		return NULL;
 	}
 
@@ -182,9 +183,9 @@ struct receiver_module *rle_receiver_new(void)
 		_this->rle_conf[i] = rle_conf_new();
 		if (!_this->rle_conf[i]) {
 			PRINT("ERROR %s %s:%s:%d: allocating receiver module"
-				       " configuration failed\n",
-					MODULE_NAME,
-					__FILE__, __func__, __LINE__);
+			      " configuration failed\n",
+			      MODULE_NAME,
+			      __FILE__, __func__, __LINE__);
 			return NULL;
 		}
 	}
@@ -198,8 +199,8 @@ void rle_receiver_destroy(struct receiver_module *_this)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
-			MODULE_NAME,
-			__FILE__, __func__, __LINE__);
+	      MODULE_NAME,
+	      __FILE__, __func__, __LINE__);
 #endif
 
 	int i;
@@ -212,13 +213,12 @@ void rle_receiver_destroy(struct receiver_module *_this)
 	_this = NULL;
 }
 
-int rle_receiver_deencap_data(struct receiver_module *_this,
-				void *data_buffer, size_t data_length)
+int rle_receiver_deencap_data(struct receiver_module *_this, void *data_buffer, size_t data_length)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
-			MODULE_NAME,
-			__FILE__, __func__, __LINE__);
+	      MODULE_NAME,
+	      __FILE__, __func__, __LINE__);
 #endif
 
 #ifdef TIME_DEBUG
@@ -231,24 +231,24 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
 
 	if (!data_buffer) {
 		PRINT("ERROR %s %s:%s:%d: data buffer is invalid\n",
-				MODULE_NAME,
-				__FILE__, __func__, __LINE__);
+		      MODULE_NAME,
+		      __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
 	if (!_this) {
 		PRINT("ERROR %s %s:%s:%d: receiver module is invalid\n",
-				MODULE_NAME,
-				__FILE__, __func__, __LINE__);
+		      MODULE_NAME,
+		      __FILE__, __func__, __LINE__);
 		return ret;
 	}
 
 	/* check PPDU validity */
 	if (data_length > RLE_MAX_PDU_SIZE) {
 		PRINT("ERROR %s %s:%s:%d: Packet too long [%zu]\n",
-				MODULE_NAME,
-				__FILE__, __func__, __LINE__,
-				data_length);
+		      MODULE_NAME,
+		      __FILE__, __func__, __LINE__,
+		      data_length);
 		return ret;
 	}
 
@@ -260,37 +260,37 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
 	int index_ctx = -1;
 
 	switch (frag_type) {
-		case RLE_PDU_COMPLETE:
-			index_ctx = get_first_free_frag_ctx(_this);
-			if (index_ctx < 0) {
-				PRINT("ERROR %s %s:%s:%d: no free reassembly context available "
-						"for deencapsulation\n",
-						MODULE_NAME,
-						__FILE__, __func__, __LINE__);
-				return C_ERROR;
-			}
-			break;
-		case RLE_PDU_START_FRAG:
-		case RLE_PDU_CONT_FRAG:
-		case RLE_PDU_END_FRAG:
-			index_ctx = get_fragment_id(data_buffer);
-#ifdef DEBUG
-			PRINT("DEBUG %s %s:%s:%d: fragment_id 0x%0x frag type %d\n",
-					MODULE_NAME,
-					__FILE__, __func__, __LINE__,
-					index_ctx, frag_type);
-#endif
-			if ((index_ctx < 0) || (index_ctx > RLE_MAX_FRAG_ID)) {
-				PRINT("ERROR %s %s:%s:%d: invalid fragment id [%d]\n",
-						MODULE_NAME,
-						__FILE__, __func__, __LINE__,
-						index_ctx);
-				return C_ERROR;
-			}
-			break;
-		default:
+	case RLE_PDU_COMPLETE:
+		index_ctx = get_first_free_frag_ctx(_this);
+		if (index_ctx < 0) {
+			PRINT("ERROR %s %s:%s:%d: no free reassembly context available "
+			      "for deencapsulation\n",
+			      MODULE_NAME,
+			      __FILE__, __func__, __LINE__);
 			return C_ERROR;
-			break;
+		}
+		break;
+	case RLE_PDU_START_FRAG:
+	case RLE_PDU_CONT_FRAG:
+	case RLE_PDU_END_FRAG:
+		index_ctx = get_fragment_id(data_buffer);
+#ifdef DEBUG
+		PRINT("DEBUG %s %s:%s:%d: fragment_id 0x%0x frag type %d\n",
+		      MODULE_NAME,
+		      __FILE__, __func__, __LINE__,
+		      index_ctx, frag_type);
+#endif
+		if ((index_ctx < 0) || (index_ctx > RLE_MAX_FRAG_ID)) {
+			PRINT("ERROR %s %s:%s:%d: invalid fragment id [%d]\n",
+			      MODULE_NAME,
+			      __FILE__, __func__, __LINE__,
+			      index_ctx);
+			return C_ERROR;
+		}
+		break;
+	default:
+		return C_ERROR;
+		break;
 	}
 
 	/* set the previously free frag ctx
@@ -300,10 +300,10 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
 
 	/* reassemble all fragments */
 	ret = reassembly_reassemble_pdu(&_this->rle_ctx_man[index_ctx],
-			_this->rle_conf[index_ctx],
-			data_buffer,
-			data_length,
-			frag_type);
+	                                _this->rle_conf[index_ctx],
+	                                data_buffer,
+	                                data_length,
+	                                frag_type);
 
 	if ((ret != C_OK) && (ret != C_REASSEMBLY_OK)) {
 		/* received RLE packet is invalid,
@@ -313,9 +313,9 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
 		rle_ctx_invalid_ctx(&_this->rle_ctx_man[index_ctx]);
 		set_free_frag_ctx(_this, index_ctx);
 		PRINT("ERROR %s %s:%s:%d: cannot reassemble data, error type %d\n",
-				MODULE_NAME,
-				__FILE__, __func__, __LINE__,
-				ret);
+		      MODULE_NAME,
+		      __FILE__, __func__, __LINE__,
+		      ret);
 	}
 
 #ifdef TIME_DEBUG
@@ -324,23 +324,21 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
 	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
 	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
 	PRINT("DEBUG %s %s:%s:%d: duration [%04ld.%06ld]\n",
-			MODULE_NAME,
-			__FILE__, __func__, __LINE__,
-			tv_delta.tv_sec, tv_delta.tv_usec);
+	      MODULE_NAME,
+	      __FILE__, __func__, __LINE__,
+	      tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
 	return ret;
 }
 
-int rle_receiver_get_packet(struct receiver_module *_this,
-			uint8_t fragment_id,
-			void *pdu_buffer,
-			int *pdu_proto_type,
-			uint32_t *pdu_length)
+int rle_receiver_get_packet(struct receiver_module *_this, uint8_t fragment_id, void *pdu_buffer,
+                            int *pdu_proto_type,
+                            uint32_t *pdu_length)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME,
-			__FILE__, __func__, __LINE__);
+	      __FILE__, __func__, __LINE__);
 #endif
 
 #ifdef TIME_DEBUG
@@ -350,9 +348,9 @@ int rle_receiver_get_packet(struct receiver_module *_this,
 #endif
 
 	int ret = reassembly_get_pdu(&_this->rle_ctx_man[fragment_id],
-			pdu_buffer,
-			pdu_proto_type,
-			pdu_length);
+	                             pdu_buffer,
+	                             pdu_proto_type,
+	                             pdu_length);
 
 /*        if (ret == C_OK) {*/
 /*                |+ reset buffer content +|*/
@@ -366,16 +364,15 @@ int rle_receiver_get_packet(struct receiver_module *_this,
 	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
 	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
 	PRINT("DEBUG %s %s:%s:%d: duration [%04ld.%06ld]\n",
-			MODULE_NAME,
-			__FILE__, __func__, __LINE__,
-			tv_delta.tv_sec, tv_delta.tv_usec);
+	      MODULE_NAME,
+	      __FILE__, __func__, __LINE__,
+	      tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
 	return ret;
 }
 
-void rle_receiver_free_context(struct receiver_module *_this,
-		uint8_t fragment_id)
+void rle_receiver_free_context(struct receiver_module *_this, uint8_t fragment_id)
 {
 	/* set to idle this fragmentation context */
 	set_free_frag_ctx(_this, fragment_id);
@@ -439,7 +436,7 @@ void rle_receiver_dump(struct receiver_module *_this)
 
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		rle_ctx_dump(&_this->rle_ctx_man[i],
-				_this->rle_conf[i]);
+		             _this->rle_conf[i]);
 	}
 }
 

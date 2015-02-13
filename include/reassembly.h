@@ -26,10 +26,8 @@
  *
  *  @ingroup
  */
-int reassembly_get_pdu(struct rle_ctx_management *rle_ctx,
-		void *pdu_buffer,
-		int *pdu_proto_type,
-		uint32_t *pdu_length);
+int reassembly_get_pdu(struct rle_ctx_management *rle_ctx, void *pdu_buffer, int *pdu_proto_type,
+                       uint32_t *pdu_length);
 
 /**
  *  @brief Reassemble fragmented RLE packet to get the PDU
@@ -45,8 +43,9 @@ int reassembly_get_pdu(struct rle_ctx_management *rle_ctx,
  *  @ingroup
  */
 int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
-		struct rle_configuration *rle_conf,
-		void *data_buffer, size_t data_length, int frag_type);
+                              struct rle_configuration *rle_conf, void *data_buffer,
+                              size_t data_length,
+                              int frag_type);
 
 /**
  *  @brief Remove RLE header from fragment

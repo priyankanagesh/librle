@@ -13,11 +13,11 @@
 #include "header.h"
 
 /** Default protocol type */
-#define RLE_CONF_DEFAULT_PTYPE	RLE_PROTO_TYPE_IPV4_UNCOMP
+#define RLE_CONF_DEFAULT_PTYPE  RLE_PROTO_TYPE_IPV4_UNCOMP
 /** Default protocol type compression flag */
-#define RLE_CONF_COMPRESS_PTYPE	C_FALSE
+#define RLE_CONF_COMPRESS_PTYPE C_FALSE
 /** Default protocol type suppression flag */
-#define RLE_CONF_SUPPRESS_PTYPE	C_FALSE
+#define RLE_CONF_SUPPRESS_PTYPE C_FALSE
 
 /** RLE configuration structure
  * to keep track of various RLE
@@ -78,8 +78,7 @@ void rle_conf_init(struct rle_configuration *_this);
  *
  *  @ingroup
  */
-int rle_conf_set_default_ptype(struct rle_configuration *_this,
-				uint16_t protocol_type);
+int rle_conf_set_default_ptype(struct rle_configuration *_this, uint16_t protocol_type);
 
 /**
  *  @brief	Get the current default protocol type
@@ -106,8 +105,7 @@ int rle_conf_get_default_ptype(struct rle_configuration *_this);
  *
  *  @ingroup
  */
-int rle_conf_set_ptype_compression(struct rle_configuration *_this,
-				int enable_ptype_compression);
+int rle_conf_set_ptype_compression(struct rle_configuration *_this, int enable_ptype_compression);
 
 /**
  *  @brief	Get current protocol type compression flag
@@ -134,8 +132,7 @@ int rle_conf_get_ptype_compression(struct rle_configuration *_this);
  *
  *  @ingroup
  */
-int rle_conf_set_ptype_suppression(struct rle_configuration *_this,
-				int enable_ptype_suppression);
+int rle_conf_set_ptype_suppression(struct rle_configuration *_this, int enable_ptype_suppression);
 
 /**
  *  @brief	Get current protocol type suppression flag
@@ -162,8 +159,7 @@ int rle_conf_get_ptype_suppression(struct rle_configuration *_this);
  *
  *  @ingroup
  */
-int rle_conf_set_crc_check(struct rle_configuration *_this,
-				int enable_crc_check);
+int rle_conf_set_crc_check(struct rle_configuration *_this, int enable_crc_check);
 
 /**
  *  @brief	Get current use-CRC check flag

@@ -43,7 +43,7 @@ static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 	clear_rx_stats();
 
 	PRINT("INFO: TEST ENCAPSULATION - DEENCAPSULATION WITH NO FRAGMENTATION, %d FRAG_ID\n",
-			nb_fragment_id);
+	      nb_fragment_id);
 
 	burst_buffer = malloc(FAKE_BURST_MAX_SIZE);
 	if (burst_buffer == NULL) {
@@ -61,28 +61,29 @@ static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 
 	/* open the source dump file */
 	handle = pcap_open_offline(pcap_file_name, errbuf);
-	if(handle == NULL) {
+	if (handle == NULL) {
 		PRINT("failed to open the source pcap file\n");
 		goto close_rle;
 	}
 
 	/* link layer in the source dump must be supported */
 	link_layer_type_src = pcap_datalink(handle);
-	if(link_layer_type_src != DLT_EN10MB &&
-			link_layer_type_src != DLT_LINUX_SLL &&
-			link_layer_type_src != DLT_RAW) {
+	if (link_layer_type_src != DLT_EN10MB &&
+	    link_layer_type_src != DLT_LINUX_SLL &&
+	    link_layer_type_src != DLT_RAW) {
 		PRINT("link layer type %d not supported in source dump (supported = "
-				"%d, %d, %d)\n", link_layer_type_src, DLT_EN10MB, DLT_LINUX_SLL,
-				DLT_RAW);
+		      "%d, %d, %d)\n", link_layer_type_src, DLT_EN10MB, DLT_LINUX_SLL,
+		      DLT_RAW);
 		goto close_input;
 	}
 
-	if(link_layer_type_src == DLT_EN10MB)
+	if (link_layer_type_src == DLT_EN10MB) {
 		link_len_src = ETHER_HDR_LEN;
-	else if(link_layer_type_src == DLT_LINUX_SLL)
+	} else if (link_layer_type_src == DLT_LINUX_SLL) {
 		link_len_src = LINUX_COOKED_HDR_LEN;
-	else /* DLT_RAW */
+	} else { /* DLT_RAW */
 		link_len_src = 0;
+	}
 
 	/* open the comparison dump file */
 /*        cmp_handle = pcap_open_offline(filename, errbuf);*/
@@ -115,7 +116,10 @@ static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 
 	/* for each packet in the dump */
 	int nb_frag_id = 0;
-	while(((packet = (unsigned char *)pcap_next(handle, &header)) != NULL) && nb_frag_id < nb_fragment_id) {
+	while (((packet =
+	                 (unsigned char *)pcap_next(handle,
+	                                            &header)) !=
+	        NULL) && nb_frag_id < nb_fragment_id) {
 		unsigned char *in_packet = NULL;
 		unsigned char *out_packet = NULL;
 		int out_ptype = 0;
@@ -138,8 +142,9 @@ static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 
 		uint16_t protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP;
 		/* Encapsulate the input packets, use in_packet and in_size as
-		   input */
-		if (rle_transmitter_encap_data(transmitter, in_packet, in_size, protocol_type) == C_ERROR) {
+		 * input */
+		if (rle_transmitter_encap_data(transmitter, in_packet, in_size,
+		                               protocol_type) == C_ERROR) {
 			PRINT("ERROR while encapsulating data\n");
 		}
 
@@ -170,31 +175,39 @@ static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 
 		burst_size = in_size + RLE_COMPLETE_HEADER_SIZE;
 
-		if (opt_verbose_flag)
+		if (opt_verbose_flag) {
 			PRINT("INFO PDU size = %zu burst size = %d\n", in_size, burst_size);
+		}
 
-		for (;;) {
-			if (rle_transmitter_get_queue_state(transmitter, nb_frag_id) == C_TRUE)
+		for (;; ) {
+			if (rle_transmitter_get_queue_state(transmitter, nb_frag_id) == C_TRUE) {
 				break;
+			}
 
-			if (remaining_pdu_size <= 0)
+			if (remaining_pdu_size <= 0) {
 				break;
+			}
 
-			if (rle_transmitter_get_packet(transmitter, burst_buffer, burst_size, nb_frag_id, protocol_type)
-					!= C_OK) {
+			if (rle_transmitter_get_packet(transmitter, burst_buffer, burst_size,
+			                               nb_frag_id, protocol_type)
+			    != C_OK) {
 				PRINT("ERROR while creating RLE fragment\n");
 				break;
 			}
 
-			if (opt_verbose_flag)
-				PRINT("DEBUG Remaining size to send = [%d] burst size = [%d] burst addr [%p]\n", remaining_pdu_size, burst_size, burst_buffer);
+			if (opt_verbose_flag) {
+				PRINT(
+				        "DEBUG Remaining size to send = [%d] burst size = [%d] burst addr [%p]\n",
+				        remaining_pdu_size, burst_size, burst_buffer);
+			}
 
 			ret_recv = rle_receiver_deencap_data(receiver, burst_buffer, burst_size);
 
-			if ((ret_recv != C_OK) && (ret_recv != C_REASSEMBLY_OK))
+			if ((ret_recv != C_OK) && (ret_recv != C_REASSEMBLY_OK)) {
 				PRINT("ERROR while receiving RLE\n");
-			else
+			} else {
 				break;
+			}
 
 			remaining_pdu_size = rle_transmitter_get_queue_size(transmitter, nb_frag_id);
 		}
@@ -202,25 +215,31 @@ static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 		if (ret_recv != C_ERROR) {
 			/* retrieve reassembled PDU */
 			test_retval = rle_receiver_get_packet(receiver, nb_frag_id,
-					out_packet, &out_ptype, &out_pkt_length);
+			                                      out_packet, &out_ptype,
+			                                      &out_pkt_length);
 		}
 
-		if (opt_verbose_flag)
+		if (opt_verbose_flag) {
 			PRINT("DEBUG in_size %zu out_pkt_length %u\n", in_size, out_pkt_length);
+		}
 
 		if (in_size == out_pkt_length && memcmp(in_packet, out_packet, in_size) == 0) {
-			if (opt_verbose_flag)
+			if (opt_verbose_flag) {
 				PRINT("Packets are equals\n");
+			}
 
 			test_retval = C_OK;
-			if (opt_verbose_flag)
+			if (opt_verbose_flag) {
 				rle_ctx_dump(&transmitter->rle_ctx_man[nb_frag_id],
-						transmitter->rle_conf);
+				             transmitter->rle_conf);
+			}
 		} else {
-			if (opt_verbose_flag)
+			if (opt_verbose_flag) {
 				PRINT("Packets are differents\n");
+			}
 
-			compare_packets((char *)in_packet, (char *)out_packet, in_size, out_pkt_length);
+			compare_packets((char *)in_packet, (char *)out_packet, in_size,
+			                out_pkt_length);
 			test_retval = C_ERROR;
 		}
 
@@ -244,16 +263,16 @@ close_fake_burst:
 	print_tx_stats();
 	print_rx_stats();
 
-	if (test_retval == C_OK)
+	if (test_retval == C_OK) {
 		PRINT("SUCCESS\n");
-	else
+	} else {
 		PRINT("FAILURE\n");
+	}
 
 	PRINT("------------------------------------------------\n");
 
 	return test_retval;
 }
-
 
 int init_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 {
@@ -261,8 +280,9 @@ int init_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 
 	ret = create_rle_modules();
 
-	if (ret != 0)
+	if (ret != 0) {
 		return ret;
+	}
 
 	ret = run_test_encap_deencap(pcap_file_name, nb_fragment_id);
 
@@ -278,4 +298,3 @@ int init_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 
 	return ret;
 }
-

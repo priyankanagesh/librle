@@ -664,7 +664,6 @@ uint64_t rle_ctx_get_counter_bytes(struct rle_ctx_management *_this);
  *
  *  @ingroup
  */
-void rle_ctx_dump(struct rle_ctx_management *_this,
-		struct rle_configuration *rle_conf);
+void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rle_conf);
 
 #endif /* _RLE_CTX_H */

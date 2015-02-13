@@ -28,11 +28,13 @@ int create_rle_modules(void)
 
 int destroy_rle_modules(void)
 {
-	if (transmitter != NULL)
+	if (transmitter != NULL) {
 		rle_transmitter_destroy(transmitter);
+	}
 
-	if (receiver != NULL)
+	if (receiver != NULL) {
 		rle_receiver_destroy(receiver);
+	}
 
 	return 0;
 }
@@ -62,8 +64,9 @@ void compare_packets(char *pkt1, char *pkt2, int size1, int size2 __attribute__ 
 	/* print packets with nb_bytes_print bytes per line */
 	for (i = 0; i < nb_lines; i++) {
 		while (j < nb_bytes) {
-			if (pkt1[j] != pkt2[j])
+			if (pkt1[j] != pkt2[j]) {
 				byte_diff = C_TRUE;
+			}
 
 			sprintf((char *)str_byte1, " %.02x ", (unsigned char)pkt1[j]);
 			sprintf((char *)str_byte2, " %.02x ", (unsigned char)pkt2[j]);
@@ -72,10 +75,11 @@ void compare_packets(char *pkt1, char *pkt2, int size1, int size2 __attribute__ 
 			j++;
 		}
 
-		if (byte_diff == C_TRUE)
+		if (byte_diff == C_TRUE) {
 			sprintf((char *)str_diff, " # ");
-		else
+		} else {
 			sprintf((char *)str_diff, "   ");
+		}
 
 		PRINT("[0x%08x] ", i * nb_bytes_print);
 		PRINT("%s", str_diff);
@@ -94,8 +98,9 @@ void compare_packets(char *pkt1, char *pkt2, int size1, int size2 __attribute__ 
 	/* print left over bytes */
 	if (remainder_bytes != 0) {
 		for (k = j; k < (j + remainder_bytes); k++) {
-			if (pkt1[k] != pkt2[k])
+			if (pkt1[k] != pkt2[k]) {
 				byte_diff = C_TRUE;
+			}
 
 			sprintf((char *)str_byte1, " %.02x ", (unsigned char)pkt1[k]);
 			sprintf((char *)str_byte2, " %.02x ", (unsigned char)pkt2[k]);
@@ -111,10 +116,11 @@ void compare_packets(char *pkt1, char *pkt2, int size1, int size2 __attribute__ 
 			strcat((char *)str_pkt2, (char *)str_byte2);
 		}
 
-		if (byte_diff == C_TRUE)
+		if (byte_diff == C_TRUE) {
 			sprintf((char *)str_diff, " # ");
-		else
+		} else {
 			sprintf((char *)str_diff, "   ");
+		}
 
 		PRINT("[0x%08x] ", (i + 1) * nb_bytes_print);
 		PRINT("%s", str_diff);
@@ -148,20 +154,21 @@ void print_tx_stats(void)
 	TX_total_drop_pkt += rle_transmitter_get_counter_dropped(transmitter);
 
 	/* avoid division by 0 */
-	if (TX_total_sent_pkt != 0)
-		avg_pkt_size = (float)(TX_total_sent_size/TX_total_sent_pkt);
+	if (TX_total_sent_pkt != 0) {
+		avg_pkt_size = (float)(TX_total_sent_size / TX_total_sent_pkt);
+	}
 
 	PRINT("INFO: TX status:\n"
-			"\tTX total sent size \t\t\t%10lu\n"
-			"\tTX total sent packets \t\t\t%10lu\n"
-			"\tTX total lost packets \t\t\t%10lu\n"
-			"\tTX total dropped packets \t\t%10lu\n"
-			"\tTX average size per packet \t\t%10.2f\n",
-			TX_total_sent_size,
-			TX_total_sent_pkt,
-			TX_total_lost_pkt,
-			TX_total_drop_pkt,
-			avg_pkt_size);
+	      "\tTX total sent size \t\t\t%10lu\n"
+	      "\tTX total sent packets \t\t\t%10lu\n"
+	      "\tTX total lost packets \t\t\t%10lu\n"
+	      "\tTX total dropped packets \t\t%10lu\n"
+	      "\tTX average size per packet \t\t%10.2f\n",
+	      TX_total_sent_size,
+	      TX_total_sent_pkt,
+	      TX_total_lost_pkt,
+	      TX_total_drop_pkt,
+	      avg_pkt_size);
 }
 
 void clear_rx_stats(void)
@@ -182,19 +189,19 @@ void print_rx_stats(void)
 	RX_total_drop_pkt += rle_receiver_get_counter_dropped(receiver);
 
 	/* avoid division by 0 */
-	if (RX_total_received_pkt != 0)
-		avg_pkt_size = (float)(RX_total_received_size/RX_total_received_pkt);
+	if (RX_total_received_pkt != 0) {
+		avg_pkt_size = (float)(RX_total_received_size / RX_total_received_pkt);
+	}
 
 	PRINT("INFO: RX status:\n"
-			"\tRX total received size \t\t\t%10lu\n"
-			"\tRX total received packets \t\t%10lu\n"
-			"\tRX total lost packets \t\t\t%10lu\n"
-			"\tRX total dropped packets \t\t%10lu\n"
-			"\tRX average size per packet \t\t%10.2f\n",
-			RX_total_received_size,
-			RX_total_received_pkt,
-			RX_total_lost_pkt,
-			RX_total_drop_pkt,
-			avg_pkt_size);
+	      "\tRX total received size \t\t\t%10lu\n"
+	      "\tRX total received packets \t\t%10lu\n"
+	      "\tRX total lost packets \t\t\t%10lu\n"
+	      "\tRX total dropped packets \t\t%10lu\n"
+	      "\tRX average size per packet \t\t%10.2f\n",
+	      RX_total_received_size,
+	      RX_total_received_pkt,
+	      RX_total_lost_pkt,
+	      RX_total_drop_pkt,
+	      avg_pkt_size);
 }
-

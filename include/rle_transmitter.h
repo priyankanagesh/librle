@@ -100,9 +100,9 @@ void rle_transmitter_destroy(struct transmitter_module *_this);
  *
  *  @ingroup
  */
-int rle_transmitter_encap_data(struct transmitter_module *_this,
-				void *data_buffer, size_t data_length,
-				uint16_t protocol_type);
+int rle_transmitter_encap_data(struct transmitter_module *_this, void *data_buffer,
+                               size_t data_length,
+                               uint16_t protocol_type);
 
 /**
  *  @brief Fill burst payload with an RLE packet
@@ -119,15 +119,11 @@ int rle_transmitter_encap_data(struct transmitter_module *_this,
  *
  *  @ingroup
  */
-int rle_transmitter_get_packet(struct transmitter_module *_this,
-		void *burst_buffer,
-		size_t burst_length,
-		uint8_t fragment_id,
-		uint16_t protocol_type);
+int rle_transmitter_get_packet(struct transmitter_module *_this, void *burst_buffer,
+                               size_t burst_length, uint8_t fragment_id,
+                               uint16_t protocol_type);
 
-
-void rle_transmitter_free_context(struct transmitter_module *_this,
-		uint8_t fragment_id);
+void rle_transmitter_free_context(struct transmitter_module *_this, uint8_t fragment_id);
 
 /**
  *  @brief Get a queue (frag_id) state, filled or empty
@@ -142,8 +138,7 @@ void rle_transmitter_free_context(struct transmitter_module *_this,
  *
  *  @ingroup
  */
-int rle_transmitter_get_queue_state(struct transmitter_module *_this,
-		uint8_t fragment_id);
+int rle_transmitter_get_queue_state(struct transmitter_module *_this, uint8_t fragment_id);
 
 /**
  *  @brief Get occupied size of a queue (frag_id)
@@ -157,8 +152,7 @@ int rle_transmitter_get_queue_state(struct transmitter_module *_this,
  *
  *  @ingroup
  */
-uint32_t rle_transmitter_get_queue_size(struct transmitter_module *_this,
-		uint8_t fragment_id);
+uint32_t rle_transmitter_get_queue_size(struct transmitter_module *_this, uint8_t fragment_id);
 
 /**
  *  @brief Get total number of successfully

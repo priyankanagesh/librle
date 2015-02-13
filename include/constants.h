@@ -31,20 +31,20 @@
 #define _REENTRANT
 #endif
 
-#define C_TRUE		1
-#define C_FALSE		0
+#define C_TRUE          1
+#define C_FALSE         0
 
-#define C_OK		0
+#define C_OK            0
 #define C_REASSEMBLY_OK 1
-#define C_ERROR		-1
-#define C_ERROR_DROP	-2
-#define C_ERROR_BUF	-3
+#define C_ERROR         -1
+#define C_ERROR_DROP    -2
+#define C_ERROR_BUF     -3
 #define C_ERROR_TOO_MUCH_FRAG -4
 
-#define IP_VERSION_4	4
-#define IP_VERSION_6	6
+#define IP_VERSION_4    4
+#define IP_VERSION_6    6
 
-#define SIZEOF_PTR	sizeof(char *)
+#define SIZEOF_PTR      sizeof(char *)
 
 /** Type of payload in RLE packet */
 enum {
@@ -56,22 +56,21 @@ enum {
 
 #ifndef __KERNEL__
 
-#define MALLOC(size_bytes)	malloc(size_bytes);
-#define FREE(buf_addr)		free(buf_addr);
-#define PRINT(x...)	do { \
-				printf(x); \
-			} while(0)
+#define MALLOC(size_bytes)      malloc(size_bytes)
+#define FREE(buf_addr)          free(buf_addr)
+#define PRINT(x ...)     do { \
+		printf(x); \
+} while (0)
 
 #else
 
-#define MOD_NAME		"RLE: "
+#define MOD_NAME                "RLE: "
 /* vmalloc allocates size with 4K modulo so for 8*2565 = 20520B it would alloc 24K
  * kmalloc allocates size with power of two so for 20520B it would alloc 32K */
-#define MALLOC(size_bytes)	kmalloc(size_bytes, GFP_KERNEL); /* vmalloc(size_bytes); */
-#define FREE(buf_addr)		kfree(buf_addr); /* vfree(buf_addr); */
-#define PRINT(x...)		printk(x);
+#define MALLOC(size_bytes)      kmalloc(size_bytes, GFP_KERNEL) /* vmalloc(size_bytes); */
+#define FREE(buf_addr)          kfree(buf_addr) /* vfree(buf_addr); */
+#define PRINT(x ...)            printk(x)
 
 #endif
 
 #endif /* _CONSTANTS_H */
-
