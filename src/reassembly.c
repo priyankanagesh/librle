@@ -409,7 +409,7 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 	      hdr->head_start.b.total_length, hdr->head.b.rle_packet_length);
 	PRINT("------ RECV START PACKET ------------\n");
 	PRINT("| SE |  RLEPL |  ID |  TL   |  LT  |  T  |  PTYPE  |\n");
-	PRINT("| %d%d |   %d   | 0x%0x |  %d  |  0x%0x | 0x%0x | 0x%0x    |\n",
+	PRINT("| %d%d |   %d   | 0x%0x |  %d  |  0x%0x | 0x%0x | 0x%04x  |\n",
 	      hdr->head.b.start_ind,
 	      hdr->head.b.end_ind,
 	      hdr->head.b.rle_packet_length,

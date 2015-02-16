@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <getopt.h>
+#include <arpa/inet.h>
 
 #ifndef __KERNEL__
 
@@ -138,6 +139,11 @@ static int run_test_frag_rea(char *pcap_file_name, uint32_t param_ptype, uint16_
 		rle_conf_set_crc_check(receiver->rle_conf[nb_frag_id], use_crc);
 
 		uint16_t protocol_type = param_ptype;
+		/* If the proto type is not set, we set it here from the 12th and 13th octets of the Ethernet
+		 * header.. */
+		if (protocol_type == 0) {
+			protocol_type = ntohs(*((uint16_t *)(packet + 12 * sizeof(char))));
+		}
 		if (rle_transmitter_encap_data(transmitter, in_packet, in_size,
 		                               protocol_type) == C_ERROR) {
 			PRINT("ERROR while encapsulating data\n");

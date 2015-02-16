@@ -40,8 +40,8 @@ static void print_usage(char *basename)
 	      "\t-c enable CRC trailer (default)\n"
 	      "\t-s enable sequence number trailer\n"
 	      "\t-e launch encapsulation/deencapsulation test\n"
-	      "\t-l launch limits of fragmenation/reassembly test\n"
-	      "\t-r launch fragmenation/reassembly test\n"
+	      "\t-l launch limits of fragmentation/reassembly test\n"
+	      "\t-r launch fragmentation/reassembly test\n"
 	      "\t-a launch all tests\n"
 	      "\t-b BURST_SIZE in Bytes (valid values between 15 and 512 Bytes)\n"
 	      "\t-p PROTOCOL_TYPE (uncompressed protocol type in hexa)\n"
@@ -120,12 +120,20 @@ int main(int argc, char *argv[])
 		goto exit_ret;
 	}
 
-	PRINT("INFO: TEST with protocol type 0x%0x\n"
-	      " burst size %d\n"
-	      " pcap file %s\n",
-	      param_protocol_type,
-	      param_burst_size,
-	      param_file_name);
+	if (param_protocol_type != 0) {
+		PRINT("INFO: TEST with protocol type 0x%0x\n"
+		      " burst size %d\n"
+		      " pcap file %s\n",
+		      param_protocol_type,
+		      param_burst_size,
+		      param_file_name);
+	} else {
+		PRINT("INFO: TEST with protocol to determine in PCAP"
+		      " burst size %d\n"
+		      " pcap file %s\n",
+		      param_burst_size,
+		      param_file_name);
+	}
 
 	/* fallback on valid trailer type to test */
 	if (opt_crc_flag != ENABLE_CRC && opt_seq_flag != ENABLE_SEQ) {

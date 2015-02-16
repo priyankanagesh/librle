@@ -538,8 +538,8 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 		}
 
 		PRINT("--------- COMPLETE PACKET ------------\n");
-		PRINT("| SE |  RLEPL  |  LT |  T  |  PTYPE |\n");
-		PRINT("| %d%d |   %d   | 0x%0x | 0x%0x |  0x%0x  |\n",
+		PRINT("| SE |  RLEPL   |  LT |  T  |  PTYPE  |\n");
+		PRINT("| %d%d |   %d   | 0x%0x | 0x%0x |  0x%04x |\n",
 		      zc_buf->header.head.b.start_ind,
 		      zc_buf->header.head.b.end_ind,
 		      zc_buf->header.head.b.rle_packet_length,
@@ -635,7 +635,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 
 			PRINT("----------- START PACKET ------------\n");
 			PRINT("| SE |  RLEPL |  ID |  TL   |  LT  |  T  |  PTYPE  |\n");
-			PRINT("| %d%d |   %d   | 0x%0x |  %d  |  0x%0x | 0x%0x | 0x%0x    |\n",
+			PRINT("| %d%d |   %d   | 0x%0x |  %d  |  0x%0x | 0x%0x | 0x%04x  |\n",
 			      zc_buf->header.head.b.start_ind,
 			      zc_buf->header.head.b.end_ind,
 			      zc_buf->header.head.b.rle_packet_length,
