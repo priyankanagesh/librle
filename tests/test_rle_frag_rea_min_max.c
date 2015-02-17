@@ -106,10 +106,13 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 		link_len_src = 0;
 	}
 
-	while (((packet =
-	                 (unsigned char *)pcap_next(handle,
-	                                            &header)) !=
-	        NULL) && nb_frag_id < nb_fragment_id) {
+	packet = (unsigned char *)pcap_next(handle, &header);
+
+	if (packet == NULL) {
+		PRINT("ERROR Packet #0: Null packet.");
+	}
+
+	for (nb_frag_id = 0; nb_frag_id < nb_fragment_id; ++nb_frag_id) {
 		unsigned char *in_packet = NULL;
 		unsigned char *out_packet = NULL;
 		int out_ptype = 0;
@@ -135,7 +138,12 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 		rle_conf_set_crc_check(transmitter->rle_conf, use_crc);
 		rle_conf_set_crc_check(receiver->rle_conf[nb_frag_id], use_crc);
 
-		uint16_t protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP;
+		uint16_t protocol_type = 0;
+		/* If the proto type is not set, we set it here from the 12th and 13th octets of the Ethernet
+		 * header.. */
+		if (protocol_type == 0) {
+			protocol_type = ntohs(*((uint16_t *)(packet + 12 * sizeof(char))));
+		}
 		if (rle_transmitter_encap_data(transmitter, in_packet, in_size,
 		                               protocol_type) == C_ERROR) {
 			PRINT("ERROR while encapsulating data\n");
@@ -249,10 +257,10 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 					test_retval = C_ERROR;
 				}
 
-				nb_frag_id++;
-
 				free(out_packet);
 				out_packet = NULL;
+				ret_recv = C_ERROR;
+				break;
 			} else {
 				free(out_packet);
 				out_packet = NULL;
