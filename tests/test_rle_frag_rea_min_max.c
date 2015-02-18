@@ -45,6 +45,7 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 	size_t size_trailer = 0;
 	char trailer_type[64];
 	unsigned char *burst_buffer = NULL;
+	uint16_t protocol_type = 0;
 
 	/* clear RLE statistics */
 	clear_tx_stats();
@@ -138,7 +139,6 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 		rle_conf_set_crc_check(transmitter->rle_conf, use_crc);
 		rle_conf_set_crc_check(receiver->rle_conf[nb_frag_id], use_crc);
 
-		uint16_t protocol_type = 0;
 		/* If the proto type is not set, we set it here from the 12th and 13th octets of the Ethernet
 		 * header.. */
 		if (protocol_type == 0) {
