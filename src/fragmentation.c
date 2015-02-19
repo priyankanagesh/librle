@@ -252,7 +252,7 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 
 	/* map RLE header to the already allocated buffer */
 	struct zc_rle_header_cont_end *rle_c_e_hdr =
-	        (struct zc_rle_header_cont_end *)rle_ctx_get_end_address(rle_ctx);
+	        (struct zc_rle_header_cont_end *)((void *)rle_ctx_get_end_address(rle_ctx));
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: new fragment start @ %p\n",

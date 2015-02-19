@@ -676,8 +676,8 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 			while ((end_bit != 1)) {
 				/* update current address in RLE zc buffer */
 				struct zc_rle_header_cont_end *zc_ce_buf =
-				        (struct zc_rle_header_cont_end *)((unsigned char *)
-				                                          ptr_to_next_frag + 8);
+				        (struct zc_rle_header_cont_end *)((void *)((unsigned char *)
+				                                          ptr_to_next_frag + 8));
 
 				ptr_to_next_frag = &(zc_ce_buf->ptrs.end);
 
