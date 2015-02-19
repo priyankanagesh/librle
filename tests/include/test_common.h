@@ -8,6 +8,11 @@
 
 #define FAKE_BURST_MAX_SIZE 4096
 
+/* Size of an Ethernet Mac address and position of its protocol type field defined for simple and
+ * explicit manipulation in our tests. */
+#define ETHER_MAC_ADDR_SIZE 6
+#define ETHER_PTYPE_POS (2 * (ETHER_MAC_ADDR_SIZE))
+
 enum options {
 	DISABLE_FRAGMENTATION = 0,
 	ENABLE_FRAGMENTATION,

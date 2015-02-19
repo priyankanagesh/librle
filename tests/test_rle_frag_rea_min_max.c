@@ -142,7 +142,7 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 		/* If the proto type is not set, we set it here from the 12th and 13th octets of the Ethernet
 		 * header.. */
 		if (protocol_type == 0) {
-			protocol_type = ntohs(*((uint16_t *)((void *)(packet + 12 * sizeof(char)))));
+			protocol_type = ntohs(*((uint16_t *)((void *)(packet + ETHER_PTYPE_POS * sizeof(char)))));
 		}
 		if (rle_transmitter_encap_data(transmitter, in_packet, in_size,
 		                               protocol_type) == C_ERROR) {
