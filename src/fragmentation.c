@@ -213,7 +213,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	rle_ctx_set_rle_length(rle_ctx,
 	                       (burst_payload_length - ptype_length));
 
-	rle_ctx_set_qos_tag(rle_ctx, 0); // TODO
+	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO */
 
 	/* Copy this fragment to burst payload:
 	 * first copy RLE header

@@ -103,7 +103,7 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 	rle_ctx_set_proto_type(rle_ctx, protocol_type);
 	uint8_t label_type = GET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID);
 	rle_ctx_set_label_type(rle_ctx, label_type);
-	rle_ctx_set_qos_tag(rle_ctx, 0); // TODO update
+	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO update */
 
 	return C_OK;
 }

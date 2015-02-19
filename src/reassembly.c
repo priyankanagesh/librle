@@ -325,7 +325,7 @@ static void update_ctx_complete(struct rle_ctx_management *rle_ctx,
 	rle_ctx_set_proto_type(rle_ctx, protocol_type);
 	rle_ctx_set_label_type(rle_ctx, label_type);
 
-	rle_ctx_set_qos_tag(rle_ctx, 0); // TODO
+	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO */
 }
 
 static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
@@ -425,7 +425,7 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 	rle_ctx_set_proto_type(rle_ctx, protocol_type);
 	rle_ctx_set_label_type(rle_ctx, hdr->head_start.b.label_type);
 
-	rle_ctx_set_qos_tag(rle_ctx, 0); // TODO
+	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO */
 }
 
 static void update_ctx_cont(struct rle_ctx_management *rle_ctx,
