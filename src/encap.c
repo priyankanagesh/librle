@@ -154,47 +154,47 @@ int encap_check_l2_pdu_validity(void *pdu_buffer, size_t pdu_length __attribute_
 	eth_hdr = (struct ether_header *)pdu_buffer;
 
 	switch (protocol_type) {
-	case RLE_PROTO_TYPE_VLAN:
-		if (eth_hdr->ether_type != RLE_PROTO_TYPE_VLAN) {
+	case RLE_PROTO_TYPE_VLAN_UNCOMP:
+		if (eth_hdr->ether_type != RLE_PROTO_TYPE_VLAN_UNCOMP) {
 			PRINT("ERROR %s %s:%s:%d: expecting ethernet vlan [0x%0x],"
 			      " got [0x%0x]\n",
 			      MODULE_NAME,
 			      __FILE__, __func__, __LINE__,
-			      RLE_PROTO_TYPE_VLAN,
+			      RLE_PROTO_TYPE_VLAN_UNCOMP,
 			      eth_hdr->ether_type);
 		} else {
 			ret = C_OK;
 		}
 		break;
-	case RLE_PROTO_TYPE_VLAN_STACKING:
-		if (eth_hdr->ether_type != RLE_PROTO_TYPE_VLAN_STACKING) {
+	case RLE_PROTO_TYPE_VLAN_QINQ_UNCOMP:
+		if (eth_hdr->ether_type != RLE_PROTO_TYPE_VLAN_QINQ_UNCOMP) {
 			PRINT("ERROR %s %s:%s:%d: expecting ethernet vlan stacking [0x%0x],"
 			      " got [0x%0x]\n",
 			      MODULE_NAME,
 			      __FILE__, __func__, __LINE__,
-			      RLE_PROTO_TYPE_VLAN_STACKING,
+			      RLE_PROTO_TYPE_VLAN_QINQ_UNCOMP,
 			      eth_hdr->ether_type);
 		} else {
 			ret = C_OK;
 		}
 		break;
-	case RLE_PROTO_TYPE_VLAN_QINQ:
-		if (eth_hdr->ether_type != RLE_PROTO_TYPE_VLAN_QINQ) {
+	case RLE_PROTO_TYPE_VLAN_QINQ_LEGACY_UNCOMP:
+		if (eth_hdr->ether_type != RLE_PROTO_TYPE_VLAN_QINQ_LEGACY_UNCOMP) {
 			PRINT("ERROR %s %s:%s:%d: expecting ethernet vlan Q-in-Q [0x%0x],"
 			      " got [0x%0x]\n",
 			      MODULE_NAME,
 			      __FILE__, __func__, __LINE__,
-			      RLE_PROTO_TYPE_VLAN_QINQ,
+			      RLE_PROTO_TYPE_VLAN_QINQ_LEGACY_UNCOMP,
 			      eth_hdr->ether_type);
 			break;
 		}
 		ethertype2 = (uint16_t)*(unsigned char *)(eth_hdr + 4);
-		if (ethertype2 != RLE_PROTO_TYPE_VLAN) {
+		if (ethertype2 != RLE_PROTO_TYPE_VLAN_UNCOMP) {
 			PRINT("ERROR %s %s:%s:%d: expecting double tagging [0x%0x],"
 			      " got [0x%0x]\n",
 			      MODULE_NAME,
 			      __FILE__, __func__, __LINE__,
-			      RLE_PROTO_TYPE_VLAN,
+			      RLE_PROTO_TYPE_VLAN_UNCOMP,
 			      ethertype2);
 		} else {
 			ret = C_OK;
@@ -219,7 +219,8 @@ int encap_check_l3_pdu_validity(void *pdu_buffer, size_t pdu_length, uint16_t pr
 	      __FILE__, __func__, __LINE__);
 #endif
 
-	if ((protocol_type == RLE_PROTO_TYPE_ARP) ||
+	if ((protocol_type == RLE_PROTO_TYPE_ARP_COMP) ||
+	    (protocol_type == RLE_PROTO_TYPE_ARP_UNCOMP) ||
 	    (protocol_type == RLE_PROTO_TYPE_SIGNAL_COMP) ||
 	    (protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP)) {
 		return C_OK;
@@ -227,7 +228,7 @@ int encap_check_l3_pdu_validity(void *pdu_buffer, size_t pdu_length, uint16_t pr
 
 	uint16_t total_length = 0;
 
-	if ((protocol_type == RLE_PROTO_TYPE_IP_COMP) ||
+	if ((protocol_type == RLE_PROTO_TYPE_IPV4_COMP) ||
 	    (protocol_type == RLE_PROTO_TYPE_IPV4_UNCOMP)) {
 		/* PDU is IPv4 packet */
 		struct iphdr *ip_hdr = (struct iphdr *)pdu_buffer;
@@ -267,7 +268,8 @@ int encap_check_l3_pdu_validity(void *pdu_buffer, size_t pdu_length, uint16_t pr
 		return C_OK;
 	}
 
-	if (protocol_type == RLE_PROTO_TYPE_IPV6_UNCOMP) {
+	if ((protocol_type == RLE_PROTO_TYPE_IPV6_COMP) ||
+	    (protocol_type == RLE_PROTO_TYPE_IPV6_UNCOMP)) {
 		/* PDU is IPv6 packet */
 		struct ip6_hdr *ip_hdr = (struct ip6_hdr *)pdu_buffer;
 
@@ -306,6 +308,8 @@ int encap_check_l3_pdu_validity(void *pdu_buffer, size_t pdu_length, uint16_t pr
 
 		return C_OK;
 	}
+
+	/* TODO: Case of 0x30 and 0x31, depending on what will be decided... */
 
 	PRINT("ERROR %s %s:%s:%d: Unknown PDU type [0x%0x]\n",
 	      MODULE_NAME,

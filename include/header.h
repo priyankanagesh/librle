@@ -12,45 +12,8 @@
 
 #include <endian.h>
 #include <stdint.h>
+#include "rle_header_proto_type_field.h"
 
-/** Label Type for implicit protocol type */
-#define RLE_LT_IMPLICIT_PROTO_TYPE              2
-/** Label Type for protocol signalling */
-#define RLE_LT_PROTO_SIGNAL                     3
-/** Type field - protocol type not supressed */
-#define RLE_T_PROTO_TYPE_NO_SUPP                0
-/** Type field - protocol type supressed */
-#define RLE_T_PROTO_TYPE_SUPP                   1
-/** Protocol type for signalling compressed */
-#define RLE_PROTO_TYPE_SIGNAL_COMP              0x42
-/** Protocol type for signalling non compressed */
-#define RLE_PROTO_TYPE_SIGNAL_UNCOMP            0x0082
-/** Protocol type for VLAN 802.1q */
-#define RLE_PROTO_TYPE_VLAN                     0x8100
-/** Protocol type for VLAN stacking 802.3ad */
-#define RLE_PROTO_TYPE_VLAN_STACKING            0x88a8
-/** Protocol type for VLAN Q-in-Q */
-#define RLE_PROTO_TYPE_VLAN_QINQ                0x9100
-/** Protocol type for ARP */
-#define RLE_PROTO_TYPE_ARP                      0x0806
-/** Protocol type compressed for IPv4/v6 */
-#define RLE_PROTO_TYPE_IP_COMP                  0x30
-/** Protocol type uncompressed for IPv4 */
-#define RLE_PROTO_TYPE_IPV4_UNCOMP              0x0800
-/** Protocol type uncompressed for IPv6 */
-#define RLE_PROTO_TYPE_IPV6_UNCOMP              0x86dd
-/** Protocol type uncompressed for SACH
- * TODO modify */
-#define RLE_PROTO_TYPE_SACH_UNCOMP              RLE_PROTO_TYPE_IPV4_UNCOMP
-/** Protocol type compressed for SACH
- * TODO modify */
-#define RLE_PROTO_TYPE_SACH_COMP                RLE_PROTO_TYPE_IP_COMP
-/** Max size of input packet (PDU) in Bytes */
-#define RLE_MAX_PDU_SIZE                        4096
-/** Size of Protocol Type uncompressed field in Bytes */
-#define RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP        2
-/** Size of Protocol Type compressed field in Bytes */
-#define RLE_PROTO_TYPE_FIELD_SIZE_COMP          1
 /** Size of mandatory fields in a start packet in Bytes */
 #define RLE_START_MANDATORY_HEADER_SIZE         4
 /** Size of fields in a continuation packet in Bytes */
