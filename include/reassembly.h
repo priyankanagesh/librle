@@ -18,8 +18,10 @@
  *
  *  @warning
  *
- *  @param rle_ctx		the rle reassembly context
- *  @param data_buffer		data buffer's address to reassemble
+ *  @param rle_ctx			the rle reassembly context
+ *  @param pdu_buffer		pdu buffer's address to reassemble
+ *  @param pdu_proto_type	the pdu protocol type
+ *  @param pdu_length		the pdu buffer's length
  *
  *  @return	C_ERROR in case of error
  *		C_OK otherwise
@@ -34,8 +36,10 @@ int reassembly_get_pdu(struct rle_ctx_management *rle_ctx, void *pdu_buffer, int
  *
  *  @warning
  *
- *  @param rle_ctx		the rle reassembly context
+ *  @param rle_ctx			the rle reassembly context
+ *  @param rle_conf 			the rle configuration
  *  @param data_buffer		data buffer's address to reassemble
+ *  @param data_length		the data_buffer's length
  *
  *  @return	C_ERROR in case of error
  *		C_OK otherwise

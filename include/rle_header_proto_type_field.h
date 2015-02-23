@@ -21,50 +21,48 @@
 /** Type field - protocol type supressed */
 #define RLE_T_PROTO_TYPE_SUPP              1
 
-/* Protocol types field values: */
-/*		compressed */
+/** Protocol types field values compressed. */
 enum {
-	/*		for signaling */
+	/* for signaling. */
 	RLE_PROTO_TYPE_SIGNAL_COMP              = 0x42,
-	/*		for VLAN */
+	/*	for VLAN. */
 	RLE_PROTO_TYPE_VLAN_COMP                = 0x0f,
 	RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD = 0x31,
 	RLE_PROTO_TYPE_VLAN_QINQ_COMP           = 0x19,
 	RLE_PROTO_TYPE_VLAN_QINQ_LEGACY_COMP    = 0x1a,
-	/*		for IPv4/v6 */
+	/*	for IPv4/v6. */
 	RLE_PROTO_TYPE_IP_COMP                  = 0x30,
 	RLE_PROTO_TYPE_IPV4_COMP                = 0x0d,
 	RLE_PROTO_TYPE_IPV6_COMP                = 0x11,
-	/*		for ARP */
+	/*	for ARP. */
 	/* TODO: ARP not in the RLE_ICD v.10 (19/02/2015). Should we considere to remove it ? */
 	RLE_PROTO_TYPE_ARP_COMP                 = 0x0e,
-	/*		for SACH */
-	/* TODO modify */
+	/*	for SACH. */
 	/* TODO: SACH not in the RLE_ICD v.10 (19/02/2015). Should we considere to remove it ? */
+	/* TODO modify */
 	RLE_PROTO_TYPE_SACH_COMP                = RLE_PROTO_TYPE_IP_COMP
 };
 
-/*		uncompressed. */
+/** Protocol types field values uncompressed. */
 enum {
-	/*		for signaling */
+	/*	for signaling */
 	RLE_PROTO_TYPE_SIGNAL_UNCOMP            = 0x0082,
-	/*		for VLAN */
+	/*	for VLAN */
 	RLE_PROTO_TYPE_VLAN_UNCOMP              = 0x8100,
 	RLE_PROTO_TYPE_VLAN_QINQ_UNCOMP         = 0x88a8,
 	RLE_PROTO_TYPE_VLAN_QINQ_LEGACY_UNCOMP  = 0x9100,
-	/*		for IPv4/v6 */
+	/*	for IPv4/v6 */
 	RLE_PROTO_TYPE_IPV4_UNCOMP              = 0x0800,
 	RLE_PROTO_TYPE_IPV6_UNCOMP              = 0x86dd,
-	/*		for ARP */
+	/*	for ARP */
 	/* TODO: ARP not in the ICD (19/02/2015). Should we considere to remove it ? */
 	RLE_PROTO_TYPE_ARP_UNCOMP               = 0x0806,
-	/*		for SACH */
-	/* TODO modify */
+	/*	for SACH */
 	/* TODO: SACH not in the ICD (19/02/2015). Should we considere to remove it ? */
+	/* TODO modify */
 	RLE_PROTO_TYPE_SACH_UNCOMP              = RLE_PROTO_TYPE_IPV4_UNCOMP
 };
 
-/** Sizes */
 /** Max size of input packet (PDU) in Bytes */
 #define RLE_MAX_PDU_SIZE                   4088
 /** Size of Protocol Type uncompressed field in Bytes */
@@ -72,9 +70,17 @@ enum {
 /** Size of Protocol Type compressed field in Bytes */
 #define RLE_PROTO_TYPE_FIELD_SIZE_COMP     1
 
-#define RLE_PROTO_TYPE_MAX_COMP_VALUE      0xFF
+/** Max protocol type compressed value */
+#define RLE_PROTO_TYPE_MAX_COMP_VALUE      0xff
 
-/* Special procotol type values */
+/**
+ * Special procotol type values.
+ *
+ *	Chosen from among reserved values in IEEE public EtherType list.
+ *	May evolve in the future.
+ *
+ *	@see http://standards.ieee.org/develop/regauth/ethertype/eth.txt
+ */
 enum {
 	RLE_PROTO_TYPE_RESERVED                 = 0x0b04,
 	RLE_PROTO_TYPE_USER_DEFINED,
@@ -82,38 +88,44 @@ enum {
 	RLE_PROTO_TYPE_ADJACENT_2BYTES_PTYPE
 };
 
-/** Lots of define to easily populate the array of protocol references.
+/**
+ * Lots of define to easily populate the array of protocol references, that allow to concatenate
+ * initializing value for arrays. The concat initializer are based on the binary arithmetic and more
+ * especially on the powers of two.
  *
- * For instance POW_2(RLE_PROTO_TYPE_RESERVED) is replaced by
+ * For instance CONCAT_INITIALIZER_POW_2(RLE_PROTO_TYPE_RESERVED) is replaced by
  * "RLE_PROTO_TYPE_RESERVED, RLE_PROTO_TYPE_RESERVED" by the preprocessor.
- * We can write array "arr[2] = { POW_2(RLE_PROTO_TYPE_RESERVED) };"
- * and the preprocessor replace it by
+ * We can write array "arr[2] = { CONCAT_INITIALIZER_POW_2(RLE_PROTO_TYPE_RESERVED) };"
+ * and the preprocessor replaces it by
  * "arr[2] = { RLE_PROTO_TYPE_RESERVED, RLE_PROTO_TYPE_RESERVED };"
- *
  */
-#define POW_2(_x)  (_x), (_x)
-#define POW_4(_x)  POW_2(_x), POW_2(_x)
-#define POW_8(_x)  POW_4(_x), POW_4(_x)
-#define POW_16(_x) POW_8(_x), POW_8(_x)
-#define POW_32(_x) POW_16(_x), POW_16(_x)
-#define POW_64(_x) POW_32(_x), POW_32(_x)
+#define CONCAT_INITIALIZER_POW_2(_x)  (_x), (_x)
+#define CONCAT_INITIALIZER_POW_4(_x)  CONCAT_INITIALIZER_POW_2(_x), CONCAT_INITIALIZER_POW_2(_x)
+#define CONCAT_INITIALIZER_POW_8(_x)  CONCAT_INITIALIZER_POW_4(_x), CONCAT_INITIALIZER_POW_4(_x)
+#define CONCAT_INITIALIZER_POW_16(_x) CONCAT_INITIALIZER_POW_8(_x), CONCAT_INITIALIZER_POW_8(_x)
+#define CONCAT_INITIALIZER_POW_32(_x) CONCAT_INITIALIZER_POW_16(_x), CONCAT_INITIALIZER_POW_16(_x)
+#define CONCAT_INITIALIZER_POW_64(_x) CONCAT_INITIALIZER_POW_32(_x), CONCAT_INITIALIZER_POW_32(_x)
 
-#define RLE_PROTO_TYPE_RESERVED_16      POW_16(RLE_PROTO_TYPE_RESERVED)
+/** 16 reserved protocol type for range 0x32 -> 0x41 */
+#define RLE_PROTO_TYPE_RESERVED_16      CONCAT_INITIALIZER_POW_16(RLE_PROTO_TYPE_RESERVED)
 
-#define RLE_PROTO_TYPE_RESERVED_21      POW_16(RLE_PROTO_TYPE_RESERVED), \
-        POW_4(RLE_PROTO_TYPE_RESERVED), \
+/** 21 reserved protocol type for range 0x1b -> 0x2f */
+#define RLE_PROTO_TYPE_RESERVED_21      CONCAT_INITIALIZER_POW_16(RLE_PROTO_TYPE_RESERVED), \
+        CONCAT_INITIALIZER_POW_4(RLE_PROTO_TYPE_RESERVED), \
         RLE_PROTO_TYPE_RESERVED
 
-#define RLE_PROTO_TYPE_RESERVED_56      POW_32(RLE_PROTO_TYPE_RESERVED), \
-        POW_16(RLE_PROTO_TYPE_RESERVED), \
-        POW_8(RLE_PROTO_TYPE_RESERVED)
+/** 56 reserved protocol type for range 0x48 -> 0x7f */
+#define RLE_PROTO_TYPE_RESERVED_56      CONCAT_INITIALIZER_POW_32(RLE_PROTO_TYPE_RESERVED), \
+        CONCAT_INITIALIZER_POW_16(RLE_PROTO_TYPE_RESERVED), \
+        CONCAT_INITIALIZER_POW_8(RLE_PROTO_TYPE_RESERVED)
 
-#define RLE_PROTO_TYPE_USER_DEFINED_127 POW_64(RLE_PROTO_TYPE_USER_DEFINED), \
-        POW_32(RLE_PROTO_TYPE_USER_DEFINED), \
-        POW_16(RLE_PROTO_TYPE_USER_DEFINED), \
-        POW_8(RLE_PROTO_TYPE_USER_DEFINED), \
-        POW_4(RLE_PROTO_TYPE_USER_DEFINED), \
-        POW_2(RLE_PROTO_TYPE_USER_DEFINED), \
+/** 127 user defined protocol type for range 0x80 -> 0xfe */
+#define RLE_PROTO_TYPE_USER_DEFINED_127 CONCAT_INITIALIZER_POW_64(RLE_PROTO_TYPE_USER_DEFINED), \
+        CONCAT_INITIALIZER_POW_32(RLE_PROTO_TYPE_USER_DEFINED), \
+        CONCAT_INITIALIZER_POW_16(RLE_PROTO_TYPE_USER_DEFINED), \
+        CONCAT_INITIALIZER_POW_8(RLE_PROTO_TYPE_USER_DEFINED), \
+        CONCAT_INITIALIZER_POW_4(RLE_PROTO_TYPE_USER_DEFINED), \
+        CONCAT_INITIALIZER_POW_2(RLE_PROTO_TYPE_USER_DEFINED), \
         RLE_PROTO_TYPE_USER_DEFINED
 
 #endif /* _RLE_HEADER_PROTO_TYPE_H */

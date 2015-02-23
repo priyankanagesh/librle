@@ -148,7 +148,7 @@ uint32_t compute_crc_zc(char *field, size_t field_len, char *pdu_buf, size_t pdu
                         uint32_t crc_init)
 {
 	char *p = NULL;
-/*        size_t total_len = (field_len + pdu_len);*/
+	/* size_t total_len = (field_len + pdu_len);*/
 	size_t len = 0;
 
 	/* compute field CRC */

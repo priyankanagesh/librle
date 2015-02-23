@@ -33,8 +33,6 @@ struct receiver_module {
  *
  *  @warning
  *
- *  @param
- *
  *  @return Pointer to the receiver module
  *
  *  @ingroup
@@ -48,8 +46,6 @@ struct receiver_module *rle_receiver_new(void);
  *
  *  @param _this	The receiver module to initialize
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_receiver_init(struct receiver_module *_this);
@@ -60,8 +56,6 @@ void rle_receiver_init(struct receiver_module *_this);
  *  @warning
  *
  *  @param _this	The receiver module to destroy
- *
- *  @return
  *
  *  @ingroup
  */
@@ -108,7 +102,16 @@ int rle_receiver_deencap_data(struct receiver_module *_this, void *data_buffer, 
 int rle_receiver_get_packet(struct receiver_module *_this, uint8_t fragment_id, void *pdu_buffer,
                             int *pdu_proto_type,
                             uint32_t *pdu_length);
-
+/**
+ *  @brief Set to idle the fragment context
+ *
+ *  @warning
+ *
+ *  @param _this	The receiver module to use for deencapsulation
+ *  @param fragment_id	Fragmentation context to use to get the PDU
+ *
+ *  @ingroup
+ */
 void rle_receiver_free_context(struct receiver_module *_this, uint8_t fragment_id);
 
 /**

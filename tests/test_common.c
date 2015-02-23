@@ -164,10 +164,10 @@ void print_tx_stats(void)
 	      "\tTX total lost packets \t\t\t%10lu\n"
 	      "\tTX total dropped packets \t\t%10lu\n"
 	      "\tTX average size per packet \t\t%10.2f\n",
-	      TX_total_sent_size,
-	      TX_total_sent_pkt,
-	      TX_total_lost_pkt,
-	      TX_total_drop_pkt,
+	      (long unsigned int)TX_total_sent_size,
+	      (long unsigned int)TX_total_sent_pkt,
+	      (long unsigned int)TX_total_lost_pkt,
+	      (long unsigned int)TX_total_drop_pkt,
 	      avg_pkt_size);
 }
 
@@ -199,9 +199,9 @@ void print_rx_stats(void)
 	      "\tRX total lost packets \t\t\t%10lu\n"
 	      "\tRX total dropped packets \t\t%10lu\n"
 	      "\tRX average size per packet \t\t%10.2f\n",
-	      RX_total_received_size,
-	      RX_total_received_pkt,
-	      RX_total_lost_pkt,
-	      RX_total_drop_pkt,
+	      (long unsigned int)RX_total_received_size,
+	      (long unsigned int)RX_total_received_pkt,
+	      (long unsigned int)RX_total_lost_pkt,
+	      (long unsigned int)RX_total_drop_pkt,
 	      avg_pkt_size);
 }

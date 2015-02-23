@@ -53,8 +53,6 @@ struct transmitter_module {
  *
  *  @warning
  *
- *  @param
- *
  *  @return Pointer to the transmitter module
  *
  *  @ingroup
@@ -68,8 +66,6 @@ struct transmitter_module *rle_transmitter_new(void);
  *
  *  @param _this	The transmitter module to initialize
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_transmitter_init(struct transmitter_module *_this);
@@ -80,8 +76,6 @@ void rle_transmitter_init(struct transmitter_module *_this);
  *  @warning
  *
  *  @param _this	The transmitter module to destroy
- *
- *  @return
  *
  *  @ingroup
  */
@@ -96,7 +90,8 @@ void rle_transmitter_destroy(struct transmitter_module *_this);
  *  @param data_buffer	Data buffer's address to encapsulate
  *  @param data_length	Data length to encapsulate
  *
- *  @return
+ *  @return	C_ERROR enable_crc_check is an invalid flag
+ *		C_OK	Otherwise
  *
  *  @ingroup
  */
@@ -115,7 +110,8 @@ int rle_transmitter_encap_data(struct transmitter_module *_this, void *data_buff
  *  @param fragment_id		Fragment id to use
  *  @param protocol_type	Protocol type to use in proto_type field
  *
- *  @return
+ *  @return	C_ERROR enable_crc_check is an invalid flag
+ *		C_OK	Otherwise
  *
  *  @ingroup
  */
@@ -123,6 +119,16 @@ int rle_transmitter_get_packet(struct transmitter_module *_this, void *burst_buf
                                size_t burst_length, uint8_t fragment_id,
                                uint16_t protocol_type);
 
+/**
+ *  @brief Set to idle the fragment context
+ *
+ *  @warning
+ *
+ *  @param _this	The transmitter module to use for deencapsulation
+ *  @param fragment_id	Fragmentation context to use to get the PDU
+ *
+ *  @ingroup
+ */
 void rle_transmitter_free_context(struct transmitter_module *_this, uint8_t fragment_id);
 
 /**

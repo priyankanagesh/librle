@@ -29,8 +29,6 @@ struct rle_configuration;
  *
  *  @warning
  *
- *  @param	_this   Pointer to the new RLE configuration
- *
  *  @return	NULL	Allocation failed
  *		Pointer to the new RLE configuration otherwise
  *
@@ -57,7 +55,7 @@ int rle_conf_destroy(struct rle_configuration *_this);
  *
  *  @warning
  *
- *  @param	protocol_type   New default protocol type
+ *  @param	_this   Pointer to the new RLE configuration
  *
  *  @return	C_ERROR protocol_type is an invalid protocol type value
  *		C_OK	Otherwise
@@ -71,7 +69,8 @@ void rle_conf_init(struct rle_configuration *_this);
  *
  *  @warning
  *
- *  @param	protocol_type   New default protocol type
+ *  @param	_this   Pointer to the new RLE configuration to set
+ *  @param	protocol_type   new default protocol type
  *
  *  @return	C_ERROR protocol_type is an invalid protocol type value
  *		C_OK	Otherwise
@@ -85,7 +84,7 @@ int rle_conf_set_default_ptype(struct rle_configuration *_this, uint16_t protoco
  *
  *  @warning
  *
- *  @param
+ *  @param	_this   Pointer to a RLE configuration
  *
  *  @return	Current default protocol type
  *
@@ -98,6 +97,7 @@ int rle_conf_get_default_ptype(struct rle_configuration *_this);
  *
  *  @warning
  *
+ *  @param	_this   Pointer to the RLE configuration to set
  *  @param	enable_ptype_compression Protocol type compression flag
  *
  *  @return	C_ERROR enable_ptype_compression is an invalid compression flag
@@ -112,7 +112,7 @@ int rle_conf_set_ptype_compression(struct rle_configuration *_this, int enable_p
  *
  *  @warning
  *
- *  @param
+ *  @param	_this   Pointer to a RLE configuration
  *
  *  @return	Current protocol type compression flag
  *
@@ -125,6 +125,7 @@ int rle_conf_get_ptype_compression(struct rle_configuration *_this);
  *
  *  @warning
  *
+ *  @param	_this   Pointer to the RLE configuration to set
  *  @param	enable_ptype_suppression Protocol type suppression flag
  *
  *  @return	C_ERROR enable_ptype_suppression is an invalid suppression flag
@@ -141,6 +142,7 @@ int rle_conf_set_ptype_suppression(struct rle_configuration *_this, int enable_p
  *
  *  @param
  *
+ *  @param	_this   Pointer to the RLE configuration to set
  *  @return	Current protocol type suppression flag
  *
  *  @ingroup
@@ -152,6 +154,7 @@ int rle_conf_get_ptype_suppression(struct rle_configuration *_this);
  *
  *  @warning
  *
+ *  @param	_this   Pointer to the RLE configuration to set
  *  @param	enable_crc_check use-CRC in trailer flag
  *
  *  @return	C_ERROR enable_crc_check is an invalid flag
@@ -166,7 +169,7 @@ int rle_conf_set_crc_check(struct rle_configuration *_this, int enable_crc_check
  *
  *  @warning
  *
- *  @param
+ *  @param	_this   Pointer to the RLE configuration to set
  *
  *  @return	Current use-CRC check flag
  *

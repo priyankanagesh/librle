@@ -108,8 +108,6 @@ int rle_ctx_destroy(struct rle_ctx_management *_this);
  *
  *  @param	_this   Pointer to the RLE context structure
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_flush_buffer(struct rle_ctx_management *_this);
@@ -120,8 +118,6 @@ void rle_ctx_flush_buffer(struct rle_ctx_management *_this);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *
- *  @return
  *
  *  @ingroup
  */
@@ -134,8 +130,6 @@ void rle_ctx_invalid_ctx(struct rle_ctx_management *_this);
  *
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New fragment id value
- *
- *  @return
  *
  *  @ingroup
  */
@@ -162,8 +156,6 @@ uint8_t rle_ctx_get_frag_id(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New sequence number value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_seq_nb(struct rle_ctx_management *_this, uint8_t val);
@@ -188,8 +180,6 @@ uint8_t rle_ctx_get_seq_nb(struct rle_ctx_management *_this);
  *
  *  @param	_this   Pointer to the RLE context structure
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_incr_seq_nb(struct rle_ctx_management *_this);
@@ -201,8 +191,6 @@ void rle_ctx_incr_seq_nb(struct rle_ctx_management *_this);
  *
  *  @param	_this	Pointer to the RLE context structure
  *  @param	val	Boolean representing fragmentation status
- *
- *  @return
  *
  *  @ingroup
  */
@@ -229,8 +217,6 @@ int rle_ctx_get_is_fragmented(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New fragment number counter value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_frag_counter(struct rle_ctx_management *_this, uint8_t val);
@@ -241,8 +227,6 @@ void rle_ctx_set_frag_counter(struct rle_ctx_management *_this, uint8_t val);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *
- *  @return
  *
  *  @ingroup
  */
@@ -256,8 +240,6 @@ void rle_ctx_incr_frag_counter(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New value of PDU fragment counter
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_nb_frag_pdu(struct rle_ctx_management *_this, int val);
@@ -268,8 +250,6 @@ void rle_ctx_set_nb_frag_pdu(struct rle_ctx_management *_this, int val);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *
- *  @return
  *
  *  @ingroup
  */
@@ -296,8 +276,6 @@ int rle_ctx_get_nb_frag_pdu(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New QoS tag value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_qos_tag(struct rle_ctx_management *_this, uint32_t val);
@@ -309,8 +287,6 @@ void rle_ctx_set_qos_tag(struct rle_ctx_management *_this, uint32_t val);
  *
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New boolean value representing CRC usage
- *
- *  @return
  *
  *  @ingroup
  */
@@ -337,8 +313,6 @@ int rle_ctx_get_use_crc(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New PDU length
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_pdu_length(struct rle_ctx_management *_this, uint32_t val);
@@ -363,8 +337,6 @@ uint32_t rle_ctx_get_pdu_length(struct rle_ctx_management *_this);
  *
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New remaining PDU length
- *
- *  @return
  *
  *  @ingroup
  */
@@ -391,8 +363,6 @@ uint32_t rle_ctx_get_remaining_pdu_length(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val     New RLE packet length
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val);
@@ -417,8 +387,6 @@ uint32_t rle_ctx_get_rle_length(struct rle_ctx_management *_this);
  *
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New Protocol Type value
- *
- *  @return
  *
  *  @ingroup
  */
@@ -445,8 +413,6 @@ uint16_t rle_ctx_get_proto_type(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *		val	New Label Type value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_label_type(struct rle_ctx_management *_this, uint8_t val);
@@ -471,8 +437,6 @@ uint8_t rle_ctx_get_label_type(struct rle_ctx_management *_this);
  *
  *  @param	_this   Pointer to the RLE context structure
  *  @param	addr	Pointer to the last data added in buffer
- *
- *  @return
  *
  *  @ingroup
  */
@@ -499,8 +463,6 @@ char *rle_ctx_get_end_address(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New counter value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_counter_ok(struct rle_ctx_management *_this, uint64_t val);
@@ -512,8 +474,6 @@ void rle_ctx_set_counter_ok(struct rle_ctx_management *_this, uint64_t val);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *
- *  @return
  *
  *  @ingroup
  */
@@ -540,8 +500,6 @@ uint64_t rle_ctx_get_counter_ok(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New counter value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_counter_dropped(struct rle_ctx_management *_this, uint64_t val);
@@ -552,8 +510,6 @@ void rle_ctx_set_counter_dropped(struct rle_ctx_management *_this, uint64_t val)
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *
- *  @return
  *
  *  @ingroup
  */
@@ -580,8 +536,6 @@ uint64_t rle_ctx_get_counter_dropped(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New counter value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_counter_lost(struct rle_ctx_management *_this, uint64_t val);
@@ -592,8 +546,6 @@ void rle_ctx_set_counter_lost(struct rle_ctx_management *_this, uint64_t val);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *
- *  @return
  *
  *  @ingroup
  */
@@ -620,8 +572,6 @@ uint64_t rle_ctx_get_counter_lost(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New counter value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_counter_bytes(struct rle_ctx_management *_this, uint64_t val);
@@ -633,8 +583,6 @@ void rle_ctx_set_counter_bytes(struct rle_ctx_management *_this, uint64_t val);
  *
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	Number of Bytes to add to the current Bytes counter
- *
- *  @return
  *
  *  @ingroup
  */
@@ -659,8 +607,6 @@ uint64_t rle_ctx_get_counter_bytes(struct rle_ctx_management *_this);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *
- *  @return
  *
  *  @ingroup
  */
