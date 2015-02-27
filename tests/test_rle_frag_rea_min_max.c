@@ -125,7 +125,7 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 		/* check Ethernet frame length */
 		if (header.len <= link_len_src || header.len != header.caplen) {
 			PRINT("ERROR Packet #%lu: bad PCAP packet (len = %d, caplen = %d)\n",
-			      test_pcap_counter, header.len, header.caplen);
+			      (long unsigned int)test_pcap_counter, header.len, header.caplen);
 			goto close_input;
 		}
 
@@ -153,8 +153,8 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 		uint32_t remaining_pdu_size = in_size;
 
 		if (opt_verbose_flag) {
-			PRINT("INFO: PDU number %zu size to send = %zu\n", test_pcap_counter,
-			      in_size);
+			PRINT("INFO: PDU number %zu size to send = %zu\n", (size_t)test_pcap_counter,
+			      (size_t)in_size);
 		}
 
 		for (;; ) {
@@ -162,7 +162,7 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 			    (ret_recv == C_REASSEMBLY_OK)) {
 				if (opt_verbose_flag) {
 					PRINT("INFO: Received all fragments of PDU number %zu\n",
-					      test_pcap_counter);
+					      (size_t)test_pcap_counter);
 				}
 				rle_transmitter_free_context(transmitter, nb_frag_id);
 				break;
@@ -286,8 +286,8 @@ close_fake_burst:
 	      "\tTotal size before encapsulation \t%10lu\n"
 	      "\tTotal sent packets \t\t\t%10lu\n"
 	      "\tAverage size per packet \t\t%10.2f\n",
-	      test_pcap_total_sent_size,
-	      test_pcap_counter,
+	      (long unsigned int)test_pcap_total_sent_size,
+	      (long unsigned int)test_pcap_counter,
 	      (float)(test_pcap_total_sent_size / test_pcap_counter));
 
 	print_tx_stats();
