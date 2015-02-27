@@ -197,7 +197,7 @@ static int run_test_frag_rea(char *pcap_file_name, uint32_t param_ptype, uint16_
 			    (remaining_pdu_size <= (size_end_header + size_trailer))) {
 				burst_size = remaining_pdu_size +
 				             size_end_header +
-				             size_trailer; //HDR + TRL END
+				             size_trailer; /* HDR + TRL END */
 			}
 
 			if (in_size < burst_size) {

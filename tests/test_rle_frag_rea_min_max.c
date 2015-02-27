@@ -142,7 +142,9 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 		/* If the proto type is not set, we set it here from the 12th and 13th octets of the Ethernet
 		 * header.. */
 		if (protocol_type == 0) {
-			protocol_type = ntohs(*((uint16_t *)((void *)(packet + ETHER_PTYPE_POS * sizeof(char)))));
+			protocol_type =
+			        ntohs(*((uint16_t *)((void *)(packet + ETHER_PTYPE_POS *
+			                                      sizeof(char)))));
 		}
 		if (rle_transmitter_encap_data(transmitter, in_packet, in_size,
 		                               protocol_type) == C_ERROR) {
@@ -153,7 +155,8 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 		uint32_t remaining_pdu_size = in_size;
 
 		if (opt_verbose_flag) {
-			PRINT("INFO: PDU number %zu size to send = %zu\n", (size_t)test_pcap_counter,
+			PRINT("INFO: PDU number %zu size to send = %zu\n",
+			      (size_t)test_pcap_counter,
 			      (size_t)in_size);
 		}
 
@@ -211,7 +214,7 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 			/* STEP 3: END packet payload size = 0
 			 * -> TEST OPTIONAL DATA FIELD */
 			burst_size = size_end_header +
-			             size_trailer; //HDR + TRL END
+			             size_trailer; /* HDR + TRL END */
 			ret_recv =
 			        rle_transmitter_get_packet(transmitter, burst_buffer, burst_size,
 			                                   nb_frag_id,
