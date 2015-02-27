@@ -665,7 +665,8 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 				PRINT("\n");
 			}
 #ifdef DEBUG
-			//DEBUG
+			/* DEBUG */
+			
 			PRINT("zc_buf->ptrs.end %p \n", zc_buf->ptrs.end);
 #endif
 
