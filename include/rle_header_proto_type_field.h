@@ -63,6 +63,41 @@ enum {
 	RLE_PROTO_TYPE_SACH_UNCOMP              = RLE_PROTO_TYPE_IPV4_UNCOMP
 };
 
+
+/**
+ * @brief		RLE header decompression of protocol type function.
+ *
+ * @param[in]	compressed_ptype                A compressed protocol type to uncompress.
+ *
+ * @return		The uncompressed protocol type.
+ *
+ * @ingroup
+ */
+uint16_t rle_header_ptype_decompression(uint8_t compressed_ptype);
+
+
+/**
+ * @brief		RLE header check if protocol type is compressable function.
+ *
+ * @param[in]	uncompressed_ptype	An uncompressed protocol type to compress.
+ *
+ * @return		C_OK if the protocol type is compressable else C_ERROR.
+ *
+ * @ingroup
+ */
+int rle_header_ptype_is_compressable(uint16_t uncompressed_ptype);
+
+/**
+ * @brief		RLE header compression of protocol type function.
+ *
+ * @param[in]	uncompressed_ptype	An uncompressed protocol type to compress.
+ *
+ * @return		The compressed protocol type.
+ *
+ * @ingroup
+ */
+uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype);
+
 /** Max size of input packet (PDU) in Bytes */
 #define RLE_MAX_PDU_SIZE                   4088
 /** Size of Protocol Type uncompressed field in Bytes */

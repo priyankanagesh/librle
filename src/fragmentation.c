@@ -14,6 +14,7 @@
 #include "rle_ctx.h"
 #include "zc_buffer.h"
 #include "crc.h"
+#include "rle_header_proto_type_field.h"
 
 #define MODULE_NAME "FRAGMENTATION"
 
@@ -119,15 +120,20 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	 * is equal to the default one
 	 * or if given ptype is for signalling packet */
 	if ((protocol_type != rle_conf_get_default_ptype(rle_conf)) &&
-	    ((protocol_type != RLE_PROTO_TYPE_SIGNAL_COMP) ||
-	     (protocol_type != RLE_PROTO_TYPE_SIGNAL_UNCOMP))) {
+	    (protocol_type != RLE_PROTO_TYPE_SIGNAL_UNCOMP)) {
 		/* remap a complete header with ptype field */
 		struct rle_header_start_w_ptype *rle_sp_hdr =
 		        (struct rle_header_start_w_ptype *)&rle_s_hdr->header;
 
 		if (rle_conf_get_ptype_compression(rle_conf)) {
-			rle_sp_hdr->ptype_c_s.proto_type = (uint8_t)protocol_type;
-			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+			if (rle_header_ptype_is_compressable(protocol_type) == C_OK) {
+				rle_sp_hdr->ptype_c_s.proto_type = rle_header_ptype_compression(
+				        protocol_type);
+				ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+			} else {
+				PRINT("ERROR: %04x is uncompressable.", protocol_type);
+				return C_ERROR;
+			}
 		} else {
 			rle_sp_hdr->ptype_u_s.proto_type = protocol_type;
 			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
@@ -177,8 +183,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	/* fill label_type field accordingly to the
 	 * given protocol type (signal or implicit/indicated
 	 * by the NCC */
-	if ((protocol_type == RLE_PROTO_TYPE_SIGNAL_COMP) ||
-	    (protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP)) {
+	if (protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP) {
 		rle_s_hdr->header.head_start.b.label_type = RLE_LT_PROTO_SIGNAL; /* RCS2 requirement */
 	} else {
 		rle_s_hdr->header.head_start.b.label_type = RLE_LT_IMPLICIT_PROTO_TYPE;

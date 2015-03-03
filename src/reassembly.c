@@ -15,6 +15,7 @@
 #include "header.h"
 #include "trailer.h"
 #include "crc.h"
+#include "rle_header_proto_type_field.h"
 
 #define MODULE_NAME "REASSEMBLY"
 
@@ -360,12 +361,11 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 		struct rle_header_start_w_ptype *hdr_pt =
 		        (struct rle_header_start_w_ptype *)data_buffer;
 		if (is_compressed) {
-			protocol_type = hdr_pt->ptype_c_s.proto_type;
-			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+			protocol_type = rle_header_ptype_decompression(hdr_pt->ptype_c_s.proto_type);
 		} else {
 			protocol_type = hdr_pt->ptype_u_s.proto_type;
-			header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 		}
+		header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 	}
 
 	if (is_crc_used) {

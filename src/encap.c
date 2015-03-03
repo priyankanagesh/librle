@@ -16,6 +16,7 @@
 #include "rle_ctx.h"
 #include "zc_buffer.h"
 #include "rle_conf.h"
+#include "rle_header_proto_type_field.h"
 
 #define MODULE_NAME "ENCAP"
 
@@ -41,15 +42,21 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 	 * is equal to the default one
 	 * or if given ptype is for signalling packet */
 	if ((protocol_type != rle_conf_get_default_ptype(rle_conf)) &&
-	    ((protocol_type != RLE_PROTO_TYPE_SIGNAL_COMP) ||
-	     (protocol_type != RLE_PROTO_TYPE_SIGNAL_UNCOMP))) {
+	    (protocol_type != RLE_PROTO_TYPE_SIGNAL_UNCOMP)) {
 		/* remap a complete header with ptype field */
 		struct rle_header_complete_w_ptype *rle_c_hdr =
 		        (struct rle_header_complete_w_ptype *)&rle_hdr->header;
 
 		if (rle_conf_get_ptype_compression(rle_conf)) {
-			rle_c_hdr->ptype_c_s.proto_type = (uint8_t)protocol_type;
-			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+			if (rle_header_ptype_is_compressable(protocol_type) == C_OK) {
+				rle_c_hdr->ptype_c_s.proto_type = rle_header_ptype_compression(
+				        protocol_type);
+				ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+				PRINT("COMPRESSION\n");
+			} else {
+				PRINT("ERROR: %04x is uncompressable.", protocol_type);
+				return C_ERROR;
+			}
 		} else {
 			rle_c_hdr->ptype_u_s.proto_type = protocol_type;
 			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
@@ -74,8 +81,7 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 	/* fill label_type field accordingly to the
 	 * given protocol type (signal or implicit/indicated
 	 * by the NCC */
-	if ((protocol_type == RLE_PROTO_TYPE_SIGNAL_COMP) ||
-	    (protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP)) {
+	if (protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP) {
 		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_LT_PROTO_SIGNAL); /* RCS2 requirement */
 	} else {
 		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_LT_IMPLICIT_PROTO_TYPE);
@@ -219,17 +225,14 @@ int encap_check_l3_pdu_validity(void *pdu_buffer, size_t pdu_length, uint16_t pr
 	      __FILE__, __func__, __LINE__);
 #endif
 
-	if ((protocol_type == RLE_PROTO_TYPE_ARP_COMP) ||
-	    (protocol_type == RLE_PROTO_TYPE_ARP_UNCOMP) ||
-	    (protocol_type == RLE_PROTO_TYPE_SIGNAL_COMP) ||
+	if ((protocol_type == RLE_PROTO_TYPE_ARP_UNCOMP) ||
 	    (protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP)) {
 		return C_OK;
 	}
 
 	uint16_t total_length = 0;
 
-	if ((protocol_type == RLE_PROTO_TYPE_IPV4_COMP) ||
-	    (protocol_type == RLE_PROTO_TYPE_IPV4_UNCOMP)) {
+	if (protocol_type == RLE_PROTO_TYPE_IPV4_UNCOMP) {
 		/* PDU is IPv4 packet */
 		struct iphdr *ip_hdr = (struct iphdr *)pdu_buffer;
 
@@ -268,8 +271,7 @@ int encap_check_l3_pdu_validity(void *pdu_buffer, size_t pdu_length, uint16_t pr
 		return C_OK;
 	}
 
-	if ((protocol_type == RLE_PROTO_TYPE_IPV6_COMP) ||
-	    (protocol_type == RLE_PROTO_TYPE_IPV6_UNCOMP)) {
+	if (protocol_type == RLE_PROTO_TYPE_IPV6_UNCOMP) {
 		/* PDU is IPv6 packet */
 		struct ip6_hdr *ip_hdr = (struct ip6_hdr *)pdu_buffer;
 
@@ -300,8 +302,7 @@ int encap_check_l3_pdu_validity(void *pdu_buffer, size_t pdu_length, uint16_t pr
 		return C_OK;
 	}
 
-	if ((protocol_type == RLE_PROTO_TYPE_SACH_COMP) ||
-	    (protocol_type == RLE_PROTO_TYPE_SACH_UNCOMP)) {
+	if (protocol_type == RLE_PROTO_TYPE_SACH_UNCOMP) {
 		/* PDU is a compressed IP-SACH packet */
 
 		/* TODO */
