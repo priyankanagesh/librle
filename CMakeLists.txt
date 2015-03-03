@@ -6,6 +6,7 @@ INCLUDE(${INFRA_PREFIX}deps/infra/cmake/a9780.cmake)
 # Options
 #
 OPTION(BUILD_TESTS "Build simple tests" ON)
+OPTION(BUILD_DOC "Build documentation" ON)
 OPTION(TIME_DEBUG "Print encapsulation and deencapsulation durations" OFF)
 
 INCLUDE_DIRECTORIES(include)
@@ -35,6 +36,10 @@ TARGET_LINK_LIBRARIES(rle
 IF (BUILD_TESTS)
 	ADD_SUBDIRECTORY(tests)
 ENDIF(BUILD_TESTS)
+
+IF (BUILD_DOC)
+    ADD_SUBDIRECTORY(doc)
+ENDIF(BUILD_DOC)
 
 IF (TIME_DEBUG)
 	add_definitions("-DTIME_DEBUG")
