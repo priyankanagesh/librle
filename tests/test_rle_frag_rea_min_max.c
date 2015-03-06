@@ -111,7 +111,8 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 
 	if (packet == NULL) {
 		PRINT("ERROR Packet #0: Null packet.");
-	}
+		goto close_input;
+	} 
 
 	for (nb_frag_id = 0; nb_frag_id < nb_fragment_id; ++nb_frag_id) {
 		unsigned char *in_packet = NULL;
