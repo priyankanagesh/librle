@@ -81,15 +81,6 @@ void rle_conf_init(struct rle_configuration *_this)
 
 int rle_conf_set_default_ptype(struct rle_configuration *_this, uint16_t protocol_type)
 {
-	if ((_this->enable_ptype_compressed && protocol_type > 0xff)) {
-		PRINT("ERROR %s %s:%s:%d: invalid protocol type [0x%0x]"
-		      " for uncompressed field\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__,
-		      protocol_type);
-		return C_ERROR;
-	}
-
 	_this->default_ptype = protocol_type;
 
 	return C_OK;

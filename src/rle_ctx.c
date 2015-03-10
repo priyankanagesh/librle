@@ -340,7 +340,13 @@ uint16_t rle_ctx_get_proto_type(struct rle_ctx_management *_this)
 
 void rle_ctx_set_label_type(struct rle_ctx_management *_this, uint8_t val)
 {
-	if ((val != RLE_LT_IMPLICIT_PROTO_TYPE) && (val != RLE_LT_PROTO_SIGNAL)) {
+	switch (val) {
+	case RLE_LT_IMPLICIT_PROTO_TYPE:
+	case RLE_LT_PROTO_SIGNAL:
+	case RLE_T_PROTO_TYPE_SUPP:
+	case RLE_T_PROTO_TYPE_NO_SUPP:
+		break;
+	default:
 		PRINT("ERROR %s %s:%s:%d: Invalid Label_type value [%d]\n",
 		      MODULE_NAME,
 		      __FILE__, __func__, __LINE__,
@@ -666,7 +672,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 			}
 #ifdef DEBUG
 			/* DEBUG */
-			
+
 			PRINT("zc_buf->ptrs.end %p \n", zc_buf->ptrs.end);
 #endif
 
@@ -678,7 +684,8 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 				/* update current address in RLE zc buffer */
 				struct zc_rle_header_cont_end *zc_ce_buf =
 				        (struct zc_rle_header_cont_end *)((void *)((unsigned char *)
-				                                          ptr_to_next_frag + 8));
+				                                                   ptr_to_next_frag
+				                                                   + 8));
 
 				ptr_to_next_frag = &(zc_ce_buf->ptrs.end);
 

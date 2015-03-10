@@ -46,6 +46,8 @@ static void print_usage(char *basename)
 	      "\t-b BURST_SIZE in Bytes (valid values between 15 and 512 Bytes)\n"
 	      "\t-p PROTOCOL_TYPE (uncompressed protocol type in hexa)\n"
 	      "\t-f PCAP_FILENAME (valid pcap file corresponding to PROTOCOL_TYPE)\n"
+	      "\t-t PROTOCOL_TYPE_STATE (state of the PROTOCOL_TYPE : "
+			"0 = uncompressed (default), 1 = compressed, 2 = suppressed)\n"
 	      "\t-h print this help\n");
 }
 
@@ -54,13 +56,14 @@ int main(int argc, char *argv[])
 	char *param_file_name = NULL;
 	uint32_t param_protocol_type = 0;
 	uint16_t param_burst_size = 0;
+	uint32_t param_state = 0;
 	int ret = C_OK;
 	int opt = 0;
 	int option_index = 0;
 
 	opt_verbose_flag = C_FALSE;
 
-	while ((opt = getopt_long(argc, argv, "csvelrah:b:p:f:",
+	while ((opt = getopt_long(argc, argv, "csvelrah:b:p:f:t:",
 	                          long_options, &option_index)) != -1) {
 		switch (opt) {
 		case 'b':
@@ -105,6 +108,10 @@ int main(int argc, char *argv[])
 			break;
 		case 'v':
 			opt_verbose_flag = C_TRUE;
+			break;
+		case 't':
+			param_state = (enum protocol_type_state)atoi(optarg);
+			test_common_set_protocol_type_state(param_state);
 			break;
 		case '?':
 		case 'h':

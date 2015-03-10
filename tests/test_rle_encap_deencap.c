@@ -141,6 +141,13 @@ static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 		rle_conf_set_crc_check(receiver->rle_conf[nb_frag_id], C_TRUE);
 
 		uint16_t protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP;
+		/* HENRICK: TODO: Passer la compression en param éventuellement */
+		/* rle_conf_set_ptype_compression(transmitter->rle_conf, C_FALSE);
+		 * rle_conf_set_ptype_compression(receiver->rle_conf[nb_frag_id], C_FALSE); */
+		/* rle_conf_set_ptype_compression(transmitter->rle_conf, C_TRUE);
+		 * rle_conf_set_ptype_compression(receiver->rle_conf[nb_frag_id], C_TRUE);
+		 * rle_conf_set_ptype_suppression(transmitter->rle_conf, C_FALSE);
+		 * rle_conf_set_ptype_suppression(receiver->rle_conf[nb_frag_id], C_FALSE); */
 		/* Encapsulate the input packets, use in_packet and in_size as
 		 * input */
 		if (rle_transmitter_encap_data(transmitter, in_packet, in_size,
@@ -172,8 +179,18 @@ static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 
 		/* test fragmentation */
 		int remaining_pdu_size = in_size;
+		size_t ptype_size = 0;
 
-		burst_size = in_size + RLE_COMPLETE_HEADER_SIZE;
+		if (!rle_conf_get_ptype_suppression(transmitter->rle_conf)) {
+			if (rle_conf_get_ptype_compression(transmitter->rle_conf)) {
+				ptype_size = 1;
+				/* TODO 0xFF case */
+			} else {
+				ptype_size = 2;
+			}
+		}
+
+		burst_size = in_size + RLE_COMPLETE_HEADER_SIZE + ptype_size;
 
 		if (opt_verbose_flag) {
 			PRINT("INFO PDU size = %zu burst size = %d\n", in_size, burst_size);

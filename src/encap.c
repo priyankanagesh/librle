@@ -35,14 +35,12 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 	uint8_t proto_type_supp = RLE_T_PROTO_TYPE_NO_SUPP;
 
 	/* map RLE header to the already allocated buffer */
-	struct zc_rle_header_complete *rle_hdr =
-	        (struct zc_rle_header_complete *)rle_ctx->buf;
+	struct zc_rle_header_complete_w_ptype *rle_hdr =
+	        (struct zc_rle_header_complete_w_ptype *)rle_ctx->buf;
 
 	/* don't fill ALPDU ptype field if given ptype
-	 * is equal to the default one
-	 * or if given ptype is for signalling packet */
-	if ((protocol_type != rle_conf_get_default_ptype(rle_conf)) &&
-	    (protocol_type != RLE_PROTO_TYPE_SIGNAL_UNCOMP)) {
+	 * if given ptype is for signalling packet */
+	if (protocol_type != RLE_PROTO_TYPE_SIGNAL_UNCOMP) {
 		/* remap a complete header with ptype field */
 		struct rle_header_complete_w_ptype *rle_c_hdr =
 		        (struct rle_header_complete_w_ptype *)&rle_hdr->header;
@@ -51,6 +49,8 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 			if (rle_header_ptype_is_compressable(protocol_type) == C_OK) {
 				rle_c_hdr->ptype_c_s.proto_type = rle_header_ptype_compression(
 				        protocol_type);
+				rle_ctx_set_proto_type(rle_ctx, rle_header_ptype_compression(
+				                               protocol_type));
 				ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 				PRINT("COMPRESSION\n");
 			} else {
@@ -59,6 +59,7 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 			}
 		} else {
 			rle_c_hdr->ptype_u_s.proto_type = protocol_type;
+			rle_ctx_set_proto_type(rle_ctx, protocol_type);
 			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 		}
 	} else {
@@ -83,8 +84,10 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 	 * by the NCC */
 	if (protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP) {
 		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_LT_PROTO_SIGNAL); /* RCS2 requirement */
-	} else {
+	} else if (proto_type_supp == RLE_T_PROTO_TYPE_SUPP) {
 		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_LT_IMPLICIT_PROTO_TYPE);
+	} else {
+		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_T_PROTO_TYPE_NO_SUPP);
 	}
 
 	/* update rle configuration */
@@ -106,10 +109,11 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 	 * protocol type & payload length */
 	rle_ctx_set_rle_length(rle_ctx,
 	                       (data_length + ptype_length));
-	rle_ctx_set_proto_type(rle_ctx, protocol_type);
 	uint8_t label_type = GET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID);
 	rle_ctx_set_label_type(rle_ctx, label_type);
 	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO update */
+
+	rle_ctx_dump(rle_ctx, rle_conf);
 
 	return C_OK;
 }

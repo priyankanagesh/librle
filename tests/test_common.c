@@ -6,6 +6,9 @@
 struct transmitter_module *transmitter = NULL;
 struct receiver_module *receiver = NULL;
 
+enum protocol_type_state state = PROTOCOL_TYPE_UNCOMPRESSED;
+static void set_protocol_type_state(const size_t number_fragment_id);
+
 int create_rle_modules(void)
 {
 	transmitter = rle_transmitter_new();
@@ -22,6 +25,8 @@ int create_rle_modules(void)
 		rle_transmitter_destroy(transmitter);
 		return -1;
 	}
+
+	set_protocol_type_state(RLE_MAX_FRAG_NUMBER);
 
 	return 0;
 }
@@ -204,4 +209,94 @@ void print_rx_stats(void)
 	      (long unsigned int)RX_total_lost_pkt,
 	      (long unsigned int)RX_total_drop_pkt,
 	      avg_pkt_size);
+}
+
+static void set_compression(const int value, const size_t number_fragment_id)
+{
+	size_t fragment_id;
+
+	rle_conf_set_ptype_compression(transmitter->rle_conf, value);
+
+	for (fragment_id = 0; fragment_id < number_fragment_id; ++fragment_id) {
+		rle_conf_set_ptype_compression(receiver->rle_conf[fragment_id], value);
+	}
+
+	return;
+}
+
+static void set_suppression(const int value, const size_t number_fragment_id)
+{
+	size_t fragment_id;
+
+	rle_conf_set_ptype_suppression(transmitter->rle_conf, value);
+
+	for (fragment_id = 0; fragment_id < number_fragment_id; ++fragment_id) {
+		rle_conf_set_ptype_suppression(receiver->rle_conf[fragment_id], value);
+	}
+
+	return;
+}
+
+static void enable_compression(const size_t number_fragment_id)
+{
+	set_compression(C_TRUE, number_fragment_id);
+	return;
+}
+
+static void disable_compression(const size_t number_fragment_id)
+{
+	set_compression(C_FALSE, number_fragment_id);
+	return;
+}
+
+static void enable_suppression(const size_t number_fragment_id)
+{
+	set_suppression(C_TRUE, number_fragment_id);
+	return;
+}
+
+static void disable_suppression(const size_t number_fragment_id)
+{
+	set_suppression(C_FALSE, number_fragment_id);
+	return;
+}
+
+static void set_protocol_type_state(const size_t number_fragment_id)
+{
+	switch (state) {
+	case PROTOCOL_TYPE_UNCOMPRESSED:
+		disable_compression(number_fragment_id);
+		disable_suppression(number_fragment_id);
+		break;
+	case  PROTOCOL_TYPE_COMPRESSED:
+		enable_compression(number_fragment_id);
+		disable_suppression(number_fragment_id);
+		break;
+	case PROTOCOL_TYPE_SUPPRESSED:
+		disable_compression(number_fragment_id);
+		enable_suppression(number_fragment_id);
+		break;
+	default:
+		break;
+	}
+
+	return;
+}
+
+void test_common_set_protocol_type_state(uint32_t value)
+{
+	switch (value) {
+	case 0:
+		state = PROTOCOL_TYPE_UNCOMPRESSED;
+		break;
+	case 1:
+		state = PROTOCOL_TYPE_COMPRESSED;
+		break;
+	case 2:
+		state = PROTOCOL_TYPE_SUPPRESSED;
+		break;
+	default:
+		state = PROTOCOL_TYPE_UNCOMPRESSED;
+		break;
+	}
 }
