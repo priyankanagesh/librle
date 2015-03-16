@@ -25,7 +25,7 @@
  *  @param protocol_type	the protocol type
  *
  *  @return C_ERROR if KO
- *  	C_OK if OK
+ *		C_OK if OK
  *
  *  @ingroup
  */
@@ -39,8 +39,8 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx, struct rle_configu
  *  @warning
  *
  *  @param pdu_buffer		data buffer's address to check
- *  @param pdu_length 		length of the buffer
- *  @param protocol_type 	the protocol type
+ *  @param pdu_length		length of the buffer
+ *  @param protocol_type	the protocol type
  *
  *  @return	C_ERROR if KO
  *		C_OK if OK
@@ -55,8 +55,8 @@ int encap_check_l2_pdu_validity(void *pdu_buffer, size_t pdu_length, uint16_t pr
  *  @warning
  *
  *  @param pdu_buffer		data buffer's address to check
- *  @param pdu_length 		length of the buffer
- *  @param protocol_type 	the protocol type
+ *  @param pdu_length		length of the buffer
+ *  @param protocol_type	the protocol type
  *
  *  @return	C_ERROR if KO
  *		C_OK if OK
@@ -64,5 +64,19 @@ int encap_check_l2_pdu_validity(void *pdu_buffer, size_t pdu_length, uint16_t pr
  *  @ingroup
  */
 int encap_check_l3_pdu_validity(void *pdu_buffer, size_t pdu_length, uint16_t protocol_type);
+
+/**
+ *  @brief Check validity of input PDU
+ *
+ *  @warning
+ *
+ *  @param pdu_length		length of the buffer
+ *
+ *  @return	C_ERROR if KO
+ *		C_OK if OK
+ *
+ *  @ingroup
+ */
+int encap_check_pdu_validity(const size_t pdu_length);
 
 #endif /* _ENCAP_H */

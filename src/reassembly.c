@@ -267,6 +267,19 @@ static size_t get_header_size(struct rle_ctx_management *rle_ctx __attribute__ (
 	if (is_suppressed != RLE_T_PROTO_TYPE_SUPP) {
 		if (is_compressed) {
 			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+			uint16_t protocol_type = 0;
+			if (frag_type == RLE_PDU_COMPLETE) {
+				struct rle_header_complete_w_ptype *hdr =
+				        (struct rle_header_complete_w_ptype *)data_buffer;
+				protocol_type = hdr->ptype_c_s.e.proto_type;
+			} else {
+				struct rle_header_start_w_ptype *hdr =
+				        (struct rle_header_start_w_ptype *)data_buffer;
+				protocol_type = hdr->ptype_c_s.e.proto_type;
+			}
+			if (protocol_type == 0xFF) {
+				header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
+			}
 		} else {
 			header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 		}
@@ -305,8 +318,15 @@ static void update_ctx_complete(struct rle_ctx_management *rle_ctx,
 		struct rle_header_complete_w_ptype *hdr_pt =
 		        (struct rle_header_complete_w_ptype *)data_buffer;
 		if (is_compressed) {
-			protocol_type = hdr_pt->ptype_c_s.proto_type;
+			protocol_type = hdr_pt->ptype_c_s.c.proto_type;
 			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+			if (protocol_type == 0xFF) {
+				protocol_type = hdr_pt->ptype_c_s.e.proto_type_uncompressed;
+				header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
+			} else {
+				protocol_type = rle_header_ptype_decompression(
+				        hdr_pt->ptype_c_s.c.proto_type);
+			}
 		} else {
 			protocol_type = hdr_pt->ptype_u_s.proto_type;
 			header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
@@ -361,11 +381,19 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 		struct rle_header_start_w_ptype *hdr_pt =
 		        (struct rle_header_start_w_ptype *)data_buffer;
 		if (is_compressed) {
-			protocol_type = rle_header_ptype_decompression(hdr_pt->ptype_c_s.proto_type);
+			protocol_type = hdr_pt->ptype_c_s.c.proto_type;
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+			if (protocol_type == 0xFF) {
+				protocol_type = hdr_pt->ptype_c_s.e.proto_type_uncompressed;
+				header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
+			} else {
+				protocol_type = rle_header_ptype_decompression(
+				        hdr_pt->ptype_c_s.c.proto_type);
+			}
 		} else {
 			protocol_type = hdr_pt->ptype_u_s.proto_type;
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 		}
-		header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 	}
 
 	if (is_crc_used) {

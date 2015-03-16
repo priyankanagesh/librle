@@ -535,7 +535,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 			struct rle_header_complete_w_ptype *hdr_pt =
 			        (struct rle_header_complete_w_ptype *)&zc_buf->header;
 			if (is_compressed) {
-				protocol_type = hdr_pt->ptype_c_s.proto_type;
+				protocol_type = hdr_pt->ptype_c_s.c.proto_type;
 				header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 			} else {
 				protocol_type = ntohs(hdr_pt->ptype_u_s.proto_type);
@@ -611,7 +611,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 				struct rle_header_start_w_ptype *hdr_pt =
 				        (struct rle_header_start_w_ptype *)&zc_buf->header;
 				if (is_compressed) {
-					protocol_type = hdr_pt->ptype_c_s.proto_type;
+					protocol_type = hdr_pt->ptype_c_s.c.proto_type;
 					header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 				} else {
 					protocol_type = ntohs(hdr_pt->ptype_u_s.proto_type);

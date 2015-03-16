@@ -39,23 +39,24 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 	        (struct zc_rle_header_complete_w_ptype *)rle_ctx->buf;
 
 	/* don't fill ALPDU ptype field if given ptype
-	 * if given ptype is for signalling packet */
-	if (protocol_type != RLE_PROTO_TYPE_SIGNAL_UNCOMP) {
+	 * is equal to the default one and suppression is active,
+	 * or if given ptype is for signalling packet */
+	if (!((protocol_type == rle_conf_get_default_ptype(rle_conf))
+	      && rle_conf_get_ptype_suppression(rle_conf))
+	    && (protocol_type != RLE_PROTO_TYPE_SIGNAL_UNCOMP)) {
 		/* remap a complete header with ptype field */
 		struct rle_header_complete_w_ptype *rle_c_hdr =
 		        (struct rle_header_complete_w_ptype *)&rle_hdr->header;
 
 		if (rle_conf_get_ptype_compression(rle_conf)) {
+			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 			if (rle_header_ptype_is_compressable(protocol_type) == C_OK) {
-				rle_c_hdr->ptype_c_s.proto_type = rle_header_ptype_compression(
+				rle_c_hdr->ptype_c_s.c.proto_type = rle_header_ptype_compression(
 				        protocol_type);
-				rle_ctx_set_proto_type(rle_ctx, rle_header_ptype_compression(
-				                               protocol_type));
-				ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
-				PRINT("COMPRESSION\n");
 			} else {
-				PRINT("ERROR: %04x is uncompressable.", protocol_type);
-				return C_ERROR;
+				rle_c_hdr->ptype_c_s.e.proto_type = 0xFF;
+				rle_c_hdr->ptype_c_s.e.proto_type_uncompressed = protocol_type;
+				ptype_length += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 			}
 		} else {
 			rle_c_hdr->ptype_u_s.proto_type = protocol_type;
@@ -66,6 +67,7 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 		/* no protocol type in this packet */
 		proto_type_supp = RLE_T_PROTO_TYPE_SUPP;
 	}
+	rle_ctx_set_proto_type(rle_ctx, protocol_type);
 
 	/* update total header size */
 	size_header += ptype_length;
@@ -113,8 +115,6 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 	rle_ctx_set_label_type(rle_ctx, label_type);
 	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO update */
 
-	rle_ctx_dump(rle_ctx, rle_conf);
-
 	return C_OK;
 }
 
@@ -128,9 +128,7 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx, struct rle_configu
 	      __FILE__, __func__, __LINE__);
 #endif
 
-	if (encap_check_l3_pdu_validity(pdu_buffer,
-	                                pdu_length,
-	                                protocol_type) == C_ERROR) {
+	if (encap_check_pdu_validity(pdu_length) == C_ERROR) {
 		rle_ctx_incr_counter_dropped(rle_ctx);
 		return C_ERROR;
 	}
@@ -322,4 +320,24 @@ int encap_check_l3_pdu_validity(void *pdu_buffer, size_t pdu_length, uint16_t pr
 	      protocol_type);
 
 	return C_ERROR;
+}
+
+int encap_check_pdu_validity(const size_t pdu_length)
+{
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d:\n",
+	      MODULE_NAME,
+	      __FILE__, __func__, __LINE__);
+#endif
+
+	if (pdu_length > RLE_MAX_PDU_SIZE) {
+		PRINT("ERROR %s %s:%s:%d: PDU too large for RL Encapsulation,"
+		      " size [%zu]\n",
+		      MODULE_NAME,
+		      __FILE__, __func__, __LINE__,
+		      pdu_length);
+		return C_ERROR;
+	}
+
+	return C_OK;
 }

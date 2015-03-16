@@ -185,7 +185,9 @@ static int run_test_encap_deencap(char *pcap_file_name, int nb_fragment_id)
 		if (!rle_conf_get_ptype_suppression(transmitter->rle_conf)) {
 			if (rle_conf_get_ptype_compression(transmitter->rle_conf)) {
 				ptype_size = 1;
-				/* TODO 0xFF case */
+				if (rle_header_ptype_is_compressable(protocol_type) == C_ERROR) {
+					ptype_size += 2;
+				}
 			} else {
 				ptype_size = 2;
 			}

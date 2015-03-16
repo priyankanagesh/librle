@@ -112,7 +112,7 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 	if (packet == NULL) {
 		PRINT("ERROR Packet #0: Null packet.");
 		goto close_input;
-	} 
+	}
 
 	for (nb_frag_id = 0; nb_frag_id < nb_fragment_id; ++nb_frag_id) {
 		unsigned char *in_packet = NULL;
@@ -162,6 +162,7 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 		}
 
 		for (;; ) {
+			size_t ptype_size = 0;
 			if ((rle_transmitter_get_queue_state(transmitter, nb_frag_id) == C_TRUE) &&
 			    (ret_recv == C_REASSEMBLY_OK)) {
 				if (opt_verbose_flag) {
@@ -172,9 +173,21 @@ static int run_test_frag_rea_min_max(char *pcap_file_name, int nb_fragment_id, i
 				break;
 			}
 
+			if (!rle_conf_get_ptype_suppression(transmitter->rle_conf)) {
+				if (rle_conf_get_ptype_compression(transmitter->rle_conf)) {
+					ptype_size = 1;
+					if (rle_header_ptype_is_compressable(protocol_type) ==
+					    C_ERROR) {
+						ptype_size += 2;
+					}
+				} else {
+					ptype_size = 2;
+				}
+			}
+
 			/* STEP 1: START packet payload size = 0
 			 * -> TEST OPTIONAL DATA FIELD */
-			burst_size = RLE_START_MANDATORY_HEADER_SIZE;
+			burst_size = RLE_START_MANDATORY_HEADER_SIZE + ptype_size;
 
 			ret_recv =
 			        rle_transmitter_get_packet(transmitter, burst_buffer, burst_size,

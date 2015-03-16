@@ -125,7 +125,15 @@ struct rle_header_complete_w_ptype {
 		} __attribute__ ((packed)) ptype_u_s;
 
 		struct {
-			uint8_t proto_type;
+			union {
+				struct {
+					uint8_t proto_type;
+				} __attribute__ ((packed)) c;
+				struct {
+					uint8_t proto_type;
+					uint16_t proto_type_uncompressed;
+				} __attribute__ ((packed)) e;
+			};
 		} __attribute__ ((packed)) ptype_c_s;
 	};
 } __attribute__ ((packed));
@@ -151,7 +159,15 @@ struct rle_header_start_w_ptype {
 		} __attribute__ ((packed)) ptype_u_s;
 
 		struct {
-			uint8_t proto_type;
+			union {
+				struct {
+					uint8_t proto_type;
+				} __attribute__ ((packed)) c;
+				struct {
+					uint8_t proto_type;
+					uint16_t proto_type_uncompressed;
+				} __attribute__ ((packed)) e;
+			};
 		} __attribute__ ((packed)) ptype_c_s;
 	};
 } __attribute__ ((packed));

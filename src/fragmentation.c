@@ -112,27 +112,30 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	uint8_t proto_type_supp = RLE_T_PROTO_TYPE_NO_SUPP;
 
 	/* map RLE header to the already allocated buffer */
-	struct zc_rle_header_start *rle_s_hdr = rle_ctx->buf;
+	struct zc_rle_header_start_w_ptype *rle_s_hdr =
+	        (struct zc_rle_header_start_w_ptype *)rle_ctx->buf;
 	rle_s_hdr->ptrs.start = NULL;
 	rle_s_hdr->ptrs.end = NULL;
 
 	/* don't fill ptype field if given ptype
-	 * is equal to the default one
+	 * is equal to the default one and suppression is active,
 	 * or if given ptype is for signalling packet */
-	if ((protocol_type != rle_conf_get_default_ptype(rle_conf)) &&
-	    (protocol_type != RLE_PROTO_TYPE_SIGNAL_UNCOMP)) {
+	if (!((protocol_type == rle_conf_get_default_ptype(rle_conf))
+	      && rle_conf_get_ptype_suppression(rle_conf))
+	    && (protocol_type != RLE_PROTO_TYPE_SIGNAL_UNCOMP)) {
 		/* remap a complete header with ptype field */
 		struct rle_header_start_w_ptype *rle_sp_hdr =
 		        (struct rle_header_start_w_ptype *)&rle_s_hdr->header;
 
 		if (rle_conf_get_ptype_compression(rle_conf)) {
+			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 			if (rle_header_ptype_is_compressable(protocol_type) == C_OK) {
-				rle_sp_hdr->ptype_c_s.proto_type = rle_header_ptype_compression(
+				rle_sp_hdr->ptype_c_s.c.proto_type = rle_header_ptype_compression(
 				        protocol_type);
-				ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 			} else {
-				PRINT("ERROR: %04x is uncompressable.", protocol_type);
-				return C_ERROR;
+				rle_sp_hdr->ptype_c_s.e.proto_type = 0xFF;
+				rle_sp_hdr->ptype_c_s.e.proto_type_uncompressed = protocol_type;
+				ptype_length += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 			}
 		} else {
 			rle_sp_hdr->ptype_u_s.proto_type = protocol_type;
@@ -144,6 +147,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 		/* no protocol type in this packet */
 		proto_type_supp = RLE_T_PROTO_TYPE_SUPP;
 	}
+	rle_ctx_set_proto_type(rle_ctx, protocol_type);
 
 	/* Robustness: test if available burst payload is smaller
 	 * than an RLE START packet header */
@@ -184,9 +188,12 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	 * given protocol type (signal or implicit/indicated
 	 * by the NCC */
 	if (protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP) {
-		rle_s_hdr->header.head_start.b.label_type = RLE_LT_PROTO_SIGNAL; /* RCS2 requirement */
-	} else {
+		/* RCS2 requirement */
+		rle_s_hdr->header.head_start.b.label_type = RLE_LT_PROTO_SIGNAL;
+	} else if (proto_type_supp == RLE_T_PROTO_TYPE_SUPP) {
 		rle_s_hdr->header.head_start.b.label_type = RLE_LT_IMPLICIT_PROTO_TYPE;
+	} else {
+		rle_s_hdr->header.head_start.b.label_type = RLE_T_PROTO_TYPE_NO_SUPP;
 	}
 
 	rle_s_hdr->header.head_start.b.proto_type_supp = proto_type_supp;
@@ -223,7 +230,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	/* Copy this fragment to burst payload:
 	 * first copy RLE header
 	 * second copy PDU region */
-	struct rle_header_start *RLE_HEADER = &(rle_s_hdr->header);
+	struct rle_header_start_w_ptype *RLE_HEADER = &(rle_s_hdr->header);
 	memcpy(burst_payload_buffer, RLE_HEADER, size_header);
 	memcpy((void *)((char *)burst_payload_buffer + size_header),
 	       rle_s_hdr->ptrs.start,
