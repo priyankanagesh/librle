@@ -223,7 +223,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	rle_ctx_set_remaining_pdu_length(rle_ctx,
 	                                 (rle_ctx_get_pdu_length(rle_ctx) - offset_payload));
 	rle_ctx_set_rle_length(rle_ctx,
-	                       (burst_payload_length - ptype_length));
+	                       (burst_payload_length - ptype_length), ptype_length);
 
 	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO */
 
@@ -333,7 +333,7 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 
 	rle_ctx_set_remaining_pdu_length(rle_ctx, new_remaining_val);
 	rle_ctx_set_rle_length(rle_ctx,
-	                       (burst_payload_length - (RLE_CONT_HEADER_SIZE + trailer_size)));
+	                       (burst_payload_length - (RLE_CONT_HEADER_SIZE + trailer_size)), 0);
 
 	/* Copy this fragment to burst payload:
 	 * first copy RLE header
@@ -428,7 +428,7 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
 	/* update some values in RLE context */
 	rle_ctx_set_remaining_pdu_length(rle_ctx, 0);
 	rle_ctx_set_rle_length(rle_ctx,
-	                       (pdu_length + ptype_length));
+	                       (pdu_length + ptype_length), ptype_length);
 
 	/* update status value */
 	rle_ctx_incr_counter_ok(rle_ctx);

@@ -310,9 +310,10 @@ uint32_t rle_ctx_get_remaining_pdu_length(struct rle_ctx_management *_this)
 	return _this->remaining_pdu_length;
 }
 
-void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val)
+void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val,
+                            const size_t header_size)
 {
-	if (val > RLE_MAX_PDU_SIZE) {
+	if (val > (RLE_MAX_PDU_SIZE + header_size)) {
 		PRINT("ERROR %s %s:%s:%d: Invalid RLE length [%d]\n",
 		      MODULE_NAME,
 		      __FILE__, __func__, __LINE__,

@@ -342,7 +342,7 @@ static void update_ctx_complete(struct rle_ctx_management *rle_ctx,
 	/* it's a RLE complete packet, so there is no data remaining */
 	rle_ctx_set_remaining_pdu_length(rle_ctx, 0);
 	/* RLE packet length is the sum of packet label, protocol type & payload length */
-	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length);
+	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length, header_size);
 	rle_ctx_set_proto_type(rle_ctx, protocol_type);
 	rle_ctx_set_label_type(rle_ctx, label_type);
 
@@ -449,7 +449,7 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 #endif
 
 	/* RLE packet length is the sum of packet label, protocol type & payload length */
-	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length);
+	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length, header_size);
 	rle_ctx_set_proto_type(rle_ctx, protocol_type);
 	rle_ctx_set_label_type(rle_ctx, hdr->head_start.b.label_type);
 
@@ -478,7 +478,7 @@ static void update_ctx_cont(struct rle_ctx_management *rle_ctx,
 	 * remaining length to receive */
 	rle_ctx_set_remaining_pdu_length(rle_ctx,
 	                                 (remaining_pdu_length - hdr->head.b.rle_packet_length));
-	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length);
+	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length, 0);
 }
 
 static void update_ctx_end(struct rle_ctx_management *rle_ctx,
@@ -496,7 +496,7 @@ static void update_ctx_end(struct rle_ctx_management *rle_ctx,
 	rle_ctx_incr_frag_counter(rle_ctx);
 	rle_ctx_incr_nb_frag_pdu(rle_ctx);
 	/* RLE packet length is the sum of packet label, protocol type & payload length */
-	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length);
+	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length, 0);
 }
 
 static void update_ctx_fragmented(struct rle_ctx_management *rle_ctx,

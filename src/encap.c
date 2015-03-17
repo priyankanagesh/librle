@@ -110,7 +110,7 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 	/* RLE packet length is the sum of packet label,
 	 * protocol type & payload length */
 	rle_ctx_set_rle_length(rle_ctx,
-	                       (data_length + ptype_length));
+	                       (data_length + ptype_length), ptype_length);
 	uint8_t label_type = GET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID);
 	rle_ctx_set_label_type(rle_ctx, label_type);
 	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO update */

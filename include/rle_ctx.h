@@ -360,12 +360,14 @@ uint32_t rle_ctx_get_remaining_pdu_length(struct rle_ctx_management *_this);
  *
  *  @warning
  *
- *  @param	_this   Pointer to the RLE context structure
- *  @param	val     New RLE packet length
+ *  @param	_this       Pointer to the RLE context structure
+ *  @param	val         New RLE packet length
+ *  @param	header_size The RLE Header size
  *
  *  @ingroup
  */
-void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val);
+void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val,
+                            const size_t header_size);
 
 /**
  *  @brief	Get RLE packet length
