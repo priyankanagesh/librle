@@ -221,6 +221,7 @@ static int run_test_frag_rea(char *pcap_file_name, uint32_t param_ptype, uint16_
 
 			if ((ret_recv != C_OK) && (ret_recv != C_REASSEMBLY_OK)) {
 				PRINT("ERROR while receiving RLE\n");
+				break;
 			}
 
 			remaining_pdu_size = rle_transmitter_get_queue_size(transmitter, nb_frag_id);
