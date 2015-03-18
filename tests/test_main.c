@@ -1,3 +1,12 @@
+/**
+ * @file   test_main.c
+ * @brief  RLE tests main function, with private functions
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
+ */
+
 #include <stdio.h>
 #include <pcap.h>
 #include <string.h>

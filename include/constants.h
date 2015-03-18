@@ -1,14 +1,14 @@
 /**
  * @file   constants.h
- * @author Aurelien Castanie
- *
  * @brief  Definition of RLE context and status structure, functions and variables
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _CONSTANTS_H
-#define _CONSTANTS_H
+#ifndef __CONSTANTS_H__
+#define __CONSTANTS_H__
 
 #ifndef __KERNEL__
 
@@ -73,4 +73,4 @@ enum {
 
 #endif
 
-#endif /* _CONSTANTS_H */
+#endif /* __CONSTANTS_H__ */

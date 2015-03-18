@@ -1,14 +1,14 @@
 /**
  * @file   rle_receiver.h
- * @author Aurelien Castanie
- *
  * @brief  Definition of RLE receiver context and status structure, functions and variables
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _RLE_RECEIVER_H
-#define _RLE_RECEIVER_H
+#ifndef __RLE_RECEIVER_H__
+#define __RLE_RECEIVER_H__
 
 #include <stddef.h>
 #include <pthread.h>
@@ -169,4 +169,4 @@ uint64_t rle_receiver_get_counter_bytes(struct receiver_module *_this);
 
 void rle_receiver_dump(struct receiver_module *_this);
 
-#endif /* _RLE_RECEIVER_H */
+#endif /* __RLE_RECEIVER_H__ */

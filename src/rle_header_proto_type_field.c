@@ -1,3 +1,12 @@
+/**
+ * @file   rle_header_proto_type_field.c
+ * @brief  RLE header protocol type fields functions
+ * @author Henrick Deschamps, based on Aurelien Castanie works.
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
+ */
+
 #include "rle_header_proto_type_field.h"
 
 #include "constants.h"

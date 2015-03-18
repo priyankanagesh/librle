@@ -1,14 +1,14 @@
 /**
  * @file   reassembly.h
- * @author Aurelien Castanie
- *
  * @brief  Definition of RLE reassembly structure, functions and variables
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _REASSEMBLY_H
-#define _REASSEMBLY_H
+#ifndef __REASSEMBLY_H__
+#define __REASSEMBLY_H__
 
 #include "rle_ctx.h"
 #include "rle_conf.h"
@@ -120,4 +120,4 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
  *                 void *data_buffer);
  */
 
-#endif /* _REASSEMBLY_H */
+#endif /* __REASSEMBLY_H__ */

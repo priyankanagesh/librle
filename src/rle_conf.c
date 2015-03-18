@@ -1,10 +1,10 @@
 /**
  * @file   rle_conf.c
- * @author aurelien castanie
- *
  * @brief  definition of rle configuration module.
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
 #include "rle_conf.h"

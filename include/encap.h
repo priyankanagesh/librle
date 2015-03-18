@@ -1,14 +1,14 @@
 /**
  * @file   encap.h
- * @author Aurelien Castanie
- *
  * @brief  Definition of RLE encapsulation structure, functions and variables
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _ENCAP_H
-#define _ENCAP_H
+#ifndef __ENCAP_H__
+#define __ENCAP_H__
 
 #include "rle_ctx.h"
 #include "rle_conf.h"
@@ -79,4 +79,4 @@ int encap_check_l3_pdu_validity(void *pdu_buffer, size_t pdu_length, uint16_t pr
  */
 int encap_check_pdu_validity(const size_t pdu_length);
 
-#endif /* _ENCAP_H */
+#endif /* __ENCAP_H__ */

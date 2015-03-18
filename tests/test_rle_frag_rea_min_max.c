@@ -1,3 +1,12 @@
+/**
+ * @file   test_rle_frag_rea_min_max.c
+ * @brief  Lib RLE fragmentation/reassembly in a special case
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
+ */
+
 #include <stdio.h>
 #include <pcap.h>
 #include <string.h>

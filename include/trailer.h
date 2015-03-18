@@ -1,14 +1,14 @@
 /**
  * @file   trailer.h
- * @author Aurelien Castanie
- *
  * @brief  Definition of RLE trailer constants, functions and variables
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _TRAILER_H
-#define _TRAILER_H
+#ifndef __TRAILER_H__
+#define __TRAILER_H__
 
 /** Max Sequence Number value */
 #define RLE_MAX_SEQ_NO          256
@@ -34,4 +34,4 @@ struct rle_trailer {
 	};
 } __attribute__ ((packed));
 
-#endif /* _TRAILER_H */
+#endif /* __TRAILER_H__ */

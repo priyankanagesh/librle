@@ -1,14 +1,14 @@
 /**
  * @file   rle_transmitter.h
- * @author Aurelien Castanie
- *
  * @brief  Definition of RLE transmitter context and status structure, functions and variables
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _RLE_TRANSMITTER_H
-#define _RLE_TRANSMITTER_H
+#ifndef __RLE_TRANSMITTER_H__
+#define __RLE_TRANSMITTER_H__
 
 #include <stddef.h>
 #include <pthread.h>
@@ -224,4 +224,4 @@ uint64_t rle_transmitter_get_counter_bytes(struct transmitter_module *_this);
  */
 void rle_transmitter_dump(struct transmitter_module *_this);
 
-#endif /* _RLE_TRANSMITTER_H */
+#endif /* __RLE_TRANSMITTER_H__ */

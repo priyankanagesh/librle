@@ -1,14 +1,14 @@
 /**
  * @file   header.h
- * @author Aurelien Castanie
- *
  * @brief  Definition of RLE header constants, functions and variables
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _HEADER_H
-#define _HEADER_H
+#ifndef __HEADER_H__
+#define __HEADER_H__
 
 #include <endian.h>
 #include <stdint.h>
@@ -187,4 +187,4 @@ struct rle_header_cont_end {
 	union rle_header_all head;
 } __attribute__ ((packed));
 
-#endif /* _HEADER_H */
+#endif /* __HEADER_H__ */

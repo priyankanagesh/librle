@@ -1,5 +1,14 @@
-#ifndef _TEST_COMMON_H
-#define _TEST_COMMON_H
+/**
+ * @file   test_common.h
+ * @brief  Definition of test for the RLE library
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
+ */
+
+#ifndef __TEST_COMMON_H__
+#define __TEST_COMMON_H__
 
 #include "rle_transmitter.h"
 #include "rle_receiver.h"
@@ -61,4 +70,4 @@ enum protocol_type_state {
 
 void test_common_set_protocol_type_state(uint32_t value);
 
-#endif /* _TEST_COMMON_H */
+#endif /* __TEST_COMMON_H__ */

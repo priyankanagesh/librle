@@ -1,10 +1,10 @@
 /**
  * @file   rle_receiver.c
- * @author Aurelien Castanie
- *
  * @brief  RLE receiver functions
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
 #include <stdlib.h>

@@ -1,14 +1,14 @@
 /**
  * @file   rle_ctx.h
- * @author Aurelien Castanie
- *
  * @brief  Definition of RLE context and status structure, functions and variables
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _RLE_CTX_H
-#define _RLE_CTX_H
+#ifndef __RLE_CTX_H__
+#define __RLE_CTX_H__
 
 #include <stdint.h>
 #include <pthread.h>
@@ -614,4 +614,4 @@ uint64_t rle_ctx_get_counter_bytes(struct rle_ctx_management *_this);
  */
 void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rle_conf);
 
-#endif /* _RLE_CTX_H */
+#endif /* __RLE_CTX_H__ */

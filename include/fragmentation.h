@@ -1,14 +1,14 @@
 /**
  * @file   fragmentation.h
- * @author Aurelien Castanie
- *
  * @brief  RLE fragmentation functions
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _FRAGMENTATION_H
-#define _FRAGMENTATION_H
+#ifndef __FRAGMENTATION_H__
+#define __FRAGMENTATION_H__
 
 #include <stddef.h>
 #include "rle_ctx.h"
@@ -149,4 +149,4 @@ int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
  */
 int fragmentation_is_needed(struct rle_ctx_management *rle_ctx, size_t burst_payload_length);
 
-#endif /* _FRAGMENTATION_H */
+#endif /* __FRAGMENTATION_H__ */

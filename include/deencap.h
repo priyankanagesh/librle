@@ -1,13 +1,13 @@
 /**
  * @file   deencap.h
- * @author Aurelien Castanie
- *
  * @brief  Definition of RLE deencapsulation structure, functions and variables
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _DEENCAP_H
-#define _DEENCAP_H
+#ifndef __DEENCAP_H__
+#define __DEENCAP_H__
 
-#endif /* _DEENCAP_H */
+#endif /* __DEENCAP_H__ */

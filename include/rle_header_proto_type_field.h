@@ -1,16 +1,17 @@
 /**
- * @file        rle_header_proto_type_field.h
- * @author      Henrick Deschamps
- *                      Based on Aurelien Castanie works.
- * @brief	Definition of RLE header protocol type fields constant values and meanings.
- *				Removed from header for more readibility, especialy since the ICD v.10 specifications.
- *
+ * @file   rle_header_proto_type_field.h
+ * @brief  Definition of RLE header protocol type fields constant values and meanings.
+ *         Removed from header for more readibility, especialy since the ICD v.10 specifications.
+ * @author Henrick Deschamps, based on Aurelien Castanie works.
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
 #include <stdint.h>
 
-#ifndef _RLE_HEADER_PROTO_TYPE_H
-#define _RLE_HEADER_PROTO_TYPE_H
+#ifndef __RLE_HEADER_PROTO_TYPE_FIELD_H__
+#define __RLE_HEADER_PROTO_TYPE_FIELD_H__
 
 /** Label Type for implicit protocol type */
 #define RLE_LT_IMPLICIT_PROTO_TYPE         2
@@ -163,4 +164,4 @@ enum {
         CONCAT_INITIALIZER_POW_2(RLE_PROTO_TYPE_USER_DEFINED), \
         RLE_PROTO_TYPE_USER_DEFINED
 
-#endif /* _RLE_HEADER_PROTO_TYPE_H */
+#endif /* __RLE_HEADER_PROTO_TYPE_FIELD_H__ */

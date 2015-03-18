@@ -1,13 +1,14 @@
 /**
- * @file		librle_interface.h
- * @author	Henrick Deschamps <hdeschamps@toulouse.viveris.com>
- *
- * @brief	Interface file for the librle library.
- *
+ * @file   librle_interface.h
+ * @brief  Interface file for the librle library.
+ * @author Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _LIBRLE_INTERFACE_H
-#define _LIBRLE_INTERFACE_H
+#ifndef __LIBRLE_INTERFACE_H__
+#define __LIBRLE_INTERFACE_H__
 
 #include <stddef.h>
 #include <stdint.h>
@@ -375,4 +376,4 @@ uint64_t rle_receiver_stats_get_counter_lost(const rle_receiver_module *const re
  */
 uint64_t rle_receiver_stats_get_counter_bytes(const rle_receiver_module *const receiver);
 
-#endif /* _LIBRLE_INTERFACE_H */
+#endif /* __LIBRLE_INTERFACE_H__ */

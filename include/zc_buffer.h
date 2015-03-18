@@ -1,14 +1,14 @@
 /**
  * @file   zc_buffer.h
- * @author Aurelien Castanie
- *
  * @brief  Definition of RLE trailer constants, functions and variables
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _ZC_BUFFER_H
-#define _ZC_BUFFER_H
+#ifndef __ZC_BUFFER_H__
+#define __ZC_BUFFER_H__
 
 #include "header.h"
 #include "trailer.h"
@@ -113,4 +113,4 @@ struct zc_rle_trailer {
 	struct rle_trailer trailer;
 };
 
-#endif /* _ZC_BUFFER_H */
+#endif /* __ZC_BUFFER_H__ */

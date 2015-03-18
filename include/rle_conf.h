@@ -1,14 +1,14 @@
 /**
  * @file   rle_conf.h
- * @author aurelien castanie
- *
  * @brief  definition of rle configuration module.
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _RLE_CONF_H
-#define _RLE_CONF_H
+#ifndef __RLE_CONF_H__
+#define __RLE_CONF_H__
 
 #include "header.h"
 
@@ -177,4 +177,4 @@ int rle_conf_set_crc_check(struct rle_configuration *_this, int enable_crc_check
  */
 int rle_conf_get_crc_check(struct rle_configuration *_this);
 
-#endif /* _RLE_CONF_H */
+#endif /* __RLE_CONF_H__ */

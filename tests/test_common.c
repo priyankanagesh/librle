@@ -1,3 +1,12 @@
+/**
+ * @file   test_common.c
+ * @brief  RLE common test functions 
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include "constants.h"
