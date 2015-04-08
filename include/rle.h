@@ -17,6 +17,7 @@
 enum rle_encap_status {
 	RLE_ENCAP_OK,              /**< Ok.                                    */
 	RLE_ENCAP_ERR,             /**< Default error. SDU should be drop.     */
+	RLE_ENCAP_ERR_NULL_TRMT,   /**< Error. The transmitter is NULL.        */
 	RLE_ENCAP_ERR_SDU_TOO_BIG  /**< Error. SDU too big to be encapsulated. */
 };
 
@@ -24,6 +25,7 @@ enum rle_encap_status {
 enum rle_frag_status {
 	RLE_FRAG_OK,                  /**< Ok.                                                    */
 	RLE_FRAG_ERR,                 /**< Default error. SDU should be drop.                     */
+	RLE_FRAG_ERR_NULL_TRMT,       /**< Error. The transmitter is NULL.                        */
 	RLE_FRAG_ERR_BURST_TOO_SMALL, /**< Error. Burst size is too small.                        */
 	RLE_FRAG_ERR_CONTEXT_IS_NULL, /**< Error. Context is NULL, ALPDU may be empty.            */
 	RLE_FRAG_ERR_INVALID_SIZE     /**< Error. Remaining data size may be invalid in End PPDU. */
@@ -40,12 +42,14 @@ enum rle_pack_status {
 
 /** Status of the decapsulation. */
 enum rle_decap_status {
-	RLE_DECAP_OK,                /**< Ok.                                                         */
-	RLE_DECAP_ERR,               /**< Error. SDUs should be drop.                                 */
-	RLE_DECAP_ERR_ALL_DROP,      /**< Error. All current SDUs were dropped. Some may be lost.     */
-	RLE_DECAP_ERR_SOME_DROP,     /**< Error. Some SDUs were dropped. Some may be lost.            */
-	RLE_DECAP_ERR_ARR_TOO_SMALL, /**< Error. Given preallocated SDUs array is too small.          */
-	RLE_DECAP_ERR_PL_TOO_SMALL   /**< Error. Given preallocated payload label array is too small. */
+	RLE_DECAP_OK,            /**< Ok.                                                       */
+	RLE_DECAP_ERR,           /**< Error. SDUs should be drop.                               */
+	RLE_DECAP_ERR_NULL_RCVR, /**< Error. The receiver is NULL.                              */
+	RLE_DECAP_ERR_ALL_DROP,  /**< Error. All current SDUs were dropped. Some may be lost.   */
+	RLE_DECAP_ERR_SOME_DROP, /**< Error. Some SDUs were dropped. Some may be lost.          */
+	RLE_DECAP_ERR_INV_FPDU,  /**< Error. Invalid FPDU. Maybe Null or bad size.              */
+	RLE_DECAP_ERR_INV_SDUS,  /**< Error. Given preallocated SDUs array is invalid.          */
+	RLE_DECAP_ERR_INV_PL     /**< Error. Given preallocated payload label array is invalid. */
 };
 
 /**
@@ -119,7 +123,7 @@ struct rle_receiver *rle_receiver_new(const struct rle_context_configuration con
  *
  * @ingroup       RLE receiver
  */
-void rle_receiver_module_destroy(struct rle_receiver *const receiver);
+void rle_receiver_destroy(struct rle_receiver *const receiver);
 
 /**
  * @brief         RLE encapsulation. Encapsulate a SDU in a RLE ALPDU frame.
@@ -165,7 +169,6 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 /**
  * @brief         RLE frame packing. Pack the given PPDU in the given FPDU.
  *
- * @param[in,out] transmitter             The transmitter module.
  * @param[in]     ppdu                    A PPDU to pack.
  * @param[in]     ppdu_length             The PPDU size.
  * @param[in]     label                   The FPDU label fields.
@@ -178,10 +181,10 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
  *
  * @ingroup       RLE transmitter
  */
-enum rle_pack_status rle_pack(struct rle_transmitter *const transmitter, const unsigned char *ppdu,
-                              const size_t ppdu_length, const char *const label,
-                              const size_t label_size,
-                              unsigned char *const fpdu, size_t *const fpdu_current_pos,
+enum rle_pack_status rle_pack(const unsigned char ppdu[], const size_t ppdu_length,
+                              const unsigned char label[], const size_t label_size,
+                              unsigned char fpdu[],
+                              size_t *const fpdu_current_pos,
                               size_t *const fpdu_remaining_size);
 
 /**
@@ -210,7 +213,7 @@ enum rle_pack_status rle_pack(struct rle_transmitter *const transmitter, const u
  * @ingroup       RLE receiver
  */
 enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
-                                      const unsigned char *const fpdu, size_t fpdu_length,
+                                      const unsigned char fpdu[], size_t fpdu_length,
                                       struct rle_sdu sdus[], const size_t sdus_max_nr,
                                       size_t *const sdus_nr, unsigned char payload_label[],
                                       const size_t payload_label_size);
