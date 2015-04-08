@@ -22,6 +22,7 @@ SET(SRC_LIBRLE
 	src/rle_receiver.c
 	src/rle_conf.c
     src/rle_header_proto_type_field.c
+    src/rle.c
 )
 
 add_definitions("-g -O2 -W -Werror -Wall -Wextra -Wuninitialized

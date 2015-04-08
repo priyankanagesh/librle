@@ -3,16 +3,17 @@ LINK_DIRECTORIES(${CMAKE_BINARY_DIR})
 
 INCLUDE_DIRECTORIES(include)
 
-SET(SRC_LIBRLE_TEST
-	test_common.c
-	test_rle_encap_deencap.c
-	test_rle_frag_rea.c
-	test_rle_frag_rea_min_max.c)
+SET(SRC_LIBRLE_TESTS
+	test_rle_common.c
+	test_rle_encap.c
+	test_rle_frag.c
+	test_rle_pack.c
+	test_rle_decap.c)
 
-ADD_LIBRARY(rle_test SHARED ${SRC_LIBRLE_TEST})
+ADD_LIBRARY(rle_tests SHARED ${SRC_LIBRLE_TESTS})
 
-ADD_EXECUTABLE(test_rle test_main.c)
+ADD_EXECUTABLE(test_rle test_rle.c)
 
 TARGET_LINK_LIBRARIES(test_rle
-	rle_test rle pcap)
+	rle_tests rle pcap)
 
