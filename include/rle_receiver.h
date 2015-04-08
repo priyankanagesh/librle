@@ -21,7 +21,7 @@
  * Provides a context structure for each
  * fragment_id.
  */
-struct receiver_module {
+struct rle_receiver {
 	struct rle_ctx_management rle_ctx_man[RLE_MAX_FRAG_NUMBER];
 	struct rle_configuration *rle_conf[RLE_MAX_FRAG_NUMBER];
 	pthread_mutex_t ctx_mutex;
@@ -37,7 +37,7 @@ struct receiver_module {
  *
  *  @ingroup
  */
-struct receiver_module *rle_receiver_new(void);
+struct rle_receiver *rle_receiver_module_new(void);
 
 /**
  *  @brief Initialize a RLE receiver module
@@ -48,7 +48,7 @@ struct receiver_module *rle_receiver_new(void);
  *
  *  @ingroup
  */
-void rle_receiver_init(struct receiver_module *_this);
+void rle_receiver_module_init(struct rle_receiver *_this);
 
 /**
  *  @brief Destroy a RLE receiver module
@@ -59,7 +59,7 @@ void rle_receiver_init(struct receiver_module *_this);
  *
  *  @ingroup
  */
-void rle_receiver_destroy(struct receiver_module *_this);
+void rle_receiver_module_destroy(struct rle_receiver *_this);
 
 /**
  *  @brief Deencapsulate RLE fragment from a buffer
@@ -79,7 +79,7 @@ void rle_receiver_destroy(struct receiver_module *_this);
  *
  *  @ingroup
  */
-int rle_receiver_deencap_data(struct receiver_module *_this, void *data_buffer, size_t data_length);
+int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, size_t data_length);
 
 /**
  *  @brief Retrieve reassembled PDU data and copy it
@@ -99,7 +99,7 @@ int rle_receiver_deencap_data(struct receiver_module *_this, void *data_buffer, 
  *
  *  @ingroup
  */
-int rle_receiver_get_packet(struct receiver_module *_this, uint8_t fragment_id, void *pdu_buffer,
+int rle_receiver_get_packet(struct rle_receiver *_this, uint8_t fragment_id, void *pdu_buffer,
                             int *pdu_proto_type,
                             uint32_t *pdu_length);
 /**
@@ -112,7 +112,7 @@ int rle_receiver_get_packet(struct receiver_module *_this, uint8_t fragment_id, 
  *
  *  @ingroup
  */
-void rle_receiver_free_context(struct receiver_module *_this, uint8_t fragment_id);
+void rle_receiver_free_context(struct rle_receiver *_this, uint8_t fragment_id);
 
 /**
  *  @brief Get total number of successfully
@@ -126,7 +126,7 @@ void rle_receiver_free_context(struct receiver_module *_this, uint8_t fragment_i
  *
  *  @ingroup
  */
-uint64_t rle_receiver_get_counter_ok(struct receiver_module *_this);
+uint64_t rle_receiver_get_counter_ok(struct rle_receiver *_this);
 
 /**
  *  @brief Get total number of dropped packets
@@ -139,7 +139,7 @@ uint64_t rle_receiver_get_counter_ok(struct receiver_module *_this);
  *
  *  @ingroup
  */
-uint64_t rle_receiver_get_counter_dropped(struct receiver_module *_this);
+uint64_t rle_receiver_get_counter_dropped(struct rle_receiver *_this);
 
 /**
  *  @brief Get total number of lost packets
@@ -152,7 +152,7 @@ uint64_t rle_receiver_get_counter_dropped(struct receiver_module *_this);
  *
  *  @ingroup
  */
-uint64_t rle_receiver_get_counter_lost(struct receiver_module *_this);
+uint64_t rle_receiver_get_counter_lost(struct rle_receiver *_this);
 
 /**
  *  @brief Get total number of sent/received Bytes
@@ -165,8 +165,8 @@ uint64_t rle_receiver_get_counter_lost(struct receiver_module *_this);
  *
  *  @ingroup
  */
-uint64_t rle_receiver_get_counter_bytes(struct receiver_module *_this);
+uint64_t rle_receiver_get_counter_bytes(struct rle_receiver *_this);
 
-void rle_receiver_dump(struct receiver_module *_this);
+void rle_receiver_dump(struct rle_receiver *_this);
 
 #endif /* __RLE_RECEIVER_H__ */

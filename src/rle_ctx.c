@@ -324,6 +324,47 @@ void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val,
 	_this->rle_length = val;
 }
 
+void rle_ctx_set_alpdu_length(struct rle_ctx_management *const _this, const uint32_t val)
+{
+	_this->alpdu_size = val;
+	return;
+}
+
+void rle_ctx_incr_alpdu_length(struct rle_ctx_management *const _this, const uint32_t val)
+{
+	_this->alpdu_size += val;
+	return;
+}
+
+uint32_t rle_ctx_get_alpdu_length(const struct rle_ctx_management *const _this)
+{
+	return _this->alpdu_size;
+}
+
+void rle_ctx_set_remaining_alpdu_length(struct rle_ctx_management *const _this, const uint32_t val)
+{
+	_this->remaining_alpdu_size = val;
+	return;
+}
+
+void rle_ctx_decr_remaining_alpdu_length(struct rle_ctx_management *const _this, const uint32_t val)
+{
+	if (val > _this->remaining_alpdu_size) {
+		PRINT("ERROR %s %s:%s:%d: Invalid decr value for remaining ALPDU length [%d]\n",
+		      MODULE_NAME,
+		      __FILE__, __func__, __LINE__,
+		      val);
+	} else {
+		_this->remaining_alpdu_size -= val;
+	}
+	return;
+}
+
+uint32_t rle_ctx_get_remaining_alpdu_length(const struct rle_ctx_management *const _this)
+{
+	return _this->remaining_alpdu_size;
+}
+
 uint32_t rle_ctx_get_rle_length(struct rle_ctx_management *_this)
 {
 	return _this->rle_length;
@@ -767,6 +808,223 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 	}
 
 	PRINT("\n--------------------------------------------------\n");
+}
+
+void rle_ctx_dump_alpdu(const uint16_t protocol_type, const struct rle_ctx_management *const _this,
+                        struct rle_configuration *const rle_conf, unsigned char alpdu_buffer[],
+                        const size_t alpdu_buffer_size,
+                        size_t *const alpdu_length)
+{
+	struct zc_rle_header_complete_w_ptype *rle_hdr =
+	        (struct zc_rle_header_complete_w_ptype *)_this->buf;
+
+	*alpdu_length = (size_t)(rle_hdr->ptrs.end - rle_hdr->ptrs.start);
+
+	if (*alpdu_length > alpdu_buffer_size) {
+		PRINT("ERROR %s:l.%d - ALPDU length (%zu) too big for buffer size (%zu).\n",
+		      __func__, __LINE__, *alpdu_length,
+		      alpdu_buffer_size);
+	} else {
+		size_t rle_header_size = 0;
+
+		if (!ptype_is_omissible(protocol_type, rle_conf)) {
+			struct rle_header_complete_w_ptype *rle_c_hdr =
+			        (struct rle_header_complete_w_ptype *)&rle_hdr->header;
+
+			if (rle_conf_get_ptype_compression(rle_conf)) {
+				rle_header_size = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
+				if (rle_header_ptype_is_compressable(protocol_type) == C_OK) {
+					alpdu_buffer[0] = rle_c_hdr->ptype_c_s.c.proto_type;
+				} else {
+					unsigned char *p_uint16 =
+					        (unsigned char *)&(rle_c_hdr->ptype_c_s.e.
+					                           proto_type_uncompressed);
+					rle_header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
+					alpdu_buffer[0] = rle_c_hdr->ptype_c_s.e.proto_type;
+					alpdu_buffer[1] = p_uint16[1];
+					alpdu_buffer[2] = p_uint16[0];
+				}
+			} else {
+				unsigned char *p_uint16 =
+				        (unsigned char *)&(rle_c_hdr->ptype_u_s.proto_type);
+				rle_header_size = RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
+				alpdu_buffer[0] = p_uint16[1];
+				alpdu_buffer[1] = p_uint16[0];
+			}
+		}
+
+		memcpy((void *)(alpdu_buffer + (size_t)rle_header_size),
+		       (const void *)rle_hdr->ptrs.start,
+		       *alpdu_length);
+		*alpdu_length += rle_header_size;
+	}
+
+	/*
+	 * {
+	 *      size_t iterator = 0;
+	 *
+	 *      for (iterator = 0; iterator < *alpdu_length; ++iterator) {
+	 *              PRINT("0x%02x ", alpdu_buffer[iterator]);
+	 *      }
+	 *      PRINT("\n");
+	 * }
+	 */
+
+	return;
+}
+
+
+enum check_frag_status check_frag_transition(const enum frag_states current_state,
+                                             const enum frag_states next_state)
+{
+	enum check_frag_status status = FRAG_STATUS_KO; /* KO states explicitly pass silently */
+
+	/*
+	 * Possible transitions:
+	 *
+	 *   +-------------------------------+
+	 *   |                               |
+	 *   |                               v
+	 * Start -------> Continue -------> End
+	 *                ^      |
+	 *                |      |
+	 *                +------+
+	 */
+
+	switch (current_state) {
+	case FRAG_STATE_START:
+	case FRAG_STATE_CONT:
+		switch (next_state) {
+		case FRAG_STATE_CONT:
+		case FRAG_STATE_END:
+			status = FRAG_STATUS_OK;
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return status;
+}
+
+static int get_fragment_type(unsigned char *buffer)
+{
+	int fragment_type = RLE_PDU_COMPLETE;
+
+	union rle_header_all *head = (union rle_header_all *)((void *)buffer);
+
+	if (head->b.start_ind == 0x0) {
+		if (head->b.end_ind == 0x0) {
+			fragment_type = FRAG_STATE_CONT;
+		} else {
+			fragment_type = FRAG_STATE_END;
+		}
+	} else {
+		if (head->b.end_ind == 0x0) {
+			fragment_type = FRAG_STATE_START;
+		} else {
+			fragment_type = FRAG_STATE_COMP;
+		}
+	}
+
+	return fragment_type;
+}
+
+enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_management *const _this)
+{
+	PRINT("CHECK_FRAG\n");
+	enum check_frag_status status = FRAG_STATUS_KO;
+	enum check_frag_status transition_status = FRAG_STATUS_KO;
+
+	unsigned char *buffer = _this->buf;
+	enum frag_states current_state = get_fragment_type(buffer);
+	enum frag_states previous_state = FRAG_STATE_START;
+	size_t sdu_size = 0;
+
+	switch (current_state) {
+	case FRAG_STATE_START:
+		break;
+	case FRAG_STATE_COMP:
+		status = FRAG_STATUS_OK;
+	/* Not a fragmented context */
+	default:
+		/* Not a start fragment. */
+		goto exit_label;
+	}
+
+	/*
+	 * Reminder :
+	 *      Possible transitions:
+	 *
+	 *   +-------------------------------+
+	 *   |                               |
+	 *   |                               v
+	 * Start -------> Continue -------> End
+	 *                ^      |
+	 *                |      |
+	 *                +------+
+	 */
+
+	/* START Fragment */
+	{
+		/* Temporary scope for rle_hdr */
+		struct zc_rle_header_start_w_ptype *rle_hdr =
+		        (struct zc_rle_header_start_w_ptype *)((void *)buffer);
+
+		sdu_size += rle_hdr->ptrs.end - rle_hdr->ptrs.start;
+	}
+
+
+	struct zc_rle_header_cont_end *rle_hdr =
+	        (struct zc_rle_header_cont_end *)((void *)(buffer +
+	                                                   sizeof(struct
+	                                                          zc_rle_header_start_w_ptype)));
+	buffer += sizeof(*rle_hdr);
+
+	previous_state = current_state;
+	current_state = get_fragment_type(buffer);
+	transition_status = check_frag_transition(previous_state, current_state);
+
+	if (transition_status != FRAG_STATUS_OK) {
+		PRINT("ERROR: Bad transition in integrity check\n");
+	}
+
+	/* CONTINUATION Fragments */
+	while (current_state != FRAG_STATE_END) {
+		if (rle_hdr->ptrs.start == NULL) {
+			PRINT("NOT FULLY FRAGMENTED\n");
+			goto exit_label;
+		}
+
+		sdu_size += rle_hdr->ptrs.end - rle_hdr->ptrs.start;
+
+		buffer += sizeof(*rle_hdr);
+		rle_hdr = (struct zc_rle_header_cont_end *)((void *)buffer);
+
+		previous_state = current_state;
+		current_state = get_fragment_type(buffer);
+		transition_status = check_frag_transition(previous_state, current_state);
+
+		if (transition_status != FRAG_STATUS_OK) {
+			PRINT("ERROR: Bad transition in integrity check\n");
+		}
+	}
+
+	/* END Fragment */
+	if (current_state == FRAG_STATE_END) {
+		sdu_size += rle_hdr->ptrs.end - rle_hdr->ptrs.start;
+
+		status = FRAG_STATUS_OK;
+
+		buffer += sizeof(*rle_hdr);
+	}
+
+exit_label:
+
+	return status;
 }
 
 #ifdef __KERNEL__

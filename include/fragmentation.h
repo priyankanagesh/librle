@@ -23,7 +23,7 @@
  *  @param rle_conf					the rle configuration
  *  @param burst_payload_buffer	data buffer's address to encapsulate
  *  @param burst_payload_length	payload length available
- *  @param protocol_type 			the protocol type
+ *  @param protocol_type         the protocol type
  *
  *  @return	C_ERROR in case of error
  *		C_OK otherwise

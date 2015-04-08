@@ -147,3 +147,26 @@ int rle_conf_get_crc_check(struct rle_configuration *_this)
 {
 	return _this->enable_crc_check;
 }
+
+int ptype_is_omissible(const uint16_t ptype, const struct rle_configuration *const rle_conf)
+{
+	int status = C_FALSE;
+
+	const int is_suppressable =
+	        (rle_conf_get_ptype_suppression((struct rle_configuration *)rle_conf));
+	const int ptype_is_default_ptype =
+	        (ptype == rle_conf_get_default_ptype((struct rle_configuration *)rle_conf));
+	const int ptype_is_signal = (ptype == RLE_PROTO_TYPE_SIGNAL_UNCOMP);
+
+	if (is_suppressable) {
+		if (ptype_is_default_ptype) {
+			status = C_TRUE;
+		}
+	} else {
+		if (ptype_is_signal) {
+			status = C_TRUE;
+		}
+	}
+
+	return status;
+}

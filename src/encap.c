@@ -40,9 +40,7 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 	/* don't fill ALPDU ptype field if given ptype
 	 * is equal to the default one and suppression is active,
 	 * or if given ptype is for signalling packet */
-	if (!((protocol_type == rle_conf_get_default_ptype(rle_conf))
-	      && rle_conf_get_ptype_suppression(rle_conf))
-	    && (protocol_type != RLE_PROTO_TYPE_SIGNAL_UNCOMP)) {
+	if (!ptype_is_omissible(protocol_type, rle_conf)) {
 		/* remap a complete header with ptype field */
 		struct rle_header_complete_w_ptype *rle_c_hdr =
 		        (struct rle_header_complete_w_ptype *)&rle_hdr->header;
@@ -92,7 +90,7 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 	}
 
 	/* update rle configuration */
-	rle_conf_set_ptype_suppression(rle_conf, proto_type_supp);
+	/* rle_conf_set_ptype_suppression(rle_conf, proto_type_supp); */
 
 	/* set start & end PDU data pointers */
 	rle_hdr->ptrs.start = (char *)data_buffer;
@@ -106,6 +104,8 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 	rle_ctx_set_use_crc(rle_ctx, C_FALSE);
 	rle_ctx_set_pdu_length(rle_ctx, data_length);
 	rle_ctx_set_remaining_pdu_length(rle_ctx, data_length);
+	rle_ctx_set_alpdu_length(rle_ctx, data_length + ptype_length);
+	rle_ctx_set_remaining_alpdu_length(rle_ctx, data_length + ptype_length);
 	/* RLE packet length is the sum of packet label,
 	 * protocol type & payload length */
 	rle_ctx_set_rle_length(rle_ctx,

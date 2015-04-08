@@ -177,4 +177,18 @@ int rle_conf_set_crc_check(struct rle_configuration *_this, int enable_crc_check
  */
 int rle_conf_get_crc_check(struct rle_configuration *_this);
 
+/**
+ *  @brief	Check if a given protocol type is omissible depending of the conf
+ *
+ *  @warning
+ *
+ *  @param	ptype    The protocol type
+ *  @param	rle_conf The configuration
+ *
+ *  @return	C_TRUE if omissible, else C_FALSE
+ *
+ *  @ingroup
+ */
+int ptype_is_omissible(const uint16_t ptype, const struct rle_configuration *const rle_conf);
+
 #endif /* __RLE_CONF_H__ */

@@ -41,7 +41,7 @@ struct transmitter_link_status {
  * access to free contexts.
  *
  */
-struct transmitter_module {
+struct rle_transmitter {
 	struct rle_ctx_management rle_ctx_man[RLE_MAX_FRAG_NUMBER];
 	struct rle_configuration *rle_conf;
 	pthread_mutex_t ctx_mutex;
@@ -57,7 +57,7 @@ struct transmitter_module {
  *
  *  @ingroup
  */
-struct transmitter_module *rle_transmitter_new(void);
+struct rle_transmitter *rle_transmitter_module_new(void);
 
 /**
  *  @brief Initialize a RLE transmitter module
@@ -68,7 +68,7 @@ struct transmitter_module *rle_transmitter_new(void);
  *
  *  @ingroup
  */
-void rle_transmitter_init(struct transmitter_module *_this);
+void rle_transmitter_module_init(struct rle_transmitter *_this);
 
 /**
  *  @brief Destroy a RLE transmitter module
@@ -79,7 +79,7 @@ void rle_transmitter_init(struct transmitter_module *_this);
  *
  *  @ingroup
  */
-void rle_transmitter_destroy(struct transmitter_module *_this);
+void rle_transmitter_module_destroy(struct rle_transmitter *_this);
 
 /**
  *  @brief Encapsulate data into an RLE packet
@@ -95,9 +95,9 @@ void rle_transmitter_destroy(struct transmitter_module *_this);
  *
  *  @ingroup
  */
-int rle_transmitter_encap_data(struct transmitter_module *_this, void *data_buffer,
-                               size_t data_length,
-                               uint16_t protocol_type);
+int rle_transmitter_encap_data(struct rle_transmitter *_this, void *data_buffer, size_t data_length,
+                               uint16_t protocol_type,
+                               uint8_t frag_id);
 
 /**
  *  @brief Fill burst payload with an RLE packet
@@ -115,7 +115,7 @@ int rle_transmitter_encap_data(struct transmitter_module *_this, void *data_buff
  *
  *  @ingroup
  */
-int rle_transmitter_get_packet(struct transmitter_module *_this, void *burst_buffer,
+int rle_transmitter_get_packet(struct rle_transmitter *_this, void *burst_buffer,
                                size_t burst_length, uint8_t fragment_id,
                                uint16_t protocol_type);
 
@@ -129,7 +129,7 @@ int rle_transmitter_get_packet(struct transmitter_module *_this, void *burst_buf
  *
  *  @ingroup
  */
-void rle_transmitter_free_context(struct transmitter_module *_this, uint8_t fragment_id);
+void rle_transmitter_free_context(struct rle_transmitter *_this, uint8_t fragment_id);
 
 /**
  *  @brief Get a queue (frag_id) state, filled or empty
@@ -144,7 +144,7 @@ void rle_transmitter_free_context(struct transmitter_module *_this, uint8_t frag
  *
  *  @ingroup
  */
-int rle_transmitter_get_queue_state(struct transmitter_module *_this, uint8_t fragment_id);
+int rle_transmitter_get_queue_state(struct rle_transmitter *_this, uint8_t fragment_id);
 
 /**
  *  @brief Get occupied size of a queue (frag_id)
@@ -158,7 +158,7 @@ int rle_transmitter_get_queue_state(struct transmitter_module *_this, uint8_t fr
  *
  *  @ingroup
  */
-uint32_t rle_transmitter_get_queue_size(struct transmitter_module *_this, uint8_t fragment_id);
+uint32_t rle_transmitter_get_queue_size(struct rle_transmitter *_this, uint8_t fragment_id);
 
 /**
  *  @brief Get total number of successfully
@@ -172,7 +172,7 @@ uint32_t rle_transmitter_get_queue_size(struct transmitter_module *_this, uint8_
  *
  *  @ingroup
  */
-uint64_t rle_transmitter_get_counter_ok(struct transmitter_module *_this);
+uint64_t rle_transmitter_get_counter_ok(struct rle_transmitter *_this);
 
 /**
  *  @brief Get total number of dropped packets
@@ -185,7 +185,7 @@ uint64_t rle_transmitter_get_counter_ok(struct transmitter_module *_this);
  *
  *  @ingroup
  */
-uint64_t rle_transmitter_get_counter_dropped(struct transmitter_module *_this);
+uint64_t rle_transmitter_get_counter_dropped(struct rle_transmitter *_this);
 
 /**
  *  @brief Get total number of lost packets
@@ -198,7 +198,7 @@ uint64_t rle_transmitter_get_counter_dropped(struct transmitter_module *_this);
  *
  *  @ingroup
  */
-uint64_t rle_transmitter_get_counter_lost(struct transmitter_module *_this);
+uint64_t rle_transmitter_get_counter_lost(struct rle_transmitter *_this);
 
 /**
  *  @brief Get total number of sent/received Bytes
@@ -211,7 +211,7 @@ uint64_t rle_transmitter_get_counter_lost(struct transmitter_module *_this);
  *
  *  @ingroup
  */
-uint64_t rle_transmitter_get_counter_bytes(struct transmitter_module *_this);
+uint64_t rle_transmitter_get_counter_bytes(struct rle_transmitter *_this);
 
 /**
  *  @brief Dump all frag_id contents
@@ -222,6 +222,33 @@ uint64_t rle_transmitter_get_counter_bytes(struct transmitter_module *_this);
  *
  *  @ingroup
  */
-void rle_transmitter_dump(struct transmitter_module *_this);
+void rle_transmitter_dump(struct rle_transmitter *_this);
+
+/**
+ *  @brief         Dump an ALPDU from a context link to a frag id of a transmitter in a buffer.
+ *
+ *                 This is intended to help testing encapsulation only. Please don't use this after
+ *                 fragmentation and take care if you want to use it in another way.
+ *
+ *  @param[in]     _this               The transmitter module.
+ *  @param[in]     frag_id             The fragment id with the context that will be dump.
+ *  @param[in,out] alpdu_buffer        A preallocated buffer that will contain the ALPDU.
+ *  @param[in]     alpdu_buffer_size   The size of the preallocated buffer
+ *  @param[out]    alpdu_length        The size of the ALPDU
+ */
+void rle_transmitter_dump_alpdu(struct rle_transmitter *_this, uint8_t frag_id,
+                                unsigned char alpdu_buffer[], const size_t alpdu_buffer_size,
+                                size_t *const alpdu_length);
+
+/**
+ *  @brief         Check the fragementation integrity in a frag id of a transmitter
+ *
+ *  @param[in]     _this               The transmitter with the frag id context to check.
+ *  @param[in]     frag_id             The frag id.
+ *
+ *  @return        FRAG_STATUS_OK if fragmentation in OK, else FRAG_STATUS_KO.
+ */
+enum check_frag_status rle_transmitter_check_frag_integrity(
+        const struct rle_transmitter *const _this, uint8_t frag_id);
 
 #endif /* __RLE_TRANSMITTER_H__ */

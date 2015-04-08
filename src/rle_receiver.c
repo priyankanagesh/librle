@@ -22,7 +22,7 @@
 
 #define MODULE_NAME "RECEIVER"
 
-static int get_first_free_frag_ctx(struct receiver_module *_this)
+static int get_first_free_frag_ctx(struct rle_receiver *_this)
 {
 	int i;
 
@@ -38,21 +38,21 @@ static int get_first_free_frag_ctx(struct receiver_module *_this)
 	return C_ERROR;
 }
 
-static void set_nonfree_frag_ctx(struct receiver_module *_this, int index)
+static void set_nonfree_frag_ctx(struct rle_receiver *_this, int index)
 {
 	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx |= (1 << index);
 	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
-static void set_free_frag_ctx(struct receiver_module *_this, int index)
+static void set_free_frag_ctx(struct rle_receiver *_this, int index)
 {
 	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx = (0 << index) & 0xff;
 	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
-static void set_free_all_frag_ctx(struct receiver_module *_this)
+static void set_free_all_frag_ctx(struct rle_receiver *_this)
 {
 	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx = 0;
@@ -133,7 +133,7 @@ static uint16_t get_rle_packet_length(void *data_buffer)
 	return head->b.rle_packet_length;
 }
 
-static void init(struct receiver_module *_this)
+static void init(struct rle_receiver *_this)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
@@ -158,7 +158,7 @@ static void init(struct receiver_module *_this)
 	set_free_all_frag_ctx(_this);
 }
 
-struct receiver_module *rle_receiver_new(void)
+struct rle_receiver *rle_receiver_module_new(void)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
@@ -166,9 +166,9 @@ struct receiver_module *rle_receiver_new(void)
 	      __FILE__, __func__, __LINE__);
 #endif
 
-	struct receiver_module *_this = NULL;
+	struct rle_receiver *_this = NULL;
 
-	_this = MALLOC(sizeof(struct receiver_module));
+	_this = MALLOC(sizeof(struct rle_receiver));
 
 	if (!_this) {
 		PRINT("ERROR %s %s:%s:%d: allocating receiver module failed\n",
@@ -195,7 +195,7 @@ struct receiver_module *rle_receiver_new(void)
 	return _this;
 }
 
-void rle_receiver_destroy(struct receiver_module *_this)
+void rle_receiver_module_destroy(struct rle_receiver *_this)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
@@ -213,7 +213,7 @@ void rle_receiver_destroy(struct receiver_module *_this)
 	_this = NULL;
 }
 
-int rle_receiver_deencap_data(struct receiver_module *_this, void *data_buffer, size_t data_length)
+int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, size_t data_length)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
@@ -332,7 +332,7 @@ int rle_receiver_deencap_data(struct receiver_module *_this, void *data_buffer, 
 	return ret;
 }
 
-int rle_receiver_get_packet(struct receiver_module *_this, uint8_t fragment_id, void *pdu_buffer,
+int rle_receiver_get_packet(struct rle_receiver *_this, uint8_t fragment_id, void *pdu_buffer,
                             int *pdu_proto_type,
                             uint32_t *pdu_length)
 {
@@ -372,13 +372,13 @@ int rle_receiver_get_packet(struct receiver_module *_this, uint8_t fragment_id, 
 	return ret;
 }
 
-void rle_receiver_free_context(struct receiver_module *_this, uint8_t fragment_id)
+void rle_receiver_free_context(struct rle_receiver *_this, uint8_t fragment_id)
 {
 	/* set to idle this fragmentation context */
 	set_free_frag_ctx(_this, fragment_id);
 }
 
-uint64_t rle_receiver_get_counter_ok(struct receiver_module *_this)
+uint64_t rle_receiver_get_counter_ok(struct rle_receiver *_this)
 {
 	int i;
 	uint64_t ctr_packet_ok = 0L;
@@ -391,7 +391,7 @@ uint64_t rle_receiver_get_counter_ok(struct receiver_module *_this)
 	return ctr_packet_ok;
 }
 
-uint64_t rle_receiver_get_counter_dropped(struct receiver_module *_this)
+uint64_t rle_receiver_get_counter_dropped(struct rle_receiver *_this)
 {
 	int i;
 	uint64_t ctr_packet_dropped = 0L;
@@ -404,7 +404,7 @@ uint64_t rle_receiver_get_counter_dropped(struct receiver_module *_this)
 	return ctr_packet_dropped;
 }
 
-uint64_t rle_receiver_get_counter_lost(struct receiver_module *_this)
+uint64_t rle_receiver_get_counter_lost(struct rle_receiver *_this)
 {
 	int i;
 	uint64_t ctr_packet_lost = 0L;
@@ -417,7 +417,7 @@ uint64_t rle_receiver_get_counter_lost(struct receiver_module *_this)
 	return ctr_packet_lost;
 }
 
-uint64_t rle_receiver_get_counter_bytes(struct receiver_module *_this)
+uint64_t rle_receiver_get_counter_bytes(struct rle_receiver *_this)
 {
 	int i;
 	uint64_t ctr_bytes = 0L;
@@ -430,7 +430,7 @@ uint64_t rle_receiver_get_counter_bytes(struct receiver_module *_this)
 	return ctr_bytes;
 }
 
-void rle_receiver_dump(struct receiver_module *_this)
+void rle_receiver_dump(struct rle_receiver *_this)
 {
 	int i;
 
@@ -441,9 +441,9 @@ void rle_receiver_dump(struct receiver_module *_this)
 }
 
 #ifdef __KERNEL__
-EXPORT_SYMBOL(rle_receiver_new);
-EXPORT_SYMBOL(rle_receiver_init);
-EXPORT_SYMBOL(rle_receiver_destroy);
+EXPORT_SYMBOL(rle_receiver_module_new);
+EXPORT_SYMBOL(rle_receiver_module_init);
+EXPORT_SYMBOL(rle_receiver_module_destroy);
 EXPORT_SYMBOL(rle_receiver_deencap_data);
 EXPORT_SYMBOL(rle_receiver_get_packet);
 EXPORT_SYMBOL(rle_receiver_dump);

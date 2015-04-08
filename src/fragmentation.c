@@ -84,6 +84,8 @@ static void add_trailer(struct rle_ctx_management *rle_ctx,
 		/* copy trailer to burst payload */
 		memcpy(burst_payload_buffer, &seq_no, RLE_SEQ_NO_FIELD_SIZE);
 
+		rle_ctx_decr_remaining_alpdu_length(rle_ctx, RLE_SEQ_NO_FIELD_SIZE);
+
 		rle_ctx_incr_seq_nb(rle_ctx);
 	} else {
 		/* crc32 is computed by using protocol type
@@ -95,6 +97,8 @@ static void add_trailer(struct rle_ctx_management *rle_ctx,
 
 		/* copy trailer to burst payload */
 		memcpy(burst_payload_buffer, &rle_trl->trailer.crc, RLE_CRC32_FIELD_SIZE);
+
+		rle_ctx_decr_remaining_alpdu_length(rle_ctx, RLE_CRC32_FIELD_SIZE);
 	}
 }
 
@@ -120,9 +124,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	/* don't fill ptype field if given ptype
 	 * is equal to the default one and suppression is active,
 	 * or if given ptype is for signalling packet */
-	if (!((protocol_type == rle_conf_get_default_ptype(rle_conf))
-	      && rle_conf_get_ptype_suppression(rle_conf))
-	    && (protocol_type != RLE_PROTO_TYPE_SIGNAL_UNCOMP)) {
+	if (!ptype_is_omissible(protocol_type, rle_conf)) {
 		/* remap a complete header with ptype field */
 		struct rle_header_start_w_ptype *rle_sp_hdr =
 		        (struct rle_header_start_w_ptype *)&rle_s_hdr->header;
@@ -224,6 +226,18 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	                                 (rle_ctx_get_pdu_length(rle_ctx) - offset_payload));
 	rle_ctx_set_rle_length(rle_ctx,
 	                       (burst_payload_length - ptype_length), ptype_length);
+	rle_ctx_set_alpdu_length(rle_ctx, rle_ctx_get_alpdu_length(rle_ctx) - ptype_length);
+	size_t trailer_size = 0;
+
+	if (rle_conf_get_crc_check(rle_conf) == C_TRUE) {
+		trailer_size += RLE_CRC32_FIELD_SIZE;
+	} else {
+		trailer_size += RLE_SEQ_NO_FIELD_SIZE;
+	}
+	rle_ctx_incr_alpdu_length(rle_ctx, trailer_size);
+	rle_ctx_set_remaining_alpdu_length(rle_ctx, rle_ctx_get_alpdu_length(rle_ctx));
+
+	rle_ctx_decr_remaining_alpdu_length(rle_ctx, offset_payload);
 
 	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO */
 
@@ -319,8 +333,10 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	 * remaining PDU data size must be equal
 	 * to zero */
 	int new_remaining_val = 0;
+	/* size_t ptype_offset = rle_ctx_get_alpdu_length(rle_ctx) - rle_ctx_get_pdu_length(rle_ctx) - trailer_size; */
 	new_remaining_val =
 	        rle_ctx_get_remaining_pdu_length(rle_ctx) - pdu_size_payload;
+/*	        rle_ctx_get_remaining_pdu_length(rle_ctx) - pdu_size_payload + ptype_offset;*/
 	if (((type_rle_frag == RLE_PDU_END_FRAG) && (new_remaining_val > 0)) ||
 	    (new_remaining_val < 0)) {
 		PRINT("ERROR %s %s:%s:%d: Invalid remaining data size"
@@ -332,6 +348,7 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	}
 
 	rle_ctx_set_remaining_pdu_length(rle_ctx, new_remaining_val);
+	rle_ctx_decr_remaining_alpdu_length(rle_ctx, pdu_size_payload);
 	rle_ctx_set_rle_length(rle_ctx,
 	                       (burst_payload_length - (RLE_CONT_HEADER_SIZE + trailer_size)), 0);
 
@@ -427,6 +444,7 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
 
 	/* update some values in RLE context */
 	rle_ctx_set_remaining_pdu_length(rle_ctx, 0);
+	rle_ctx_set_remaining_alpdu_length(rle_ctx, 0);
 	rle_ctx_set_rle_length(rle_ctx,
 	                       (pdu_length + ptype_length), ptype_length);
 
@@ -480,7 +498,7 @@ int fragmentation_is_needed(struct rle_ctx_management *rle_ctx, size_t burst_pay
 	      burst_payload_length);
 #endif
 	size_t total_rle_length = RLE_COMPLETE_HEADER_SIZE +
-	                          rle_ctx_get_rle_length(rle_ctx);
+	                          rle_ctx_get_alpdu_length(rle_ctx);
 
 	if (total_rle_length > burst_payload_length) {
 		return C_TRUE;
