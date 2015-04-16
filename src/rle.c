@@ -10,17 +10,16 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "rle.h"
-
 #include "constants.h"
 #include "rle_ctx.h"
 #include "rle_conf.h"
-
 #include "rle_receiver.h"
 #include "rle_transmitter.h"
 
 #include "header.h"
 #include "trailer.h"
+
+#include "rle.h"
 
 struct rle_transmitter *rle_transmitter_new(const struct rle_context_configuration configuration)
 {
@@ -131,28 +130,38 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 	size_t remaining_pdu = rle_ctx_get_remaining_pdu_length(&transmitter->rle_ctx_man[frag_id]);
 	size_t remaining_alpdu =
 	        rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id]);
+	size_t burst_size = remaining_burst_size <
+	                    RLE_MAX_PPDU_PL_SIZE ? remaining_burst_size : RLE_MAX_PPDU_PL_SIZE;
 
 	if (remaining_alpdu == 0) {
 		status = RLE_FRAG_ERR_CONTEXT_IS_NULL;
 		goto exit_label;
 	}
 
-	if (remaining_burst_size < min_burst_size) {
+	if (burst_size < min_burst_size) {
 		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
 		goto exit_label;
 	}
 
-	/* If the remaining burst size is large enough to send SDU, but not the ALPDU protection bytes.*/
-	if ((remaining_burst_size > RLE_CONT_HEADER_SIZE + remaining_pdu) &&
-	    (remaining_burst_size < RLE_CONT_HEADER_SIZE + remaining_alpdu)) {
+	/*
+	 * The further statement checks if the remaining burst size is large enough to send SDU,
+	 * but not the ALPDU protection octets. If not, there is no framentation, and an error code is
+	 * returned. The user of the library must retry the fragmentation with either:
+	 * - a smaller burst size, in order to send partially or fully the ALPDU without its
+	 *   protection bytes. Those octets could not be split apart and should be sent together in a
+	 *   forthcoming burst.
+	 * - a bigger burst size, for the same reason as exposed previously.
+	 */
+	if ((burst_size > RLE_CONT_HEADER_SIZE + remaining_pdu) &&
+	    (burst_size < RLE_CONT_HEADER_SIZE + remaining_alpdu)) {
 		status = RLE_FRAG_ERR_INVALID_SIZE;
 		goto exit_label;
 	}
 
-	if (remaining_alpdu < remaining_burst_size) {
+	if (remaining_alpdu < burst_size) {
 		*ppdu_length = remaining_alpdu + RLE_CONT_HEADER_SIZE;
 	} else {
-		*ppdu_length = remaining_burst_size;
+		*ppdu_length = burst_size;
 	}
 
 	ret =
@@ -160,8 +169,15 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 	                transmitter, ppdu, *ppdu_length, frag_id, rle_ctx_get_proto_type(
 	                        &transmitter->rle_ctx_man[frag_id]));
 
+
+	remaining_alpdu = rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id]);
+
+	if (remaining_alpdu == 0) {
+		rle_transmitter_free_context(transmitter, frag_id);
+	}
+
 	if (ret == C_OK) {
-		status = RLE_ENCAP_OK;
+		status = RLE_FRAG_OK;
 	}
 
 
@@ -169,9 +185,9 @@ exit_label:
 	return status;
 }
 
-enum rle_pack_status rle_pack(const unsigned char ppdu[], const size_t ppdu_length,
-                              const unsigned char label[], const size_t label_size,
-                              unsigned char fpdu[],
+enum rle_pack_status rle_pack(const unsigned char *const ppdu, const size_t ppdu_length,
+                              const unsigned char *const label, const size_t label_size,
+                              unsigned char *const fpdu,
                               size_t *const fpdu_current_pos,
                               size_t *const fpdu_remaining_size)
 {
@@ -244,9 +260,10 @@ exit_label:
 }
 
 enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
-                                      const unsigned char fpdu[], size_t fpdu_length,
-                                      struct rle_sdu sdus[], const size_t sdus_max_nr,
-                                      size_t *const sdus_nr, unsigned char payload_label[],
+                                      const unsigned char *const fpdu, const size_t fpdu_length,
+                                      struct rle_sdu sdus[],
+                                      const size_t sdus_max_nr, size_t *const sdus_nr,
+                                      unsigned char *const payload_label,
                                       const size_t payload_label_size)
 {
 	enum rle_decap_status status = RLE_DECAP_ERR;
@@ -254,6 +271,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 	*sdus_nr = 0;
 
 	if (receiver == NULL) {
+		status = RLE_DECAP_ERR_NULL_RCVR;
 		goto exit_label;
 	}
 
@@ -277,8 +295,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 		goto exit_label;
 	}
 
-	if (!((payload_label_size != 0) && (payload_label_size != 3) &&
-	      (payload_label_size != 6))) {
+	if ((payload_label_size != 0) && (payload_label_size != 3) && (payload_label_size != 6)) {
 		status = RLE_DECAP_ERR_INV_PL;
 		goto exit_label;
 	}
@@ -371,7 +388,6 @@ size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiv
 
 uint64_t rle_receiver_stats_get_counter_ok(const struct rle_receiver *const receiver)
 {
-	/* TODO */
 	uint64_t counter_ok = 0;
 	size_t iterator = 0;
 	struct rle_ctx_management ctx_man;
@@ -386,7 +402,6 @@ uint64_t rle_receiver_stats_get_counter_ok(const struct rle_receiver *const rece
 
 uint64_t rle_receiver_stats_get_counter_dropped(const struct rle_receiver *const receiver)
 {
-	/* TODO */
 	uint64_t counter_dropped = 0;
 	size_t iterator = 0;
 	struct rle_ctx_management ctx_man;
@@ -401,7 +416,6 @@ uint64_t rle_receiver_stats_get_counter_dropped(const struct rle_receiver *const
 
 uint64_t rle_receiver_stats_get_counter_lost(const struct rle_receiver *const receiver)
 {
-	/* TODO */
 	uint64_t counter_lost = 0;
 	size_t iterator = 0;
 	struct rle_ctx_management ctx_man;
@@ -416,7 +430,6 @@ uint64_t rle_receiver_stats_get_counter_lost(const struct rle_receiver *const re
 
 uint64_t rle_receiver_stats_get_counter_bytes(const struct rle_receiver *const receiver)
 {
-	/* TODO */
 	uint64_t counter_bytes = 0;
 	size_t iterator = 0;
 	struct rle_ctx_management ctx_man;

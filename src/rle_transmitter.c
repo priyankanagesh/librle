@@ -21,21 +21,17 @@
 
 #define MODULE_NAME "TRANSMITTER"
 
-/*static int get_first_free_frag_ctx(struct rle_transmitter *_this)
- * {
- *      int i;
- *
- *      pthread_mutex_lock(&_this->ctx_mutex);
- *      for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
- *              if (((_this->free_ctx >> i) & 0x1) == 0) {
- *                      pthread_mutex_unlock(&_this->ctx_mutex);
- *                      return i;
- *              }
- *      }
- *      pthread_mutex_unlock(&_this->ctx_mutex);
- *
- *      return C_ERROR;
- * }*/
+static int is_frag_ctx_free(struct rle_transmitter *const _this, const uint8_t frag_id)
+{
+	int is_free = C_FALSE;
+
+	pthread_mutex_lock(&_this->ctx_mutex);
+	is_free = ((_this->free_ctx >> frag_id) & 0x1) ? C_TRUE : C_FALSE;
+	pthread_mutex_unlock(&_this->ctx_mutex);
+
+	return is_free;
+}
+
 static void set_nonfree_frag_ctx(struct rle_transmitter *_this, int index)
 {
 	pthread_mutex_lock(&_this->ctx_mutex);
@@ -171,16 +167,11 @@ int rle_transmitter_encap_data(struct rle_transmitter *_this, void *data_buffer,
 		return ret;
 	}
 
-
-	/* TODO Manage error case when ctx is not free in frag id. */
-	/* get first free frag context */
-	/* int index_ctx = get_first_free_frag_ctx(_this);
-	 * if (index_ctx < 0) {
-	 *      PRINT("ERROR %s:%s:%d: no free fragmentation context available "
-	 *            "for encapsulation\n",
-	 *            __FILE__, __func__, __LINE__);
-	 *      return ret;
-	 * }*/
+	if (is_frag_ctx_free(_this, frag_id)) {
+		PRINT("ERROR %s:%s:%d: frag id is not free\n",
+		      __FILE__, __func__, __LINE__);
+		return ret;
+	}
 
 	/* set to 'used' the previously free frag context */
 	/* set_nonfree_frag_ctx(_this, index_ctx); */

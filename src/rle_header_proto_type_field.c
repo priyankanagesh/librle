@@ -15,9 +15,7 @@
 #define RLE_PROTO_TYPE_IPV4_OR_IPV6 RLE_PROTO_TYPE_IPV4_UNCOMP
 
 /* Protocol type references decompression array. ref: Table 7-3 p. 110 ETSI EN 301 545-2 v.1.2.1 */
-/* TODO: Eventualy, change every hex value by a RLE_PROTO_TYPE_..._UNCOMP. */
-/* TODO: Const ? Not sure if we use a variable for IPv4 <-> IPv6... */
-uint16_t rle_header_proto_type_protocol_references_decomp[RLE_PROTO_TYPE_MAX_COMP_VALUE + 1] = {
+const uint16_t rle_header_ptype_decomp[RLE_PROTO_TYPE_MAX_COMP_VALUE + 1] = {
 	/* 0x00 -> 0x1a */
 	0x0000,
 	0x0001,
@@ -77,12 +75,12 @@ uint16_t rle_header_ptype_decompression(uint8_t compressed_ptype)
 {
 	uint16_t uncompressed_ptype = 0x0000;
 
-	uncompressed_ptype = rle_header_proto_type_protocol_references_decomp[compressed_ptype];
+	uncompressed_ptype = rle_header_ptype_decomp[compressed_ptype];
 
 	return uncompressed_ptype;
 }
 
-int rle_header_ptype_is_compressable(uint16_t uncompressed_ptype)
+int rle_header_ptype_is_compressible(uint16_t uncompressed_ptype)
 {
 	int return_value = C_ERROR;
 

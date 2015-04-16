@@ -232,8 +232,10 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 
 	if (rle_conf_get_crc_check(rle_conf) == C_TRUE) {
 		trailer_size += RLE_CRC32_FIELD_SIZE;
+		rle_s_hdr->header.head_start.b.use_crc = 1;
 	} else {
 		trailer_size += RLE_SEQ_NO_FIELD_SIZE;
+		rle_s_hdr->header.head_start.b.use_crc = 0;
 	}
 	rle_ctx_incr_alpdu_length(rle_ctx, trailer_size);
 	rle_ctx_set_remaining_alpdu_length(rle_ctx, rle_ctx_get_alpdu_length(rle_ctx));
@@ -378,7 +380,8 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	return C_OK;
 }
 
-static int get_fragment_type(struct rle_ctx_management *rle_ctx, size_t burst_payload_length)
+static int get_fragment_type_from_ctx(struct rle_ctx_management *rle_ctx,
+                                      size_t burst_payload_length)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
@@ -543,7 +546,7 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 		}
 	}
 
-	int frag_type = get_fragment_type(rle_ctx, burst_payload_length);
+	int frag_type = get_fragment_type_from_ctx(rle_ctx, burst_payload_length);
 
 	if ((frag_type == RLE_PDU_START_FRAG) &&
 	    (burst_payload_length < RLE_START_MANDATORY_HEADER_SIZE)) {

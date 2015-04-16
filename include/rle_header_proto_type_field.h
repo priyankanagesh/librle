@@ -78,15 +78,15 @@ uint16_t rle_header_ptype_decompression(uint8_t compressed_ptype);
 
 
 /**
- * @brief		RLE header check if protocol type is compressable function.
+ * @brief		RLE header check if protocol type is compressible function.
  *
  * @param[in]	uncompressed_ptype	An uncompressed protocol type to compress.
  *
- * @return		C_OK if the protocol type is compressable else C_ERROR.
+ * @return		C_OK if the protocol type is compressible else C_ERROR.
  *
  * @ingroup
  */
-int rle_header_ptype_is_compressable(uint16_t uncompressed_ptype);
+int rle_header_ptype_is_compressible(uint16_t uncompressed_ptype);
 
 /**
  * @brief		RLE header compression of protocol type function.
@@ -101,6 +101,8 @@ uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype);
 
 /** Max size of input packet (PDU) in Bytes */
 #define RLE_MAX_PDU_SIZE                   4088
+/** Max size of PPDU Payload (PPDU_PL) in Bytes */
+#define RLE_MAX_PPDU_PL_SIZE               2047
 /** Size of Protocol Type uncompressed field in Bytes */
 #define RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP   2
 /** Size of Protocol Type compressed field in Bytes */

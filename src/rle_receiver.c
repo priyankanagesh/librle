@@ -59,7 +59,7 @@ static void set_free_all_frag_ctx(struct rle_receiver *_this)
 	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
-static int get_fragment_type(void *data_buffer)
+static int get_recvd_fragment_type(void *data_buffer)
 {
 	union rle_header_all *head = (union rle_header_all *)data_buffer;
 	int type_rle_frag = C_ERROR;
@@ -256,7 +256,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 	 * right frag id context (SE bits)
 	 * or
 	 * search for the first free frag id context to put data into it */
-	int frag_type = get_fragment_type(data_buffer);
+	int frag_type = get_recvd_fragment_type(data_buffer);
 	int index_ctx = -1;
 
 	switch (frag_type) {
@@ -438,6 +438,21 @@ void rle_receiver_dump(struct rle_receiver *_this)
 		rle_ctx_dump(&_this->rle_ctx_man[i],
 		             _this->rle_conf[i]);
 	}
+}
+
+size_t rle_receiver_get_alpdu_protection_length(const struct rle_receiver *const _this,
+                                                const unsigned char *const buffer)
+{
+	size_t alpdu_protection_length = 0;
+	uint8_t frag_id = 0;
+	int use_crc = 0;
+	union rle_header_all *head = (union rle_header_all *)((void *)buffer);
+
+	frag_id = (uint8_t)head->b.LT_T_FID;
+	use_crc = rle_ctx_get_use_crc(&((struct rle_receiver *)(_this))->rle_ctx_man[frag_id]);
+	alpdu_protection_length = (size_t)(use_crc == 1 ? 4 : 1);
+
+	return alpdu_protection_length;
 }
 
 #ifdef __KERNEL__

@@ -71,7 +71,7 @@ static int check_fragmented_length(struct rle_ctx_management *rle_ctx, size_t da
 	}
 
 	size_t recv_pkt_length = (data_length -
-	                          (sizeof(struct rle_header_cont_end) + trailer_size));
+	                          ((sizeof(struct rle_header_cont_end) + trailer_size)));
 
 	/* for each fragment received, remaining data size is updated,
 	 * so if everything is okay remaining size must be equal
@@ -664,7 +664,7 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 		}
 	} else {
 		/* no fragmentation case */
-		ret = check_complete_length(rle_ctx, data_buffer, data_length, hdr_offset);
+		ret = check_complete_length(rle_ctx, data_buffer, data_length, RLE_CONT_HEADER_SIZE);
 		if (ret == C_OK) {
 			/* update ctx status structure if length checking is OK */
 			update_ctx_complete(rle_ctx, rle_conf,

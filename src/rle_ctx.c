@@ -833,7 +833,7 @@ void rle_ctx_dump_alpdu(const uint16_t protocol_type, const struct rle_ctx_manag
 
 			if (rle_conf_get_ptype_compression(rle_conf)) {
 				rle_header_size = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
-				if (rle_header_ptype_is_compressable(protocol_type) == C_OK) {
+				if (rle_header_ptype_is_compressible(protocol_type) == C_OK) {
 					alpdu_buffer[0] = rle_c_hdr->ptype_c_s.c.proto_type;
 				} else {
 					unsigned char *p_uint16 =
@@ -910,9 +910,9 @@ enum check_frag_status check_frag_transition(const enum frag_states current_stat
 	return status;
 }
 
-static int get_fragment_type(unsigned char *buffer)
+enum frag_states get_fragment_type(const unsigned char *const buffer)
 {
-	int fragment_type = RLE_PDU_COMPLETE;
+	enum frag_states fragment_type = RLE_PDU_COMPLETE;
 
 	union rle_header_all *head = (union rle_header_all *)((void *)buffer);
 
@@ -932,6 +932,44 @@ static int get_fragment_type(unsigned char *buffer)
 
 	return fragment_type;
 }
+
+size_t get_fragment_length(const unsigned char *const buffer)
+{
+	size_t fragment_length = 0;
+	enum frag_states fragment_type = RLE_PDU_COMPLETE;
+	union rle_header_all *head = (union rle_header_all *)((void *)buffer);
+
+
+	fragment_type = get_fragment_type(buffer);
+
+	switch (fragment_type) {
+	case FRAG_STATE_CONT:
+	case FRAG_STATE_COMP:
+	case FRAG_STATE_END:
+		fragment_length += (size_t)RLE_CONT_HEADER_SIZE;
+		break;
+	case FRAG_STATE_START:
+		fragment_length += (size_t)RLE_START_MANDATORY_HEADER_SIZE;
+		break;
+	default:
+		break;
+	}
+
+	fragment_length += rle_header_all_get_packet_length(*head);
+
+	return fragment_length;
+}
+
+uint8_t get_fragment_frag_id(const unsigned char *const buffer)
+{
+	uint8_t frag_id = 0;
+	union rle_header_all *head = (union rle_header_all *)((void *)buffer);
+
+	frag_id = (uint8_t)head->b.LT_T_FID;
+
+	return frag_id;
+}
+
 
 enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_management *const _this)
 {

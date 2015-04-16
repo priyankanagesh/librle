@@ -7,8 +7,8 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef __LIBRLE_INTERFACE_H__
-#define __LIBRLE_INTERFACE_H__
+#ifndef __RLE_H__
+#define __RLE_H__
 
 #include <stddef.h>
 #include <stdint.h>
@@ -16,7 +16,7 @@
 /** Status of the encapsulation. */
 enum rle_encap_status {
 	RLE_ENCAP_OK,              /**< Ok.                                    */
-	RLE_ENCAP_ERR,             /**< Default error. SDU should be drop.     */
+	RLE_ENCAP_ERR,             /**< Default error. SDU should be dropped.  */
 	RLE_ENCAP_ERR_NULL_TRMT,   /**< Error. The transmitter is NULL.        */
 	RLE_ENCAP_ERR_SDU_TOO_BIG  /**< Error. SDU too big to be encapsulated. */
 };
@@ -24,7 +24,7 @@ enum rle_encap_status {
 /** Status of the fragmentation. */
 enum rle_frag_status {
 	RLE_FRAG_OK,                  /**< Ok.                                                    */
-	RLE_FRAG_ERR,                 /**< Default error. SDU should be drop.                     */
+	RLE_FRAG_ERR,                 /**< Default error. SDU should be dropped.                  */
 	RLE_FRAG_ERR_NULL_TRMT,       /**< Error. The transmitter is NULL.                        */
 	RLE_FRAG_ERR_BURST_TOO_SMALL, /**< Error. Burst size is too small.                        */
 	RLE_FRAG_ERR_CONTEXT_IS_NULL, /**< Error. Context is NULL, ALPDU may be empty.            */
@@ -34,7 +34,7 @@ enum rle_frag_status {
 /** Status of the frame packing. */
 enum rle_pack_status {
 	RLE_PACK_OK,                 /**< Ok.                                                      */
-	RLE_PACK_ERR,                /**< Default error. SDUs should be drop.                      */
+	RLE_PACK_ERR,                /**< Default error. SDUs should be dropped.                   */
 	RLE_PACK_ERR_FPDU_TOO_SMALL, /**< Error. FPDU is too small for the current PPDU. No drop.  */
 	RLE_PACK_ERR_INVALID_PPDU,   /**< Error. Current PPDU is invalid, maybe NULL or bad size.  */
 	RLE_PACK_ERR_INVALID_LAB     /**< Error. Current label is invalid, maybe NULL or bad size. */
@@ -43,7 +43,7 @@ enum rle_pack_status {
 /** Status of the decapsulation. */
 enum rle_decap_status {
 	RLE_DECAP_OK,            /**< Ok.                                                       */
-	RLE_DECAP_ERR,           /**< Error. SDUs should be drop.                               */
+	RLE_DECAP_ERR,           /**< Error. SDUs should be dropped.                            */
 	RLE_DECAP_ERR_NULL_RCVR, /**< Error. The receiver is NULL.                              */
 	RLE_DECAP_ERR_ALL_DROP,  /**< Error. All current SDUs were dropped. Some may be lost.   */
 	RLE_DECAP_ERR_SOME_DROP, /**< Error. Some SDUs were dropped. Some may be lost.          */
@@ -181,9 +181,9 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
  *
  * @ingroup       RLE transmitter
  */
-enum rle_pack_status rle_pack(const unsigned char ppdu[], const size_t ppdu_length,
-                              const unsigned char label[], const size_t label_size,
-                              unsigned char fpdu[],
+enum rle_pack_status rle_pack(const unsigned char *const ppdu, const size_t ppdu_length,
+                              const unsigned char *const label, const size_t label_size,
+                              unsigned char *const fpdu,
                               size_t *const fpdu_current_pos,
                               size_t *const fpdu_remaining_size);
 
@@ -213,9 +213,10 @@ enum rle_pack_status rle_pack(const unsigned char ppdu[], const size_t ppdu_leng
  * @ingroup       RLE receiver
  */
 enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
-                                      const unsigned char fpdu[], size_t fpdu_length,
-                                      struct rle_sdu sdus[], const size_t sdus_max_nr,
-                                      size_t *const sdus_nr, unsigned char payload_label[],
+                                      const unsigned char *const fpdu, const size_t fpdu_length,
+                                      struct rle_sdu sdus[],
+                                      const size_t sdus_max_nr, size_t *const sdus_nr,
+                                      unsigned char *const payload_label,
                                       const size_t payload_label_size);
 
 /**
@@ -245,7 +246,7 @@ uint64_t rle_transmitter_stats_get_counter_ok(const struct rle_transmitter *cons
 /**
  * @brief         Get total number of dropped SDU in a RLE transmitter module.
  *
- *                In transmission, a SDU may be drop during encapsulation, fragmentation or
+ *                In transmission, a SDU may be dropped during encapsulation, fragmentation or
  *                packing in error cases.
  *
  * @param[in]     transmitter              The transmitter module. Must be initialize.
@@ -294,7 +295,7 @@ uint64_t rle_receiver_stats_get_counter_ok(const struct rle_receiver *const rece
 /**
  * @brief         Get total number of dropped SDUs in a RLE receiver module.
  *
- *                In reception, a SDU may be drop in decapsulation in error cases.
+ *                In reception, a SDU may be dropped in decapsulation in error cases.
  *
  * @param[in]     receiver                 The receiver module. Must be initialize.
  *
@@ -308,7 +309,9 @@ uint64_t rle_receiver_stats_get_counter_dropped(const struct rle_receiver *const
  * @brief         Get total number of lost SDUs in a RLE receiver module.
  *
  *                In reception, a SDU may be lost in decapsulation if the Seq numbers or the CRC
- *                are not the expected ones.
+ *                are not the expected ones. When the CRC is wrong, one packet is count as lost,
+ *                but when the SeqNo is not the expected one, the difference between them is
+ *                compute and the counter is increase by the number of missing SeqNos.
  *
  * @param[in]     receiver                 The receiver module. Must be initialize.
  *
@@ -329,4 +332,4 @@ uint64_t rle_receiver_stats_get_counter_lost(const struct rle_receiver *const re
  */
 uint64_t rle_receiver_stats_get_counter_bytes(const struct rle_receiver *const receiver);
 
-#endif /* __LIBRLE_INTERFACE_H__ */
+#endif /* __RLE_H__ */

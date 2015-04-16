@@ -34,6 +34,17 @@ enum boolean test_encap_null_transmitter(void);
 enum boolean test_encap_too_big(void);
 
 /**
+ * @brief         Encapsulation test when transmitter configuration is invalid.
+ *
+ *                Ask the creation and initialization of an RLE transmitter, with an invalid
+ *                configuration (i.e. with a non supported implicit protocol type).
+ *                Warning: An ERROR message will be printed.
+ *
+ * @return        BOOL_TRUE if transmitter non initialized, else BOOL_FALSE.
+ */
+enum boolean test_encap_inv_config(void);
+
+/**
  * @brief         All the Encapsulation tests
  *
  *                Encapsulation test for different protocol types (IPv4, v6, VLAN, QinQ,
