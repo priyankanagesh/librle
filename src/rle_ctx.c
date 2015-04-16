@@ -587,10 +587,10 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 
 		PRINT("--------- COMPLETE PACKET ------------\n");
 		PRINT("| SE |  RLEPL   |  LT |  T  |  PTYPE  |\n");
-		PRINT("| %d%d |   %d   | 0x%0x | 0x%0x |  0x%04x |\n",
+		PRINT("| %d%d |   %zu   | 0x%0x | 0x%0x |  0x%04x |\n",
 		      zc_buf->header.head.b.start_ind,
 		      zc_buf->header.head.b.end_ind,
-		      zc_buf->header.head.b.rle_packet_length,
+		      rle_header_all_get_packet_length(zc_buf->header.head),
 		      label_type,
 		      proto_type_supp,
 		      protocol_type);
@@ -683,12 +683,12 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 
 			PRINT("----------- START PACKET ------------\n");
 			PRINT("| SE |  RLEPL |  ID |  TL   |  LT  |  T  |  PTYPE  |\n");
-			PRINT("| %d%d |   %d   | 0x%0x |  %d  |  0x%0x | 0x%0x | 0x%04x  |\n",
+			PRINT("| %d%d |   %zu   | 0x%0x |  %zu  |  0x%0x | 0x%0x | 0x%04x  |\n",
 			      zc_buf->header.head.b.start_ind,
 			      zc_buf->header.head.b.end_ind,
-			      zc_buf->header.head.b.rle_packet_length,
+			      rle_header_all_get_packet_length(zc_buf->header.head),
 			      zc_buf->header.head.b.LT_T_FID,
-			      zc_buf->header.head_start.b.total_length,
+			      rle_header_start_get_packet_length(zc_buf->header.head_start),
 			      zc_buf->header.head_start.b.label_type,
 			      zc_buf->header.head_start.b.proto_type_supp,
 			      protocol_type);
@@ -747,10 +747,10 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 					PRINT("----------- CONT PACKET ------------\n");
 				}
 				PRINT("| SE |  RLEPL   |  ID  |\n");
-				PRINT("| %d%d |   %d     | 0x%0x  |\n",
+				PRINT("| %d%d |   %zu     | 0x%0x  |\n",
 				      zc_ce_buf->header.head.b.start_ind,
 				      zc_ce_buf->header.head.b.end_ind,
-				      zc_ce_buf->header.head.b.rle_packet_length,
+				      rle_header_all_get_packet_length(zc_ce_buf->header.head),
 				      zc_ce_buf->header.head.b.LT_T_FID);
 
 				int k = 0;
@@ -1025,6 +1025,63 @@ enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_managem
 exit_label:
 
 	return status;
+}
+
+void rle_header_all_set_packet_length(union rle_header_all *const header, const size_t length)
+{
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	(*header).b.rle_packet_length_1 = (uint8_t)((((uint16_t)(length) & 0x7ff) >> 5) & 0x3f);
+	(*header).b.rle_packet_length_2 = (uint8_t)(((uint16_t)(length) & 0x7ff) & 0x1f);
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	(*header).b.rle_packet_length = length;
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+	return;
+}
+
+size_t rle_header_all_get_packet_length(const union rle_header_all header)
+{
+	size_t length = 0;
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	length = ((uint16_t)((header.b.rle_packet_length_1 & 0x3f)) << 5) & 0x7ff;
+	length |= (header.b.rle_packet_length_2 & 0x1f);
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	length = header.b.rle_packet_length;
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+	return length;
+}
+
+void rle_header_start_set_packet_length(union rle_header_start_packet *const header,
+                                        const size_t length)
+{
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	(*header).b.total_length_1 = (uint8_t)((((uint16_t)(length) & 0xfff) >> 5) & 0x7f);
+	(*header).b.total_length_2 = (uint8_t)(((uint16_t)(length) & 0xfff) & 0x1f);
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	(*header).b.rle_packet_length = length;
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+	return;
+}
+
+size_t rle_header_start_get_packet_length(const union rle_header_start_packet header)
+{
+	size_t length = 0;
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	length = ((uint16_t)((header.b.total_length_1 & 0x7f)) << 5) & 0xfff;
+	length |= (header.b.total_length_2 & 0x1f);
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	length = header.b.rle_packet_length;
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+	return length;
 }
 
 #ifdef __KERNEL__

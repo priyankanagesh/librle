@@ -33,13 +33,14 @@ static int check_complete_length(struct rle_ctx_management *rle_ctx, void *data_
 	union rle_header_all *head = (union rle_header_all *)data_buffer;
 	/* rle packet length is the sum of proto_type and payload size */
 	size_t recv_packet_length = (data_length - header_size);
+	const size_t header_packet_length = rle_header_all_get_packet_length(*head);
 
-	if (head->b.rle_packet_length != recv_packet_length) {
+	if (header_packet_length != recv_packet_length) {
 		PRINT("ERROR %s %s:%s:%d: invalid packet length,"
-		      " received size [%d] computed size [%zu] header [%zu]\n",
+		      " received size [%zu] computed size [%zu] header [%zu]\n",
 		      MODULE_NAME,
 		      __FILE__, __func__, __LINE__,
-		      head->b.rle_packet_length,
+		      header_packet_length,
 		      recv_packet_length,
 		      header_size);
 		rle_ctx_incr_counter_dropped(rle_ctx);
@@ -321,14 +322,20 @@ static void update_ctx_complete(struct rle_ctx_management *rle_ctx,
 			protocol_type = hdr_pt->ptype_c_s.c.proto_type;
 			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 			if (protocol_type == 0xFF) {
-				protocol_type = hdr_pt->ptype_c_s.e.proto_type_uncompressed;
+				protocol_type = htons(hdr_pt->ptype_c_s.e.proto_type_uncompressed);
 				header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 			} else {
-				protocol_type = rle_header_ptype_decompression(
-				        hdr_pt->ptype_c_s.c.proto_type);
+				const uint8_t compressed_ptype = hdr_pt->ptype_c_s.c.proto_type;
+				if (compressed_ptype == 0x31) {
+					PRINT(
+					        "ERROR: Invalid compressed protocol type 0x31. Not supported yet\n");
+					ret = C_ERROR_DROP;
+					goto error;
+				}
+				protocol_type = rle_header_ptype_decompression(compressed_ptype);
 			}
 		} else {
-			protocol_type = hdr_pt->ptype_u_s.proto_type;
+			protocol_type = htons(hdr_pt->ptype_u_s.proto_type);
 			header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 		}
 	}
@@ -342,11 +349,16 @@ static void update_ctx_complete(struct rle_ctx_management *rle_ctx,
 	/* it's a RLE complete packet, so there is no data remaining */
 	rle_ctx_set_remaining_pdu_length(rle_ctx, 0);
 	/* RLE packet length is the sum of packet label, protocol type & payload length */
-	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length, header_size);
+	rle_ctx_set_rle_length(rle_ctx, rle_header_all_get_packet_length(hdr->head), header_size);
 	rle_ctx_set_proto_type(rle_ctx, protocol_type);
 	rle_ctx_set_label_type(rle_ctx, label_type);
 
 	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO */
+
+	ret = C_OK;
+
+error:
+	return ret;
 }
 
 static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
@@ -384,14 +396,14 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 			protocol_type = hdr_pt->ptype_c_s.c.proto_type;
 			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 			if (protocol_type == 0xFF) {
-				protocol_type = hdr_pt->ptype_c_s.e.proto_type_uncompressed;
+				protocol_type = htons(hdr_pt->ptype_c_s.e.proto_type_uncompressed);
 				header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 			} else {
 				protocol_type = rle_header_ptype_decompression(
 				        hdr_pt->ptype_c_s.c.proto_type);
 			}
 		} else {
-			protocol_type = hdr_pt->ptype_u_s.proto_type;
+			protocol_type = htons(hdr_pt->ptype_u_s.proto_type);
 			header_size += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 		}
 	}
@@ -402,8 +414,7 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 		trailer_size += RLE_SEQ_NO_FIELD_SIZE;
 	}
 
-	size_t pdu_length = (hdr->head_start.b.total_length -
-	                     header_size);
+	size_t pdu_length = rle_header_start_get_packet_length(hdr->head_start) - header_size;
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: RLE head_start.b.total_length %d PDU length %zu"
@@ -417,8 +428,9 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 #endif
 
 	rle_ctx_set_pdu_length(rle_ctx, pdu_length);
-	rle_ctx_set_remaining_pdu_length(rle_ctx, (hdr->head_start.b.total_length -
-	                                           hdr->head.b.rle_packet_length));
+	rle_ctx_set_remaining_pdu_length(rle_ctx,
+	                                 rle_header_start_get_packet_length(hdr->head_start) -
+	                                 rle_header_all_get_packet_length(hdr->head));
 	rle_ctx_set_is_fragmented(rle_ctx, C_TRUE);
 	rle_ctx_set_frag_counter(rle_ctx, 1);
 	rle_ctx_set_nb_frag_pdu(rle_ctx, 1);
@@ -449,7 +461,7 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 #endif
 
 	/* RLE packet length is the sum of packet label, protocol type & payload length */
-	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length, header_size);
+	rle_ctx_set_rle_length(rle_ctx, rle_header_all_get_packet_length(hdr->head), header_size);
 	rle_ctx_set_proto_type(rle_ctx, protocol_type);
 	rle_ctx_set_label_type(rle_ctx, hdr->head_start.b.label_type);
 
@@ -477,8 +489,9 @@ static void update_ctx_cont(struct rle_ctx_management *rle_ctx,
 	 * we can deduce from total length and previous packets length the
 	 * remaining length to receive */
 	rle_ctx_set_remaining_pdu_length(rle_ctx,
-	                                 (remaining_pdu_length - hdr->head.b.rle_packet_length));
-	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length, 0);
+	                                 (remaining_pdu_length -
+	                                  rle_header_all_get_packet_length(hdr->head)));
+	rle_ctx_set_rle_length(rle_ctx, rle_header_all_get_packet_length(hdr->head), 0);
 }
 
 static void update_ctx_end(struct rle_ctx_management *rle_ctx,
@@ -496,7 +509,7 @@ static void update_ctx_end(struct rle_ctx_management *rle_ctx,
 	rle_ctx_incr_frag_counter(rle_ctx);
 	rle_ctx_incr_nb_frag_pdu(rle_ctx);
 	/* RLE packet length is the sum of packet label, protocol type & payload length */
-	rle_ctx_set_rle_length(rle_ctx, hdr->head.b.rle_packet_length, 0);
+	rle_ctx_set_rle_length(rle_ctx, rle_header_all_get_packet_length(hdr->head), 0);
 }
 
 static void update_ctx_fragmented(struct rle_ctx_management *rle_ctx,

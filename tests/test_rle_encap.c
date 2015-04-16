@@ -243,9 +243,9 @@ static enum boolean test_encap(const uint16_t protocol_type,
 				        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
 				theorical_alpdu_header[0] = compressed_ptype;
 				theorical_alpdu_header[1] =
-				        (unsigned char)(htons(protocol_type) & 0x00ff);
+				        (unsigned char)(protocol_type & 0x00ff);
 				theorical_alpdu_header[2] =
-				        (unsigned char)((htons(protocol_type) & 0xff00) >> 8);
+				        (unsigned char)((protocol_type & 0xff00) >> 8);
 			}
 		} else {
 			/* Protocol type is uncompressed */
@@ -253,9 +253,9 @@ static enum boolean test_encap(const uint16_t protocol_type,
 			theorical_alpdu_header_size = (size_t)2;
 			theorical_alpdu_header =
 			        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
-			theorical_alpdu_header[0] = (unsigned char)(htons(protocol_type) & 0x00ff);
+			theorical_alpdu_header[0] = (unsigned char)(protocol_type & 0x00ff);
 			theorical_alpdu_header[1] =
-			        (unsigned char)((htons(protocol_type) & 0xff00) >> 8);
+			        (unsigned char)((protocol_type & 0xff00) >> 8);
 		}
 	} else {
 		/* Protocol type is omitted */

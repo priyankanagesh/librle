@@ -131,16 +131,17 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 
 		if (rle_conf_get_ptype_compression(rle_conf)) {
 			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
-			if (rle_header_ptype_is_compressable(protocol_type) == C_OK) {
+			if (rle_header_ptype_is_compressible(protocol_type) == C_OK) {
 				rle_sp_hdr->ptype_c_s.c.proto_type = rle_header_ptype_compression(
 				        protocol_type);
 			} else {
 				rle_sp_hdr->ptype_c_s.e.proto_type = 0xFF;
-				rle_sp_hdr->ptype_c_s.e.proto_type_uncompressed = protocol_type;
+				rle_sp_hdr->ptype_c_s.e.proto_type_uncompressed = ntohs(
+				        protocol_type);
 				ptype_length += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 			}
 		} else {
-			rle_sp_hdr->ptype_u_s.proto_type = protocol_type;
+			rle_sp_hdr->ptype_u_s.proto_type = ntohs(protocol_type);
 			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 		}
 
@@ -166,14 +167,14 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	rle_s_hdr->header.head.b.start_ind = 1;
 	rle_s_hdr->header.head.b.end_ind = 0;
 	/* RLE packet length is the sum of packet label, protocol type & data length */
-	rle_s_hdr->header.head.b.rle_packet_length =
-	        (burst_payload_length - RLE_START_MANDATORY_HEADER_SIZE);
+	rle_header_all_set_packet_length(&(rle_s_hdr->header.head),
+	                                 (burst_payload_length - RLE_START_MANDATORY_HEADER_SIZE));
 	uint8_t frag_id = rle_ctx_get_frag_id(rle_ctx);
 	SET_FRAG_ID(rle_s_hdr->header.head.b.LT_T_FID, frag_id);
 
 	/* RLE total length is the sum of packet label, protocol type & PDU length */
-	rle_s_hdr->header.head_start.b.total_length =
-	        (rle_ctx_get_pdu_length(rle_ctx) + ptype_length);
+	rle_header_start_set_packet_length(&(rle_s_hdr->header.head_start),
+	                                   rle_ctx_get_pdu_length(rle_ctx) + ptype_length);
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: Set total length to %d "
@@ -306,8 +307,9 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 		}
 	}
 
-	rle_c_e_hdr->header.head.b.rle_packet_length =
-	        (burst_payload_length - (RLE_CONT_HEADER_SIZE + trailer_size));
+	rle_header_all_set_packet_length(&(rle_c_e_hdr->header.head),
+	                                 (burst_payload_length -
+	                                  (RLE_CONT_HEADER_SIZE + trailer_size)));
 	uint8_t frag_id = rle_ctx_get_frag_id(rle_ctx);
 	SET_FRAG_ID(rle_c_e_hdr->header.head.b.LT_T_FID, frag_id);
 
@@ -423,6 +425,8 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
 	size_t ptype_length = data_length - pdu_length;
 
 	size_header += ptype_length;
+
+	rle_header_all_set_packet_length(&(zc_buf->header.head), ptype_length + pdu_length);
 
 	uint8_t proto_type_supp = GET_PROTO_TYPE_SUPP(zc_buf->header.head.b.LT_T_FID);
 	if (proto_type_supp != RLE_T_PROTO_TYPE_SUPP) {

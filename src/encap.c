@@ -47,16 +47,17 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 
 		if (rle_conf_get_ptype_compression(rle_conf)) {
 			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
-			if (rle_header_ptype_is_compressable(protocol_type) == C_OK) {
+			if (rle_header_ptype_is_compressible(protocol_type) == C_OK) {
 				rle_c_hdr->ptype_c_s.c.proto_type = rle_header_ptype_compression(
 				        protocol_type);
 			} else {
 				rle_c_hdr->ptype_c_s.e.proto_type = 0xFF;
-				rle_c_hdr->ptype_c_s.e.proto_type_uncompressed = protocol_type;
+				rle_c_hdr->ptype_c_s.e.proto_type_uncompressed = ntohs(
+				        protocol_type);
 				ptype_length += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 			}
 		} else {
-			rle_c_hdr->ptype_u_s.proto_type = protocol_type;
+			rle_c_hdr->ptype_u_s.proto_type = ntohs(protocol_type);
 			rle_ctx_set_proto_type(rle_ctx, protocol_type);
 			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 		}
@@ -75,7 +76,7 @@ static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configur
 	/* fill RLE complete header */
 	rle_hdr->header.head.b.start_ind = 1;
 	rle_hdr->header.head.b.end_ind = 1;
-	rle_hdr->header.head.b.rle_packet_length = data_length;
+	rle_header_all_set_packet_length(&(rle_hdr->header.head), data_length);
 	SET_PROTO_TYPE_SUPP(rle_hdr->header.head.b.LT_T_FID, proto_type_supp);
 
 	/* fill label_type field accordingly to the

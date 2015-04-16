@@ -130,7 +130,7 @@ static uint16_t get_rle_packet_length(void *data_buffer)
 {
 	union rle_header_all *head = (union rle_header_all *)data_buffer;
 
-	return head->b.rle_packet_length;
+	return rle_header_all_get_packet_length(*head);
 }
 
 static void init(struct rle_receiver *_this)

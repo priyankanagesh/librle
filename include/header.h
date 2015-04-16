@@ -32,13 +32,12 @@
  *  Protocol Type Suppressed
  *  and Fragment ID
  *  on a union rle_header_all */
-#if __BYTE_ORDER == __LITTLE_ENDIAN
 
 #define SET_LABEL_TYPE(_y, _x)  do {                             \
 		(_y) = ((_y & 0x1) ^ (_x << 1));        \
 } while (0)
 
-#define GET_LABEL_TYPE(_y) ((_y) >> 1)
+#define GET_LABEL_TYPE(_y) (((_y) >> 1) & 0x3)
 
 #define SET_PROTO_TYPE_SUPP(_y, _x) do {                 \
 		(_y) = ((_y & 0x6) ^ (_x));     \
@@ -46,27 +45,18 @@
 
 #define GET_PROTO_TYPE_SUPP(_y) ((_y) & 0x1)
 
-#elif __BYTE_ORDER == __BIG_ENDIAN
-
-#define SET_LABEL_TYPE(_y, _x)  do {                     \
-		(_y) = ((_y & 0x4) ^ (_x));     \
-} while (0)
-
-#define GET_LABEL_TYPE(_y) ((_y) & 0x7)
-
-#define SET_PROTO_TYPE_SUPP(_y, _x) do {                         \
-		(_y) = ((_y & 0x3) ^ (_x << 2));        \
-} while (0)
-
-#define GET_PROTO_TYPE_SUPP(_y) ((_y) >> 2)
-
-#else
-#error "Please fix <asm/byteorder.h>"
-#endif
-
 #define SET_FRAG_ID(_y, _x) do {                         \
 		(_y) = (_x);                    \
 } while (0)
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+
+#define GET_RLE_PACKET_LENGTH
+
+#elif __BYTE_ORDER == __BIG_ENDIAN
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
 
 /*
  * common RLE packet header
@@ -77,15 +67,16 @@ union rle_header_all {
 	uint16_t all;
 	struct {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-		uint16_t start_ind : 1;
+		uint16_t rle_packet_length_1 : 6;
 		uint16_t end_ind : 1;
-		uint16_t rle_packet_length : 11;
+		uint16_t start_ind : 1;
 		uint16_t LT_T_FID : 3;
+		uint16_t rle_packet_length_2 : 5;
 #elif __BYTE_ORDER == __BIG_ENDIAN
-		uint16_t LT_T_FID : 3;
-		uint16_t rle_packet_length : 11;
-		uint16_t end_ind : 1;
 		uint16_t start_ind : 1;
+		uint16_t end_ind : 1;
+		uint16_t rle_packet_length : 11;
+		uint16_t LT_T_FID : 3;
 #else
 #error "Please fix <asm/byteorder.h>"
 #endif
@@ -100,13 +91,16 @@ union rle_header_start_packet {
 	uint16_t all;
 	struct {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-		uint16_t total_length : 13;
-		uint16_t label_type : 2; /* LT for fragmented packet */
-		uint16_t proto_type_supp : 1; /* T for fragmented packet */
-#elif __BYTE_ORDER == __BIG_ENDIAN
+		uint16_t total_length_1 : 7;
+		uint16_t use_crc : 1;
 		uint16_t proto_type_supp : 1;
 		uint16_t label_type : 2;
-		uint16_t total_length : 13;
+		uint16_t total_length_2 : 5;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+		uint16_t use_crc : 1;
+		uint16_t total_length : 12;
+		uint16_t label_type : 2; /* LT for fragmented packet */
+		uint16_t proto_type_supp : 1; /* T for fragmented packet */
 #else
 #error "Please fix <asm/byteorder.h>"
 #endif

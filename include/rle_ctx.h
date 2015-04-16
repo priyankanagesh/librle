@@ -749,4 +749,66 @@ enum check_frag_status check_frag_transition(const enum frag_states current_stat
  */
 enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_management *const _this);
 
+/**
+ *  @brief         Get the type of the fragment in the buffer
+ *
+ *  @param[in]     buffer              The buffer
+ *
+ *  @return        the fragment type @see enum frag_states
+ */
+enum frag_states get_fragment_type(const unsigned char *const buffer);
+
+/**
+ *  @brief         Get the length of the fragment in the buffer
+ *
+ *  @param[in]     buffer              The buffer
+ *
+ *  @return        the fragment type @see enum frag_states
+ */
+size_t get_fragment_length(const unsigned char *const buffer);
+
+/**
+ *  @brief         Get the fragment id of the fragment in the buffer
+ *
+ *  @param[in]     buffer              The buffer
+ *
+ *  @return        the fragment id of the fragment
+ */
+uint8_t get_fragment_frag_id(const unsigned char *const buffer);
+
+/**
+ *  @brief         Set the packet length of a given RLE Header for CONT, END or COMP.
+ *
+ *  @param[in,out] header              The RLE header
+ *  @param[in]     length              The packet length
+ */
+void rle_header_all_set_packet_length(union rle_header_all *const header, const size_t length);
+
+/**
+ *  @brief         Get the packet length of a given RLE Header for CONT, END or COMP.
+ *
+ *  @param[in]     header              The RLE header
+ *
+ *  @return        the packet length
+ */
+size_t rle_header_all_get_packet_length(const union rle_header_all header);
+
+/**
+ *  @brief         Set the packet length of a given RLE Header for START.
+ *
+ *  @param[in,out] header              The RLE header
+ *  @param[in]     length              The packet length
+ */
+void rle_header_start_set_packet_length(union rle_header_start_packet *const header,
+                                        const size_t length);
+
+/**
+ *  @brief         Get the packet length of a given RLE Header for START.
+ *
+ *  @param[in]     header              The RLE header
+ *
+ *  @return        the packet length
+ */
+size_t rle_header_start_get_packet_length(const union rle_header_start_packet header);
+
 #endif /* __RLE_CTX_H__ */
