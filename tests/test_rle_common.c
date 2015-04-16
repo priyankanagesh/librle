@@ -381,6 +381,7 @@ static void print_stats(const void *const module, const char *const module_name,
 		uint64_t(*const *stats_function) (const void *const);
 		const char *const *function_name;
 
+		printf("STATS %s:\n", module_name);
 		for (stats_function = stats_functions, function_name = function_names;
 		     (*stats_function) && (*function_name);
 		     ++stats_function, ++function_name) {
@@ -418,7 +419,7 @@ void print_transmitter_stats(void)
 			};
 
 		print_stats((const void *const)transmitter, module_name,
-		            (uint64_t(**const) (const void *const))stats_functions,
+		            (uint64_t(*const *) (const void *const))stats_functions,
 		            function_names);
 	}
 
@@ -451,7 +452,7 @@ void print_receiver_stats(void)
 		};
 
 		print_stats((const void *const)receiver, module_name,
-		            (uint64_t(**const) (const void *const))stats_functions,
+		            (uint64_t(*const *) (const void *const))stats_functions,
 		            function_names);
 	}
 

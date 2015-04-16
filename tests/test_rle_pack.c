@@ -31,6 +31,12 @@ static enum boolean test_pack(const size_t fpdu_length, const size_t nb_ppdus,
                               const size_t ppdus_length[],
                               const size_t label_length);
 
+static void print_modules_stats(void)
+{
+	print_transmitter_stats();
+	return;
+}
+
 /**
  * @brief         Check an FPDU.
  *
@@ -177,6 +183,9 @@ static enum boolean test_pack(const size_t fpdu_length, const size_t nb_ppdus,
 	                             label_length);
 
 exit_label:
+
+	print_modules_stats();
+
 	for (iterator = 0; iterator < nb_ppdus; ++iterator) {
 		if (ppdus[iterator] != NULL) {
 			free(ppdus[iterator]);

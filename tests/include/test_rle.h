@@ -22,6 +22,23 @@
 #include "test_rle_pack.h"
 #include "test_rle_decap.h"
 
+/*
+ * How to add a Test:
+ *
+ * Step 1: Write a public function in one of the four test functions source files (encap, decap...)
+ * Step 2: Write the name of the test and its symbole in a struct in the corresponding tests
+ *         functions in the body source of this file.
+ * Step 3: Append a pointer to this struct in the same function.
+ * Step 4: Compile and execute.
+ *
+ */
+
+/** Test structure, used to launch tests. */
+struct test {
+	const char *const name;                /**< The name of the test.    */
+	enum boolean(*const function) (void);  /**< The function to execute. */
+};
+
 /** Test counters */
 static size_t total_number_of_tests;      /**< Counter for the total number of tests.            */
 static size_t total_number_of_succ_tests; /**< Counter for the total number of successful tests. */
@@ -32,14 +49,11 @@ static size_t total_number_of_succ_tests; /**< Counter for the total number of s
  *                Launch a list of test.
  *
  * @param[in]     test_name                The name of the test
- * @param[in]     function_names           The names of the test functions
- * @param[in]     test_functions           The test functions
+ * @param[in]     current_tests            The current tests to execute @see struct test
  *
  * @return        BOOL_TRUE if OK, else BOOL_FALSE.
  */
-static enum boolean tests(const char *const test_name, const char *const function_names[],
-                          enum boolean(
-                                  *const test_functions[]) (void));
+static enum boolean tests(const char *const test_name, const struct test *const current_tests[]);
 
 /**
  * @brief         Specific test function for encapsulation
@@ -63,10 +77,10 @@ static enum boolean frag_tests(void);
 static enum boolean pack_tests(void);
 
 /**
- * @brief         Specific test function for unpacking
+ * @brief         Specific test function for decapsulation
  *
  * @return        BOOL_TRUE if OK, else BOOL_FALSE.
  */
-static enum boolean unpack_tests(void);
+static enum boolean decap_tests(void);
 
 #endif /* __TEST_RLE_H__ */

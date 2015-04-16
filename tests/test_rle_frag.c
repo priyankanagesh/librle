@@ -35,6 +35,12 @@ static enum boolean test_frag(const uint16_t protocol_type,
                               const size_t burst_size,
                               const uint8_t frag_id);
 
+static void print_modules_stats(void)
+{
+	print_transmitter_stats();
+	return;
+}
+
 static enum boolean test_frag(const uint16_t protocol_type,
                               const struct rle_context_configuration conf, const size_t length,
                               const size_t burst_size,
@@ -114,7 +120,7 @@ static enum boolean test_frag(const uint16_t protocol_type,
 
 exit_label:
 
-	print_transmitter_stats();
+	print_modules_stats();
 
 	if (transmitter != NULL) {
 		rle_transmitter_destroy(transmitter);
@@ -247,8 +253,6 @@ enum boolean test_frag_too_small(void)
 
 exit_label:
 
-	print_transmitter_stats();
-
 	if (transmitter != NULL) {
 		rle_transmitter_destroy(transmitter);
 		transmitter = NULL;
@@ -320,8 +324,6 @@ enum boolean test_frag_null_context(void)
 	output = (status == RLE_FRAG_ERR_CONTEXT_IS_NULL);
 
 exit_label:
-
-	print_transmitter_stats();
 
 	if (transmitter != NULL) {
 		rle_transmitter_destroy(transmitter);
@@ -408,8 +410,6 @@ enum boolean test_frag_invalid_size(void)
 	output = (status == RLE_FRAG_ERR_INVALID_SIZE);
 
 exit_label:
-
-	print_transmitter_stats();
 
 	if (transmitter != NULL) {
 		rle_transmitter_destroy(transmitter);

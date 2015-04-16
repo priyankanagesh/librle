@@ -35,6 +35,12 @@ static enum boolean compare_packets(const unsigned char pkt_1[], const size_t pk
                                     const unsigned char pkt_2[],
                                     const size_t pkt_2_length);
 
+static void print_modules_stats(void)
+{
+	print_transmitter_stats();
+	return;
+}
+
 /**
  * @brief         Check the encapsulation of a given SDU in an ALPDU.
  *
@@ -325,7 +331,7 @@ static enum boolean test_encap(const uint16_t protocol_type,
 
 exit_label:
 
-	print_transmitter_stats();
+	print_modules_stats();
 
 	if (transmitter != NULL) {
 		rle_transmitter_destroy(transmitter);
@@ -355,6 +361,7 @@ exit_label:
 
 enum boolean test_encap_null_transmitter(void)
 {
+	PRINT_TEST("Special case : Encapsulation with a null transmitter.");
 	enum boolean output = BOOL_FALSE;
 	const size_t max_size = RLE_MAX_PDU_SIZE;
 	const uint16_t protocol_type = 0x0800; /* Arbitrarly */
