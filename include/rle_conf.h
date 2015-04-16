@@ -13,7 +13,7 @@
 #include "header.h"
 
 /** Default protocol type */
-#define RLE_CONF_DEFAULT_PTYPE  RLE_PROTO_TYPE_IPV4_UNCOMP
+#define RLE_CONF_DEFAULT_PTYPE  RLE_PROTO_TYPE_IPV4_COMP
 /** Default protocol type compression flag */
 #define RLE_CONF_COMPRESS_PTYPE C_FALSE
 /** Default protocol type suppression flag */
@@ -77,7 +77,7 @@ void rle_conf_init(struct rle_configuration *_this);
  *
  *  @ingroup
  */
-int rle_conf_set_default_ptype(struct rle_configuration *_this, uint16_t protocol_type);
+int rle_conf_set_default_ptype(struct rle_configuration *_this, uint8_t protocol_type);
 
 /**
  *  @brief	Get the current default protocol type

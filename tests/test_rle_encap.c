@@ -129,6 +129,41 @@ exit_label:
 	return output;
 }
 
+static enum boolean is_suppressible(uint16_t protocol_type, uint8_t default_ptype)
+{
+	enum boolean suppressible = BOOL_FALSE;
+
+	switch (protocol_type) {
+	case 0x0082:
+		suppressible = BOOL_TRUE;
+		break;
+	case 0x8100:
+		suppressible = (default_ptype == 0x0f);
+		break;
+	case 0x88a8:
+		suppressible = (default_ptype == 0x19);
+		break;
+	case 0x9100:
+		suppressible = (default_ptype == 0x1a);
+		break;
+	case 0x0800:
+		suppressible = (default_ptype == 0x0d);
+		suppressible |= (default_ptype == 0x30);
+		break;
+	case 0x86dd:
+		suppressible = (default_ptype == 0x11);
+		suppressible |= (default_ptype == 0x30);
+		break;
+	case 0x0806:
+		suppressible = (default_ptype == 0x0e);
+		break;
+	default:
+		break;
+	}
+
+	return suppressible;
+}
+
 static enum boolean test_encap(const uint16_t protocol_type,
                                const struct rle_context_configuration conf, const size_t length,
                                const uint8_t frag_id)
@@ -137,9 +172,9 @@ static enum boolean test_encap(const uint16_t protocol_type,
 	        "protocol type 0x%04x, length %zu, frag_id %d, conf %s", protocol_type, length,
 	        frag_id,
 	        conf.use_ptype_omission == 0 ?
-	        (conf.use_compressed_ptype == 0 ?
-	         "uncompressed" : "compressed") : (conf.implicit_protocol_type == protocol_type ?
-	                                           "omitted" : "non omitted"));
+	        (conf.use_compressed_ptype == 0 ?  "uncompressed" : "compressed") :
+	        (conf.implicit_protocol_type == 0x00) ?  "non omitted" :
+	        (conf.implicit_protocol_type == 0x30 ? "ip omitted" : "omitted"));
 	enum boolean output = BOOL_FALSE;
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 	unsigned char *theorical_alpdu_header = NULL;
@@ -182,8 +217,7 @@ static enum boolean test_encap(const uint16_t protocol_type,
 	}
 
 	/* Making of the ALPDU we theoricaly will have in the transmitter context. */
-	if (!((protocol_type == conf.implicit_protocol_type) && (conf.use_ptype_omission == 1))
-	    && !((protocol_type == 0x0082 /* Signalling */) && (conf.use_ptype_omission == 0))) {
+	if (!is_suppressible(protocol_type, conf.implicit_protocol_type)) {
 		if (conf.use_compressed_ptype) {
 			/* The protocol type is compressed */
 
@@ -193,12 +227,6 @@ static enum boolean test_encap(const uint16_t protocol_type,
 			unsigned char compressed_ptype = 0x00;
 			theorical_alpdu_header_size = 1;
 			switch (protocol_type) {
-			case 0x0082:         /* Signal      */
-				theorical_alpdu_header =
-				        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
-				compressed_ptype = 0x42;
-				theorical_alpdu_header[0] = compressed_ptype;
-				break;
 			case 0x0800:         /* IPv4        */
 				theorical_alpdu_header =
 				        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
@@ -387,7 +415,7 @@ enum boolean test_encap_too_big(void)
 	};
 
 	const struct rle_context_configuration conf = {
-		.implicit_protocol_type = 0x0800,
+		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
@@ -455,6 +483,35 @@ exit_label:
 	return output;
 }
 
+enum boolean test_encap_inv_config(void)
+{
+	PRINT_TEST("Special test: try to create an RLE transmitter module with an invalid conf. "
+	           "Warning: An error message may be printed.");
+	enum boolean output = BOOL_FALSE;
+
+	const struct rle_context_configuration conf = {
+		.implicit_protocol_type = 0x31
+	};
+
+	if (transmitter != NULL) {
+		rle_transmitter_destroy(transmitter);
+		transmitter = NULL;
+	}
+
+	transmitter = rle_transmitter_new(conf);
+
+	output = (transmitter == NULL);
+
+	if (transmitter != NULL) {
+		rle_transmitter_destroy(transmitter);
+		transmitter = NULL;
+	}
+
+	PRINT_TEST_STATUS(output);
+	printf("\n");
+	return output;
+}
+
 enum boolean test_encap_all(void)
 {
 	PRINT_TEST("Test the general cases of encapsulation.");
@@ -476,11 +533,39 @@ enum boolean test_encap_all(void)
 		const uint8_t max_frag_id = 7;
 		uint8_t frag_id = 0;
 
+		uint8_t default_ptype = 0x00;
+		switch (protocol_types[iterator]) {
+		case 0x0082:
+			default_ptype = 0x42;
+			break;
+		case 0x8100:
+			default_ptype = 0x0f;
+			break;
+		case 0x88a8:
+			default_ptype = 0x19;
+			break;
+		case 0x9100:
+			default_ptype = 0x1a;
+			break;
+		case 0x0800:
+			default_ptype = 0x0d;
+			break;
+		case 0x86dd:
+			default_ptype = 0x11;
+			break;
+		case 0x0806:
+			default_ptype = 0x0e;
+			break;
+		default:
+			default_ptype = 0x00;
+			break;
+		}
+
 		/* The test will be launch on each fragment id. */
 		for (frag_id = 0; frag_id < max_frag_id; ++frag_id) {
 			/* Configuration for uncompressed protocol type */
 			struct rle_context_configuration conf_uncomp = {
-				.implicit_protocol_type = 0x0000,
+				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
 				.use_ptype_omission = 0
@@ -488,15 +573,23 @@ enum boolean test_encap_all(void)
 
 			/* Configuration for compressed protocol type */
 			struct rle_context_configuration conf_comp = {
-				.implicit_protocol_type = 0x0000,
+				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 1,
-				.use_ptype_omission = 1 /* Omission set to 1 to test Signal compression. */
+				.use_ptype_omission = 0
 			};
 
 			/* Configuration for omitted protocol type */
 			struct rle_context_configuration conf_omitted = {
-				.implicit_protocol_type = protocol_types[iterator],
+				.implicit_protocol_type = default_ptype,
+				.use_alpdu_crc = 0,
+				.use_compressed_ptype = 0,
+				.use_ptype_omission = 1
+			};
+
+			/* Special test for IPv4 and v6*/
+			struct rle_context_configuration conf_omitted_ip = {
+				.implicit_protocol_type = 0x30,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
 				.use_ptype_omission = 1
@@ -504,7 +597,7 @@ enum boolean test_encap_all(void)
 
 			/* Configuration for non omitted protocol type in omission conf */
 			struct rle_context_configuration conf_not_omitted = {
-				.implicit_protocol_type = 0x0000,
+				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
 				.use_ptype_omission = 1
@@ -515,6 +608,7 @@ enum boolean test_encap_all(void)
 				&conf_uncomp,
 				&conf_comp,
 				&conf_omitted,
+				&conf_omitted_ip,
 				&conf_not_omitted,
 				NULL
 			};

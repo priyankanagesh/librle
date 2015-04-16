@@ -290,9 +290,19 @@ return_hdr_size:
 	return header_size;
 }
 
-static void update_ctx_complete(struct rle_ctx_management *rle_ctx,
-                                struct rle_configuration *rle_conf, void *data_buffer,
-                                size_t data_length)
+static uint8_t check_ip_version(const void *const data_buffer)
+{
+	uint16_t ip_version = 0x00;
+
+	ip_version = ntohs(*((uint16_t *)(data_buffer)));
+	ip_version >>= 12;
+
+	return (uint8_t)ip_version;
+}
+
+static int update_ctx_complete(struct rle_ctx_management *rle_ctx,
+                               struct rle_configuration *rle_conf, void *data_buffer,
+                               size_t data_length)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
@@ -300,6 +310,7 @@ static void update_ctx_complete(struct rle_ctx_management *rle_ctx,
 	      __FILE__, __func__, __LINE__);
 #endif
 
+	int ret = C_OK;
 	struct rle_header_complete *hdr = (struct rle_header_complete *)data_buffer;
 	uint16_t protocol_type = 0;
 	size_t header_size = RLE_COMPLETE_HEADER_SIZE;
@@ -308,11 +319,25 @@ static void update_ctx_complete(struct rle_ctx_management *rle_ctx,
 	uint8_t proto_type_supp = GET_PROTO_TYPE_SUPP(hdr->head.b.LT_T_FID);
 	uint8_t label_type = GET_LABEL_TYPE(hdr->head.b.LT_T_FID);
 
-	if ((proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
-	    (label_type == RLE_LT_IMPLICIT_PROTO_TYPE)) {
-		protocol_type = rle_conf_get_default_ptype(rle_conf);
-	} else if (label_type == RLE_LT_PROTO_SIGNAL) {
+	if (label_type == RLE_LT_PROTO_SIGNAL) {
 		protocol_type = RLE_PROTO_TYPE_SIGNAL_UNCOMP;
+	} else if ((proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
+	           (label_type == RLE_LT_IMPLICIT_PROTO_TYPE)) {
+		const uint8_t default_ptype = rle_conf_get_default_ptype(rle_conf);
+		if (default_ptype == RLE_PROTO_TYPE_IP_COMP) {
+			uint8_t ip_version = check_ip_version(hdr + 1);
+			if (ip_version == 4) {
+				protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP;
+			} else if (ip_version == 6) {
+				protocol_type = RLE_PROTO_TYPE_IPV6_UNCOMP;
+			} else {
+				PRINT("ERROR: Invalid IP version.");
+				ret = C_ERROR_DROP;
+				goto error;
+			}
+		} else {
+			protocol_type = rle_header_ptype_decompression(default_ptype);
+		}
 	}
 
 	if (proto_type_supp != RLE_T_PROTO_TYPE_SUPP) {
@@ -382,11 +407,23 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 	int is_compressed = rle_conf_get_ptype_compression(rle_conf);
 	int is_crc_used = rle_conf_get_crc_check(rle_conf);
 
-	if ((hdr->head_start.b.proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
-	    (hdr->head_start.b.label_type == RLE_LT_IMPLICIT_PROTO_TYPE)) {
-		protocol_type = rle_conf_get_default_ptype(rle_conf);
-	} else if (hdr->head_start.b.label_type == RLE_LT_PROTO_SIGNAL) {
+	if (hdr->head_start.b.label_type == RLE_LT_PROTO_SIGNAL) {
 		protocol_type = RLE_PROTO_TYPE_SIGNAL_UNCOMP;
+	} else if ((hdr->head_start.b.proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
+	           (hdr->head_start.b.label_type == RLE_LT_IMPLICIT_PROTO_TYPE)) {
+		const uint8_t default_ptype = rle_conf_get_default_ptype(rle_conf);
+		if (default_ptype == RLE_PROTO_TYPE_IP_COMP) {
+			uint8_t ip_version = check_ip_version(hdr + 1);
+			if (ip_version == 4) {
+				protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP;
+			} else if (ip_version == 6) {
+				protocol_type = RLE_PROTO_TYPE_IPV6_UNCOMP;
+			} else {
+				/* TODO Error */
+			}
+		} else {
+			protocol_type = rle_header_ptype_decompression(default_ptype);
+		}
 	}
 
 	if (hdr->head_start.b.proto_type_supp != RLE_T_PROTO_TYPE_SUPP) {
@@ -512,15 +549,16 @@ static void update_ctx_end(struct rle_ctx_management *rle_ctx,
 	rle_ctx_set_rle_length(rle_ctx, rle_header_all_get_packet_length(hdr->head), 0);
 }
 
-static void update_ctx_fragmented(struct rle_ctx_management *rle_ctx,
-                                  struct rle_configuration *rle_conf, void *data_buffer,
-                                  int frag_type)
+static int update_ctx_fragmented(struct rle_ctx_management *rle_ctx,
+                                 struct rle_configuration *rle_conf, void *data_buffer,
+                                 int frag_type)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
 	      MODULE_NAME,
 	      __FILE__, __func__, __LINE__);
 #endif
+	int ret = C_OK;
 
 	switch (frag_type) {
 	case RLE_PDU_START_FRAG:
@@ -543,8 +581,11 @@ static void update_ctx_fragmented(struct rle_ctx_management *rle_ctx,
 		      MODULE_NAME,
 		      __FILE__, __func__, __LINE__,
 		      frag_type);
+		ret = C_ERROR_DROP;
 		break;
 	}
+
+	return ret;
 }
 
 int reassembly_get_pdu(struct rle_ctx_management *rle_ctx, void *pdu_buffer, int *pdu_proto_type,

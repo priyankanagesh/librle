@@ -79,10 +79,10 @@ struct rle_sdu {
  * Interface for the configuration initialisation in transmitter and receiver "new" functions.
  */
 struct rle_context_configuration {
-	uint16_t implicit_protocol_type; /**< Protocol type that could be omitted.                  */
-	int use_alpdu_crc;               /**< If set to 1, RLE check on CRC, else if 0, Seq number. */
-	int use_ptype_omission;          /**< If set to 1, implicit_protocol_type is omitted.       */
-	int use_compressed_ptype;        /**< If set to 1, protocol types are compressed.           */
+	uint8_t implicit_protocol_type; /**< Protocol type that could be omitted.                  */
+	int use_alpdu_crc;              /**< If set to 1, RLE check on CRC, else if 0, Seq number. */
+	int use_ptype_omission;         /**< If set to 1, implicit_protocol_type is omitted.       */
+	int use_compressed_ptype;       /**< If set to 1, protocol types are compressed.           */
 };
 
 /**

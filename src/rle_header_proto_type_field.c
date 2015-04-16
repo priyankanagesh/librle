@@ -11,8 +11,7 @@
 
 #include "constants.h"
 
-/* TODO: To modify, depending on the specs. */
-#define RLE_PROTO_TYPE_IPV4_OR_IPV6 RLE_PROTO_TYPE_IPV4_UNCOMP
+#define RLE_PROTO_TYPE_IPV4_OR_IPV6 0
 
 /* Protocol type references decompression array. ref: Table 7-3 p. 110 ETSI EN 301 545-2 v.1.2.1 */
 const uint16_t rle_header_ptype_decomp[RLE_PROTO_TYPE_MAX_COMP_VALUE + 1] = {
@@ -47,10 +46,8 @@ const uint16_t rle_header_ptype_decomp[RLE_PROTO_TYPE_MAX_COMP_VALUE + 1] = {
 	/* 0x1b -> 0x2f */
 	RLE_PROTO_TYPE_RESERVED_21,
 	/* 0x30 -> 0x31 */
-	/* TODO: Choose between IPv4 or v6, maybe with a variable, modified by the conf. */
 	RLE_PROTO_TYPE_IPV4_OR_IPV6,
-	/* TODO: Choose between IPv4 or v6, maybe with a variable, modified by the conf. */
-	RLE_PROTO_TYPE_IPV4_OR_IPV6,
+	RLE_PROTO_TYPE_VLAN_UNCOMP,
 	/* 0x32 -> 0x41 */
 	RLE_PROTO_TYPE_RESERVED_16,
 	/* 0x42 -> 0x47 */

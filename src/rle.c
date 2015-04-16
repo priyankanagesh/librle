@@ -23,7 +23,16 @@
 
 struct rle_transmitter *rle_transmitter_new(const struct rle_context_configuration configuration)
 {
-	volatile struct rle_transmitter *transmitter = rle_transmitter_module_new();
+	struct rle_transmitter *transmitter = rle_transmitter_module_new();
+
+	if (configuration.implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
+		PRINT(
+		        "ERROR: could not initialize transmitter with 0x31 as implicit protocol type : "
+		        "Not supported yet.\n");
+		rle_transmitter_destroy(transmitter);
+		transmitter = NULL;
+		goto exit_label;
+	}
 
 	if (transmitter != NULL) {
 		size_t iterator = 0;
@@ -48,7 +57,8 @@ struct rle_transmitter *rle_transmitter_new(const struct rle_context_configurati
 		                               configuration.use_ptype_omission);
 	}
 
-	return (struct rle_transmitter *)transmitter;
+exit_label:
+	return transmitter;
 }
 
 void rle_transmitter_destroy(struct rle_transmitter *const transmitter)
@@ -59,7 +69,15 @@ void rle_transmitter_destroy(struct rle_transmitter *const transmitter)
 
 struct rle_receiver *rle_receiver_new(const struct rle_context_configuration configuration)
 {
-	volatile struct rle_receiver *receiver = rle_receiver_module_new();
+	struct rle_receiver *receiver = rle_receiver_module_new();
+
+	if (configuration.implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
+		PRINT("ERROR: could not initialize receiver with 0x31 as implicit protocol type : "
+		      "Not supported yet.\n");
+		rle_receiver_destroy(receiver);
+		receiver = NULL;
+		goto exit_label;
+	}
 
 	if (receiver != NULL) {
 		size_t iterator = 0;
@@ -76,7 +94,8 @@ struct rle_receiver *rle_receiver_new(const struct rle_context_configuration con
 		}
 	}
 
-	return (struct rle_receiver *)receiver;
+exit_label:
+	return receiver;
 }
 
 void rle_receiver_destroy(struct rle_receiver *const receiver)

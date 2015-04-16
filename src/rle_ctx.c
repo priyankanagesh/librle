@@ -524,6 +524,16 @@ uint64_t rle_ctx_get_counter_bytes(struct rle_ctx_management *_this)
 	return ctr_packets_bytes;
 }
 
+static uint8_t check_ip_version(const void *const data_buffer)
+{
+	uint16_t ip_version = 0x0000;
+
+	ip_version = ntohs(*((uint16_t *)(data_buffer)));
+	ip_version >>= 12;
+
+	return (uint8_t)ip_version;
+}
+
 void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rle_conf)
 {
 	PRINT("\n-------------------DUMP RLE CTX-------------------\n");
@@ -568,7 +578,17 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 
 		if ((proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
 		    (label_type == RLE_LT_IMPLICIT_PROTO_TYPE)) {
-			protocol_type = rle_conf_get_default_ptype(rle_conf);
+			const uint8_t default_ptype = rle_conf_get_default_ptype(rle_conf);
+			if (default_ptype == RLE_PROTO_TYPE_IP_COMP) {
+				const uint8_t ip_version = check_ip_version(hdr + 1);
+				if (ip_version == 4) {
+					protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP;
+				} else if (ip_version == 6) {
+					protocol_type = RLE_PROTO_TYPE_IPV6_UNCOMP;
+				}
+			} else {
+				protocol_type = rle_header_ptype_decompression(default_ptype);
+			}
 		} else if (label_type == RLE_LT_PROTO_SIGNAL) {
 			protocol_type = RLE_PROTO_TYPE_SIGNAL_UNCOMP;
 		}
@@ -644,7 +664,21 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 
 			if ((hdr->head_start.b.proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
 			    (hdr->head_start.b.label_type == RLE_LT_IMPLICIT_PROTO_TYPE)) {
-				protocol_type = rle_conf_get_default_ptype(rle_conf);
+				const uint8_t default_ptype = rle_conf_get_default_ptype(rle_conf);
+				if (default_ptype == RLE_PROTO_TYPE_IP_COMP) {
+					protocol_type = check_ip_version(hdr + 1);
+				} else if (default_ptype ==
+				           RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
+					const uint8_t ip_version = check_ip_version(hdr + 1);
+					if (ip_version == 4) {
+						protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP;
+					} else if (ip_version == 6) {
+						protocol_type = RLE_PROTO_TYPE_IPV6_UNCOMP;
+					}
+				} else {
+					protocol_type = rle_header_ptype_decompression(
+					        default_ptype);
+				}
 			} else if (hdr->head_start.b.label_type == RLE_LT_PROTO_SIGNAL) {
 				protocol_type = RLE_PROTO_TYPE_SIGNAL_UNCOMP;
 			}
