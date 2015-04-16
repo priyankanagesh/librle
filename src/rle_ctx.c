@@ -481,10 +481,10 @@ void rle_ctx_set_counter_lost(struct rle_ctx_management *_this, uint64_t val)
 	pthread_mutex_unlock(&_this->lk_status.ctr_lost_mutex);
 }
 
-void rle_ctx_incr_counter_lost(struct rle_ctx_management *_this)
+void rle_ctx_incr_counter_lost(struct rle_ctx_management *_this, uint32_t val)
 {
 	pthread_mutex_lock(&_this->lk_status.ctr_lost_mutex);
-	_this->lk_status.counter_lost++;
+	_this->lk_status.counter_lost += val;
 	pthread_mutex_unlock(&_this->lk_status.ctr_lost_mutex);
 }
 

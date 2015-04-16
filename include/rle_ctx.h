@@ -630,7 +630,7 @@ void rle_ctx_set_counter_lost(struct rle_ctx_management *_this, uint64_t val);
  *
  *  @ingroup
  */
-void rle_ctx_incr_counter_lost(struct rle_ctx_management *_this);
+void rle_ctx_incr_counter_lost(struct rle_ctx_management *_this, uint32_t val);
 
 /**
  *  @brief	Get current lost PDU counter value

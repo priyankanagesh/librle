@@ -123,6 +123,7 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx, void *d
 		      MODULE_NAME,
 		      __FILE__, __func__, __LINE__,
 		      trl->b.seq_no, rle_ctx->next_seq_nb);
+		const size_t nb_lost_pkts = (rle_ctx->next_seq_nb - trl->b.seq_no) % RLE_MAX_SEQ_NO;
 		/* update sequence with received one
 		 * and increment it to resynchronize
 		 * with sender sequence */
@@ -130,7 +131,7 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx, void *d
 		rle_ctx_incr_seq_nb(rle_ctx);
 		/* we must update lost & dropped packet
 		 * counter and */
-		rle_ctx_incr_counter_lost(rle_ctx);
+		rle_ctx_incr_counter_lost(rle_ctx, nb_lost_pkts);
 		rle_ctx_incr_counter_dropped(rle_ctx);
 
 		return C_ERROR_DROP;
@@ -683,8 +684,12 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 
 	if (frag_type != RLE_PDU_COMPLETE) {
 		/* fragmentation case */
-		update_ctx_fragmented(rle_ctx, rle_conf,
-		                      data_buffer, frag_type);
+		ret = update_ctx_fragmented(rle_ctx, rle_conf,
+		                            data_buffer, frag_type);
+		if (ret != C_OK) {
+			rle_ctx_incr_counter_dropped(rle_ctx);
+			goto error_frag;
+		}
 
 		if (frag_type == RLE_PDU_END_FRAG) {
 			/* in case of end packet,
@@ -708,8 +713,13 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 		ret = check_complete_length(rle_ctx, data_buffer, data_length, RLE_CONT_HEADER_SIZE);
 		if (ret == C_OK) {
 			/* update ctx status structure if length checking is OK */
-			update_ctx_complete(rle_ctx, rle_conf,
-			                    data_buffer, data_length);
+			ret = update_ctx_complete(rle_ctx, rle_conf,
+			                          data_buffer, data_length);
+			if (ret != C_OK) {
+				rle_ctx_incr_counter_dropped(rle_ctx);
+				goto error_frag;
+			}
+
 			rle_ctx_incr_counter_ok(rle_ctx);
 
 			/* update link status */
