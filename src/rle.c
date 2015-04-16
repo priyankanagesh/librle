@@ -336,11 +336,68 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 			}
 		}
 
-		/* TODO Get PPDUs */
+		{
+			size_t offset = payload_label_size;
+			uint8_t fragment_id = 0;
+
+			do {
+				enum frag_states fragment_type = FRAG_STATE_COMP;
+				int ret = C_ERROR;
+				size_t fragment_length = 0;
+
+				do {
+					fragment_type = get_fragment_type(&fpdu[offset]);
+
+					fragment_length = get_fragment_length(&fpdu[offset]);
+
+					if (fragment_type == FRAG_STATE_END) {
+						size_t alpdu_protection_length = 0;
+
+						alpdu_protection_length =
+						        rle_receiver_get_alpdu_protection_length(
+						                receiver, &fpdu[offset]);
+						fragment_id = get_fragment_frag_id(&fpdu[offset]);
+
+						fragment_length += alpdu_protection_length;
+					}
+					ret = rle_receiver_deencap_data(
+					        receiver, (unsigned char *)&fpdu[offset],
+					        fragment_length);
+
+					if ((ret != C_OK) && (ret != C_REASSEMBLY_OK)) {
+						/* TODO cleaning, pkt dropping, etc... */
+						PRINT("Error during reassembly.\n");
+						status = RLE_FRAG_ERR;
+						goto exit_label;
+					}
+
+					offset += fragment_length;
+				} while (!((fragment_type == FRAG_STATE_COMP) ||
+				           (fragment_type == FRAG_STATE_END)));
+				int out_ptype = 0;
+				uint32_t out_packet_length = 0;
+				unsigned char current_sdu[RLE_MAX_PDU_SIZE];
+
+				ret =
+				        rle_receiver_get_packet(receiver, fragment_id, current_sdu,
+				                                &out_ptype,
+				                                &out_packet_length);
+				if (ret != C_OK) {
+					/* TODO cleaning, pkt dropping, etc... */
+					PRINT("Error getting packet from context.\n");
+					status = RLE_FRAG_ERR;
+					goto exit_label;
+				}
+				memcpy((void *)sdus[*sdus_nr].buffer, (const void *)current_sdu,
+				       (size_t)out_packet_length);
+				sdus[*sdus_nr].size = (size_t)out_packet_length;
+				sdus[*sdus_nr].protocol_type = (uint16_t)out_ptype;
+				(*sdus_nr)++;
+			} while (!(fpdu[offset] == '\0'));
+		}
 	}
 
-	/* TODO Uncomment when done */
-	/* status = RLE_DECAP_OK; */
+	status = RLE_DECAP_OK;
 
 exit_label:
 	return status;
