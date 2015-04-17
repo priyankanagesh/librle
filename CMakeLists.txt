@@ -6,6 +6,7 @@ INCLUDE(${INFRA_PREFIX}deps/infra/cmake/a9780.cmake)
 # Options
 #
 OPTION(BUILD_TESTS "Build simple tests" ON)
+OPTION(BUILD_DOC "Build documentation" ON)
 OPTION(TIME_DEBUG "Print encapsulation and deencapsulation durations" OFF)
 
 INCLUDE_DIRECTORIES(include)
@@ -20,6 +21,8 @@ SET(SRC_LIBRLE
 	src/rle_transmitter.c
 	src/rle_receiver.c
 	src/rle_conf.c
+    src/rle_header_proto_type_field.c
+    src/rle.c
 )
 
 add_definitions("-g -O2 -W -Werror -Wall -Wextra -Wuninitialized
@@ -35,6 +38,10 @@ TARGET_LINK_LIBRARIES(rle
 IF (BUILD_TESTS)
 	ADD_SUBDIRECTORY(tests)
 ENDIF(BUILD_TESTS)
+
+IF (BUILD_DOC)
+    ADD_SUBDIRECTORY(doc)
+ENDIF(BUILD_DOC)
 
 IF (TIME_DEBUG)
 	add_definitions("-DTIME_DEBUG")

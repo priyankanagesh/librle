@@ -18,8 +18,9 @@ int ksat_rle_tx_new(struct transmitter_module *_tx_rle)
 	int ret_val = 0;
 	struct transmitter_module *tx_rle = NULL;
 
-	if (!try_module_get(THIS_MODULE))
+	if (!try_module_get(THIS_MODULE)) {
 		return -ENODEV;
+	}
 
 	tx_rle = rle_transmitter_new();
 	if (tx_rle == NULL) {
@@ -60,13 +61,11 @@ EXPORT_SYMBOL_GPL(ksat_rle_tx_delete);
 
 int ksat_rle_tx_encapsulation(const void *_rle_ctx, struct sk_buff *skb)
 {
-
 }
 EXPORT_SYMBOL_GPL(ksat_rle_tx_encapsulation);
 
 int ksat_rle_tx_get_fragment(const void *_rle_ctx, struct sk_buff *skb)
 {
-
 }
 EXPORT_SYMBOL_GPL(ksat_rle_tx_get_fragment);
 

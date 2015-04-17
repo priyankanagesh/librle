@@ -1,14 +1,14 @@
 /**
  * @file   zc_buffer.h
- * @author Aurelien Castanie
- *
  * @brief  Definition of RLE trailer constants, functions and variables
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _ZC_BUFFER_H
-#define _ZC_BUFFER_H
+#ifndef __ZC_BUFFER_H__
+#define __ZC_BUFFER_H__
 
 #include "header.h"
 #include "trailer.h"
@@ -19,15 +19,15 @@
  * headers, trailers and pointers sizes.
  */
 #define ZC_BUFFER_MAX_SIZE_PACKED (((RLE_START_MANDATORY_HEADER_SIZE) + \
-      (RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP)) +	\
-    ((RLE_MAX_SEQ_NO - 2) * (RLE_CONT_HEADER_SIZE)) +	\
-	  (RLE_END_HEADER_SIZE) +	\
-		(RLE_CRC32_FIELD_SIZE) + \
-		(RLE_MAX_SEQ_NO * sizeof(struct zc_ptrs_data)))
+                                    (RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP)) +     \
+                                   ((RLE_MAX_SEQ_NO - 2) * (RLE_CONT_HEADER_SIZE)) +   \
+                                   (RLE_END_HEADER_SIZE) +       \
+                                   (RLE_CRC32_FIELD_SIZE) + \
+                                   (RLE_MAX_SEQ_NO * sizeof(struct zc_ptrs_data)))
 
 /**
  * This define ajusts the size of the zc buffer, taking account of the architecture alignement
- * in the structures. 
+ * in the structures.
  *
  *     1 x ( Max start header size + alignement + 2 x zc pointers )
  * + 254 x ( Continue header size  + alignement + 2 x zc pointers )
@@ -37,10 +37,10 @@
  * = 3080 Octets (arch. 32-bits) / 6148 Octets (arch. 64-bits)
  *
  */
-#define ZC_BUFFER_MAX_SIZE ((1 * (int) (sizeof(struct zc_rle_header_complete_w_ptype))) + \
-    (((RLE_MAX_SEQ_NO) - 2) * (int) (sizeof(struct zc_rle_header_cont_end))) + \
-    (1 * (int) (sizeof(struct zc_rle_header_cont_end))) + \
-    (1 * (int) (sizeof(struct zc_rle_trailer))))
+#define ZC_BUFFER_MAX_SIZE ((1 * (int)(sizeof(struct zc_rle_header_complete_w_ptype))) + \
+                            (((RLE_MAX_SEQ_NO)-2) * (int)(sizeof(struct zc_rle_header_cont_end))) + \
+                            (1 * (int)(sizeof(struct zc_rle_header_cont_end))) + \
+                            (1 * (int)(sizeof(struct zc_rle_trailer))))
 
 /**
  * Structure of pair or pointers
@@ -113,5 +113,4 @@ struct zc_rle_trailer {
 	struct rle_trailer trailer;
 };
 
-
-#endif /* _ZC_BUFFER_H */
+#endif /* __ZC_BUFFER_H__ */
