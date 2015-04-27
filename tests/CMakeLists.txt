@@ -15,5 +15,5 @@ ADD_LIBRARY(rle_tests SHARED ${SRC_LIBRLE_TESTS})
 ADD_EXECUTABLE(test_rle test_rle.c)
 
 TARGET_LINK_LIBRARIES(test_rle
-	rle_tests rle pcap)
+	rle_tests rle)
 
