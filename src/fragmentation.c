@@ -420,8 +420,8 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
 	      MODULE_NAME,
 	      __FILE__, __func__, __LINE__);
 #endif
-	struct zc_rle_header_complete *zc_buf =
-	        (struct zc_rle_header_complete *)rle_ctx->buf;
+	struct zc_rle_header_complete_w_ptype *zc_buf =
+	        (struct zc_rle_header_complete_w_ptype *)rle_ctx->buf;
 	size_t size_header = RLE_COMPLETE_HEADER_SIZE;
 	size_t pdu_length = rle_ctx_get_pdu_length(rle_ctx);
 	size_t data_length = rle_ctx_get_rle_length(rle_ctx);

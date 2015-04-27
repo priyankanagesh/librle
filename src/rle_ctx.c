@@ -1047,14 +1047,13 @@ enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_managem
 		        (struct zc_rle_header_start_w_ptype *)((void *)buffer);
 
 		sdu_size += rle_hdr->ptrs.end - rle_hdr->ptrs.start;
+		buffer += sizeof(struct zc_rle_header_start_w_ptype *);
 	}
 
 
+	/* CONTINUATION Fragments */
 	struct zc_rle_header_cont_end *rle_hdr =
-	        (struct zc_rle_header_cont_end *)((void *)(buffer +
-	                                                   sizeof(struct
-	                                                          zc_rle_header_start_w_ptype)));
-	buffer += sizeof(*rle_hdr);
+	        (struct zc_rle_header_cont_end *)((void *)(buffer));
 
 	previous_state = current_state;
 	current_state = get_fragment_type(buffer);
@@ -1064,7 +1063,6 @@ enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_managem
 		PRINT("ERROR: Bad transition in integrity check\n");
 	}
 
-	/* CONTINUATION Fragments */
 	while (current_state != FRAG_STATE_END) {
 		if (rle_hdr->ptrs.start == NULL) {
 			PRINT("NOT FULLY FRAGMENTED\n");
@@ -1073,7 +1071,7 @@ enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_managem
 
 		sdu_size += rle_hdr->ptrs.end - rle_hdr->ptrs.start;
 
-		buffer += sizeof(*rle_hdr);
+		buffer += sizeof(struct zc_rle_header_cont_end *);
 		rle_hdr = (struct zc_rle_header_cont_end *)((void *)buffer);
 
 		previous_state = current_state;
@@ -1091,7 +1089,7 @@ enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_managem
 
 		status = FRAG_STATUS_OK;
 
-		buffer += sizeof(*rle_hdr);
+		buffer += sizeof(struct zc_rle_header_cont_end *);
 	}
 
 exit_label:
