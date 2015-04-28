@@ -373,7 +373,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 					}
 					ret = rle_receiver_deencap_data(
 					        receiver, (unsigned char *)&fpdu[offset],
-					        fragment_length);
+					        fragment_length, (int *)((void *)&fragment_id));
 
 					if ((ret != C_OK) && (ret != C_REASSEMBLY_OK)) {
 						/* TODO cleaning, pkt dropping, etc... */
