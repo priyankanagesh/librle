@@ -19,9 +19,7 @@
 
 #define MODULE_NAME "REASSEMBLY"
 
-static int check_complete_length(struct rle_ctx_management *rle_ctx, void *data_buffer,
-                                 size_t data_length,
-                                 size_t header_size)
+static int check_complete_length(void *data_buffer, size_t data_length, size_t header_size)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
@@ -43,7 +41,6 @@ static int check_complete_length(struct rle_ctx_management *rle_ctx, void *data_
 		      header_packet_length,
 		      recv_packet_length,
 		      header_size);
-		rle_ctx_incr_counter_dropped(rle_ctx);
 		return C_ERROR_DROP;
 	}
 
@@ -93,7 +90,6 @@ static int check_fragmented_length(struct rle_ctx_management *rle_ctx, size_t da
 		      __FILE__, __func__, __LINE__,
 		      data_length,
 		      recv_pkt_length, remaining_size);
-		rle_ctx_incr_counter_dropped(rle_ctx);
 		ret = C_ERROR_DROP;
 	}
 
@@ -132,7 +128,6 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx, void *d
 		/* we must update lost & dropped packet
 		 * counter and */
 		rle_ctx_incr_counter_lost(rle_ctx, nb_lost_pkts);
-		rle_ctx_incr_counter_dropped(rle_ctx);
 
 		return C_ERROR_DROP;
 	}
@@ -191,7 +186,7 @@ static int check_fragmented_crc(struct rle_ctx_management *rle_ctx, void *data_b
 		      MODULE_NAME,
 		      __FILE__, __func__, __LINE__,
 		      trl->crc, crc);
-		rle_ctx_incr_counter_dropped(rle_ctx);
+		rle_ctx_incr_counter_lost(rle_ctx, 1);
 		return C_ERROR_DROP;
 	}
 
@@ -672,7 +667,7 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 		      MODULE_NAME,
 		      __FILE__, __func__, __LINE__);
 		ret = C_ERROR_TOO_MUCH_FRAG;
-		goto ret_val;
+		goto error_frag;
 	}
 
 	/* the copy begins from the buffer end address
@@ -687,7 +682,6 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 		ret = update_ctx_fragmented(rle_ctx, rle_conf,
 		                            data_buffer, frag_type);
 		if (ret != C_OK) {
-			rle_ctx_incr_counter_dropped(rle_ctx);
 			goto error_frag;
 		}
 
@@ -710,13 +704,12 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 		}
 	} else {
 		/* no fragmentation case */
-		ret = check_complete_length(rle_ctx, data_buffer, data_length, RLE_CONT_HEADER_SIZE);
+		ret = check_complete_length(data_buffer, data_length, RLE_CONT_HEADER_SIZE);
 		if (ret == C_OK) {
 			/* update ctx status structure if length checking is OK */
 			ret = update_ctx_complete(rle_ctx, rle_conf,
 			                          data_buffer, data_length);
 			if (ret != C_OK) {
-				rle_ctx_incr_counter_dropped(rle_ctx);
 				goto error_frag;
 			}
 
@@ -743,6 +736,9 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 	goto ret_val;
 
 error_frag:
+	/* Incr. counter dropped. */
+	rle_ctx_incr_counter_dropped(rle_ctx);
+
 	/* discard all data */
 	memset((void *)(rle_ctx->end_address),
 	       0, (data_length - hdr_offset));
