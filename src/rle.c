@@ -120,6 +120,7 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 
 	if (sdu.size > RLE_MAX_PDU_SIZE) {
 		status = RLE_ENCAP_ERR_SDU_TOO_BIG;
+		rle_transmitter_free_context(transmitter, frag_id);
 		goto exit_label;
 	}
 
@@ -156,6 +157,7 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 
 	if (remaining_alpdu == 0) {
 		status = RLE_FRAG_ERR_CONTEXT_IS_NULL;
+		rle_transmitter_free_context(transmitter, frag_id);
 		goto exit_label;
 	}
 
@@ -166,6 +168,7 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 
 	if (burst_size < min_burst_size) {
 		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
+		rle_transmitter_free_context(transmitter, frag_id);
 		goto exit_label;
 	}
 
@@ -181,6 +184,7 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 	if ((burst_size > RLE_CONT_HEADER_SIZE + remaining_pdu) &&
 	    (burst_size < RLE_CONT_HEADER_SIZE + remaining_alpdu)) {
 		status = RLE_FRAG_ERR_INVALID_SIZE;
+		rle_transmitter_free_context(transmitter, frag_id);
 		goto exit_label;
 	}
 
@@ -400,6 +404,9 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 				sdus[*sdus_nr].size = (size_t)out_packet_length;
 				sdus[*sdus_nr].protocol_type = (uint16_t)out_ptype;
 				(*sdus_nr)++;
+				if (ret == C_OK) {
+					rle_receiver_free_context(receiver, fragment_id);
+				}
 			} while (!(fpdu[offset] == '\0'));
 		}
 	}
