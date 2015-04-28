@@ -1067,7 +1067,7 @@ enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_managem
 	/* CONTINUATION Fragments */
 	while (current_state != FRAG_STATE_END) {
 		if (rle_hdr->ptrs.start == NULL) {
-			PRINT("NOT FULLY FRAGMENTED\n");
+			PRINT("ERROR: NOT FULLY FRAGMENTED\n");
 			goto exit_label;
 		}
 
