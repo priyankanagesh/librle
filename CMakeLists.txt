@@ -9,6 +9,7 @@ OPTION(BUILD_TESTS "Build simple tests" ON)
 OPTION(BUILD_DOC "Build documentation" ON)
 OPTION(TIME_DEBUG "Print encapsulation and deencapsulation durations" OFF)
 OPTION(COVERAGE "Allow code coverage. (requires GCOV. Optionnaly LCOV and genhtml for reports)" OFF)
+OPTION(FUZZING "Instrumentation for fuzzing with AFL and ASAN. (requires AFL and ASAN)" OFF)
 
 INCLUDE_DIRECTORIES(include)
 
@@ -35,6 +36,16 @@ ADD_LIBRARY(rle SHARED ${SRC_LIBRLE})
 TARGET_LINK_LIBRARIES(rle
 	pthread
 )
+
+
+IF (FUZZING)
+    set(ENV{AFL_USE_ASAN} 1)
+    set(ENV{AFL_HARDEN} 1)
+    set(CMAKE_C_COMPILER /usr/local/bin/afl-gcc)
+    add_definitions(-fno-omit-frame-pointer -g)
+ELSE(FUZZING)
+    add_definitions("-Werror")
+ENDIF(FUZZING)
 
 IF (BUILD_TESTS)
 	ADD_SUBDIRECTORY(tests)

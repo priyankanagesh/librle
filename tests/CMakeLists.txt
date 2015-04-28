@@ -17,19 +17,28 @@ ADD_EXECUTABLE(test_rle EXCLUDE_FROM_ALL test_rle.c)
 TARGET_LINK_LIBRARIES(test_rle
 	rle_tests rle pcap)
 
+ADD_EXECUTABLE(test_non_regression EXCLUDE_FROM_ALL test_non_regression.c)
+
+TARGET_LINK_LIBRARIES(test_non_regression rle pcap)
+
 # By default, tests are not generated. You can either generate tests with:
 # The RLE library test:
 #   $ make test_rle
+# The non regression test:
+#   $ make test_non_regression
 # Both of them:
 #   $ make tests
 ADD_TEST(test_rle test_rle)
-ADD_CUSTOM_TARGET(tests DEPENDS test_rle)
+ADD_TEST(test_non_regression test_non_regression)
+ADD_CUSTOM_TARGET(tests DEPENDS test_rle test_non_regression)
 
 # Definitions of the system commands for the next targets.
 SET(SYS_CMD_GREP /bin/grep)
 SET(SYS_CMD_ECHO /bin/echo)
+SET(SYS_CMD_RM /bin/rm)
 SET(SYS_CMD_LCOV /usr/bin/lcov)
 SET(SYS_CMD_GENHTML /usr/bin/genhtml)
+SET(SYS_CMD_AFL_FUZZ /usr/local/bin/afl-fuzz)
 
 # Check the tests with:
 #   $ make check
@@ -56,3 +65,16 @@ IF (COVERAGE)
         && ${SYS_CMD_ECHO} "Coverage report: ${CMAKE_BINARY_DIR}/html/index.html" )
     ADD_CUSTOM_TARGET(cov_report DEPENDS coverage COMMAND ${CMAKE_CCOV_REPORT_COMMAND})
 ENDIF(COVERAGE)
+
+# If fuzzing is on, launch AFL fuzzing with:
+#   $ make fuzzing
+# /!\ You may be requiered to execute those commands as root before the fuzzing:
+#   # echo core >/proc/sys/kernel/core_pattern
+#   # cd /sys/devices/system/cpu
+#   # echo performance | tee cpu*/cpufreq/scaling_governor
+IF(FUZZING)
+    SET(CMAKE_CFUZZING_COMMAND
+           ${SYS_CMD_RM} -rf ${CMAKE_BINARY_DIR}/findings/
+        && ${SYS_CMD_AFL_FUZZ} -i ${CMAKE_SOURCE_DIR}/tests/samples/fuzzing/ -o ${CMAKE_BINARY_DIR}/findings/ -m none ${CMAKE_BINARY_DIR}/tests/test_non_regression --ignore-malformed @@)
+    ADD_CUSTOM_TARGET(fuzzing DEPENDS test_non_regression COMMAND ${CMAKE_CFUZZING_COMMAND})
+ENDIF(FUZZING)
