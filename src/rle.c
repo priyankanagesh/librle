@@ -15,6 +15,7 @@
 #include "rle_conf.h"
 #include "rle_receiver.h"
 #include "rle_transmitter.h"
+#include "fragmentation.h"
 
 #include "header.h"
 #include "trailer.h"
@@ -144,7 +145,8 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 		goto exit_label;
 	}
 
-	size_t min_burst_size = RLE_START_MANDATORY_HEADER_SIZE;
+	size_t min_burst_size = RLE_CONT_HEADER_SIZE;
+
 	int ret = 0;
 	size_t remaining_pdu = rle_ctx_get_remaining_pdu_length(&transmitter->rle_ctx_man[frag_id]);
 	size_t remaining_alpdu =
@@ -155,6 +157,11 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 	if (remaining_alpdu == 0) {
 		status = RLE_FRAG_ERR_CONTEXT_IS_NULL;
 		goto exit_label;
+	}
+
+	if (fragmentation_is_needed(&transmitter->rle_ctx_man[frag_id], remaining_burst_size) &&
+	    !rle_ctx_get_is_fragmented(&transmitter->rle_ctx_man[frag_id])) {
+		min_burst_size = RLE_START_MANDATORY_HEADER_SIZE;
 	}
 
 	if (burst_size < min_burst_size) {
@@ -177,7 +184,7 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 		goto exit_label;
 	}
 
-	if (remaining_alpdu < burst_size) {
+	if ((remaining_alpdu + RLE_CONT_HEADER_SIZE) < burst_size) {
 		*ppdu_length = remaining_alpdu + RLE_CONT_HEADER_SIZE;
 	} else {
 		*ppdu_length = burst_size;
@@ -408,7 +415,7 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
 {
 	struct rle_ctx_management ctx_man = transmitter->rle_ctx_man[fragment_id];
 
-	return (size_t)rle_ctx_get_remaining_pdu_length(&ctx_man);
+	return (size_t)rle_ctx_get_remaining_alpdu_length(&ctx_man);
 }
 
 uint64_t rle_transmitter_stats_get_counter_ok(const struct rle_transmitter *const transmitter)

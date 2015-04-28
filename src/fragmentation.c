@@ -336,11 +336,8 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	/* if we are building a END packet,
 	 * remaining PDU data size must be equal
 	 * to zero */
-	int new_remaining_val = 0;
-	/* size_t ptype_offset = rle_ctx_get_alpdu_length(rle_ctx) - rle_ctx_get_pdu_length(rle_ctx) - trailer_size; */
-	new_remaining_val =
+	int new_remaining_val =
 	        rle_ctx_get_remaining_pdu_length(rle_ctx) - pdu_size_payload;
-/*	        rle_ctx_get_remaining_pdu_length(rle_ctx) - pdu_size_payload + ptype_offset;*/
 	if (((type_rle_frag == RLE_PDU_END_FRAG) && (new_remaining_val > 0)) ||
 	    (new_remaining_val < 0)) {
 		PRINT("ERROR %s %s:%s:%d: Invalid remaining data size"
@@ -354,7 +351,7 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	rle_ctx_set_remaining_pdu_length(rle_ctx, new_remaining_val);
 	rle_ctx_decr_remaining_alpdu_length(rle_ctx, pdu_size_payload);
 	rle_ctx_set_rle_length(rle_ctx,
-	                       (burst_payload_length - (RLE_CONT_HEADER_SIZE + trailer_size)), 0);
+	                       (burst_payload_length - (RLE_CONT_HEADER_SIZE)), 0);
 
 	/* Copy this fragment to burst payload:
 	 * first copy RLE header
@@ -390,15 +387,12 @@ static int get_fragment_type_from_ctx(struct rle_ctx_management *rle_ctx,
 #endif
 
 	int frag_type = RLE_PDU_START_FRAG;
-	uint32_t remaining_pdu_len = rle_ctx_get_remaining_pdu_length(rle_ctx);
+	size_t remaining_alpdu_len = rle_ctx_get_remaining_alpdu_length(rle_ctx);
 
 	if (is_fragmented_pdu(rle_ctx)) {
-		size_t trailer_size =
-		        (rle_ctx_get_use_crc(rle_ctx) ==
-		         C_FALSE) ? RLE_SEQ_NO_FIELD_SIZE : RLE_CRC32_FIELD_SIZE;
 		/* not all PDU data has been sent, so
 		 * it's a CONT or END packet */
-		if ((remaining_pdu_len + RLE_END_HEADER_SIZE + trailer_size) <=
+		if ((remaining_alpdu_len + RLE_END_HEADER_SIZE) <=
 		    burst_payload_length) {
 			frag_type = RLE_PDU_END_FRAG;
 		} else {
