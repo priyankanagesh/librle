@@ -501,6 +501,11 @@ enum boolean test_decap_inv_sdus(void)
 
 exit_label:
 
+	if (receiver != NULL) {
+		rle_receiver_destroy(receiver);
+		receiver = NULL;
+	}
+
 	PRINT_TEST_STATUS(output);
 	printf("\n");
 	return output;
@@ -589,6 +594,11 @@ enum boolean test_decap_inv_pl(void)
 
 exit_label:
 
+	if (receiver != NULL) {
+		rle_receiver_destroy(receiver);
+		receiver = NULL;
+	}
+
 	PRINT_TEST_STATUS(output);
 	printf("\n");
 	return output;
@@ -623,6 +633,139 @@ enum boolean test_decap_inv_config(void)
 	return output;
 }
 
+enum boolean test_decap_not_null_padding(void)
+{
+	PRINT_TEST("Special case : Decapsulation with an invalid FPDU padding. "
+	           "Must succeed but print a warning message .");
+	enum boolean output = BOOL_FALSE;
+	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
+	enum rle_frag_status ret_frag = RLE_FRAG_ERR;
+	enum rle_pack_status ret_pack = RLE_PACK_ERR;
+	enum rle_decap_status ret_decap = RLE_DECAP_ERR;
+
+	const size_t fpdu_length = 5000;
+	unsigned char fpdu[fpdu_length];
+	size_t fpdu_iterator = 0;
+	for (fpdu_iterator = 0; fpdu_iterator < fpdu_length; ++fpdu_iterator) {
+		fpdu[fpdu_iterator] = '\0';
+	}
+
+	const uint8_t frag_id = 0;
+
+	const size_t sdu_length = 100;
+
+	unsigned char *const buffer_in[sdu_length];
+	unsigned char *const buffer_out[sdu_length];
+
+	struct rle_sdu sdu = {
+		.buffer = (unsigned char *)buffer_in,
+		.size = sdu_length
+	};
+	memcpy((void *)sdu.buffer, (const void *)payload_initializer, sdu_length);
+	sdu.buffer[0] = 0x40; /* IPv4 */
+
+	const size_t sdus_max_nr = 1;
+	struct rle_sdu sdus[sdus_max_nr];
+	sdus[0].buffer = (unsigned char *)buffer_out;
+
+	size_t sdus_nr = 0;
+
+	const struct rle_context_configuration conf = {
+		.implicit_protocol_type = 0x0d,
+		.use_alpdu_crc = 0,
+		.use_ptype_omission = 0,
+		.use_compressed_ptype = 0
+	};
+
+	if (receiver != NULL) {
+		rle_receiver_destroy(receiver);
+		receiver = NULL;
+	}
+	receiver = rle_receiver_new(conf);
+	if (receiver == NULL) {
+		PRINT_ERROR("Error allocating receiver.");
+		goto exit_label;
+	}
+
+	if (transmitter != NULL) {
+		rle_transmitter_destroy(transmitter);
+		transmitter = NULL;
+	}
+	transmitter = rle_transmitter_new(conf);
+	if (transmitter == NULL) {
+		PRINT_ERROR("Error allocating transmitter.");
+		goto exit_label;
+	}
+
+	ret_encap = rle_encapsulate(transmitter, sdu, frag_id);
+	if (ret_encap != RLE_ENCAP_OK) {
+		PRINT_ERROR("Encap does not return OK.");
+		goto exit_label;
+	}
+
+	{
+		const size_t payload_label_size = 0;
+		unsigned char *payload_label = NULL;
+		size_t fpdu_current_pos = 0;
+		size_t fpdu_remaining_size = fpdu_length;
+		const size_t burst_size = 30;
+		while (rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id
+		                                          ]) !=
+		       0) {
+			unsigned char ppdu[burst_size];
+			size_t ppdu_length = 0;
+
+			ret_frag = rle_fragment(transmitter, frag_id, burst_size, ppdu,
+			                        &ppdu_length);
+
+			if (ret_frag != RLE_FRAG_OK) {
+				PRINT_ERROR("Frag does not return OK.");
+				goto exit_label;
+			}
+
+			ret_pack =
+			        rle_pack(ppdu, ppdu_length, payload_label, payload_label_size,
+			                 fpdu,
+			                 &fpdu_current_pos,
+			                 &fpdu_remaining_size);
+
+			if (ret_pack != RLE_PACK_OK) {
+				PRINT_ERROR("Pack does not return OK.");
+				goto exit_label;
+			}
+		}
+
+		/* Bad injection, should trigger the warning bad padding message during decapsulation. */
+		fpdu[fpdu_length - 1] = 0x01;
+
+		ret_decap =
+		        rle_decapsulate(receiver, fpdu, fpdu_length, sdus, sdus_max_nr, &sdus_nr,
+		                        payload_label,
+		                        payload_label_size);
+
+		if (ret_decap != RLE_DECAP_OK) {
+			PRINT_ERROR("Decap does not return OK.");
+			goto exit_label;
+		}
+	}
+
+	output = BOOL_TRUE;
+
+exit_label:
+	if (receiver != NULL) {
+		rle_receiver_destroy(receiver);
+		receiver = NULL;
+	}
+
+	if (transmitter != NULL) {
+		rle_transmitter_destroy(transmitter);
+		transmitter = NULL;
+	}
+
+	PRINT_TEST_STATUS(output);
+	printf("\n");
+	return output;
+}
 
 enum boolean test_decap_all(void)
 {

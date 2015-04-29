@@ -126,6 +126,7 @@ static enum boolean decap_tests(void)
 	const struct test inv_sdus = { "Invalid SDUs buffer", test_decap_inv_sdus };
 	const struct test inv_pl = { "Invalid payload label buffer", test_decap_inv_pl };
 	const struct test inv_config = { "Invalid receiver configuration", test_decap_inv_config };
+	const struct test inv_padding = { "Invalid padding", test_decap_not_null_padding };
 
 	const struct test *const decapsulation_tests[] =
 	{
@@ -135,6 +136,7 @@ static enum boolean decap_tests(void)
 		&inv_sdus,
 		&inv_pl,
 		&inv_config,
+		&inv_padding,
 		NULL
 	};
 

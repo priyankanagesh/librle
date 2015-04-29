@@ -350,6 +350,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 		{
 			size_t offset = payload_label_size;
 			uint8_t fragment_id = 0;
+			int end_ppdus = C_FALSE;
 
 			do {
 				enum frag_states fragment_type = FRAG_STATE_COMP;
@@ -407,7 +408,26 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 				if (ret == C_OK) {
 					rle_receiver_free_context(receiver, fragment_id);
 				}
-			} while (!(fpdu[offset] == '\0'));
+				end_ppdus = (offset >= (fpdu_length - 1));
+				if (!end_ppdus) {
+					end_ppdus = (fpdu[offset] == '\0');
+					end_ppdus &= (fpdu[offset + 1] == '\0');
+				}
+			} while (!end_ppdus);
+
+			{
+				const unsigned char *p_fpdu;
+				int correct_padding = C_OK;
+				for (p_fpdu = &fpdu[offset];
+				     (p_fpdu < fpdu + fpdu_length) && (correct_padding == C_OK);
+				     ++p_fpdu) {
+					if (*p_fpdu != '\0') {
+						PRINT(
+						        "WARNING: Current padding contains octets non equal to 0x00.\n");
+						correct_padding = C_FALSE;
+					}
+				}
+			}
 		}
 	}
 
