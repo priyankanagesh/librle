@@ -71,6 +71,7 @@ void rle_receiver_module_destroy(struct rle_receiver *_this);
  *  @param _this	The receiver module to use for deencapsulation
  *  @param data_buffer	Data buffer's address to deencapsulate
  *  @param data_length	Data length to deencapsulate
+ *  @param index_ctx		The index of the context
  *
  *  @return	C_ERROR		if error occured while reassembling PDU
  *		C_ERROR_TOO_MUCH_FRAG	if the PDU was too fragmented (> 256 fragments)
@@ -79,7 +80,7 @@ void rle_receiver_module_destroy(struct rle_receiver *_this);
  *
  *  @ingroup
  */
-int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, size_t data_length);
+int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, size_t data_length, int * index_ctx);
 
 /**
  *  @brief Retrieve reassembled PDU data and copy it

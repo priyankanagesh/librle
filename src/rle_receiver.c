@@ -213,7 +213,8 @@ void rle_receiver_module_destroy(struct rle_receiver *_this)
 	_this = NULL;
 }
 
-int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, size_t data_length)
+int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, size_t data_length,
+                              int *index_ctx)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
@@ -257,12 +258,12 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 	 * or
 	 * search for the first free frag id context to put data into it */
 	int frag_type = get_recvd_fragment_type(data_buffer);
-	int index_ctx = -1;
+	*index_ctx = -1;
 
 	switch (frag_type) {
 	case RLE_PDU_COMPLETE:
-		index_ctx = get_first_free_frag_ctx(_this);
-		if (index_ctx < 0) {
+		*index_ctx = get_first_free_frag_ctx(_this);
+		if (*index_ctx < 0) {
 			PRINT("ERROR %s %s:%s:%d: no free reassembly context available "
 			      "for deencapsulation\n",
 			      MODULE_NAME,
@@ -273,18 +274,18 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 	case RLE_PDU_START_FRAG:
 	case RLE_PDU_CONT_FRAG:
 	case RLE_PDU_END_FRAG:
-		index_ctx = get_fragment_id(data_buffer);
+		*index_ctx = get_fragment_id(data_buffer);
 #ifdef DEBUG
 		PRINT("DEBUG %s %s:%s:%d: fragment_id 0x%0x frag type %d\n",
 		      MODULE_NAME,
 		      __FILE__, __func__, __LINE__,
-		      index_ctx, frag_type);
+		      *index_ctx, frag_type);
 #endif
-		if ((index_ctx < 0) || (index_ctx > RLE_MAX_FRAG_ID)) {
+		if ((*index_ctx < 0) || (*index_ctx > RLE_MAX_FRAG_ID)) {
 			PRINT("ERROR %s %s:%s:%d: invalid fragment id [%d]\n",
 			      MODULE_NAME,
 			      __FILE__, __func__, __LINE__,
-			      index_ctx);
+			      *index_ctx);
 			return C_ERROR;
 		}
 		break;
@@ -296,11 +297,11 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 	/* set the previously free frag ctx
 	 * or force already
 	 * set frag ctx to 'used' state */
-	set_nonfree_frag_ctx(_this, index_ctx);
+	set_nonfree_frag_ctx(_this, *index_ctx);
 
 	/* reassemble all fragments */
-	ret = reassembly_reassemble_pdu(&_this->rle_ctx_man[index_ctx],
-	                                _this->rle_conf[index_ctx],
+	ret = reassembly_reassemble_pdu(&_this->rle_ctx_man[*index_ctx],
+	                                _this->rle_conf[*index_ctx],
 	                                data_buffer,
 	                                data_length,
 	                                frag_type);
@@ -309,9 +310,9 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 		/* received RLE packet is invalid,
 		 * we have to flush related context
 		 * for this frag_id */
-		rle_ctx_flush_buffer(&_this->rle_ctx_man[index_ctx]);
-		rle_ctx_invalid_ctx(&_this->rle_ctx_man[index_ctx]);
-		set_free_frag_ctx(_this, index_ctx);
+		rle_ctx_flush_buffer(&_this->rle_ctx_man[*index_ctx]);
+		rle_ctx_invalid_ctx(&_this->rle_ctx_man[*index_ctx]);
+		set_free_frag_ctx(_this, *index_ctx);
 		PRINT("ERROR %s %s:%s:%d: cannot reassemble data, error type %d\n",
 		      MODULE_NAME,
 		      __FILE__, __func__, __LINE__,
@@ -375,6 +376,7 @@ int rle_receiver_get_packet(struct rle_receiver *_this, uint8_t fragment_id, voi
 void rle_receiver_free_context(struct rle_receiver *_this, uint8_t fragment_id)
 {
 	/* set to idle this fragmentation context */
+	rle_ctx_flush_buffer(&_this->rle_ctx_man[fragment_id]);
 	set_free_frag_ctx(_this, fragment_id);
 }
 

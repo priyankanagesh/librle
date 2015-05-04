@@ -8,6 +8,8 @@ INCLUDE(${INFRA_PREFIX}deps/infra/cmake/a9780.cmake)
 OPTION(BUILD_TESTS "Build simple tests" ON)
 OPTION(BUILD_DOC "Build documentation" ON)
 OPTION(TIME_DEBUG "Print encapsulation and deencapsulation durations" OFF)
+OPTION(COVERAGE "Allow code coverage. (requires GCOV. Optionnaly LCOV and genhtml for reports)" OFF)
+OPTION(FUZZING "Instrumentation for fuzzing with AFL and ASAN. (requires AFL and ASAN)" OFF)
 
 INCLUDE_DIRECTORIES(include)
 
@@ -25,7 +27,7 @@ SET(SRC_LIBRLE
     src/rle.c
 )
 
-add_definitions("-g -O2 -W -Werror -Wall -Wextra -Wuninitialized
+add_definitions("-g -W -Wall -Wextra -Wuninitialized
 -Wstrict-prototypes -Wcast-align -Wmissing-prototypes -Wchar-subscripts
 -Wpointer-arith -Winline  -Wno-conversion -Wshadow -fno-strict-aliasing")
 
@@ -34,6 +36,16 @@ ADD_LIBRARY(rle SHARED ${SRC_LIBRLE})
 TARGET_LINK_LIBRARIES(rle
 	pthread
 )
+
+
+IF (FUZZING)
+    set(ENV{AFL_USE_ASAN} 1)
+    set(ENV{AFL_HARDEN} 1)
+    set(CMAKE_C_COMPILER /usr/local/bin/afl-gcc)
+    add_definitions(-fno-omit-frame-pointer -g)
+ELSE(FUZZING)
+    add_definitions("-Werror")
+ENDIF(FUZZING)
 
 IF (BUILD_TESTS)
 	ADD_SUBDIRECTORY(tests)
@@ -46,6 +58,14 @@ ENDIF(BUILD_DOC)
 IF (TIME_DEBUG)
 	add_definitions("-DTIME_DEBUG")
 ENDIF(TIME_DEBUG)
+
+IF (COVERAGE)
+    add_definitions("-fprofile-arcs -ftest-coverage -O0")
+    TARGET_LINK_LIBRARIES(rle
+        gcov)
+ELSE(COVERAGE)
+    add_definitions("-O2")
+ENDIF(COVERAGE)
 
 INSTALL(TARGETS rle
 	DESTINATION lib/)

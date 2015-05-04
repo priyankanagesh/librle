@@ -61,6 +61,16 @@ enum boolean test_decap_inv_pl(void);
 enum boolean test_decap_inv_config(void);
 
 /**
+ * @brief         Decapsulation test when FPDU contains padding with a non equal to 0 octet.
+ *
+ *                No error should be raised, and decapsulation must be successful but a warning
+ *                message will be printed.
+ *
+ * @return        BOOL_TRUE if decapsulation succeed, else BOOL_FALSE.
+ */
+enum boolean test_decap_not_null_padding(void);
+
+/**
  * @brief         All the Decapsulation tests
  *
  *                Decapsulation test for different protocol types (IPv4, v6, VLAN, QinQ,

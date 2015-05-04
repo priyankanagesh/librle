@@ -15,6 +15,7 @@
 #include "rle_conf.h"
 #include "rle_receiver.h"
 #include "rle_transmitter.h"
+#include "fragmentation.h"
 
 #include "header.h"
 #include "trailer.h"
@@ -119,6 +120,7 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 
 	if (sdu.size > RLE_MAX_PDU_SIZE) {
 		status = RLE_ENCAP_ERR_SDU_TOO_BIG;
+		rle_transmitter_free_context(transmitter, frag_id);
 		goto exit_label;
 	}
 
@@ -144,7 +146,8 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 		goto exit_label;
 	}
 
-	size_t min_burst_size = RLE_START_MANDATORY_HEADER_SIZE;
+	size_t min_burst_size = RLE_CONT_HEADER_SIZE;
+
 	int ret = 0;
 	size_t remaining_pdu = rle_ctx_get_remaining_pdu_length(&transmitter->rle_ctx_man[frag_id]);
 	size_t remaining_alpdu =
@@ -154,11 +157,18 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 
 	if (remaining_alpdu == 0) {
 		status = RLE_FRAG_ERR_CONTEXT_IS_NULL;
+		rle_transmitter_free_context(transmitter, frag_id);
 		goto exit_label;
+	}
+
+	if (fragmentation_is_needed(&transmitter->rle_ctx_man[frag_id], remaining_burst_size) &&
+	    !rle_ctx_get_is_fragmented(&transmitter->rle_ctx_man[frag_id])) {
+		min_burst_size = RLE_START_MANDATORY_HEADER_SIZE;
 	}
 
 	if (burst_size < min_burst_size) {
 		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
+		rle_transmitter_free_context(transmitter, frag_id);
 		goto exit_label;
 	}
 
@@ -174,10 +184,11 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 	if ((burst_size > RLE_CONT_HEADER_SIZE + remaining_pdu) &&
 	    (burst_size < RLE_CONT_HEADER_SIZE + remaining_alpdu)) {
 		status = RLE_FRAG_ERR_INVALID_SIZE;
+		rle_transmitter_free_context(transmitter, frag_id);
 		goto exit_label;
 	}
 
-	if (remaining_alpdu < burst_size) {
+	if ((remaining_alpdu + RLE_CONT_HEADER_SIZE) < burst_size) {
 		*ppdu_length = remaining_alpdu + RLE_CONT_HEADER_SIZE;
 	} else {
 		*ppdu_length = burst_size;
@@ -339,6 +350,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 		{
 			size_t offset = payload_label_size;
 			uint8_t fragment_id = 0;
+			int end_ppdus = C_FALSE;
 
 			do {
 				enum frag_states fragment_type = FRAG_STATE_COMP;
@@ -362,7 +374,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 					}
 					ret = rle_receiver_deencap_data(
 					        receiver, (unsigned char *)&fpdu[offset],
-					        fragment_length);
+					        fragment_length, (int *)((void *)&fragment_id));
 
 					if ((ret != C_OK) && (ret != C_REASSEMBLY_OK)) {
 						/* TODO cleaning, pkt dropping, etc... */
@@ -393,7 +405,29 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 				sdus[*sdus_nr].size = (size_t)out_packet_length;
 				sdus[*sdus_nr].protocol_type = (uint16_t)out_ptype;
 				(*sdus_nr)++;
-			} while (!(fpdu[offset] == '\0'));
+				if (ret == C_OK) {
+					rle_receiver_free_context(receiver, fragment_id);
+				}
+				end_ppdus = (offset >= (fpdu_length - 1));
+				if (!end_ppdus) {
+					end_ppdus = (fpdu[offset] == '\0');
+					end_ppdus &= (fpdu[offset + 1] == '\0');
+				}
+			} while (!end_ppdus);
+
+			{
+				const unsigned char *p_fpdu;
+				int correct_padding = C_OK;
+				for (p_fpdu = &fpdu[offset];
+				     (p_fpdu < fpdu + fpdu_length) && (correct_padding == C_OK);
+				     ++p_fpdu) {
+					if (*p_fpdu != '\0') {
+						PRINT(
+						        "WARNING: Current padding contains octets non equal to 0x00.\n");
+						correct_padding = C_FALSE;
+					}
+				}
+			}
 		}
 	}
 
@@ -408,7 +442,7 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
 {
 	struct rle_ctx_management ctx_man = transmitter->rle_ctx_man[fragment_id];
 
-	return (size_t)rle_ctx_get_remaining_pdu_length(&ctx_man);
+	return (size_t)rle_ctx_get_remaining_alpdu_length(&ctx_man);
 }
 
 uint64_t rle_transmitter_stats_get_counter_ok(const struct rle_transmitter *const transmitter)
