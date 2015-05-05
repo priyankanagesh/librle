@@ -15,7 +15,7 @@ ADD_LIBRARY(rle_tests EXCLUDE_FROM_ALL SHARED ${SRC_LIBRLE_TESTS})
 ADD_EXECUTABLE(test_rle EXCLUDE_FROM_ALL test_rle.c)
 
 TARGET_LINK_LIBRARIES(test_rle
-	rle_tests rle pcap)
+	rle_tests rle)
 
 ADD_EXECUTABLE(test_non_regression EXCLUDE_FROM_ALL test_non_regression.c)
 
