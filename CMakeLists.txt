@@ -79,4 +79,8 @@ ENDIF(COVERAGE)
 INSTALL(TARGETS rle
 	DESTINATION lib/)
 
+INSTALL(FILES
+	include/rle.h
+	DESTINATION include/)
+
 gen_pkg_config("rle" "${DESCRIPTION_SUMMARY}" "" "")
