@@ -27,7 +27,7 @@
 #include <rle.h>
 
 /** The program version */
-#define TEST_VERSION  "RLE non-regression test application, version 0.1\n"
+#define TEST_VERSION  "RLE non-regression test application, version 1.0.1\n"
 
 
 /** The length (in bytes) of the Ethernet header */
@@ -52,6 +52,10 @@ static int compare_packets(const unsigned char *const pkt1, const int pkt1_size,
                            const unsigned char *const pkt2,
                            const int pkt2_size);
 
+static char *str_encap_error(const enum rle_encap_status status);
+static char *str_frag_error(const enum rle_frag_status status);
+static char *str_pack_error(const enum rle_pack_status status);
+static char *str_decap_error(const enum rle_decap_status status);
 
 /** Whether the application runs in verbose mode or not */
 static int is_verbose = 0;
@@ -208,7 +212,6 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 		sdus_out[packet_iterator].buffer = sdu_out_buf[packet_iterator] + link_len_src;
 	}
 
-	uint8_t frag_id = 0;
 	const size_t burst_size = BURST_SIZE;
 	const size_t label_size = 3;
 	size_t current_label_length = label_size; /* Arbitrarly */
@@ -224,8 +227,6 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 
 
 	for (packet_iterator = 0; packet_iterator < number_of_packets; ++packet_iterator) {
-		printf_verbose("\n=== packet #%zu:\n", packet_iterator + 1);
-
 		sdus_in[packet_iterator].protocol_type =
 		        ntohs(*(uint16_t *)((void *)(packets[packet_iterator] + (ETHER_HDR_LEN - 2))));
 
@@ -270,129 +271,148 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 			}
 			printf_verbose("\n");
 		}
+	}
 
-		/* Encapsulate the IP packet into a RLE packet */
-		printf_verbose("=== RLE encapsulation: start\n");
-		ret_encap = rle_encapsulate(transmitter, sdus_in[packet_iterator], frag_id);
+	size_t current_packet_no = 0;
+	for (packet_iterator = 0;
+	     packet_iterator < number_of_packets;
+	     packet_iterator = current_packet_no) {
+		const size_t max_frag_id = min(number_of_packets - current_packet_no, 8);
+		uint8_t frag_id;
+		int all_contexts_emptied = 0;
 
-		switch (ret_encap) {
-		case RLE_ENCAP_OK:
-			printf_verbose("=== RLE encapsulation: success\n");
-			break;
-		case RLE_ENCAP_ERR_NULL_TRMT:
-		case RLE_ENCAP_ERR_SDU_TOO_BIG:
-			printf_verbose("=== RLE encapsulation: misuse\n"
-			               "    %s\n", ret_encap == RLE_ENCAP_ERR_NULL_TRMT ?
-			               "RLE_ENCAP_ERR_NULL_TRMT" : "RLE_ENCAP_ERR_SDU_TOO_BIG");
-			status = 2;
-			goto exit;
-		case RLE_ENCAP_ERR:
-		default:
-			printf_verbose("=== RLE encapsulation: failure\n");
-			status = -1;
-			goto exit;
-		}
+		current_packet_no += max_frag_id;
 
-		while (rle_transmitter_stats_get_queue_size(transmitter, frag_id) != 0) {
-			unsigned char ppdu[burst_size];
-			size_t ppdu_length = 0;
+		for (frag_id = 0; frag_id < max_frag_id; ++frag_id) {
+			printf_verbose("\n=== packet #%zu:\n", packet_iterator + frag_id + 1);
+			/* Encapsulate the IP packet into a RLE packet */
+			printf_verbose("=== RLE encapsulation: start\n");
+			ret_encap = rle_encapsulate(transmitter, sdus_in[packet_iterator + frag_id],
+			                            frag_id);
 
-			printf_verbose("=== RLE fragmentation: start\n");
-			ret_frag = rle_fragment(transmitter, frag_id, burst_size, ppdu,
-			                        &ppdu_length);
-
-			switch (ret_frag) {
-			case RLE_FRAG_OK:
-				printf_verbose("=== RLE fragmentation: success. "
-				               "burst_size: %zu, remaining alpdu: %zu.\n",
-				               burst_size,
-				               rle_transmitter_stats_get_queue_size(transmitter,
-				                                                    frag_id));
-				printf_verbose("=== %zu-byte PPDU\n", ppdu_length);
-				{
-					unsigned char *ppdu_it;
-					for (ppdu_it = ppdu;
-					     ppdu_it < ppdu + ppdu_length;
-					     ++ppdu_it) {
-						printf_verbose(
-						        "%02x%s", *ppdu_it,
-						        (ppdu_it - ppdu) % 16 ==
-						        15 ? "\n" : " ");
-					}
-					printf_verbose("\n");
-				}
+			switch (ret_encap) {
+			case RLE_ENCAP_OK:
+				printf_verbose("=== RLE encapsulation: success\n");
 				break;
-			case RLE_FRAG_ERR_NULL_TRMT:
-			case RLE_FRAG_ERR_INVALID_SIZE:
-			case RLE_FRAG_ERR_BURST_TOO_SMALL:
-			case RLE_FRAG_ERR_CONTEXT_IS_NULL:
+			case RLE_ENCAP_ERR_NULL_TRMT:
+			case RLE_ENCAP_ERR_SDU_TOO_BIG:
 				printf_verbose(
-				        "=== RLE fragmentation: misuse\n"
-				        "    %s\n", ret_frag == RLE_FRAG_ERR_NULL_TRMT ?
-				        "RLE_FRAG_ERR_NULL_TRMT" : ret_frag ==
-				        RLE_FRAG_ERR_INVALID_SIZE ?
-				        "RLE_FRAG_ERR_INVALID_SIZE" : ret_frag ==
-				        RLE_FRAG_ERR_BURST_TOO_SMALL ?
-				        "RLE_FRAG_ERR_BURST_TOO_SMALL" :
-				        "RLE_FRAG_ERR_CONTEXT_IS_NULL");
+				        "=== RLE encapsulation: misuse\n"
+				        "    %s\n", str_encap_error(ret_encap));
 				status = 2;
 				goto exit;
-			case RLE_FRAG_ERR:
+			case RLE_ENCAP_ERR:
 			default:
 				printf_verbose("=== RLE encapsulation: failure\n");
 				status = -1;
 				goto exit;
 			}
-
-			assert(ppdu_length <= burst_size);
-
-			printf_verbose("=== RLE packing: start\n");
-			ret_pack =
-			        rle_pack(ppdu, ppdu_length, labelp, current_label_length,
-			                 fpdu,
-			                 &fpdu_current_pos,
-			                 &fpdu_remaining_size);
-
-			switch (ret_pack) {
-			case RLE_PACK_OK:
-				printf_verbose("=== RLE packing: success\n");
-				printf_verbose("===> %zu-byte FPDU (max %zu bytes)\n",
-				               fpdu_current_pos,
-				               fpdu_length);
-				break;
-			case RLE_PACK_ERR_FPDU_TOO_SMALL:
-			case RLE_PACK_ERR_INVALID_LAB:
-			case RLE_PACK_ERR_INVALID_PPDU:
-				printf_verbose(
-				        "=== RLE packing: misuse\n"
-				        "    %s\n", ret_pack == RLE_PACK_ERR_FPDU_TOO_SMALL ?
-				        "RLE_PACK_ERR_FPDU_TOO_SMALL" : ret_pack ==
-				        RLE_PACK_ERR_INVALID_LAB ?
-				        "RLE_PACK_ERR_INVALID_LAB" : "RLE_PACK_ERR_INVALID_PPDU");
-				status = 2;
-				goto exit;
-			case RLE_PACK_ERR:
-			default:
-				printf_verbose("=== RLE packing: failure\n");
-				status = -1;
-				goto exit;
-			}
-
-
-			labelp = NULL;
-			current_label_length = 0;
 		}
 
-		{
-			printf_verbose("\n");
-			printf_verbose("=== %zu-byte FPDU:\n", fpdu_current_pos);
-			size_t it = 0;
-			for (it = 0; it < fpdu_current_pos; ++it) {
-				printf_verbose("%02x%s", fpdu[it], it % 16 == 15 ? "\n" : " ");
+		while (!all_contexts_emptied) {
+			frag_id = 0;
+			all_contexts_emptied = 1;
+			for (frag_id = 0; frag_id < max_frag_id; ++frag_id) {
+				if (rle_transmitter_stats_get_queue_size(transmitter,
+				                                         frag_id) != 0) {
+					unsigned char ppdu[burst_size];
+					size_t ppdu_length = 0;
+					all_contexts_emptied = 0;
+
+					printf_verbose("=== RLE fragmentation: start\n");
+					ret_frag =
+					        rle_fragment(transmitter, frag_id, burst_size, ppdu,
+					                     &ppdu_length);
+
+					switch (ret_frag) {
+					case RLE_FRAG_OK:
+						printf_verbose(
+						        "=== RLE fragmentation: success. "
+						        "burst_size: %zu, remaining alpdu: %zu.\n",
+						        burst_size,
+						        rle_transmitter_stats_get_queue_size(
+						                transmitter,
+						                frag_id));
+						printf_verbose("=== %zu-byte PPDU\n", ppdu_length);
+						{
+							unsigned char *ppdu_it;
+							for (ppdu_it = ppdu;
+							     ppdu_it < ppdu + ppdu_length;
+							     ++ppdu_it) {
+								printf_verbose(
+								        "%02x%s", *ppdu_it,
+								        (ppdu_it - ppdu) % 16 ==
+								        15 ? "\n" : " ");
+							}
+							printf_verbose("\n");
+						}
+						break;
+					case RLE_FRAG_ERR_NULL_TRMT:
+					case RLE_FRAG_ERR_INVALID_SIZE:
+					case RLE_FRAG_ERR_BURST_TOO_SMALL:
+					case RLE_FRAG_ERR_CONTEXT_IS_NULL:
+						printf_verbose(
+						        "=== RLE fragmentation: misuse\n"
+						        "    %s\n", str_frag_error(ret_frag));
+						status = 2;
+						goto exit;
+					case RLE_FRAG_ERR:
+					default:
+						printf_verbose("=== RLE encapsulation: failure\n");
+						status = -1;
+						goto exit;
+					}
+
+					assert(ppdu_length <= burst_size);
+
+					printf_verbose("=== RLE packing: start\n");
+					ret_pack =
+					        rle_pack(ppdu, ppdu_length, labelp,
+					                 current_label_length,
+					                 fpdu,
+					                 &fpdu_current_pos,
+					                 &fpdu_remaining_size);
+
+					switch (ret_pack) {
+					case RLE_PACK_OK:
+						printf_verbose("=== RLE packing: success\n");
+						printf_verbose(
+						        "===> %zu-byte FPDU (max %zu bytes)\n",
+						        fpdu_current_pos,
+						        fpdu_length);
+						break;
+					case RLE_PACK_ERR_FPDU_TOO_SMALL:
+					case RLE_PACK_ERR_INVALID_LAB:
+					case RLE_PACK_ERR_INVALID_PPDU:
+						printf_verbose(
+						        "=== RLE packing: misuse\n"
+						        "    %s\n", str_pack_error(ret_pack));
+						status = 2;
+						goto exit;
+					case RLE_PACK_ERR:
+					default:
+						printf_verbose("=== RLE packing: failure\n");
+						status = -1;
+						goto exit;
+					}
+
+					labelp = NULL;
+					current_label_length = 0;
+
+					{
+						printf_verbose("\n");
+						printf_verbose("=== %zu-byte FPDU:\n",
+						               fpdu_current_pos);
+						size_t it = 0;
+						for (it = 0; it < fpdu_current_pos; ++it) {
+							printf_verbose("%02x%s", fpdu[it],
+							               it % 16 == 15 ? "\n" : " ");
+						}
+						printf_verbose("\n");
+					}
+				}
 			}
-			printf_verbose("\n");
 		}
-		frag_id = (frag_id + 1) % 8;
 	}
 
 	/* decapsulate the FPDU */
@@ -409,10 +429,7 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 	case RLE_DECAP_ERR_INV_PL:
 	case RLE_DECAP_ERR_INV_SDUS:
 		printf_verbose("=== RLE decapsulation: misuse\n"
-		               "    %s\n", ret_decap == RLE_DECAP_ERR_NULL_RCVR ?
-		               "RLE_DECAP_ERR_NULL_RCVR" : ret_decap == RLE_DECAP_ERR_INV_FPDU ?
-		               "RLE_DECAP_ERR_INV_FPDU" : ret_decap == RLE_DECAP_ERR_INV_PL ?
-		               "RLE_DECAP_ERR_INV_PL" : "RLE_DECAP_ERR_INV_SDUS");
+		               "    %s\n", str_decap_error(ret_decap));
 		status = 2;
 		goto exit;
 	case RLE_DECAP_ERR:
@@ -846,4 +863,114 @@ static int compare_packets(const unsigned char *const pkt1, const int pkt1_size,
 
 skip:
 	return valid;
+}
+
+
+/**
+ * @brief     show the encapsulation error linked to the encapsulation status.
+ *
+ * @param[in] status          the encapsulation status.
+ *
+ * @return    a printable encapsulation error.
+ */
+static char *str_encap_error(const enum rle_encap_status status)
+{
+	switch (status) {
+	case RLE_ENCAP_OK:
+		return "[RLE_ENCAP_OK] no error detected.";
+	case RLE_ENCAP_ERR:
+		return "[RLE_ENCAP_ERR] Default error. SDU should be dropped.";
+	case RLE_ENCAP_ERR_NULL_TRMT:
+		return "[RLE_ENCAP_ERR_NULL_TRMT] The transmitter is NULL.";
+	case RLE_ENCAP_ERR_SDU_TOO_BIG:
+		return "[RLE_ENCAP_ERR_SDU_TOO_BIG] SDU too big to be encapsulated.";
+	default:
+		return "[Unknwon status]";
+	}
+}
+
+
+/**
+ * @brief     show the fragmentation error linked to the fragmentation status.
+ *
+ * @param[in] status          the fragmentation status.
+ *
+ * @return    a printable fragmentation error.
+ */
+static char *str_frag_error(const enum rle_frag_status status)
+{
+	switch (status) {
+	case RLE_FRAG_OK:
+		return "[RLE_FRAG_OK] no error detected.";
+	case RLE_FRAG_ERR:
+		return "[RLE_FRAG_ERR] SDU should be dropped.";
+	case RLE_FRAG_ERR_NULL_TRMT:
+		return "[RLE_FRAG_ERR_NULL_TRMT] The transmitter is NULL.";
+	case RLE_FRAG_ERR_BURST_TOO_SMALL:
+		return "[RLE_FRAG_ERR_BURST_TOO_SMALL] Burst size is too small.";
+	case RLE_FRAG_ERR_CONTEXT_IS_NULL:
+		return "[RLE_FRAG_ERR_CONTEXT_IS_NULL] Context is NULL, ALPDU may be empty.";
+	case RLE_FRAG_ERR_INVALID_SIZE:
+		return "[RLE_FRAG_ERR_INVALID_SIZE] Remaining data size may be invalid in End PPDU.";
+	default:
+		return "[Unknwon status]";
+	}
+}
+
+
+/**
+ * @brief     show the packing error linked to the packing status.
+ *
+ * @param[in] status          the packing status.
+ *
+ * @return    a printable packing error.
+ */
+static char *str_pack_error(const enum rle_pack_status status)
+{
+	switch (status) {
+	case RLE_PACK_OK:
+		return "[RLE_PACK_OK] no error detected.";
+	case RLE_PACK_ERR:
+		return "[RLE_PACK_ERR] SDUs should be dropped.";
+	case RLE_PACK_ERR_FPDU_TOO_SMALL:
+		return "[RLE_PACK_ERR_FPDU_TOO_SMALL] FPDU is too small for the current PPDU. No drop.";
+	case RLE_PACK_ERR_INVALID_PPDU:
+		return "[RLE_PACK_ERR_INVALID_PPDU] Current PPDU is invalid, maybe NULL or bad size.";
+	case RLE_PACK_ERR_INVALID_LAB:
+		return "[RLE_PACK_ERR_INVALID_LAB] Current label is invalid, maybe NULL or bad size.";
+	default:
+		return "[Unknwon status]";
+	}
+}
+
+
+/**
+ * @brief     show the decapsulation error linked to the decapsulation status.
+ *
+ * @param[in] status          the decapsulation status.
+ *
+ * @return    a printable decapsulation error.
+ */
+static char *str_decap_error(const enum rle_decap_status status)
+{
+	switch (status) {
+	case RLE_DECAP_OK:
+		return "[RLE_DECAP_OK] no error detected.";
+	case RLE_DECAP_ERR:
+		return "[RLE_DECAP_ERR] SDUs should be dropped.";
+	case RLE_DECAP_ERR_NULL_RCVR:
+		return "[RLE_DECAP_ERR_NULL_RCVR] The receiver is NULL.";
+	case RLE_DECAP_ERR_ALL_DROP:
+		return "[RLE_DECAP_ERR_ALL_DROP] All current SDUs were dropped. Some may be lost.";
+	case RLE_DECAP_ERR_SOME_DROP:
+		return "[RLE_DECAP_ERR_SOME_DROP] Some SDUs were dropped. Some may be lost.";
+	case RLE_DECAP_ERR_INV_FPDU:
+		return "[RLE_DECAP_ERR_INV_FPDU] Invalid FPDU. Maybe Null or bad size.";
+	case RLE_DECAP_ERR_INV_SDUS:
+		return "[RLE_DECAP_ERR_INV_SDUS] Given preallocated SDUs array is invalid.";
+	case RLE_DECAP_ERR_INV_PL:
+		return "[RLE_DECAP_ERR_INV_PL] Given preallocated payload label array is invalid.";
+	default:
+		return "[Unknwon status]";
+	}
 }
