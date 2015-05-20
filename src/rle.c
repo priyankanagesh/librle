@@ -289,6 +289,12 @@ exit_label:
 	return status;
 }
 
+void rle_pad(unsigned char *const fpdu, const size_t fpdu_current_pos,
+             const size_t fpdu_remaining_size)
+{
+	memset((void *)(fpdu + fpdu_current_pos), 0, fpdu_remaining_size);
+}
+
 enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
                                       const unsigned char *const fpdu, const size_t fpdu_length,
                                       struct rle_sdu sdus[],

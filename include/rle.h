@@ -188,6 +188,18 @@ enum rle_pack_status rle_pack(const unsigned char *const ppdu, const size_t ppdu
                               size_t *const fpdu_remaining_size);
 
 /**
+ * @brief         RLE padding. Pad the given FPDU with 0x00 octets.
+ *
+ * @param[in,out] fpdu                    Frame PDU to pad.
+ * @param[in]     fpdu_current_pos        Current position in the FPDU.
+ * @param[in]     fpdu_remaining_size     Remaining size in the FPDU.
+ *
+ * @ingroup       RLE transmitter
+ */
+void rle_pad(unsigned char *const fpdu, const size_t fpdu_current_pos,
+             const size_t fpdu_remaining_size);
+
+/**
  * @brief         RLE decapsulation function. Decapsulate the given FPDU into zero or more SDUs.
  *
  *                The function returns all of the SDUs that are fully decapsulated.
