@@ -37,6 +37,9 @@
 #define min(x, y) \
         (((x) < (y)) ? (x) : (y))
 
+/** Burst size for fragmentation in the test. */
+#define BURST_SIZE 14
+
 /* prototypes of private functions */
 static void usage(void);
 static int test_encap_and_decap(const bool ignore_malformed, const char *const src_filename);
@@ -206,7 +209,7 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 	}
 
 	uint8_t frag_id = 0;
-	const size_t burst_size = 38;
+	const size_t burst_size = BURST_SIZE;
 	const size_t label_size = 3;
 	size_t current_label_length = label_size; /* Arbitrarly */
 	const unsigned char label[3] = { 0x00, 0x01, 0x02 };
