@@ -81,6 +81,7 @@ static enum boolean frag_tests(void)
 	const struct test too_small = { "Too small", test_frag_too_small };
 	const struct test null_context = { "Null context", test_frag_null_context };
 	const struct test invalid_size = { "Invalid size", test_frag_invalid_size };
+	const struct test real_world = { "Real-world", test_frag_real_world };
 
 	const struct test *const fragmentation_tests[] =
 	{
@@ -89,6 +90,7 @@ static enum boolean frag_tests(void)
 		&too_small,
 		&null_context,
 		&invalid_size,
+		&real_world,
 		NULL
 	};
 
