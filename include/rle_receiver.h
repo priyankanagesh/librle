@@ -1,14 +1,14 @@
 /**
  * @file   rle_receiver.h
- * @author Aurelien Castanie
- *
  * @brief  Definition of RLE receiver context and status structure, functions and variables
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _RLE_RECEIVER_H
-#define _RLE_RECEIVER_H
+#ifndef __RLE_RECEIVER_H__
+#define __RLE_RECEIVER_H__
 
 #include <stddef.h>
 #include <pthread.h>
@@ -21,7 +21,7 @@
  * Provides a context structure for each
  * fragment_id.
  */
-struct receiver_module {
+struct rle_receiver {
 	struct rle_ctx_management rle_ctx_man[RLE_MAX_FRAG_NUMBER];
 	struct rle_configuration *rle_conf[RLE_MAX_FRAG_NUMBER];
 	pthread_mutex_t ctx_mutex;
@@ -33,13 +33,11 @@ struct receiver_module {
  *
  *  @warning
  *
- *  @param
- *
  *  @return Pointer to the receiver module
  *
  *  @ingroup
  */
-struct receiver_module *rle_receiver_new(void);
+struct rle_receiver *rle_receiver_module_new(void);
 
 /**
  *  @brief Initialize a RLE receiver module
@@ -48,11 +46,9 @@ struct receiver_module *rle_receiver_new(void);
  *
  *  @param _this	The receiver module to initialize
  *
- *  @return
- *
  *  @ingroup
  */
-void rle_receiver_init(struct receiver_module *_this);
+void rle_receiver_module_init(struct rle_receiver *_this);
 
 /**
  *  @brief Destroy a RLE receiver module
@@ -61,11 +57,9 @@ void rle_receiver_init(struct receiver_module *_this);
  *
  *  @param _this	The receiver module to destroy
  *
- *  @return
- *
  *  @ingroup
  */
-void rle_receiver_destroy(struct receiver_module *_this);
+void rle_receiver_module_destroy(struct rle_receiver *_this);
 
 /**
  *  @brief Deencapsulate RLE fragment from a buffer
@@ -77,6 +71,7 @@ void rle_receiver_destroy(struct receiver_module *_this);
  *  @param _this	The receiver module to use for deencapsulation
  *  @param data_buffer	Data buffer's address to deencapsulate
  *  @param data_length	Data length to deencapsulate
+ *  @param index_ctx		The index of the context
  *
  *  @return	C_ERROR		if error occured while reassembling PDU
  *		C_ERROR_TOO_MUCH_FRAG	if the PDU was too fragmented (> 256 fragments)
@@ -85,8 +80,7 @@ void rle_receiver_destroy(struct receiver_module *_this);
  *
  *  @ingroup
  */
-int rle_receiver_deencap_data(struct receiver_module *_this,
-				void *data_buffer, size_t data_length);
+int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, size_t data_length, int * index_ctx);
 
 /**
  *  @brief Retrieve reassembled PDU data and copy it
@@ -106,14 +100,20 @@ int rle_receiver_deencap_data(struct receiver_module *_this,
  *
  *  @ingroup
  */
-int rle_receiver_get_packet(struct receiver_module *_this,
-			uint8_t fragment_id,
-			void *pdu_buffer,
-			int *pdu_proto_type,
-			uint32_t *pdu_length);
-
-void rle_receiver_free_context(struct receiver_module *_this,
-		uint8_t fragment_id);
+int rle_receiver_get_packet(struct rle_receiver *_this, uint8_t fragment_id, void *pdu_buffer,
+                            int *pdu_proto_type,
+                            uint32_t *pdu_length);
+/**
+ *  @brief Set to idle the fragment context
+ *
+ *  @warning
+ *
+ *  @param _this	The receiver module to use for deencapsulation
+ *  @param fragment_id	Fragmentation context to use to get the PDU
+ *
+ *  @ingroup
+ */
+void rle_receiver_free_context(struct rle_receiver *_this, uint8_t fragment_id);
 
 /**
  *  @brief Get total number of successfully
@@ -127,7 +127,7 @@ void rle_receiver_free_context(struct receiver_module *_this,
  *
  *  @ingroup
  */
-uint64_t rle_receiver_get_counter_ok(struct receiver_module *_this);
+uint64_t rle_receiver_get_counter_ok(struct rle_receiver *_this);
 
 /**
  *  @brief Get total number of dropped packets
@@ -140,7 +140,7 @@ uint64_t rle_receiver_get_counter_ok(struct receiver_module *_this);
  *
  *  @ingroup
  */
-uint64_t rle_receiver_get_counter_dropped(struct receiver_module *_this);
+uint64_t rle_receiver_get_counter_dropped(struct rle_receiver *_this);
 
 /**
  *  @brief Get total number of lost packets
@@ -153,7 +153,7 @@ uint64_t rle_receiver_get_counter_dropped(struct receiver_module *_this);
  *
  *  @ingroup
  */
-uint64_t rle_receiver_get_counter_lost(struct receiver_module *_this);
+uint64_t rle_receiver_get_counter_lost(struct rle_receiver *_this);
 
 /**
  *  @brief Get total number of sent/received Bytes
@@ -166,8 +166,35 @@ uint64_t rle_receiver_get_counter_lost(struct receiver_module *_this);
  *
  *  @ingroup
  */
-uint64_t rle_receiver_get_counter_bytes(struct receiver_module *_this);
+uint64_t rle_receiver_get_counter_bytes(struct rle_receiver *_this);
 
-void rle_receiver_dump(struct receiver_module *_this);
+/**
+ *  @brief Dump an RLE receiver
+ *
+ *  @warning
+ *
+ *  @param _this		The receiver module
+ *
+ *  @ingroup
+ */
+void rle_receiver_dump(struct rle_receiver *_this);
 
-#endif /* _RLE_RECEIVER_H */
+/**
+ *  @brief Get the length of the ALPDU protection mechanism, knowing the receiver and a buffer.
+ *
+ * The buffer must be an end PPDU, but this function  will also work on cont and comp PPDU. The
+ * buffer is needed to get the fragment id, in order to extract the current configuration.
+ *
+ *  @warning
+ *
+ *  @param _this     The receiver module
+ *  @param buffer    The buffer, an End PPDU
+ *
+ *  @return	Number of octets in the ALPDU protection mechanism.
+ *
+ *  @ingroup
+ */
+size_t rle_receiver_get_alpdu_protection_length(const struct rle_receiver *const _this,
+                                                const unsigned char *const buffer);
+
+#endif /* __RLE_RECEIVER_H__ */

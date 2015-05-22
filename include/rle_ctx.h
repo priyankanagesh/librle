@@ -1,14 +1,14 @@
 /**
  * @file   rle_ctx.h
- * @author Aurelien Castanie
- *
  * @brief  Definition of RLE context and status structure, functions and variables
- *
- *
+ * @author Aurelien Castanie, Henrick Deschamps
+ * @date   03/2015
+ * @copyright
+ *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef _RLE_CTX_H
-#define _RLE_CTX_H
+#ifndef __RLE_CTX_H__
+#define __RLE_CTX_H__
 
 #include <stdint.h>
 #include <pthread.h>
@@ -55,6 +55,10 @@ struct rle_ctx_management {
 	uint32_t remaining_pdu_length;
 	/** size of last RLE packet/fragment received/sent */
 	uint32_t rle_length;
+	/** size of the ALPDU fragmented/to fragment */
+	uint32_t alpdu_size;
+	/** remaining ALPDU size to send/receive */
+	uint32_t remaining_alpdu_size;
 	/** PDU protocol type */
 	uint16_t proto_type;
 	/** PDU Label type */
@@ -108,8 +112,6 @@ int rle_ctx_destroy(struct rle_ctx_management *_this);
  *
  *  @param	_this   Pointer to the RLE context structure
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_flush_buffer(struct rle_ctx_management *_this);
@@ -120,8 +122,6 @@ void rle_ctx_flush_buffer(struct rle_ctx_management *_this);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *
- *  @return
  *
  *  @ingroup
  */
@@ -134,8 +134,6 @@ void rle_ctx_invalid_ctx(struct rle_ctx_management *_this);
  *
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New fragment id value
- *
- *  @return
  *
  *  @ingroup
  */
@@ -162,8 +160,6 @@ uint8_t rle_ctx_get_frag_id(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New sequence number value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_seq_nb(struct rle_ctx_management *_this, uint8_t val);
@@ -188,8 +184,6 @@ uint8_t rle_ctx_get_seq_nb(struct rle_ctx_management *_this);
  *
  *  @param	_this   Pointer to the RLE context structure
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_incr_seq_nb(struct rle_ctx_management *_this);
@@ -201,8 +195,6 @@ void rle_ctx_incr_seq_nb(struct rle_ctx_management *_this);
  *
  *  @param	_this	Pointer to the RLE context structure
  *  @param	val	Boolean representing fragmentation status
- *
- *  @return
  *
  *  @ingroup
  */
@@ -229,8 +221,6 @@ int rle_ctx_get_is_fragmented(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New fragment number counter value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_frag_counter(struct rle_ctx_management *_this, uint8_t val);
@@ -241,8 +231,6 @@ void rle_ctx_set_frag_counter(struct rle_ctx_management *_this, uint8_t val);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *
- *  @return
  *
  *  @ingroup
  */
@@ -256,8 +244,6 @@ void rle_ctx_incr_frag_counter(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New value of PDU fragment counter
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_nb_frag_pdu(struct rle_ctx_management *_this, int val);
@@ -268,8 +254,6 @@ void rle_ctx_set_nb_frag_pdu(struct rle_ctx_management *_this, int val);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *
- *  @return
  *
  *  @ingroup
  */
@@ -296,8 +280,6 @@ int rle_ctx_get_nb_frag_pdu(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New QoS tag value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_qos_tag(struct rle_ctx_management *_this, uint32_t val);
@@ -309,8 +291,6 @@ void rle_ctx_set_qos_tag(struct rle_ctx_management *_this, uint32_t val);
  *
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New boolean value representing CRC usage
- *
- *  @return
  *
  *  @ingroup
  */
@@ -337,8 +317,6 @@ int rle_ctx_get_use_crc(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New PDU length
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_pdu_length(struct rle_ctx_management *_this, uint32_t val);
@@ -364,8 +342,6 @@ uint32_t rle_ctx_get_pdu_length(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New remaining PDU length
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_remaining_pdu_length(struct rle_ctx_management *_this, uint32_t val);
@@ -388,14 +364,14 @@ uint32_t rle_ctx_get_remaining_pdu_length(struct rle_ctx_management *_this);
  *
  *  @warning
  *
- *  @param	_this   Pointer to the RLE context structure
- *  @param	val     New RLE packet length
- *
- *  @return
+ *  @param	_this       Pointer to the RLE context structure
+ *  @param	val         New RLE packet length
+ *  @param	header_size The RLE Header size
  *
  *  @ingroup
  */
-void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val);
+void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val,
+                            const size_t header_size);
 
 /**
  *  @brief	Get RLE packet length
@@ -411,14 +387,87 @@ void rle_ctx_set_rle_length(struct rle_ctx_management *_this, uint32_t val);
 uint32_t rle_ctx_get_rle_length(struct rle_ctx_management *_this);
 
 /**
+ *  @brief	Set ALPDU length
+ *
+ *  @warning
+ *
+ *  @param	_this       Pointer to the RLE context structure
+ *  @param	val         New ALPDU length
+ *
+ *  @ingroup
+ */
+void rle_ctx_set_alpdu_length(struct rle_ctx_management *const _this, const uint32_t val);
+
+/**
+ *  @brief	increment ALPDU length
+ *
+ *  @warning
+ *
+ *  @param	_this       Pointer to the RLE context structure
+ *  @param	val         ALPDU length incremented of val
+ *
+ *  @ingroup
+ */
+void rle_ctx_incr_alpdu_length(struct rle_ctx_management *const _this, const uint32_t val);
+
+/**
+ *  @brief	Get ALPDU length
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @return	Current ALPDU length
+ *
+ *  @ingroup
+ */
+uint32_t rle_ctx_get_alpdu_length(const struct rle_ctx_management *const _this);
+
+
+/**
+ *  @brief	Set remaining ALPDU length
+ *
+ *  @warning
+ *
+ *  @param	_this       Pointer to the RLE context structure
+ *  @param	val         New remaining ALPDU length
+ *
+ *  @ingroup
+ */
+void rle_ctx_set_remaining_alpdu_length(struct rle_ctx_management *const _this, const uint32_t val);
+
+/**
+ *  @brief	decrement remaining ALPDU length
+ *
+ *  @warning
+ *
+ *  @param	_this       Pointer to the RLE context structure
+ *  @param	val         remaining ALPDU length decremented of val
+ *
+ *  @ingroup
+ */
+void rle_ctx_decr_remaining_alpdu_length(struct rle_ctx_management *const _this, const uint32_t val);
+
+/**
+ *  @brief	Get remaining ALPDU length
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @return	Current remaining ALPDU length
+ *
+ *  @ingroup
+ */
+uint32_t rle_ctx_get_remaining_alpdu_length(const struct rle_ctx_management *const _this);
+
+/**
  *  @brief	Set Protocol Type value
  *
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New Protocol Type value
- *
- *  @return
  *
  *  @ingroup
  */
@@ -445,8 +494,6 @@ uint16_t rle_ctx_get_proto_type(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *		val	New Label Type value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_label_type(struct rle_ctx_management *_this, uint8_t val);
@@ -471,8 +518,6 @@ uint8_t rle_ctx_get_label_type(struct rle_ctx_management *_this);
  *
  *  @param	_this   Pointer to the RLE context structure
  *  @param	addr	Pointer to the last data added in buffer
- *
- *  @return
  *
  *  @ingroup
  */
@@ -499,8 +544,6 @@ char *rle_ctx_get_end_address(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New counter value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_counter_ok(struct rle_ctx_management *_this, uint64_t val);
@@ -512,8 +555,6 @@ void rle_ctx_set_counter_ok(struct rle_ctx_management *_this, uint64_t val);
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *
- *  @return
  *
  *  @ingroup
  */
@@ -540,8 +581,6 @@ uint64_t rle_ctx_get_counter_ok(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New counter value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_counter_dropped(struct rle_ctx_management *_this, uint64_t val);
@@ -552,8 +591,6 @@ void rle_ctx_set_counter_dropped(struct rle_ctx_management *_this, uint64_t val)
  *  @warning
  *
  *  @param	_this   Pointer to the RLE context structure
- *
- *  @return
  *
  *  @ingroup
  */
@@ -580,8 +617,6 @@ uint64_t rle_ctx_get_counter_dropped(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New counter value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_counter_lost(struct rle_ctx_management *_this, uint64_t val);
@@ -593,11 +628,9 @@ void rle_ctx_set_counter_lost(struct rle_ctx_management *_this, uint64_t val);
  *
  *  @param	_this   Pointer to the RLE context structure
  *
- *  @return
- *
  *  @ingroup
  */
-void rle_ctx_incr_counter_lost(struct rle_ctx_management *_this);
+void rle_ctx_incr_counter_lost(struct rle_ctx_management *_this, uint32_t val);
 
 /**
  *  @brief	Get current lost PDU counter value
@@ -620,8 +653,6 @@ uint64_t rle_ctx_get_counter_lost(struct rle_ctx_management *_this);
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	New counter value
  *
- *  @return
- *
  *  @ingroup
  */
 void rle_ctx_set_counter_bytes(struct rle_ctx_management *_this, uint64_t val);
@@ -633,8 +664,6 @@ void rle_ctx_set_counter_bytes(struct rle_ctx_management *_this, uint64_t val);
  *
  *  @param	_this   Pointer to the RLE context structure
  *  @param	val	Number of Bytes to add to the current Bytes counter
- *
- *  @return
  *
  *  @ingroup
  */
@@ -660,11 +689,126 @@ uint64_t rle_ctx_get_counter_bytes(struct rle_ctx_management *_this);
  *
  *  @param	_this   Pointer to the RLE context structure
  *
- *  @return
- *
  *  @ingroup
  */
-void rle_ctx_dump(struct rle_ctx_management *_this,
-		struct rle_configuration *rle_conf);
+void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rle_conf);
 
-#endif /* _RLE_CTX_H */
+/**
+ *  @brief         Dump an ALPDU from a context in a buffer.
+ *
+ *                 This is intended to help testing encapsulation only. Please don't use this after
+ *                 fragmentation and take care if you want to use it in another way.
+ *
+ *  @param[in]     protocol_type       The theorical protocol_type in the context.
+ *                                     (You can use rle_ctx_get_proto_type)
+ *                                     For now, this param is useful, but it can evolve in the
+ *                                     future.
+ *  @param[in]     _this               The RLE context
+ *  @param[in]     rle_conf            The RLE configuration
+ *  @param[in,out] alpdu_buffer        A preallocated buffer that will contain the ALPDU.
+ *  @param[in]     alpdu_buffer_size   The size of the preallocated buffer
+ *  @param[out]    alpdu_length        The size of the ALPDU
+ */
+void rle_ctx_dump_alpdu(const uint16_t protocol_type, const struct rle_ctx_management *const _this,
+                        struct rle_configuration *const rle_conf, unsigned char alpdu_buffer[],
+                        const size_t alpdu_buffer_size,
+                        size_t *const alpdu_length);
+
+/** Status for the fragmentation checking */
+enum check_frag_status {
+	FRAG_STATUS_OK, /**< Fragementation is ok. */
+	FRAG_STATUS_KO  /**< Error case.           */
+};
+
+
+/** States of fragmentation */
+enum frag_states {
+	FRAG_STATE_START, /**< Fragementation is in starting state   */
+	FRAG_STATE_CONT,  /**< Fragementation is in continuing state */
+	FRAG_STATE_END,   /**< Fragementation is in ending state     */
+	FRAG_STATE_COMP   /**< No fragmentation */
+};
+
+/**
+ *  @brief         Check if a fragmentation transition is OK.
+ *
+ *  @param[in]     current_state       The current state.
+ *  @param[in]     next_state          The future state.
+ *
+ *  @return        FRAG_STATUS_OK if legal transition, else FRAG_STATUS_KO.
+ */
+enum check_frag_status check_frag_transition(const enum frag_states current_state,
+                                             const enum frag_states next_state);
+
+/**
+ *  @brief         Check the fragmentation integrity
+ *
+ *  @param[in]     _this               The context with the buffer to check.
+ *
+ *  @return        FRAG_STATUS_OK if fragmentation in OK, else FRAG_STATUS_KO.
+ */
+enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_management *const _this);
+
+/**
+ *  @brief         Get the type of the fragment in the buffer
+ *
+ *  @param[in]     buffer              The buffer
+ *
+ *  @return        the fragment type @see enum frag_states
+ */
+enum frag_states get_fragment_type(const unsigned char *const buffer);
+
+/**
+ *  @brief         Get the length of the fragment in the buffer
+ *
+ *  @param[in]     buffer              The buffer
+ *
+ *  @return        the fragment type @see enum frag_states
+ */
+size_t get_fragment_length(const unsigned char *const buffer);
+
+/**
+ *  @brief         Get the fragment id of the fragment in the buffer
+ *
+ *  @param[in]     buffer              The buffer
+ *
+ *  @return        the fragment id of the fragment
+ */
+uint8_t get_fragment_frag_id(const unsigned char *const buffer);
+
+/**
+ *  @brief         Set the packet length of a given RLE Header for CONT, END or COMP.
+ *
+ *  @param[in,out] header              The RLE header
+ *  @param[in]     length              The packet length
+ */
+void rle_header_all_set_packet_length(union rle_header_all *const header, const size_t length);
+
+/**
+ *  @brief         Get the packet length of a given RLE Header for CONT, END or COMP.
+ *
+ *  @param[in]     header              The RLE header
+ *
+ *  @return        the packet length
+ */
+size_t rle_header_all_get_packet_length(const union rle_header_all header);
+
+/**
+ *  @brief         Set the packet length of a given RLE Header for START.
+ *
+ *  @param[in,out] header              The RLE header
+ *  @param[in]     length              The packet length
+ */
+void rle_header_start_set_packet_length(union rle_header_start_packet *const header,
+                                        const size_t length);
+
+/**
+ *  @brief         Get the packet length of a given RLE Header for START.
+ *
+ *  @param[in]     header              The RLE header
+ *
+ *  @return        the packet length
+ */
+size_t rle_header_start_get_packet_length(const union rle_header_start_packet header);
+
+#endif /* __RLE_CTX_H__ */
