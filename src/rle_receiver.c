@@ -202,14 +202,15 @@ void rle_receiver_module_destroy(struct rle_receiver *_this)
 	      MODULE_NAME,
 	      __FILE__, __func__, __LINE__);
 #endif
+	if (_this) {
+		int i;
+		for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+			rle_ctx_destroy(&_this->rle_ctx_man[i]);
+			rle_conf_destroy(_this->rle_conf[i]);
+		}
 
-	int i;
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		rle_ctx_destroy(&_this->rle_ctx_man[i]);
-		rle_conf_destroy(_this->rle_conf[i]);
+		FREE(_this);
 	}
-
-	FREE(_this);
 	_this = NULL;
 }
 

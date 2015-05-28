@@ -652,9 +652,7 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 		break;
 	default:
 		PRINT("ERROR %s %s:%s:%d: invalid fragment type [%d] to reassemble\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__,
-		      frag_type);
+		      MODULE_NAME, __FILE__, __func__, __LINE__, frag_type);
 		goto ret_val;
 		break;
 	}
@@ -664,18 +662,28 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 	 * otherwise drop fragment and all data of this frag_id */
 	if (rle_ctx_get_nb_frag_pdu(rle_ctx) > RLE_MAX_SEQ_NO) {
 		PRINT("ERROR %s %s:%s:%d: waited too much fragments to reassemble packet\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__);
+		      MODULE_NAME, __FILE__, __func__, __LINE__);
 		ret = C_ERROR_TOO_MUCH_FRAG;
 		goto error_frag;
+	}
+
+	/*
+	 * Check the size of the fragment and the header offset to avoid overflow.
+	 */
+	if (data_length < hdr_offset) {
+		PRINT("ERROR %s %s:%s:%d: received fragment too small compared to header offset.\n",
+		      MODULE_NAME, __FILE__, __func__, __LINE__);
+		ret = C_ERROR_DROP;
+		goto err_size;
 	}
 
 	/* the copy begins from the buffer end address
 	 * and the copied data are from a received RLE packet
 	 * plus RLE header length to get the payload only */
-	memcpy((void *)(rle_ctx->end_address),
-	       (const void *)((char *)data_buffer + hdr_offset),
-	       (data_length - hdr_offset));
+	if (data_length > hdr_offset) {
+		memcpy((void *)(rle_ctx->end_address), (const void *)((char *)data_buffer + hdr_offset),
+		       (data_length - hdr_offset));
+	}
 
 	if (frag_type != RLE_PDU_COMPLETE) {
 		/* fragmentation case */
@@ -736,12 +744,15 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 	goto ret_val;
 
 error_frag:
+	/* discard all data */
+	if (data_length > hdr_offset) {
+		memset((void *)(rle_ctx->end_address),
+		       0, (data_length - hdr_offset));
+	}
+
+err_size:
 	/* Incr. counter dropped. */
 	rle_ctx_incr_counter_dropped(rle_ctx);
-
-	/* discard all data */
-	memset((void *)(rle_ctx->end_address),
-	       0, (data_length - hdr_offset));
 
 	/* TODO call a callback which must be
 	 * specific to each protocol type supported
