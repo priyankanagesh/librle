@@ -54,6 +54,17 @@ SET(CMAKE_CTEST_COMMAND
     || (${SYS_CMD_ECHO} "Test libRLE failed $$?" && exit 1))
 ADD_CUSTOM_TARGET(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS test_rle)
 
+# Static tests:
+SET(CMAKE_CSTATIC_TESTS
+       ${CMAKE_SOURCE_DIR}/tests/samples/scripts/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression ${CMAKE_SOURCE_DIR}/tests/samples/fuzzing
+    && ${CMAKE_SOURCE_DIR}/tests/samples/scripts/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression ${CMAKE_SOURCE_DIR}/tests/samples/non_reg)
+ADD_CUSTOM_TARGET(static_tests COMMAND ${CMAKE_CSTATIC_TESTS} DEPENDS test_non_regression)
+
+SET(CMAKE_CSTATIC_TESTS_FPDU
+       ${CMAKE_SOURCE_DIR}/tests/samples/scripts/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression_fpdu ${CMAKE_SOURCE_DIR}/tests/samples/fuzzing-fpdu
+    && ${CMAKE_SOURCE_DIR}/tests/samples/scripts/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression_fpdu ${CMAKE_SOURCE_DIR}/tests/samples/non_reg_fpdu)
+   ADD_CUSTOM_TARGET(static_tests_fpdu COMMAND ${CMAKE_CSTATIC_TESTS_FPDU} DEPENDS test_non_regression_fpdu)
+
 # If coverage is on.
 # generate coverage files with:
 #   $ make coverage
