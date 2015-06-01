@@ -7,8 +7,13 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#ifndef __KERNEL__
+
 #include <stdlib.h>
 #include <stdio.h>
+
+#endif
+
 #ifdef TIME_DEBUG
 #include <sys/time.h>
 #endif

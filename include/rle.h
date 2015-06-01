@@ -10,8 +10,17 @@
 #ifndef __RLE_H__
 #define __RLE_H__
 
+#ifndef __KERNEL__
+
 #include <stddef.h>
 #include <stdint.h>
+
+#else
+
+#include <linux/stddef.h>
+#include <linux/types.h>
+
+#endif
 
 /** Status of the encapsulation. */
 enum rle_encap_status {
