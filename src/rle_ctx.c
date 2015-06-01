@@ -88,16 +88,8 @@ int rle_ctx_init(struct rle_ctx_management *_this)
 	 * all variables */
 	flush(_this);
 
-	/* initialize all link status
-	 * mutexes */
-	pthread_mutex_init(&_this->lk_status.ctr_ok_mutex, NULL);
-	pthread_mutex_init(&_this->lk_status.ctr_dropped_mutex, NULL);
-	pthread_mutex_init(&_this->lk_status.ctr_bytes_mutex, NULL);
-	pthread_mutex_init(&_this->lk_status.ctr_lost_mutex, NULL);
-
 	/* allocate enough memory space
 	 * for the worst case of fragmentation */
-	/* TODO see for receiver buffer size */
 	_this->buf = MALLOC(ZC_BUFFER_MAX_SIZE);
 	if (!_this->buf) {
 		PRINT("ERROR %s %s:%s:%d: allocating ZC buffer failed [%s]\n",
@@ -131,13 +123,6 @@ int rle_ctx_destroy(struct rle_ctx_management *_this)
 		      __FILE__, __func__, __LINE__);
 		return C_ERROR;
 	}
-
-	/* destroy all link status
-	 * mutexes */
-	pthread_mutex_destroy(&_this->lk_status.ctr_ok_mutex);
-	pthread_mutex_destroy(&_this->lk_status.ctr_dropped_mutex);
-	pthread_mutex_destroy(&_this->lk_status.ctr_bytes_mutex);
-	pthread_mutex_destroy(&_this->lk_status.ctr_lost_mutex);
 
 	flush(_this);
 
@@ -426,100 +411,76 @@ char *rle_ctx_get_end_address(struct rle_ctx_management *_this)
 *********************************/
 void rle_ctx_set_counter_ok(struct rle_ctx_management *_this, uint64_t val)
 {
-	pthread_mutex_lock(&_this->lk_status.ctr_ok_mutex);
 	_this->lk_status.counter_ok = val;
-	pthread_mutex_unlock(&_this->lk_status.ctr_ok_mutex);
 }
 
 void rle_ctx_incr_counter_ok(struct rle_ctx_management *_this)
 {
-	pthread_mutex_lock(&_this->lk_status.ctr_ok_mutex);
 	_this->lk_status.counter_ok++;
-	pthread_mutex_unlock(&_this->lk_status.ctr_ok_mutex);
 }
 
 uint64_t rle_ctx_get_counter_ok(struct rle_ctx_management *_this)
 {
 	uint64_t ctr_packets_ok = 0L;
 
-	pthread_mutex_lock(&_this->lk_status.ctr_ok_mutex);
 	ctr_packets_ok = _this->lk_status.counter_ok;
-	pthread_mutex_unlock(&_this->lk_status.ctr_ok_mutex);
 
 	return ctr_packets_ok;
 }
 
 void rle_ctx_set_counter_dropped(struct rle_ctx_management *_this, uint64_t val)
 {
-	pthread_mutex_lock(&_this->lk_status.ctr_dropped_mutex);
 	_this->lk_status.counter_dropped = val;
-	pthread_mutex_unlock(&_this->lk_status.ctr_dropped_mutex);
 }
 
 void rle_ctx_incr_counter_dropped(struct rle_ctx_management *_this)
 {
-	pthread_mutex_lock(&_this->lk_status.ctr_dropped_mutex);
 	_this->lk_status.counter_dropped++;
-	pthread_mutex_unlock(&_this->lk_status.ctr_dropped_mutex);
 }
 
 uint64_t rle_ctx_get_counter_dropped(struct rle_ctx_management *_this)
 {
 	uint64_t ctr_packets_dropped = 0L;
 
-	pthread_mutex_lock(&_this->lk_status.ctr_dropped_mutex);
 	ctr_packets_dropped = _this->lk_status.counter_dropped;
-	pthread_mutex_unlock(&_this->lk_status.ctr_dropped_mutex);
 
 	return ctr_packets_dropped;
 }
 
 void rle_ctx_set_counter_lost(struct rle_ctx_management *_this, uint64_t val)
 {
-	pthread_mutex_lock(&_this->lk_status.ctr_lost_mutex);
 	_this->lk_status.counter_lost = val;
-	pthread_mutex_unlock(&_this->lk_status.ctr_lost_mutex);
 }
 
 void rle_ctx_incr_counter_lost(struct rle_ctx_management *_this, uint32_t val)
 {
-	pthread_mutex_lock(&_this->lk_status.ctr_lost_mutex);
 	_this->lk_status.counter_lost += val;
-	pthread_mutex_unlock(&_this->lk_status.ctr_lost_mutex);
 }
 
 uint64_t rle_ctx_get_counter_lost(struct rle_ctx_management *_this)
 {
 	uint64_t ctr_packets_lost = 0L;
 
-	pthread_mutex_lock(&_this->lk_status.ctr_lost_mutex);
 	ctr_packets_lost = _this->lk_status.counter_lost;
-	pthread_mutex_unlock(&_this->lk_status.ctr_lost_mutex);
 
 	return ctr_packets_lost;
 }
 
 void rle_ctx_set_counter_bytes(struct rle_ctx_management *_this, uint64_t val)
 {
-	pthread_mutex_lock(&_this->lk_status.ctr_bytes_mutex);
 	_this->lk_status.counter_bytes = val;
-	pthread_mutex_unlock(&_this->lk_status.ctr_bytes_mutex);
 }
 
 void rle_ctx_incr_counter_bytes(struct rle_ctx_management *_this, uint32_t val)
 {
-	pthread_mutex_lock(&_this->lk_status.ctr_bytes_mutex);
 	_this->lk_status.counter_bytes += val;
-	pthread_mutex_unlock(&_this->lk_status.ctr_bytes_mutex);
 }
 
 uint64_t rle_ctx_get_counter_bytes(struct rle_ctx_management *_this)
 {
 	uint64_t ctr_packets_bytes = 0L;
 
-	pthread_mutex_lock(&_this->lk_status.ctr_bytes_mutex);
 	ctr_packets_bytes = _this->lk_status.counter_bytes;
-	pthread_mutex_unlock(&_this->lk_status.ctr_bytes_mutex);
 
 	return ctr_packets_bytes;
 }
@@ -536,6 +497,18 @@ static uint8_t check_ip_version(const void *const data_buffer)
 
 void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rle_conf)
 {
+	/* get ptype compression status from NCC */
+	int is_compressed = rle_conf_get_ptype_compression(rle_conf);
+	int protocol_type = 0;
+	char *i_ptr = NULL;
+
+	/* just get the first bits of RLE packet */
+	union rle_header_all *header = _this->buf;
+
+	int i = 0;
+	int j = 0;
+	uint8_t data = 0;
+
 	PRINT("\n-------------------DUMP RLE CTX-------------------\n");
 	PRINT("\tfrag_id		\t\t= [0x%0x]\n", _this->frag_id);
 	PRINT("\tnext_seq_nb		\t= [0x%0x]\n", _this->next_seq_nb);
@@ -550,23 +523,17 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 	PRINT("\tlabel_type		\t= [0x%0x]\n", _this->label_type);
 	PRINT("\tend address		\t= [%p]\n", _this->end_address);
 	PRINT("\tLink Status:\n");
-	PRINT("\tPackets sent/received	\t= [%"PRIu64 "]\n", _this->lk_status.counter_ok);
-	PRINT("\tPackets lost		\t= [%"PRIu64 "]\n", _this->lk_status.counter_lost);
-	PRINT("\tPackets dropped	\t\t= [%"PRIu64 "]\n", _this->lk_status.counter_dropped);
-	PRINT("\tBytes sent/received	\t= [%"PRIu64 "]\n", _this->lk_status.counter_bytes);
+	PRINT("\tPackets sent/received	\t= [%lu]\n", (long unsigned int)_this->lk_status.counter_ok);
+	PRINT("\tPackets lost		\t= [%lu]\n", (long unsigned int)_this->lk_status.counter_lost);
+	PRINT("\tPackets dropped	\t\t= [%lu]\n",
+	      (long unsigned int)_this->lk_status.counter_dropped);
+	PRINT("\tBytes sent/received	\t= [%lu]\n",
+	      (long unsigned int)_this->lk_status.counter_bytes);
 
 	if (_this->frag_counter == 0) {
 		PRINT("\n--------------------------------------------------\n");
 		return;
 	}
-
-	/* get ptype compression status from NCC */
-	int is_compressed = rle_conf_get_ptype_compression(rle_conf);
-	int protocol_type = 0;
-	char *i_ptr = NULL;
-
-	/* just get the first bits of RLE packet */
-	union rle_header_all *header = _this->buf;
 
 	if ((header->b.start_ind == 1) && (header->b.end_ind == 1)) {
 		/* COMPLETE RLE packet */
@@ -623,10 +590,6 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 			i_ptr = (char *)zc_buf_tmp->ptrs.start;
 		}
 
-		int i = 0;
-		int j = 0;
-		uint8_t data = 0;
-
 		PRINT("|  \t\t  PAYLOAD  \t\t  |\n");
 		for (i = 0; (char *)(i_ptr + i) < zc_buf->ptrs.end; i++) {
 			data = (*(i_ptr + i));
@@ -661,6 +624,12 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 			        (struct zc_rle_header_start *)_this->buf;
 			struct rle_header_start *hdr = &zc_buf->header;
 			size_t header_size = RLE_START_MANDATORY_HEADER_SIZE;
+
+			int m = 0;
+			int n = 0;
+			uint8_t data_mn = 0;
+
+			void *ptr_to_next_frag = NULL;
 
 			if ((hdr->head_start.b.proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
 			    (hdr->head_start.b.label_type == RLE_LT_IMPLICIT_PROTO_TYPE)) {
@@ -726,24 +695,21 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 			      zc_buf->header.head_start.b.label_type,
 			      zc_buf->header.head_start.b.proto_type_supp,
 			      protocol_type);
-			int i = 0;
-			int j = 0;
-			uint8_t data = 0;
 
 			PRINT("|  \t\t  PAYLOAD  \t\t  |\n");
-			for (i = 0; (char *)(i_ptr + i) < zc_buf->ptrs.end; i++) {
-				data = (*(i_ptr + i));
-				PRINT(" %02x ", data);
+			for (m = 0; (char *)(i_ptr + m) < zc_buf->ptrs.end; m++) {
+				data_mn = (*(i_ptr + m));
+				PRINT(" %02x ", data_mn);
 
-				if (j == 3) {
+				if (n == 3) {
 					PRINT("\n");
-					j = 0;
+					n = 0;
 				} else {
-					j++;
+					n++;
 				}
 			}
 
-			if (j != 0) {
+			if (n != 0) {
 				PRINT("\n");
 			}
 #ifdef DEBUG
@@ -752,7 +718,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 			PRINT("zc_buf->ptrs.end %p \n", zc_buf->ptrs.end);
 #endif
 
-			void *ptr_to_next_frag = &(zc_buf->ptrs.end);
+			ptr_to_next_frag = &(zc_buf->ptrs.end);
 
 			/* START packet is dumped,
 			 * dump all others fragments */
@@ -762,6 +728,11 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 				        (struct zc_rle_header_cont_end *)((void *)((unsigned char *)
 				                                                   ptr_to_next_frag
 				                                                   + 8));
+				struct rle_header_cont_end *hdr_ce = NULL;
+
+				int k = 0;
+				int l = 0;
+				uint8_t _data = 0;
 
 				ptr_to_next_frag = &(zc_ce_buf->ptrs.end);
 
@@ -772,7 +743,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 					break;
 				}
 
-				struct rle_header_cont_end *hdr_ce = &zc_ce_buf->header;
+				hdr_ce = &zc_ce_buf->header;
 
 				/* then dump CONTINUATION & END packet */
 				if (hdr_ce->head.b.end_ind == 0x1) {
@@ -787,10 +758,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 				      rle_header_all_get_packet_length(zc_ce_buf->header.head),
 				      zc_ce_buf->header.head.b.LT_T_FID);
 
-				int k = 0;
-				int l = 0;
 				i_ptr = (char *)zc_ce_buf->ptrs.start;
-				uint8_t _data = 0;
 #ifdef DEBUG
 				PRINT("DEBUG ptrs start %p end %p i_ptr %p\n",
 				      zc_ce_buf->ptrs.start,
@@ -817,10 +785,12 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 				}
 
 				if (hdr_ce->head.b.end_ind == 0x1) {
+					struct rle_trailer *trl = NULL;
+
 					/* print trailer */
 					PRINT("----------- END TRAILER ------------\n");
 					i_ptr = (char *)(&(zc_ce_buf->ptrs.end) + 1);
-					struct rle_trailer *trl = (struct rle_trailer *)i_ptr;
+					trl = (struct rle_trailer *)i_ptr;
 
 					if (!use_crc) {
 						PRINT("\t SeqNo 0x%0x\n", trl->b.seq_no);
@@ -1007,7 +977,6 @@ uint8_t get_fragment_frag_id(const unsigned char *const buffer)
 
 enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_management *const _this)
 {
-	PRINT("CHECK_FRAG\n");
 	enum check_frag_status status = FRAG_STATUS_KO;
 	enum check_frag_status transition_status = FRAG_STATUS_KO;
 
@@ -1015,6 +984,10 @@ enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_managem
 	enum frag_states current_state = get_fragment_type(buffer);
 	enum frag_states previous_state = FRAG_STATE_START;
 	size_t sdu_size = 0;
+
+	struct zc_rle_header_cont_end *rle_hdr = NULL;
+
+	PRINT("CHECK_FRAG\n");
 
 	switch (current_state) {
 	case FRAG_STATE_START:
@@ -1047,21 +1020,20 @@ enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_managem
 		        ((struct rle_header_start *)((void *)buffer))->head_start.b.proto_type_supp;
 
 		if (supp != RLE_T_PROTO_TYPE_SUPP) {
-			struct zc_rle_header_start_w_ptype *rle_hdr =
+			struct zc_rle_header_start_w_ptype *rle_hdr_start =
 			        (struct zc_rle_header_start_w_ptype *)((void *)buffer);
-			sdu_size += rle_hdr->ptrs.end - rle_hdr->ptrs.start;
+			sdu_size += rle_hdr_start->ptrs.end - rle_hdr_start->ptrs.start;
 		} else {
-			struct zc_rle_header_start *rle_hdr =
+			struct zc_rle_header_start *rle_hdr_start =
 			        (struct zc_rle_header_start *)((void *)buffer);
-			sdu_size += rle_hdr->ptrs.end - rle_hdr->ptrs.start;
+			sdu_size += rle_hdr_start->ptrs.end - rle_hdr_start->ptrs.start;
 		}
 		buffer += sizeof(struct zc_rle_header_start_w_ptype);
 	}
 
 
 	/* CONTINUATION Fragments */
-	struct zc_rle_header_cont_end *rle_hdr =
-	        (struct zc_rle_header_cont_end *)((void *)(buffer));
+	rle_hdr = (struct zc_rle_header_cont_end *)((void *)(buffer));
 
 	previous_state = current_state;
 	current_state = get_fragment_type(buffer);

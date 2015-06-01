@@ -11,7 +11,6 @@
 #define __RLE_TRANSMITTER_H__
 
 #include <stddef.h>
-#include <pthread.h>
 #include "rle_ctx.h"
 #include "header.h"
 
@@ -44,7 +43,6 @@ struct transmitter_link_status {
 struct rle_transmitter {
 	struct rle_ctx_management rle_ctx_man[RLE_MAX_FRAG_NUMBER];
 	struct rle_configuration *rle_conf;
-	pthread_mutex_t ctx_mutex;
 	uint8_t free_ctx;
 };
 

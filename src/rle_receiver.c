@@ -26,37 +26,28 @@ static int get_first_free_frag_ctx(struct rle_receiver *_this)
 {
 	int i;
 
-	pthread_mutex_lock(&_this->ctx_mutex);
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		if (((_this->free_ctx >> i) & 0x1) == 0) {
-			pthread_mutex_unlock(&_this->ctx_mutex);
 			return i;
 		}
 	}
-	pthread_mutex_unlock(&_this->ctx_mutex);
 
 	return C_ERROR;
 }
 
 static void set_nonfree_frag_ctx(struct rle_receiver *_this, int index)
 {
-	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx |= (1 << index);
-	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static void set_free_frag_ctx(struct rle_receiver *_this, int index)
 {
-	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx = (0 << index) & 0xff;
-	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static void set_free_all_frag_ctx(struct rle_receiver *_this)
 {
-	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx = 0;
-	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static int get_recvd_fragment_type(void *data_buffer)
@@ -152,8 +143,6 @@ static void init(struct rle_receiver *_this)
 		rle_ctx_set_seq_nb(&_this->rle_ctx_man[i], 0);
 	}
 
-	pthread_mutex_init(&_this->ctx_mutex, NULL);
-
 	/* all frag_id are set to idle */
 	set_free_all_frag_ctx(_this);
 }
@@ -167,6 +156,7 @@ struct rle_receiver *rle_receiver_module_new(void)
 #endif
 
 	struct rle_receiver *_this = NULL;
+	int i = 0;
 
 	_this = MALLOC(sizeof(struct rle_receiver));
 
@@ -176,8 +166,6 @@ struct rle_receiver *rle_receiver_module_new(void)
 		      __FILE__, __func__, __LINE__);
 		return NULL;
 	}
-
-	int i;
 
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		_this->rle_conf[i] = rle_conf_new();
@@ -230,6 +218,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 #endif
 
 	int ret = C_ERROR;
+	int frag_type = 0;
 
 	if (!data_buffer) {
 		PRINT("ERROR %s %s:%s:%d: data buffer is invalid\n",
@@ -258,7 +247,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 	 * right frag id context (SE bits)
 	 * or
 	 * search for the first free frag id context to put data into it */
-	int frag_type = get_recvd_fragment_type(data_buffer);
+	frag_type = get_recvd_fragment_type(data_buffer);
 	*index_ctx = -1;
 
 	switch (frag_type) {

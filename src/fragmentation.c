@@ -74,9 +74,10 @@ static void add_trailer(struct rle_ctx_management *rle_ctx,
 	char *buf_last_addr = rle_ctx_get_end_address(rle_ctx);
 
 	if (!rle_ctx->use_crc) {
-		/* fill next seq number field */
-		rle_trl->trailer.b.seq_no = rle_ctx_get_seq_nb(rle_ctx);
 		uint8_t seq_no = rle_ctx_get_seq_nb(rle_ctx);
+
+		/* fill next seq number field */
+		rle_trl->trailer.b.seq_no = seq_no;
 
 		rle_ctx_set_end_address(rle_ctx,
 		                        (char *)(buf_last_addr + RLE_SEQ_NO_FIELD_SIZE));
@@ -114,6 +115,10 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	size_t size_header = RLE_START_MANDATORY_HEADER_SIZE;
 	size_t ptype_length = 0;
 	uint8_t proto_type_supp = RLE_T_PROTO_TYPE_NO_SUPP;
+	uint8_t frag_id = 0;
+	size_t offset_payload = 0;
+	size_t trailer_size = 0;
+	struct rle_header_start_w_ptype *RLE_HEADER = NULL;
 
 	/* map RLE header to the already allocated buffer */
 	struct zc_rle_header_start_w_ptype *rle_s_hdr =
@@ -169,7 +174,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	/* RLE packet length is the sum of packet label, protocol type & data length */
 	rle_header_all_set_packet_length(&(rle_s_hdr->header.head),
 	                                 (burst_payload_length - RLE_START_MANDATORY_HEADER_SIZE));
-	uint8_t frag_id = rle_ctx_get_frag_id(rle_ctx);
+	frag_id = rle_ctx_get_frag_id(rle_ctx);
 	SET_FRAG_ID(rle_s_hdr->header.head.b.LT_T_FID, frag_id);
 
 	/* RLE total length is the sum of packet label, protocol type & PDU length */
@@ -202,7 +207,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	rle_s_hdr->header.head_start.b.proto_type_supp = proto_type_supp;
 
 	/* set start & end PDU data pointers */
-	size_t offset_payload = burst_payload_length - size_header;
+	offset_payload = burst_payload_length - size_header;
 	rle_s_hdr->ptrs.start = (char *)rle_ctx->pdu_buf;
 	rle_s_hdr->ptrs.end = (char *)((char *)rle_ctx->pdu_buf + offset_payload);
 
@@ -228,7 +233,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	rle_ctx_set_rle_length(rle_ctx,
 	                       (burst_payload_length - ptype_length), ptype_length);
 	rle_ctx_set_alpdu_length(rle_ctx, rle_ctx_get_alpdu_length(rle_ctx) - ptype_length);
-	size_t trailer_size = 0;
+	trailer_size = 0;
 
 	if (rle_conf_get_crc_check(rle_conf) == C_TRUE) {
 		trailer_size += RLE_CRC32_FIELD_SIZE;
@@ -247,7 +252,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	/* Copy this fragment to burst payload:
 	 * first copy RLE header
 	 * second copy PDU region */
-	struct rle_header_start_w_ptype *RLE_HEADER = &(rle_s_hdr->header);
+	RLE_HEADER = &(rle_s_hdr->header);
 	memcpy(burst_payload_buffer, RLE_HEADER, size_header);
 	memcpy((void *)((char *)burst_payload_buffer + size_header),
 	       rle_s_hdr->ptrs.start,
@@ -267,6 +272,12 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	      MODULE_NAME,
 	      __FILE__, __func__, __LINE__);
 #endif
+	struct zc_rle_header_cont_end *rle_c_e_hdr = NULL;
+	size_t trailer_size = 0;
+	uint8_t frag_id = 0;
+	size_t offset_new_fragment = 0;
+	size_t pdu_size_payload = 0;
+	int new_remaining_val = 0;
 
 	/* Robustness: test if available burst payload is smaller
 	 * than an RLE CONT or END packet header */
@@ -280,8 +291,7 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	}
 
 	/* map RLE header to the already allocated buffer */
-	struct zc_rle_header_cont_end *rle_c_e_hdr =
-	        (struct zc_rle_header_cont_end *)((void *)rle_ctx_get_end_address(rle_ctx));
+	rle_c_e_hdr = (struct zc_rle_header_cont_end *)((void *)rle_ctx_get_end_address(rle_ctx));
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: new fragment start @ %p\n",
@@ -299,7 +309,7 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 		rle_c_e_hdr->header.head.b.end_ind = 0;
 	}
 
-	size_t trailer_size = 0;
+	trailer_size = 0;
 
 	if (type_rle_frag == RLE_PDU_END_FRAG) {
 		if (rle_conf_get_crc_check(rle_conf) == C_TRUE) {
@@ -312,13 +322,13 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	rle_header_all_set_packet_length(&(rle_c_e_hdr->header.head),
 	                                 (burst_payload_length -
 	                                  (RLE_CONT_HEADER_SIZE + trailer_size)));
-	uint8_t frag_id = rle_ctx_get_frag_id(rle_ctx);
+	frag_id = rle_ctx_get_frag_id(rle_ctx);
 	SET_FRAG_ID(rle_c_e_hdr->header.head.b.LT_T_FID, frag_id);
 
 	/* set start & end PDU data pointers to new fragment data region */
-	size_t offset_new_fragment =
-	        rle_ctx_get_pdu_length(rle_ctx) - rle_ctx_get_remaining_pdu_length(rle_ctx);
-	size_t pdu_size_payload = burst_payload_length - (RLE_CONT_HEADER_SIZE + trailer_size);
+	offset_new_fragment = rle_ctx_get_pdu_length(rle_ctx) - rle_ctx_get_remaining_pdu_length(
+	        rle_ctx);
+	pdu_size_payload = burst_payload_length - (RLE_CONT_HEADER_SIZE + trailer_size);
 
 	rle_c_e_hdr->ptrs.start = (char *)((char *)rle_ctx->pdu_buf + offset_new_fragment);
 	rle_c_e_hdr->ptrs.end =
@@ -336,8 +346,7 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	/* if we are building a END packet,
 	 * remaining PDU data size must be equal
 	 * to zero */
-	int new_remaining_val =
-	        rle_ctx_get_remaining_pdu_length(rle_ctx) - pdu_size_payload;
+	new_remaining_val = rle_ctx_get_remaining_pdu_length(rle_ctx) - pdu_size_payload;
 	if (((type_rle_frag == RLE_PDU_END_FRAG) && (new_remaining_val > 0)) ||
 	    (new_remaining_val < 0)) {
 		PRINT("ERROR %s %s:%s:%d: Invalid remaining data size"
@@ -420,12 +429,13 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
 	size_t pdu_length = rle_ctx_get_pdu_length(rle_ctx);
 	size_t data_length = rle_ctx_get_rle_length(rle_ctx);
 	size_t ptype_length = data_length - pdu_length;
+	uint8_t proto_type_supp = 0;
 
 	size_header += ptype_length;
 
 	rle_header_all_set_packet_length(&(zc_buf->header.head), ptype_length + pdu_length);
 
-	uint8_t proto_type_supp = GET_PROTO_TYPE_SUPP(zc_buf->header.head.b.LT_T_FID);
+	proto_type_supp = GET_PROTO_TYPE_SUPP(zc_buf->header.head.b.LT_T_FID);
 	if (proto_type_supp != RLE_T_PROTO_TYPE_SUPP) {
 		struct rle_header_complete_w_ptype *rle_cp_hdr =
 		        (struct rle_header_complete_w_ptype *)&zc_buf->header;
@@ -520,6 +530,7 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 #endif
 
 	int ret = C_ERROR;
+	int frag_type = 0;
 
 	if (!rle_ctx) {
 		PRINT("ERROR %s %s:%s:%d: RLE context is NULL\n",
@@ -540,7 +551,7 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 		}
 	}
 
-	int frag_type = get_fragment_type_from_ctx(rle_ctx, burst_payload_length);
+	frag_type = get_fragment_type_from_ctx(rle_ctx, burst_payload_length);
 
 	if ((frag_type == RLE_PDU_START_FRAG) &&
 	    (burst_payload_length < RLE_START_MANDATORY_HEADER_SIZE)) {

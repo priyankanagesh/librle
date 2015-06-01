@@ -11,25 +11,19 @@
 #define __RLE_CTX_H__
 
 #include <stdint.h>
-#include <pthread.h>
 #include "rle_conf.h"
 
-/** RLE link status counters
- * and associated mutexes */
+/** RLE link status counters */
 struct link_status {
 	/** Number of packets sent/received
 	 * successfully */
 	uint64_t counter_ok;
-	pthread_mutex_t ctr_ok_mutex;
 	/** Number of dropped packets */
 	uint64_t counter_dropped;
-	pthread_mutex_t ctr_dropped_mutex;
 	/** Number of lost packets */
 	uint64_t counter_lost;
-	pthread_mutex_t ctr_lost_mutex;
 	/** Number of bytes sent/received */
 	uint64_t counter_bytes;
-	pthread_mutex_t ctr_bytes_mutex;
 };
 
 /** RLE context management structure */
@@ -712,7 +706,7 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 void rle_ctx_dump_alpdu(const uint16_t protocol_type, const struct rle_ctx_management *const _this,
                         struct rle_configuration *const rle_conf, unsigned char alpdu_buffer[],
                         const size_t alpdu_buffer_size,
-                        size_t *const alpdu_length);
+                        size_t * const alpdu_length);
 
 /** Status for the fragmentation checking */
 enum check_frag_status {
