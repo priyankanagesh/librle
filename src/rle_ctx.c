@@ -1135,8 +1135,3 @@ size_t rle_header_start_get_packet_length(const union rle_header_start_packet he
 #endif
 	return length;
 }
-
-#ifdef __KERNEL__
-EXPORT_SYMBOL(rle_ctx_init);
-EXPORT_SYMBOL(rle_ctx_destroy);
-#endif

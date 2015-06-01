@@ -446,12 +446,3 @@ size_t rle_receiver_get_alpdu_protection_length(const struct rle_receiver *const
 
 	return alpdu_protection_length;
 }
-
-#ifdef __KERNEL__
-EXPORT_SYMBOL(rle_receiver_module_new);
-EXPORT_SYMBOL(rle_receiver_module_init);
-EXPORT_SYMBOL(rle_receiver_module_destroy);
-EXPORT_SYMBOL(rle_receiver_deencap_data);
-EXPORT_SYMBOL(rle_receiver_get_packet);
-EXPORT_SYMBOL(rle_receiver_dump);
-#endif
