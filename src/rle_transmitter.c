@@ -354,14 +354,3 @@ enum check_frag_status rle_transmitter_check_frag_integrity(
 {
 	return rle_ctx_check_frag_integrity(&_this->rle_ctx_man[frag_id]);
 }
-
-#ifdef __KERNEL__
-EXPORT_SYMBOL(rle_transmitter_module_new);
-EXPORT_SYMBOL(rle_transmitter_module_init);
-EXPORT_SYMBOL(rle_transmitter_module_destroy);
-EXPORT_SYMBOL(rle_transmitter_encap_data);
-EXPORT_SYMBOL(rle_transmitter_get_packet);
-EXPORT_SYMBOL(rle_transmitter_get_queue_state);
-EXPORT_SYMBOL(rle_transmitter_get_queue_size);
-EXPORT_SYMBOL(rle_transmitter_dump);
-#endif
