@@ -1043,11 +1043,19 @@ enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_managem
 	/* START Fragment */
 	{
 		/* Temporary scope for rle_hdr */
-		struct zc_rle_header_start_w_ptype *rle_hdr =
-		        (struct zc_rle_header_start_w_ptype *)((void *)buffer);
+		const int supp =
+		        ((struct rle_header_start *)((void *)buffer))->head_start.b.proto_type_supp;
 
-		sdu_size += rle_hdr->ptrs.end - rle_hdr->ptrs.start;
-		buffer += sizeof(struct zc_rle_header_start_w_ptype *);
+		if (supp != RLE_T_PROTO_TYPE_SUPP) {
+			struct zc_rle_header_start_w_ptype *rle_hdr =
+			        (struct zc_rle_header_start_w_ptype *)((void *)buffer);
+			sdu_size += rle_hdr->ptrs.end - rle_hdr->ptrs.start;
+		} else {
+			struct zc_rle_header_start *rle_hdr =
+			        (struct zc_rle_header_start *)((void *)buffer);
+			sdu_size += rle_hdr->ptrs.end - rle_hdr->ptrs.start;
+		}
+		buffer += sizeof(struct zc_rle_header_start_w_ptype);
 	}
 
 
@@ -1061,6 +1069,7 @@ enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_managem
 
 	if (transition_status != FRAG_STATUS_OK) {
 		PRINT("ERROR: Bad transition in integrity check\n");
+		goto exit_label;
 	}
 
 	while (current_state != FRAG_STATE_END) {
@@ -1071,7 +1080,7 @@ enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_managem
 
 		sdu_size += rle_hdr->ptrs.end - rle_hdr->ptrs.start;
 
-		buffer += sizeof(struct zc_rle_header_cont_end *);
+		buffer += sizeof(struct zc_rle_header_cont_end);
 		rle_hdr = (struct zc_rle_header_cont_end *)((void *)buffer);
 
 		previous_state = current_state;
@@ -1080,6 +1089,7 @@ enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_managem
 
 		if (transition_status != FRAG_STATUS_OK) {
 			PRINT("ERROR: Bad transition in integrity check\n");
+			goto exit_label;
 		}
 	}
 
@@ -1089,7 +1099,7 @@ enum check_frag_status rle_ctx_check_frag_integrity(const struct rle_ctx_managem
 
 		status = FRAG_STATUS_OK;
 
-		buffer += sizeof(struct zc_rle_header_cont_end *);
+		buffer += sizeof(struct zc_rle_header_cont_end);
 	}
 
 exit_label:
