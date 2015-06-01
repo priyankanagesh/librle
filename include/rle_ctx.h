@@ -10,7 +10,16 @@
 #ifndef __RLE_CTX_H__
 #define __RLE_CTX_H__
 
+#ifndef __KERNEL__
+
 #include <stdint.h>
+
+#else
+
+#include <linux/types.h>
+
+#endif
+
 #include "rle_conf.h"
 
 /** RLE link status counters */

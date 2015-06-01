@@ -7,8 +7,16 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#ifndef __KERNEL__
+
 #include <stdlib.h>
 #include <string.h>
+
+#else
+
+#include <linux/string.h>
+
+#endif
 
 #include "constants.h"
 #include "rle_ctx.h"

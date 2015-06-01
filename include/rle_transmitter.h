@@ -10,7 +10,16 @@
 #ifndef __RLE_TRANSMITTER_H__
 #define __RLE_TRANSMITTER_H__
 
+#ifndef __KERNEL__
+
 #include <stddef.h>
+
+#else
+
+#include <linux/stddef.h>
+
+#endif
+
 #include "rle_ctx.h"
 #include "header.h"
 

@@ -21,6 +21,8 @@
 
 #else
 
+#include <linux/slab.h>
+#include <linux/printk.h>
 #include <linux/vmalloc.h>
 #include <linux/ip.h>
 #include <linux/ipv6.h>

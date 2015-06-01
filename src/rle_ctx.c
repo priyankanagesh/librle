@@ -7,16 +7,30 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#ifndef __KERNEL__
+
 #include <errno.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#else
+
+#include <linux/stddef.h>
+#include <linux/string.h>
+
+#endif
+
 #include "rle_ctx.h"
 #include "constants.h"
 #include "zc_buffer.h"
 
 #define MODULE_NAME "RLE CTX"
+
+#ifdef __KERNEL__
+#define strerror(errno) "1"
+#endif
 
 /************************************************************************
 *									*

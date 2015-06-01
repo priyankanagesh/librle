@@ -8,7 +8,15 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#ifndef __KERNEL__
+
 #include <stdint.h>
+
+#else
+
+#include <linux/types.h>
+
+#endif
 
 #ifndef __RLE_HEADER_PROTO_TYPE_FIELD_H__
 #define __RLE_HEADER_PROTO_TYPE_FIELD_H__
