@@ -110,13 +110,12 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
                                       const uint8_t frag_id)
 {
 	enum rle_encap_status status = RLE_ENCAP_ERR;
+	int ret = 0;
 
 	if (transmitter == NULL) {
 		status = RLE_ENCAP_ERR_NULL_TRMT;
 		goto exit_label;
 	}
-
-	int ret = 0;
 
 	if (sdu.size > RLE_MAX_PDU_SIZE) {
 		status = RLE_ENCAP_ERR_SDU_TOO_BIG;
@@ -141,19 +140,23 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 {
 	enum rle_frag_status status = RLE_FRAG_ERR; /* Error by default. */
 
+	size_t min_burst_size = 0;
+	int ret = 0;
+	size_t remaining_pdu = 0;
+	size_t remaining_alpdu = 0;
+	size_t burst_size = 0;
+
 	if (transmitter == NULL) {
 		status = RLE_FRAG_ERR_NULL_TRMT;
 		goto exit_label;
 	}
 
-	size_t min_burst_size = RLE_CONT_HEADER_SIZE;
+	min_burst_size = RLE_CONT_HEADER_SIZE;
 
-	int ret = 0;
-	size_t remaining_pdu = rle_ctx_get_remaining_pdu_length(&transmitter->rle_ctx_man[frag_id]);
-	size_t remaining_alpdu =
-	        rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id]);
-	size_t burst_size = remaining_burst_size <
-	                    RLE_MAX_PPDU_PL_SIZE ? remaining_burst_size : RLE_MAX_PPDU_PL_SIZE;
+	remaining_pdu = rle_ctx_get_remaining_pdu_length(&transmitter->rle_ctx_man[frag_id]);
+	remaining_alpdu = rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id]);
+	burst_size = remaining_burst_size <
+	             RLE_MAX_PPDU_PL_SIZE ? remaining_burst_size : RLE_MAX_PPDU_PL_SIZE;
 
 	if (remaining_alpdu == 0) {
 		status = RLE_FRAG_ERR_CONTEXT_IS_NULL;
@@ -362,6 +365,10 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 				enum frag_states fragment_type = FRAG_STATE_COMP;
 				int ret = C_ERROR;
 				size_t fragment_length = 0;
+				int out_ptype = 0;
+				uint32_t out_packet_length = 0;
+				unsigned char current_sdu[RLE_MAX_PDU_SIZE];
+
 
 				do {
 					fragment_type = get_fragment_type(&fpdu[offset]);
@@ -400,10 +407,6 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 					offset += fragment_length;
 				} while (!((fragment_type == FRAG_STATE_COMP) ||
 				           (fragment_type == FRAG_STATE_END)));
-				int out_ptype = 0;
-				uint32_t out_packet_length = 0;
-				unsigned char current_sdu[RLE_MAX_PDU_SIZE];
-
 				ret =
 				        rle_receiver_get_packet(receiver, fragment_id, current_sdu,
 				                                &out_ptype,

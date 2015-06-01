@@ -60,6 +60,8 @@ static int check_fragmented_length(struct rle_ctx_management *rle_ctx, size_t da
 	 * must not be taken into account while computing
 	 * PDU total length */
 	size_t trailer_size = 0;
+	size_t recv_pkt_length = 0;
+	uint32_t remaining_size = 0;
 
 	if (rle_ctx_get_use_crc(rle_ctx) == C_TRUE) {
 		trailer_size += RLE_CRC32_FIELD_SIZE;
@@ -67,13 +69,12 @@ static int check_fragmented_length(struct rle_ctx_management *rle_ctx, size_t da
 		trailer_size += RLE_SEQ_NO_FIELD_SIZE;
 	}
 
-	size_t recv_pkt_length = (data_length -
-	                          ((sizeof(struct rle_header_cont_end) + trailer_size)));
+	recv_pkt_length = (data_length - ((sizeof(struct rle_header_cont_end) + trailer_size)));
 
 	/* for each fragment received, remaining data size is updated,
 	 * so if everything is okay remaining size must be equal
 	 * to the last rle_packet_length value */
-	uint32_t remaining_size = rle_ctx_get_remaining_pdu_length(rle_ctx);
+	remaining_size = rle_ctx_get_remaining_pdu_length(rle_ctx);
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: RLE trailer_size %zu recv_pkt_length %zu remaining_size %d\n",
@@ -114,12 +115,12 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx, void *d
 	                                                 (data_length - RLE_SEQ_NO_FIELD_SIZE));
 
 	if (trl->b.seq_no != rle_ctx->next_seq_nb) {
+		const size_t nb_lost_pkts = (rle_ctx->next_seq_nb - trl->b.seq_no) % RLE_MAX_SEQ_NO;
 		PRINT("ERROR %s %s:%s:%d: sequence number inconsistency,"
 		      " received [%d] expected [%d]\n",
 		      MODULE_NAME,
 		      __FILE__, __func__, __LINE__,
 		      trl->b.seq_no, rle_ctx->next_seq_nb);
-		const size_t nb_lost_pkts = (rle_ctx->next_seq_nb - trl->b.seq_no) % RLE_MAX_SEQ_NO;
 		/* update sequence with received one
 		 * and increment it to resynchronize
 		 * with sender sequence */
@@ -225,6 +226,8 @@ static size_t get_header_size(struct rle_ctx_management *rle_ctx __attribute__ (
                               void *data_buffer, int frag_type)
 {
 	size_t header_size = 0;
+	int is_compressed = 0;
+	int is_suppressed = 0;
 
 	switch (frag_type) {
 	case RLE_PDU_COMPLETE:
@@ -246,8 +249,8 @@ static size_t get_header_size(struct rle_ctx_management *rle_ctx __attribute__ (
 
 	/* get ptype compression status from NCC and
 	 * protocol type suppressed field value */
-	int is_compressed = rle_conf_get_ptype_compression(rle_conf);
-	int is_suppressed = 0xff;
+	is_compressed = rle_conf_get_ptype_compression(rle_conf);
+	is_suppressed = 0xff;
 
 	if (frag_type == RLE_PDU_COMPLETE) {
 		struct rle_header_complete *hdr =
@@ -263,8 +266,8 @@ static size_t get_header_size(struct rle_ctx_management *rle_ctx __attribute__ (
 
 	if (is_suppressed != RLE_T_PROTO_TYPE_SUPP) {
 		if (is_compressed) {
-			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 			uint16_t protocol_type = 0;
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 			if (frag_type == RLE_PDU_COMPLETE) {
 				struct rle_header_complete_w_ptype *hdr =
 				        (struct rle_header_complete_w_ptype *)data_buffer;
@@ -397,6 +400,7 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 	uint16_t protocol_type = 0;
 	size_t header_size = 0;
 	size_t trailer_size = 0;
+	size_t pdu_length;
 
 	/* get ptype compression status from NCC
 	 * and CRC usage from user */
@@ -447,7 +451,7 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 		trailer_size += RLE_SEQ_NO_FIELD_SIZE;
 	}
 
-	size_t pdu_length = rle_header_start_get_packet_length(hdr->head_start) - header_size;
+	pdu_length = rle_header_start_get_packet_length(hdr->head_start) - header_size;
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: RLE head_start.b.total_length %d PDU length %zu"

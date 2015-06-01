@@ -11,7 +11,6 @@
 #define __RLE_RECEIVER_H__
 
 #include <stddef.h>
-#include <pthread.h>
 #include "rle_ctx.h"
 #include "header.h"
 
@@ -24,7 +23,6 @@
 struct rle_receiver {
 	struct rle_ctx_management rle_ctx_man[RLE_MAX_FRAG_NUMBER];
 	struct rle_configuration *rle_conf[RLE_MAX_FRAG_NUMBER];
-	pthread_mutex_t ctx_mutex;
 	uint8_t free_ctx;
 };
 
@@ -80,7 +78,8 @@ void rle_receiver_module_destroy(struct rle_receiver *_this);
  *
  *  @ingroup
  */
-int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, size_t data_length, int * index_ctx);
+int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, size_t data_length,
+                              int *index_ctx);
 
 /**
  *  @brief Retrieve reassembled PDU data and copy it

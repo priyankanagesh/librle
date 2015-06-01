@@ -25,32 +25,24 @@ static int is_frag_ctx_free(struct rle_transmitter *const _this, const uint8_t f
 {
 	int is_free = C_FALSE;
 
-	pthread_mutex_lock(&_this->ctx_mutex);
 	is_free = ((_this->free_ctx >> frag_id) & 0x1) ? C_TRUE : C_FALSE;
-	pthread_mutex_unlock(&_this->ctx_mutex);
 
 	return is_free;
 }
 
 static void set_nonfree_frag_ctx(struct rle_transmitter *_this, int index)
 {
-	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx |= (1 << index);
-	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static void set_free_frag_ctx(struct rle_transmitter *_this, int index)
 {
-	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx = (0 << index) & 0xff;
-	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static void set_free_all_frag_ctx(struct rle_transmitter *_this)
 {
-	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx = 0;
-	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static void init(struct rle_transmitter *_this)
@@ -69,8 +61,6 @@ static void init(struct rle_transmitter *_this)
 		rle_ctx_set_frag_id(&_this->rle_ctx_man[i], i);
 		rle_ctx_set_seq_nb(&_this->rle_ctx_man[i], 0);
 	}
-
-	pthread_mutex_init(&_this->ctx_mutex, NULL);
 
 	/* all frag_id are set to idle */
 	set_free_all_frag_ctx(_this);

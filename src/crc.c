@@ -62,8 +62,6 @@
 
 #include "crc.h"
 
-#include <stdint.h>
-
 /** CRC-32 table */
 static const uint32_t crctab[] =
 {
