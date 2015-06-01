@@ -193,7 +193,7 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 	const size_t fpdu_length = 5000; /* Arbitrarly */
 	unsigned char fpdu[fpdu_length];
 
-	memset((void *)fpdu, '\0', fpdu_length);
+	memset((void *)fpdu, -1, fpdu_length);
 
 
 	struct rle_sdu sdus_out[number_of_packets];
@@ -391,6 +391,9 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 		}
 		frag_id = (frag_id + 1) % 8;
 	}
+
+	/* pad the FPDU */
+	rle_pad(fpdu, fpdu_current_pos, fpdu_remaining_size);
 
 	/* decapsulate the FPDU */
 	printf_verbose("=== RLE decapsulation: start\n");
