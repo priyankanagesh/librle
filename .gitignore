@@ -11,3 +11,10 @@ VERSION
 *.changes
 *.o.d
 .*sw*
+linux/kmod/.*.ko.cmd
+linux/kmod/.tmp_versions/
+linux/kmod/Module.symvers
+linux/kmod/*.ko
+linux/kmod/*.mod.c
+linux/kmod/modules.order
+linux/kmod_test_userspace
