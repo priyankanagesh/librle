@@ -40,15 +40,23 @@ clean:
 	    $(CURDIR)/kmod/$(librle_test_modname).mod.c \
 	    $(CURDIR)/kmod/modules.order \
 	    $(CURDIR)/kmod/Module.symvers \
-	    $(CURDIR)/$(userspace_test_name)
+	    $(CURDIR)/$(userspace_test_name) \
+	    $(CURDIR)/kmod/.$(librle_modname).ko.cmd \
+	    $(CURDIR)/kmod/.$(librle_test_modname).ko.cmd \
+	    $(CURDIR)/kmod/.tmp_versions/*
+	rmdir \
+	    $(CURDIR)/kmod/.tmp_versions
+
+MDIR := kernel/drivers/misc/librle
+librle_moddir = /lib/modules/${KVER}/${MDIR}/kmod
+INSTALL = install
+INSTALL = install
 
 install:
 	$(INSTALL) -d $(DESTDIR)/$(librle_moddir)
-	$(INSTALL) -m 644 $(builddir)/kmod/$(librle_mod) $(DESTDIR)/$(librle_moddir)/$(librle_mod)
-	$(INSTALL) -m 644 $(builddir)/kmod/$(librle_test_mod) $(DESTDIR)/$(librle_moddir)/$(librle_test_mod)
-	-/sbin/depmod -a
+	$(INSTALL) -m 644 $(CURDIR)/kmod/$(librle_mod) $(DESTDIR)/$(librle_moddir)/$(librle_mod)
+	$(INSTALL) -m 644 $(CURDIR)/kmod/$(librle_test_mod) $(DESTDIR)/$(librle_moddir)/$(librle_test_mod)
 
 uninstall:
 	rm -f $(DESTDIR)/$(librle_moddir)/$(librle_mod)
 	rm -f $(DESTDIR)/$(librle_moddir)/$(librle_test_mod)
-	-/sbin/depmod -a
