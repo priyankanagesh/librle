@@ -22,8 +22,10 @@ ADD_EXECUTABLE(test_non_regression EXCLUDE_FROM_ALL test_non_regression.c)
 TARGET_LINK_LIBRARIES(test_non_regression rle pcap)
 
 ADD_EXECUTABLE(test_non_regression_fpdu EXCLUDE_FROM_ALL test_non_regression_fpdu.c)
-
 TARGET_LINK_LIBRARIES(test_non_regression_fpdu rle pcap)
+
+ADD_EXECUTABLE(test_perfs EXCLUDE_FROM_ALL test_perfs.c)
+TARGET_LINK_LIBRARIES(test_perfs rle pcap)
 
 # By default, tests are not generated. You can either generate tests with:
 # The RLE library test:
@@ -35,7 +37,9 @@ TARGET_LINK_LIBRARIES(test_non_regression_fpdu rle pcap)
 ADD_TEST(test_rle test_rle)
 ADD_TEST(test_non_regression test_non_regression)
 ADD_TEST(test_non_regression_fpdu test_non_regression_fpdu)
-ADD_CUSTOM_TARGET(tests DEPENDS test_rle test_non_regression test_non_regression_fpdu)
+ADD_TEST(test_perfs test_perfs)
+ADD_CUSTOM_TARGET(tests DEPENDS test_rle test_non_regression
+	test_non_regression_fpdu test_perfs)
 
 # Definitions of the system commands for the next targets.
 SET(SYS_CMD_GREP /bin/grep)
