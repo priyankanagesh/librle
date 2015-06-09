@@ -122,19 +122,21 @@ void rle_transmitter_module_destroy(struct rle_transmitter *_this)
 	      __FILE__, __func__, __LINE__);
 #endif
 
-	int i;
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		rle_ctx_destroy(&_this->rle_ctx_man[i]);
+	if (_this) {
+		int i;
+		for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+			rle_ctx_destroy(&_this->rle_ctx_man[i]);
+		}
+
+		set_free_all_frag_ctx(_this);
+
+		if (rle_conf_destroy(_this->rle_conf) != C_OK) {
+			PRINT("ERROR %s:%s:%d: destroying RLE configuration failed\n",
+			      __FILE__, __func__, __LINE__);
+		}
+
+		FREE(_this);
 	}
-
-	set_free_all_frag_ctx(_this);
-
-	if (rle_conf_destroy(_this->rle_conf) != C_OK) {
-		PRINT("ERROR %s:%s:%d: destroying RLE configuration failed\n",
-		      __FILE__, __func__, __LINE__);
-	}
-
-	FREE(_this);
 	_this = NULL;
 }
 

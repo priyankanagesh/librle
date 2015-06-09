@@ -378,6 +378,14 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 
 						fragment_length += alpdu_protection_length;
 					}
+
+					if (fragment_length > (fpdu_length - offset)) {
+						PRINT("Invalid fragment size, fragment length too big for FPDU\n");
+						PRINT("Fragment length: %zu, Remaining FPDU size: %zu\n",
+						      fragment_length, fpdu_length - offset);
+						goto exit_label;
+					}
+
 					ret = rle_receiver_deencap_data(
 					        receiver, (unsigned char *)&fpdu[offset],
 					        fragment_length, (int *)((void *)&fragment_id));

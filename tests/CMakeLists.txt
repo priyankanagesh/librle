@@ -21,6 +21,10 @@ ADD_EXECUTABLE(test_non_regression EXCLUDE_FROM_ALL test_non_regression.c)
 
 TARGET_LINK_LIBRARIES(test_non_regression rle pcap)
 
+ADD_EXECUTABLE(test_non_regression_fpdu EXCLUDE_FROM_ALL test_non_regression_fpdu.c)
+
+TARGET_LINK_LIBRARIES(test_non_regression_fpdu rle pcap)
+
 # By default, tests are not generated. You can either generate tests with:
 # The RLE library test:
 #   $ make test_rle
@@ -30,7 +34,8 @@ TARGET_LINK_LIBRARIES(test_non_regression rle pcap)
 #   $ make tests
 ADD_TEST(test_rle test_rle)
 ADD_TEST(test_non_regression test_non_regression)
-ADD_CUSTOM_TARGET(tests DEPENDS test_rle test_non_regression)
+ADD_TEST(test_non_regression_fpdu test_non_regression_fpdu)
+ADD_CUSTOM_TARGET(tests DEPENDS test_rle test_non_regression test_non_regression_fpdu)
 
 # Definitions of the system commands for the next targets.
 SET(SYS_CMD_GREP /bin/grep)
@@ -48,6 +53,17 @@ SET(CMAKE_CTEST_COMMAND
     && ${CMAKE_BINARY_DIR}/tests/test_rle > /dev/null
     || (${SYS_CMD_ECHO} "Test libRLE failed $$?" && exit 1))
 ADD_CUSTOM_TARGET(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS test_rle)
+
+# Static tests:
+SET(CMAKE_CSTATIC_TESTS
+       ${CMAKE_SOURCE_DIR}/tests/samples/scripts/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression ${CMAKE_SOURCE_DIR}/tests/samples/fuzzing
+    && ${CMAKE_SOURCE_DIR}/tests/samples/scripts/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression ${CMAKE_SOURCE_DIR}/tests/samples/non_reg)
+ADD_CUSTOM_TARGET(static_tests COMMAND ${CMAKE_CSTATIC_TESTS} DEPENDS test_non_regression)
+
+SET(CMAKE_CSTATIC_TESTS_FPDU
+       ${CMAKE_SOURCE_DIR}/tests/samples/scripts/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression_fpdu ${CMAKE_SOURCE_DIR}/tests/samples/fuzzing-fpdu
+    && ${CMAKE_SOURCE_DIR}/tests/samples/scripts/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression_fpdu ${CMAKE_SOURCE_DIR}/tests/samples/non_reg_fpdu)
+   ADD_CUSTOM_TARGET(static_tests_fpdu COMMAND ${CMAKE_CSTATIC_TESTS_FPDU} DEPENDS test_non_regression_fpdu)
 
 # If coverage is on.
 # generate coverage files with:
@@ -67,7 +83,7 @@ IF (COVERAGE)
 ENDIF(COVERAGE)
 
 # If fuzzing is on, launch AFL fuzzing with:
-#   $ make fuzzing
+#   $ make fuzzing (or $ make fuzzing-fpdu)
 # /!\ You may be requiered to execute those commands as root before the fuzzing:
 #   # echo core >/proc/sys/kernel/core_pattern
 #   # cd /sys/devices/system/cpu
@@ -77,4 +93,8 @@ IF(FUZZING)
            ${SYS_CMD_RM} -rf ${CMAKE_BINARY_DIR}/findings/
         && ${SYS_CMD_AFL_FUZZ} -i ${CMAKE_SOURCE_DIR}/tests/samples/fuzzing/ -o ${CMAKE_BINARY_DIR}/findings/ -m none ${CMAKE_BINARY_DIR}/tests/test_non_regression --ignore-malformed @@)
     ADD_CUSTOM_TARGET(fuzzing DEPENDS test_non_regression COMMAND ${CMAKE_CFUZZING_COMMAND})
+    SET(CMAKE_CFUZZING_FPDU_COMMAND
+           ${SYS_CMD_RM} -rf ${CMAKE_BINARY_DIR}/findings/
+        && ${SYS_CMD_AFL_FUZZ} -i ${CMAKE_SOURCE_DIR}/tests/samples/fuzzing-fpdu/ -o ${CMAKE_BINARY_DIR}/findings/ -m none ${CMAKE_BINARY_DIR}/tests/test_non_regression_fpdu --ignore-malformed @@)
+    ADD_CUSTOM_TARGET(fuzzing-fpdu DEPENDS test_non_regression_fpdu COMMAND ${CMAKE_CFUZZING_FPDU_COMMAND})
 ENDIF(FUZZING)
