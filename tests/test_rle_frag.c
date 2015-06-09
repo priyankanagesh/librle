@@ -17,6 +17,8 @@
 
 #include "rle_transmitter.h"
 
+#define GET_CONF_VALUE(x) ((x) == 1 ? "True" : "False")
+
 /**
  * @brief         Generic fragmentation test.
  *
@@ -46,13 +48,11 @@ static enum boolean test_frag(const uint16_t protocol_type,
                               const size_t burst_size,
                               const uint8_t frag_id)
 {
-	PRINT_TEST(
-	        "protocole type 0x%04x, conf %s with %s, SDU length %zu, burst sizes %zu, frag id %d",
-	        protocol_type, conf.use_ptype_omission == 0 ?
-	        (conf.use_compressed_ptype == 0 ?
-	         "uncompressed" : "compressed") : (conf.implicit_protocol_type == protocol_type ?
-	                                           "omitted" : "non omitted"),
-	        conf.use_alpdu_crc == 1 ? "CRC" : "SeqNo", length, burst_size, frag_id);
+	PRINT_TEST("protocole type 0x%04x, conf (omitted protocol type %02x, compression %s, "
+			     "omission %s) with %s protection. SDU length %zu, burst sizes %zu, frag id %d",
+			     protocol_type, conf.implicit_protocol_type, GET_CONF_VALUE(conf.use_compressed_ptype),
+				  GET_CONF_VALUE(conf.use_ptype_omission), conf.use_alpdu_crc == 1 ? "CRC" : "Seq No",
+				  length, burst_size, frag_id);
 	enum boolean output = BOOL_FALSE;
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 
@@ -418,6 +418,46 @@ exit_label:
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
 		sdu.buffer = NULL;
+	}
+
+	PRINT_TEST_STATUS(output);
+	printf("\n");
+	return output;
+}
+
+enum boolean test_frag_real_world(void)
+{
+	PRINT_TEST("Fragmentation with realistic values and Configuration.");
+	enum boolean output = BOOL_TRUE;
+	const uint16_t protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP; /* IPv4 Arbitrarily. */
+	const uint8_t frag_id = 1;
+
+	const struct rle_context_configuration conf = {
+		.implicit_protocol_type = RLE_PROTO_TYPE_IPV4_COMP,
+		.use_alpdu_crc = 0,
+		.use_compressed_ptype = 0,
+		.use_ptype_omission = 1
+	};
+
+	const size_t sdu_lengths[] = { 100, 1500 };
+	size_t sdu_lengths_it;
+
+	for (sdu_lengths_it = 0; sdu_lengths_it < sizeof(sdu_lengths) / sizeof *(sdu_lengths); 
+			++sdu_lengths_it) {
+		const size_t sdu_length = sdu_lengths[sdu_lengths_it];
+		const size_t burst_sizes[] =
+		{ 14, 24, 38, 51, 55, 59, 62, 69, 84, 85, 93, 96, 100, 115, 123, 130, 144, 170, 175,
+		  188, 264, 298, 355, 400, 438, 444, 539, 599 };
+		size_t burst_sizes_it;
+		for (burst_sizes_it = 0; burst_sizes_it < sizeof(burst_sizes) / sizeof *(burst_sizes); 
+				++burst_sizes_it) {
+			const size_t burst_size = burst_sizes[burst_sizes_it];
+			const enum boolean ret = test_frag(protocol_type, conf, sdu_length, burst_size, frag_id);
+			if (ret == BOOL_FALSE) {
+				/* Only one fail means the encap test fail. */
+				output = BOOL_FALSE;
+			}
+		}
 	}
 
 	PRINT_TEST_STATUS(output);
