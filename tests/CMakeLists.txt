@@ -61,7 +61,8 @@ ADD_CUSTOM_TARGET(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS test_rle)
 # Static tests:
 SET(CMAKE_CSTATIC_TESTS
        ${CMAKE_SOURCE_DIR}/tests/samples/scripts/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression ${CMAKE_SOURCE_DIR}/tests/samples/fuzzing
-    && ${CMAKE_SOURCE_DIR}/tests/samples/scripts/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression ${CMAKE_SOURCE_DIR}/tests/samples/non_reg)
+    && ${CMAKE_SOURCE_DIR}/tests/samples/scripts/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression ${CMAKE_SOURCE_DIR}/tests/samples/non_reg
+    && ${CMAKE_SOURCE_DIR}/tests/samples/scripts/special_static_test.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression ${CMAKE_SOURCE_DIR}/tests/samples/non_reg/error_burst_size_1.pcap f5)
 ADD_CUSTOM_TARGET(static_tests COMMAND ${CMAKE_CSTATIC_TESTS} DEPENDS test_non_regression)
 
 SET(CMAKE_CSTATIC_TESTS_FPDU
