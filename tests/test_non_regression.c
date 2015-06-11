@@ -20,6 +20,7 @@
 #include <assert.h>
 #include <stdarg.h>
 #include <netinet/in.h>
+#include <getopt.h>
 
 #include <pcap/pcap.h>
 #include <pcap.h>
@@ -42,7 +43,7 @@
 
 /* prototypes of private functions */
 static void usage(void);
-static int test_encap_and_decap(const bool ignore_malformed, const char *const src_filename);
+static int test_encap_and_decap(const char *const src_filename);
 static int encap_decap(struct rle_transmitter *const transmitter,
                        struct rle_receiver *const receiver, const size_t *const packets_length,
                        const unsigned char *const *const packets, const size_t number_of_packets,
@@ -59,6 +60,12 @@ static char *str_decap_error(const enum rle_decap_status status);
 
 /** Whether the application runs in verbose mode or not */
 static int is_verbose = 0;
+
+/** Whether the application ignores malformed packets or not. */
+static int ignore_malformed = 0;
+
+/** Size of PPDU fragment, BURST_SIZE by default. */
+static size_t fragment_size = BURST_SIZE;
 
 #define printf_verbose(x ...) do { \
 		if (is_verbose) { printf(x); } \
@@ -77,56 +84,68 @@ static int is_verbose = 0;
 int main(int argc, char *argv[])
 {
 	char *src_filename = NULL;
-	bool ignore_malformed = false;
 	int status = 1;
-	int args_used;
 
-	/* set to quiet mode by default */
-	is_verbose = 0;
+	while (1) {
+		int c;
 
-	/* parse program arguments, print the help message in case of failure */
-	if (argc <= 1) {
-		usage();
-		goto error;
-	}
+		static struct option long_options[] =
+		{
+			{ "verbose", no_argument, &is_verbose, 1 },
+			{ "ignore-malformed", no_argument, &ignore_malformed, 1 },
+			{ "fragment_size", required_argument, 0, 'b' },
+			{ 0, 0, 0, 0 }
+		};
 
-	for (argc--, argv++; argc > 0; argc -= args_used, argv += args_used) {
-		args_used = 1;
+		int option_index = 0;
 
-		if (!strcmp(*argv, "-v")) {
-			/* print version */
+		c = getopt_long(argc, argv, "vhf:", long_options, &option_index);
+
+		if (c == -1) {
+			break;
+		}
+
+		switch (c) {
+		case 0:
+			/* If this option set a flag, do nothing else now. */
+			if (long_options[option_index].flag != 0) {
+				break;
+			}
+			printf("option %s", long_options[option_index].name);
+			if (optarg) {
+				printf(" with arg %s", optarg);
+			}
+			printf("\n");
+			break;
+		case 'f': /* Fragment Size */
+			printf("fragment size with value `%s'\n", optarg);
+			fragment_size = atoi(optarg);
+			break;
+		case 'v': /* Version */
 			printf(TEST_VERSION);
+			status = EXIT_SUCCESS;
 			goto error;
-		} else if (!strcmp(*argv, "-h")) {
-			/* print help */
+		case 'h': /* Help */
 			usage();
+			status = EXIT_SUCCESS;
 			goto error;
-		} else if (!strcmp(*argv, "--verbose")) {
-			/* enable verbose mode */
-			is_verbose = 1;
-		} else if (!strcmp(*argv, "--ignore-malformed")) {
-			/* do not exit with error code if malformed packets are found */
-			ignore_malformed = true;
-		} else if (src_filename == NULL) {
-			/* get the name of the file that contains the packets to
-			 * encapsulate/decapsulate */
-			src_filename = argv[0];
-		} else {
-			/* do not accept more than one filename without option name */
+		case '?':
+		default:
 			usage();
 			goto error;
 		}
 	}
 
-	/* the source filename is mandatory */
-	if (src_filename == NULL) {
+	if (optind != argc - 1) {
 		fprintf(stderr, "FLOW is a mandatory parameter\n\n");
 		usage();
 		goto error;
 	}
 
+	src_filename = argv[optind];
+
 	/* test RLE encap/decap with the packets from the file */
-	status = test_encap_and_decap(ignore_malformed, src_filename);
+	status = test_encap_and_decap(src_filename);
 
 	printf("=== exit test with code %d\n", status);
 error:
@@ -152,6 +171,7 @@ static void usage(void)
 	        "options:\n"
 	        "  -v                      Print version information and exit\n"
 	        "  -h                      Print this usage and exit\n"
+			  "  -f                      Size of the PPDU fragments (burst size by default)\n"
 	        "  --ignore-malformed      Ignore malformed packets for test\n"
 	        "  --verbose               Run the test in verbose mode\n");
 }
@@ -167,7 +187,6 @@ static void usage(void)
  * @param packets           The packets to encapsulate/decapsulate (link layer included)
  * @param number_of_packets The number of packets.
  * @param link_len_src      The length of the link layer header before IP data
- * @param ignore_malformed  Whether to handle malformed packets as fatal for test
  * @return                  1 if the process is successful
  *                          2 if the process is not successful, but due to a misuse of the RLE lib.
  *                          0 if the decapsulated packet doesn't match the
@@ -212,7 +231,6 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 		sdus_out[packet_iterator].buffer = sdu_out_buf[packet_iterator] + link_len_src;
 	}
 
-	const size_t burst_size = BURST_SIZE;
 	const size_t label_size = 3;
 	size_t current_label_length = label_size; /* Arbitrarly */
 	const unsigned char label[3] = { 0x00, 0x01, 0x02 };
@@ -315,24 +333,19 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 			for (frag_id = 0; frag_id < max_frag_id; ++frag_id) {
 				if (rle_transmitter_stats_get_queue_size(transmitter,
 				                                         frag_id) != 0) {
-					unsigned char ppdu[burst_size];
+					unsigned char ppdu[fragment_size];
 					size_t ppdu_length = 0;
 					all_contexts_emptied = 0;
 
 					printf_verbose("=== RLE fragmentation: start\n");
-					ret_frag =
-					        rle_fragment(transmitter, frag_id, burst_size, ppdu,
-					                     &ppdu_length);
+					ret_frag = rle_fragment(transmitter, frag_id, fragment_size, ppdu,
+					                        &ppdu_length);
 
 					switch (ret_frag) {
 					case RLE_FRAG_OK:
-						printf_verbose(
-						        "=== RLE fragmentation: success. "
-						        "burst_size: %zu, remaining alpdu: %zu.\n",
-						        burst_size,
-						        rle_transmitter_stats_get_queue_size(
-						                transmitter,
-						                frag_id));
+						printf_verbose("=== RLE fragmentation: success. "
+						               "fragment_size: %zu, remaining alpdu: %zu.\n", fragment_size,
+						               rle_transmitter_stats_get_queue_size(transmitter, frag_id));
 						printf_verbose("=== %zu-byte PPDU\n", ppdu_length);
 						{
 							unsigned char *ppdu_it;
@@ -363,7 +376,7 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 						goto exit;
 					}
 
-					assert(ppdu_length <= burst_size);
+					assert(ppdu_length <= fragment_size);
 
 					printf_verbose("=== RLE packing: start\n");
 					ret_pack =
@@ -477,14 +490,13 @@ exit:
  * @brief Test the RLE library with a flow of IP packets going through
  *        encapsulation, fragmentation, packing and decapsulation
  *
- * @param ignore_malformed     Whether to handle malformed packets as fatal for test
  * @param src_filename         The name of the PCAP file that contains the
  *                             IP packets
  * @return                     0 in case of success,
  *                             1 in case of failure,
  *                             77 if test is skipped
  */
-static int test_encap_and_decap(const bool ignore_malformed, const char *const src_filename)
+static int test_encap_and_decap(const char *const src_filename)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];
 	pcap_t *handle;
