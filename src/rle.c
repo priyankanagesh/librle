@@ -205,11 +205,13 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 		*ppdu_length = burst_size;
 	}
 
-	ret =
-	        rle_transmitter_get_packet(
-	                transmitter, ppdu, *ppdu_length, frag_id, rle_ctx_get_proto_type(
-	                        &transmitter->rle_ctx_man[frag_id]));
+	ret = rle_transmitter_get_packet(transmitter, ppdu, *ppdu_length, frag_id,
+	                                 rle_ctx_get_proto_type(&transmitter->rle_ctx_man[frag_id]));
 
+	if (ret == C_ERROR_FRAG_SIZE) {
+		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
+		goto exit_label;
+	}
 
 	remaining_alpdu = rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id]);
 
