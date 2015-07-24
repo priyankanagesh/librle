@@ -28,6 +28,9 @@ find ${2} -name "*.pcap" \
 
 # Return 0 if no errors are counted, else 1
 eval_errors () {
+    if [[ ${1} -eq 0 ]]; then
+        echo "OK"
+    fi
     [[ ${1} -eq 0 ]]
 }
 

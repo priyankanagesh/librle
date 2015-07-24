@@ -249,7 +249,7 @@ int rle_transmitter_get_packet(struct rle_transmitter *_this, void *burst_buffer
 #endif
 
 return_val:
-	if (ret != C_OK) {
+	if ((ret != C_OK) && (ret != C_ERROR_FRAG_SIZE)) {
 		rle_ctx_incr_counter_dropped(&_this->rle_ctx_man[fragment_id]);
 		set_free_frag_ctx(_this, fragment_id);
 	}
