@@ -170,12 +170,8 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	/* Robustness: test if available burst payload is smaller
 	 * than an RLE START packet header */
 	if (burst_payload_length < size_header) {
-		PRINT("ERROR %s %s:%s:%d: Available burst payload size [%zu]"
-		      " is not enough to carry data\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__,
-		      burst_payload_length);
-		return C_ERROR;
+		/* Silently return the ERROR to the interface. */
+		return C_ERROR_FRAG_SIZE;
 	}
 
 	/* fill RLE start header */
@@ -293,11 +289,8 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	 * than an RLE CONT or END packet header */
 	if ((type_rle_frag == RLE_PDU_CONT_FRAG) &&
 	    (burst_payload_length - RLE_CONT_HEADER_SIZE) <= 0) {
-		PRINT("ERROR %s:%s:%d: Available burst payload size [%zu]"
-		      " is not enough to carry data\n",
-		      __FILE__, __func__, __LINE__,
-		      burst_payload_length);
-		return C_ERROR;
+		/* Silently return the error to the interface. */
+		return C_ERROR_FRAG_SIZE;
 	}
 
 	/* map RLE header to the already allocated buffer */
@@ -496,9 +489,11 @@ int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
 		memset((void *)rle_hdr, 0, sizeof(struct zc_rle_header_complete));
 	}
 
-	if (fragmentation_add_header(rle_ctx, rle_conf,
-	                             burst_payload_buffer, burst_payload_length,
-	                             frag_type, protocol_type) != C_OK) {
+	ret = fragmentation_add_header(rle_ctx, rle_conf, burst_payload_buffer, burst_payload_length,
+	                             frag_type, protocol_type);
+
+	/* If not OK or just a frag size error, return error. */
+	if ((ret != C_OK) && (ret != C_ERROR_FRAG_SIZE)) {
 		PRINT("ERROR %s %s:%s:%d: PDU fragmentation process failed\n",
 		      MODULE_NAME,
 		      __FILE__, __func__, __LINE__);
