@@ -578,3 +578,73 @@ uint64_t rle_receiver_stats_get_counter_bytes(const struct rle_receiver *const r
 
 	return counter_bytes;
 }
+
+enum rle_header_size_status rle_get_header_size(const struct rle_context_configuration *const conf,
+                                                const enum rle_fpdu_types fpdu_type,
+                                                size_t *const rle_header_size)
+{
+	enum rle_header_size_status status = RLE_HEADER_SIZE_ERR;
+	size_t header_size = 0;
+
+	switch(fpdu_type)
+	{
+		case RLE_LOGON_FPDU:
+
+			/* FPDU header. */
+			/* payload label = 6 */
+			header_size = 6;
+
+			status = RLE_HEADER_SIZE_OK;
+			break;
+
+		case RLE_CTRL_FPDU:
+
+			/* FPDU header. */
+			/* payload label = 3 */
+			header_size = 3;
+
+			status = RLE_HEADER_SIZE_OK;
+			break;
+
+		case RLE_TRAFFIC_FPDU:
+
+			/* Unable to guess the headers overhead size */
+
+			status = RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC;
+			break;
+
+		case RLE_TRAFFIC_CTRL_FPDU:
+
+			/* FPDU header. */
+			/* payload label = 3 */
+			header_size = 3;
+
+			/* PPDU header. Only complete PPDU. */
+			/* se_length_ltt = 2 */
+			/* pdu_label     = 0 */
+			header_size += 2 + 0;
+
+			if (conf != NULL) {
+				/* ALPDU header. */
+				/* protocol_type    = 0. May depends on conf with a different implementation. */
+				/* alpdu_label      = 0 */
+				/* protection_bytes = 0 */
+				header_size += 0 + 0 + 0;
+			} else {
+				/* ALPDU header. */
+				/* protocol_type    = 0 */
+				/* alpdu_label      = 0 */
+				/* protection_bytes = 0 */
+				header_size += 0 + 0 + 0;
+			}
+
+			status = RLE_HEADER_SIZE_OK;
+			break;
+		default:
+			break;
+	}
+
+	*rle_header_size = header_size;
+
+	return status;
+}
