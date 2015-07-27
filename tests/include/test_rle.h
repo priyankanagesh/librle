@@ -21,6 +21,7 @@
 #include "test_rle_frag.h"
 #include "test_rle_pack.h"
 #include "test_rle_decap.h"
+#include "test_rle_misc.h"
 
 /*
  * How to add a Test:

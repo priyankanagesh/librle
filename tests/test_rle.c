@@ -145,6 +145,25 @@ static enum boolean decap_tests(void)
 	return tests(decapsulation, decapsulation_tests);
 }
 
+static enum boolean misc_tests(void)
+{
+	const char *const miscellaneous = "Miscellaneous";
+
+	const struct test request_overhead_all = { "Request overhead All",
+	                                           test_request_rle_header_overhead_all };
+	const struct test request_overhead_traffic = { "Request overhead Traffic",
+	                                               test_request_rle_header_overhead_traffic };
+
+	const struct test *const miscellaneous_tests[] =
+	{
+		&request_overhead_all,
+		&request_overhead_traffic,
+		NULL
+	};
+
+	return tests(miscellaneous, miscellaneous_tests);
+}
+
 int main(void)
 {
 	PRINT_TEST("Lib RLE tests.\n");
@@ -178,6 +197,12 @@ int main(void)
 	/*---------------------*/
 
 	tests_success &= decap_tests();
+
+	/*---------------------*/
+	/*--  Miscellaneous  --*/
+	/*---------------------*/
+
+	tests_success &= misc_tests();
 
 	printf("Tests %s. %zu/%zu\n\n", tests_success == BOOL_TRUE ? "OK" : "KO",
 	       total_number_of_succ_tests,
