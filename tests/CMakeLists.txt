@@ -15,17 +15,17 @@ ADD_LIBRARY(rle_tests EXCLUDE_FROM_ALL SHARED ${SRC_LIBRLE_TESTS})
 ADD_EXECUTABLE(test_rle EXCLUDE_FROM_ALL test_rle.c)
 
 TARGET_LINK_LIBRARIES(test_rle
-	rle_tests rle)
+	rle_tests librle)
 
 ADD_EXECUTABLE(test_non_regression EXCLUDE_FROM_ALL test_non_regression.c)
 
-TARGET_LINK_LIBRARIES(test_non_regression rle pcap)
+TARGET_LINK_LIBRARIES(test_non_regression librle pcap)
 
 ADD_EXECUTABLE(test_non_regression_fpdu EXCLUDE_FROM_ALL test_non_regression_fpdu.c)
-TARGET_LINK_LIBRARIES(test_non_regression_fpdu rle pcap)
+TARGET_LINK_LIBRARIES(test_non_regression_fpdu librle pcap)
 
 ADD_EXECUTABLE(test_perfs EXCLUDE_FROM_ALL test_perfs.c)
-TARGET_LINK_LIBRARIES(test_perfs rle pcap)
+TARGET_LINK_LIBRARIES(test_perfs librle pcap)
 
 # By default, tests are not generated. You can either generate tests with:
 # The RLE library test:
@@ -78,10 +78,10 @@ SET(CMAKE_CSTATIC_TESTS_FPDU
 IF (COVERAGE)
     SET(CMAKE_CCOVERAGE_COMMAND
            ${CMAKE_BINARY_DIR}/tests/test_rle > /dev/null
-        && ${SYS_CMD_ECHO} "Coverage files generated in ${CMAKE_BINARY_DIR}/CMakeFiles/rle.dir/src")
+        && ${SYS_CMD_ECHO} "Coverage files generated in ${CMAKE_BINARY_DIR}/CMakeFiles/librle.dir/src")
     ADD_CUSTOM_TARGET(coverage DEPENDS test_rle COMMAND ${CMAKE_CCOVERAGE_COMMAND})
     SET(CMAKE_CCOV_REPORT_COMMAND
-           ${SYS_CMD_LCOV} -c -d ${CMAKE_BINARY_DIR}/CMakeFiles/rle.dir/src -o coverage.run
+           ${SYS_CMD_LCOV} -c -d ${CMAKE_BINARY_DIR}/CMakeFiles/librle.dir/src -o coverage.run
         && ${SYS_CMD_GENHTML} -o ${CMAKE_BINARY_DIR}/html/ coverage.run
         && ${SYS_CMD_ECHO} "Coverage report: ${CMAKE_BINARY_DIR}/html/index.html" )
     ADD_CUSTOM_TARGET(cov_report DEPENDS coverage COMMAND ${CMAKE_CCOV_REPORT_COMMAND})
