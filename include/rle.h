@@ -61,6 +61,21 @@ enum rle_decap_status {
 	RLE_DECAP_ERR_INV_PL     /**< Error. Given preallocated payload label array is invalid. */
 };
 
+/** Status of RLE header size. */
+enum rle_header_size_status {
+	RLE_HEADER_SIZE_OK,                    /**< OK. */
+	RLE_HEADER_SIZE_ERR,                   /**< Default error, returned size may be false. */
+	RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC, /**< Error. Size cannot be calculated.*/
+};
+
+/** Different kind of FPDUs */
+enum rle_fpdu_types {
+	RLE_LOGON_FPDU,        /**< Log on FPDU. */
+	RLE_CTRL_FPDU,         /**< Control FPDU. */
+	RLE_TRAFFIC_FPDU,      /**< Traffic only FPDU. */
+	RLE_TRAFFIC_CTRL_FPDU, /**< Traffic and control FPDU. */
+};
+
 /**
  * RLE transmitter.
  * For encapsulation, fragmentation and packing.
@@ -352,5 +367,24 @@ uint64_t rle_receiver_stats_get_counter_lost(const struct rle_receiver *const re
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_bytes(const struct rle_receiver *const receiver);
+
+/**
+ * @brief         Get the size of an RLE headers overhead (ALPDU + PPDU + FPDU headers).
+ *                Those header sizes are known only for signal fpdus, and traffic-control fpdus.
+ *
+ * @param[in]     conf                    The rle module configuration. could be set to "NULL".
+ *                                        May be used for evolution or adaption of RLE.
+ * @param[in]     fpdu_type               The type of the FPDU.
+ * @param[out]    rle_header_size         The size of the RLE header in octets.
+ *
+ * @return        RLE_HEADER_SIZE_OK if size is calculated,
+ *                RLE_HEADER_SIZE_ERR on generic errors,
+ *                RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC when size cannot be calculated due
+ *                to RLE prediction limitations (for instance, on traffic only burst).
+ *
+ */
+enum rle_header_size_status rle_get_header_size(const struct rle_context_configuration *const conf,
+                                                const enum rle_fpdu_types fpdu_type,
+                                                size_t *const rle_header_size);
 
 #endif /* __RLE_H__ */
