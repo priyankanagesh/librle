@@ -38,3 +38,4 @@ EXPORT_SYMBOL(rle_receiver_stats_get_counter_ok);
 EXPORT_SYMBOL(rle_receiver_stats_get_counter_dropped);
 EXPORT_SYMBOL(rle_receiver_stats_get_counter_lost);
 EXPORT_SYMBOL(rle_receiver_stats_get_counter_bytes);
+EXPORT_SYMBOL(rle_header_size);
