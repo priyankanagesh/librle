@@ -80,7 +80,7 @@ static enum boolean test_request_rle_header_overhead(
 	size_t overhead_size = 0;
 	enum rle_header_size_status header_size_status = RLE_HEADER_SIZE_ERR;
 
-	header_size_status = rle_header_size(conf, fpdu_type, &overhead_size);
+	header_size_status = rle_get_header_size(conf, fpdu_type, &overhead_size);
 
 	if (header_size_status == RLE_HEADER_SIZE_OK)
 	{
@@ -103,7 +103,7 @@ enum boolean test_request_rle_header_overhead_traffic(void)
 	enum rle_header_size_status header_size_status = RLE_HEADER_SIZE_ERR;
 	const struct rle_context_configuration *const conf = NULL;
 
-	header_size_status = rle_header_size(conf, RLE_TRAFFIC_FPDU, &overhead_size);
+	header_size_status = rle_get_header_size(conf, RLE_TRAFFIC_FPDU, &overhead_size);
 
 	if (header_size_status == RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC)
 	{
