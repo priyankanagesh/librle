@@ -305,8 +305,8 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 		/* received RLE packet is invalid,
 		 * we have to flush related context
 		 * for this frag_id */
-		rle_ctx_flush_buffer(&_this->rle_ctx_man[*index_ctx]);
 		rle_ctx_invalid_ctx(&_this->rle_ctx_man[*index_ctx]);
+		rle_ctx_flush_buffer(&_this->rle_ctx_man[*index_ctx]);
 		set_free_frag_ctx(_this, *index_ctx);
 		PRINT("ERROR %s %s:%s:%d: cannot reassemble data, error type %d\n",
 		      MODULE_NAME,
