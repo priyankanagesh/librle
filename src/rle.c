@@ -379,13 +379,6 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 		fragment_type = get_fragment_type(&fpdu[offset]);
 		fragment_length = get_fragment_length(&fpdu[offset]);
 
-		/* the END fragment also contains the ALPDU protection (CRC or sequence number) */
-		if (fragment_type == FRAG_STATE_END) {
-			fragment_length +=
-				rle_receiver_get_alpdu_protection_length(receiver, &fpdu[offset]);
-			/* TODO: put header and correction protection in PPDU Length field */
-		}
-
 		/* stop parsing the FPDU if the PPDU length is wrong */
 		if (fragment_length > (fpdu_length - offset)) {
 			PRINT("Invalid fragment size, fragment length too big for FPDU\n");

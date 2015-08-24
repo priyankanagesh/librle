@@ -122,7 +122,8 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	      __FILE__, __func__, __LINE__);
 #endif
 
-	size_t size_header = RLE_START_MANDATORY_HEADER_SIZE;
+	const size_t size_ppdu_header = RLE_START_MANDATORY_HEADER_SIZE;
+	size_t size_alpdu_ppdu_header = 0;
 	size_t ptype_length = 0;
 	uint8_t proto_type_supp = RLE_T_PROTO_TYPE_NO_SUPP;
 	uint8_t frag_id = 0;
@@ -160,16 +161,16 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
 		}
 
-		size_header += ptype_length;
 	} else {
 		/* no protocol type in this packet */
 		proto_type_supp = RLE_T_PROTO_TYPE_SUPP;
 	}
+	size_alpdu_ppdu_header = size_ppdu_header + ptype_length;
 	rle_ctx_set_proto_type(rle_ctx, protocol_type);
 
 	/* Robustness: test if available burst payload is smaller
 	 * than an RLE START packet header */
-	if (burst_payload_length < size_header) {
+	if (burst_payload_length < size_alpdu_ppdu_header) {
 		/* Silently return the ERROR to the interface. */
 		return C_ERROR_FRAG_SIZE;
 	}
@@ -183,18 +184,14 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	frag_id = rle_ctx_get_frag_id(rle_ctx);
 	SET_FRAG_ID(rle_s_hdr->header.head.b.LT_T_FID, frag_id);
 
-	/* RLE total length is the sum of packet label, protocol type & PDU length */
-	rle_header_start_set_packet_length(&(rle_s_hdr->header.head_start),
-	                                   rle_ctx_get_pdu_length(rle_ctx) + ptype_length);
-
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: Set total length to %d "
-	      "ptype %zu size_header %zu proto_type suppressed %d\n",
+	      "ptype %zu ALPDU-PPDU size_header %zu proto_type suppressed %d\n",
 	      MODULE_NAME,
 	      __FILE__, __func__, __LINE__,
 	      rle_s_hdr->header.head_start.b.total_length,
 	      ptype_length,
-	      size_header,
+	      size_aldpu_ppdu_header,
 	      proto_type_supp);
 #endif
 
@@ -213,7 +210,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	rle_s_hdr->header.head_start.b.proto_type_supp = proto_type_supp;
 
 	/* set start & end PDU data pointers */
-	offset_payload = burst_payload_length - size_header;
+	offset_payload = burst_payload_length - size_alpdu_ppdu_header;
 	rle_s_hdr->ptrs.start = (char *)rle_ctx->pdu_buf;
 	rle_s_hdr->ptrs.end = (char *)((char *)rle_ctx->pdu_buf + offset_payload);
 
@@ -238,7 +235,6 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	                                 (rle_ctx_get_pdu_length(rle_ctx) - offset_payload));
 	rle_ctx_set_rle_length(rle_ctx,
 	                       (burst_payload_length - ptype_length), ptype_length);
-	rle_ctx_set_alpdu_length(rle_ctx, rle_ctx_get_alpdu_length(rle_ctx) - ptype_length);
 	trailer_size = 0;
 
 	if (rle_conf_get_crc_check(rle_conf) == C_TRUE) {
@@ -251,7 +247,11 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	rle_ctx_incr_alpdu_length(rle_ctx, trailer_size);
 	rle_ctx_set_remaining_alpdu_length(rle_ctx, rle_ctx_get_alpdu_length(rle_ctx));
 
-	rle_ctx_decr_remaining_alpdu_length(rle_ctx, offset_payload);
+	rle_ctx_decr_remaining_alpdu_length(rle_ctx, burst_payload_length - size_ppdu_header);
+
+	/* RLE total length is the sum of packet label, protocol type & PDU length */
+	rle_header_start_set_packet_length(&(rle_s_hdr->header.head_start),
+	                                   rle_ctx_get_alpdu_length(rle_ctx));
 
 	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO */
 
@@ -259,10 +259,9 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	 * first copy RLE header
 	 * second copy PDU region */
 	RLE_HEADER = &(rle_s_hdr->header);
-	memcpy(burst_payload_buffer, RLE_HEADER, size_header);
-	memcpy((void *)((char *)burst_payload_buffer + size_header),
-	       rle_s_hdr->ptrs.start,
-	       offset_payload);
+	memcpy(burst_payload_buffer, RLE_HEADER, size_alpdu_ppdu_header);
+	memcpy((void *)((char *)burst_payload_buffer + size_alpdu_ppdu_header),
+	       rle_s_hdr->ptrs.start, offset_payload);
 
 	return C_OK;
 }
@@ -323,8 +322,8 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	}
 
 	rle_header_all_set_packet_length(&(rle_c_e_hdr->header.head),
-	                                 (burst_payload_length -
-	                                  (RLE_CONT_HEADER_SIZE + trailer_size)));
+	                                 burst_payload_length - RLE_CONT_HEADER_SIZE);
+
 	frag_id = rle_ctx_get_frag_id(rle_ctx);
 	SET_FRAG_ID(rle_c_e_hdr->header.head.b.LT_T_FID, frag_id);
 
@@ -428,13 +427,12 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
 #endif
 	struct zc_rle_header_complete_w_ptype *zc_buf =
 	        (struct zc_rle_header_complete_w_ptype *)rle_ctx->buf;
-	size_t size_header = RLE_COMPLETE_HEADER_SIZE;
-	size_t pdu_length = rle_ctx_get_pdu_length(rle_ctx);
-	size_t data_length = rle_ctx_get_rle_length(rle_ctx);
-	size_t ptype_length = data_length - pdu_length;
+	const size_t size_ppdu_header = RLE_COMPLETE_HEADER_SIZE;
+	const size_t pdu_length = rle_ctx_get_pdu_length(rle_ctx);
+	const size_t data_length = rle_ctx_get_rle_length(rle_ctx);
+	const size_t ptype_length = data_length - pdu_length;
+	const size_t size_alpdu_ppdu_header = size_ppdu_header + ptype_length;
 	uint8_t proto_type_supp = 0;
-
-	size_header += ptype_length;
 
 	rle_header_all_set_packet_length(&(zc_buf->header.head), ptype_length + pdu_length);
 
@@ -443,18 +441,17 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
 		struct rle_header_complete_w_ptype *rle_cp_hdr =
 		        (struct rle_header_complete_w_ptype *)&zc_buf->header;
 		/* copy header region */
-		memcpy(burst_payload_buffer, rle_cp_hdr, size_header);
+		memcpy(burst_payload_buffer, rle_cp_hdr, size_alpdu_ppdu_header);
 	} else {
 		struct rle_header_complete *rle_c_hdr =
 		        (struct rle_header_complete *)&zc_buf->header;
 		/* copy header region */
-		memcpy(burst_payload_buffer, rle_c_hdr, size_header);
+		memcpy(burst_payload_buffer, rle_c_hdr, size_alpdu_ppdu_header);
 	}
 
 	/* copy PDU */
-	memcpy((void *)((char *)burst_payload_buffer + size_header),
-	       zc_buf->ptrs.start,
-	       pdu_length);
+	memcpy((void *)((char *)burst_payload_buffer + size_alpdu_ppdu_header),
+	       zc_buf->ptrs.start, pdu_length);
 
 	/* update some values in RLE context */
 	rle_ctx_set_remaining_pdu_length(rle_ctx, 0);
