@@ -78,7 +78,7 @@ static int check_fragmented_length(struct rle_ctx_management *rle_ctx, size_t da
 		trailer_size += RLE_SEQ_NO_FIELD_SIZE;
 	}
 
-	recv_pkt_length = (data_length - ((sizeof(struct rle_header_cont_end) + trailer_size)));
+	recv_pkt_length = data_length - sizeof(struct rle_header_cont_end);
 
 	/* for each fragment received, remaining data size is updated,
 	 * so if everything is okay remaining size must be equal
@@ -460,7 +460,7 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 		trailer_size += RLE_SEQ_NO_FIELD_SIZE;
 	}
 
-	pdu_length = rle_header_start_get_packet_length(hdr->head_start) - header_size;
+	pdu_length = rle_header_start_get_packet_length(hdr->head_start) - header_size - trailer_size;
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: RLE head_start.b.total_length %d PDU length %zu"
