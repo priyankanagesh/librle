@@ -178,11 +178,10 @@ int rle_transmitter_encap_data(struct rle_transmitter *_this, void *data_buffer,
 	if (encap_encapsulate_pdu(&_this->rle_ctx_man[frag_id],
 	                          _this->rle_conf,
 	                          data_buffer, data_length,
-	                          protocol_type)
-	    == C_ERROR) {
-		/* rle_ctx_incr_counter_dropped(&_this->rle_ctx_man[index_ctx]); */
-		rle_ctx_incr_counter_dropped(&_this->rle_ctx_man[frag_id]);
-		/* set_free_frag_ctx(_this, index_ctx); */
+	                          protocol_type) == C_ERROR) {
+		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[frag_id];
+		rle_ctx_incr_counter_dropped(rle_ctx);
+		rle_ctx_incr_counter_bytes_dropped(rle_ctx, data_length);
 		set_free_frag_ctx(_this, frag_id);
 		PRINT("ERROR %s:%s:%d: cannot encapsulate data\n",
 		      __FILE__, __func__, __LINE__);
@@ -250,7 +249,9 @@ int rle_transmitter_get_packet(struct rle_transmitter *_this, void *burst_buffer
 
 return_val:
 	if ((ret != C_OK) && (ret != C_ERROR_FRAG_SIZE)) {
-		rle_ctx_incr_counter_dropped(&_this->rle_ctx_man[fragment_id]);
+		struct rle_ctx_management *const rle_ctx = &_this->rle_ctx_man[fragment_id];
+		rle_ctx_incr_counter_dropped(rle_ctx);
+		rle_ctx_incr_counter_bytes_dropped(rle_ctx, rle_ctx_get_remaining_alpdu_length(rle_ctx));
 		set_free_frag_ctx(_this, fragment_id);
 	}
 
@@ -327,7 +328,7 @@ uint64_t rle_transmitter_get_counter_bytes(struct rle_transmitter *_this)
 
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
-		ctr_bytes += rle_ctx_get_counter_bytes(rle_ctx);
+		ctr_bytes += rle_ctx_get_counter_bytes_in(rle_ctx);
 	}
 
 	return ctr_bytes;

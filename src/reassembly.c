@@ -240,9 +240,11 @@ static size_t get_header_size(struct rle_ctx_management *rle_ctx __attribute__ (
 
 	switch (frag_type) {
 	case RLE_PDU_COMPLETE:
+		rle_ctx_incr_counter_in(rle_ctx);
 		header_size = RLE_COMPLETE_HEADER_SIZE;
 		break;
 	case RLE_PDU_START_FRAG:
+		rle_ctx_incr_counter_in(rle_ctx);
 		header_size = RLE_START_MANDATORY_HEADER_SIZE;
 		break;
 	case RLE_PDU_CONT_FRAG:
@@ -623,6 +625,10 @@ int reassembly_get_pdu(struct rle_ctx_management *rle_ctx, void *pdu_buffer, int
 	*pdu_proto_type = rle_ctx_get_proto_type(rle_ctx);
 	*pdu_length = rle_ctx_get_pdu_length(rle_ctx);
 
+	/* update link status */
+	rle_ctx_incr_counter_ok(rle_ctx);
+	rle_ctx_incr_counter_bytes_ok(rle_ctx, *pdu_length);
+
 	/* update rle pointer to data end address */
 	rle_ctx_set_end_address(rle_ctx, (char *)(rle_ctx->buf));
 	rle_ctx_set_remaining_pdu_length(rle_ctx, 0);
@@ -718,7 +724,6 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 
 			/* Tell user that
 			 * reassembly is complete */
-			rle_ctx_incr_counter_ok(rle_ctx);
 			ret = C_REASSEMBLY_OK;
 		} else {
 			ret = C_OK;
@@ -734,11 +739,8 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 				goto error_frag;
 			}
 
-			rle_ctx_incr_counter_ok(rle_ctx);
-
 			/* update link status */
-			rle_ctx_incr_counter_bytes(rle_ctx,
-			                           data_length);
+			rle_ctx_incr_counter_bytes_in(rle_ctx, data_length);
 
 			goto ret_val;
 		} else {
@@ -751,8 +753,7 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 	                                          (data_length - hdr_offset)));
 
 	/* update link status */
-	rle_ctx_incr_counter_bytes(rle_ctx,
-	                           data_length);
+	rle_ctx_incr_counter_bytes_in(rle_ctx, data_length);
 
 	goto ret_val;
 
@@ -766,6 +767,7 @@ error_frag:
 err_size:
 	/* Incr. counter dropped. */
 	rle_ctx_incr_counter_dropped(rle_ctx);
+	rle_ctx_incr_counter_bytes_dropped(rle_ctx, rle_ctx_get_remaining_alpdu_length(rle_ctx));
 
 	/* TODO call a callback which must be
 	 * specific to each protocol type supported
