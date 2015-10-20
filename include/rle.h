@@ -110,6 +110,31 @@ struct rle_context_configuration {
 };
 
 /**
+ * RLE transmitter statistics.
+ */
+struct rle_transmitter_stats {
+	size_t sdus_in;       /**< Number of SDUs received for sending.   */
+	size_t sdus_sent;     /**< Number of SDUs sent.                   */
+	size_t sdus_dropped;  /**< Number of SDUs dropped.                */
+	size_t bytes_in;      /**< Number of octets received for sending. */
+	size_t bytes_sent;    /**< Number of octets sent.                 */
+	size_t bytes_dropped; /**< Number of octets dropped.              */
+};
+
+/**
+ * RLE receiver statistics.
+ */
+struct rle_receiver_stats {
+	size_t sdus_received;     /**< Number of SDUs received.               */
+	size_t sdus_reassembled;  /**< Number of SDUs reassembled in SDUs.    */
+	size_t sdus_dropped;      /**< Number of SDUs dropped.                */
+	size_t sdus_lost;         /**< Number of SDUs lost.                   */
+	size_t bytes_received;    /**< Number of octets received for sending. */
+	size_t bytes_reassembled; /**< Number of octets sent.                 */
+	size_t bytes_dropped;     /**< Number of octets dropped.              */
+};
+
+/**
  * @brief         Create and initialize a RLE transmitter module.
  *
  * @param[in]     configuration            The configuration of the RLE transmitter.
@@ -256,7 +281,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
                                       const size_t payload_label_size);
 
 /**
- * @brief         Get occupied size of a queue (frag_id) in a RLE transmitter module.
+ * @brief         Get occupied size of a queue (frag_id) in an RLE transmitter module.
  *
  * @param[in]     transmitter             The transmitter module. Must be initialize.
  * @param[in]     fragment_id             Fragment id to use. Must be valid.
@@ -269,43 +294,104 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
                                             const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of successfully sent SDU in a RLE transmitter module.
+ * @brief         Get total number of ready to be sent SDU of an RLE transmitter queue.
  *
  * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of SDUs sent successfully.
  *
  * @ingroup       RLE transmitter statistics
  */
-uint64_t rle_transmitter_stats_get_counter_ok(const struct rle_transmitter *const transmitter);
+size_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter *const transmitter,
+                                                 const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of dropped SDU in a RLE transmitter module.
+ * @brief         Get total number of successfully sent SDU of an RLE transmitter queue.
+ *
+ * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @return        Number of SDUs sent successfully.
+ *
+ * @ingroup       RLE transmitter statistics
+ */
+size_t rle_transmitter_stats_get_counter_sdus_sent(const struct rle_transmitter *const transmitter,
+                                                   const uint8_t fragment_id);
+
+/**
+ * @brief         Get total number of dropped SDU of an RLE transmitter queue.
  *
  *                In transmission, a SDU may be dropped during encapsulation, fragmentation or
  *                packing in error cases.
  *
  * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of dropped SDUs.
  *
  * @ingroup       RLE transmitter statistics
  */
-uint64_t rle_transmitter_stats_get_counter_dropped(const struct rle_transmitter *const transmitter);
+size_t rle_transmitter_stats_get_counter_sdus_dropped(
+        const struct rle_transmitter *const transmitter, const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of sent octets in a RLE transmitter module.
+ * @brief         Get total number of ready to be sent octets of an RLE transmitter queue.
  *
  * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of octets sent.
  *
  * @ingroup       RLE transmitter statistics
  */
-uint64_t rle_transmitter_stats_get_counter_bytes(const struct rle_transmitter *const transmitter);
+size_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter *const transmitter,
+                                                  const uint8_t fragment_id);
 
 /**
- * @brief         Get occupied size of a queue (frag_id) in a RLE receiver module.
+ * @brief         Get total number of sent octets of an RLE transmitter queue.
+ *
+ * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @return        Number of octets sent.
+ *
+ * @ingroup       RLE transmitter statistics
+ */
+size_t rle_transmitter_stats_get_counter_bytes_sent(const struct rle_transmitter *const transmitter,
+                                                  const uint8_t fragment_id);
+
+/**
+ * @brief         Get total number of dropped octetsof an RLE transmitter queue.
+ *
+ * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @return        Number of octets sent.
+ *
+ * @ingroup       RLE transmitter statistics
+ */
+size_t rle_transmitter_stats_get_counter_bytes_dropped(
+        const struct rle_transmitter *const transmitter, const uint8_t fragment_id);
+
+/**
+ * @brief         Dump all the statistics of a given RLE transmitter queue in an RLE stats
+ *                structure.
+ *
+ * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ * @param[out]    stats                    The RLE stats structure.
+ *
+ * @return        0 if OK, else 1.
+ *
+ * @ingroup       RLE transmitter statistics
+ */
+int rle_transmitter_stats_get_counters(const struct rle_transmitter *const transmitter,
+                                       const uint8_t fragment_id,
+                                       struct rle_transmitter_stats *const stats);
+
+/**
+ * @brief         Get occupied size of a queue (frag_id) in a RLE receiver queue.
  *
  * @param[in]     receiver                 The receiver module. Must be initialize.
  * @param[in]     fragment_id              Fragment id to use. Must be valid.
@@ -318,31 +404,48 @@ size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiv
                                          const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of successfully received SDUs in a RLE receiver module.
+ * @brief         Get total number of partially received SDUs of an RLE receiver queue.
  *
  * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of SDUs received successfully.
  *
  * @ingroup       RLE receiver statistics
  */
-uint64_t rle_receiver_stats_get_counter_ok(const struct rle_receiver *const receiver);
+size_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver *const receiver,
+                                                    const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of dropped SDUs in a RLE receiver module.
+ * @brief         Get total number of successfully reassembled SDUs of an RLE receiver queue.
+ *
+ * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @return        Number of SDUs received successfully.
+ *
+ * @ingroup       RLE receiver statistics
+ */
+size_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiver *const receiver,
+                                                       const uint8_t fragment_id);
+
+/**
+ * @brief         Get total number of dropped SDUs of an RLE receiver queue.
  *
  *                In reception, a SDU may be dropped in decapsulation in error cases.
  *
  * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of dropped SDUs.
  *
  * @ingroup       RLE receiver statistics
  */
-uint64_t rle_receiver_stats_get_counter_dropped(const struct rle_receiver *const receiver);
+size_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *const receiver,
+                                                   const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of lost SDUs in a RLE receiver module.
+ * @brief         Get total number of lost SDUs of an RLE receiver queue.
  *
  *                In reception, a SDU may be lost in decapsulation if the Seq numbers or the CRC
  *                are not the expected ones. When the CRC is wrong, one packet is count as lost,
@@ -350,23 +453,72 @@ uint64_t rle_receiver_stats_get_counter_dropped(const struct rle_receiver *const
  *                compute and the counter is increase by the number of missing SeqNos.
  *
  * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of lost SDUs.
  *
  * @ingroup       RLE receiver statistics
  */
-uint64_t rle_receiver_stats_get_counter_lost(const struct rle_receiver *const receiver);
+size_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *const receiver,
+                                                const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of received octets in a RLE receiver module.
+ * @brief         Get total number of received octets of partially received SDUs of an RLE receiver
+ *                queue.
  *
  * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of octets received.
  *
  * @ingroup       RLE receiver statistics
  */
-uint64_t rle_receiver_stats_get_counter_bytes(const struct rle_receiver *const receiver);
+size_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver *const receiver,
+                                                     const uint8_t fragment_id);
+
+/**
+ * @brief         Get total number of received octets of successfully reassembled in SDUs of an RLE
+ *                receiver queue.
+ *
+ * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @return        Number of octets received.
+ *
+ * @ingroup       RLE receiver statistics
+ */
+size_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_receiver *const receiver,
+                                                        const uint8_t fragment_id);
+
+/**
+ * @brief         Get total number of received octets of dropped SDUs of an RLE receiver queue.
+ *
+ * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @return        Number of octets received.
+ *
+ * @ingroup       RLE receiver statistics
+ */
+size_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver *const receiver,
+                                                    const uint8_t fragment_id);
+
+/**
+ * @brief         Dump all the statistics of a given RLE receiver queue in an RLE stats
+ *                structure.
+ *
+ * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ * @param[out]    stats                    The RLE stats structure.
+ *
+ * @return        0 if OK, else 1.
+ *
+ * @ingroup       RLE receiver statistics
+ */
+int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
+                                    const uint8_t fragment_id,
+                                    struct rle_receiver_stats *const stats);
+
 
 /**
  * @brief         Get the size of an RLE headers overhead (ALPDU + PPDU + FPDU headers).

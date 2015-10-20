@@ -434,6 +434,9 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
 	const size_t size_alpdu_ppdu_header = size_ppdu_header + ptype_length;
 	uint8_t proto_type_supp = 0;
 
+	rle_ctx_incr_counter_in(rle_ctx);
+	rle_ctx_incr_counter_bytes_in(rle_ctx, pdu_length);
+
 	rle_header_all_set_packet_length(&(zc_buf->header.head), ptype_length + pdu_length);
 
 	proto_type_supp = GET_PROTO_TYPE_SUPP(zc_buf->header.head.b.LT_T_FID);
@@ -461,6 +464,7 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
 
 	/* update status value */
 	rle_ctx_incr_counter_ok(rle_ctx);
+	rle_ctx_incr_counter_bytes_ok(rle_ctx, ptype_length + size_alpdu_ppdu_header);
 
 	return C_OK;
 }
@@ -484,6 +488,11 @@ int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
 		struct zc_rle_header_complete *rle_hdr =
 		        (struct zc_rle_header_complete *)rle_ctx->buf;
 		memset((void *)rle_hdr, 0, sizeof(struct zc_rle_header_complete));
+
+		/* First fragment of a PDU is being sent so increment status link to be sent packet counter */
+		rle_ctx_incr_counter_in(rle_ctx);
+		rle_ctx_incr_counter_bytes_in(rle_ctx, rle_ctx->pdu_length);
+
 	}
 
 	ret = fragmentation_add_header(rle_ctx, rle_conf, burst_payload_buffer, burst_payload_length,
@@ -572,8 +581,8 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 return_ret:
 	/* update link status */
 	if (ret == C_OK) {
-		rle_ctx_incr_counter_bytes(rle_ctx,
-		                           burst_payload_length);
+		rle_ctx_incr_counter_bytes_ok(rle_ctx,
+		                              burst_payload_length);
 	}
 
 	return ret;

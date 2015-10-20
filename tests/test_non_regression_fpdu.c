@@ -447,15 +447,27 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 		                  link_len_src);
 
 		printf("=== statistics: \n");
-		printf("===\treceiver ok:         %lu\n",
-		       (unsigned long)rle_receiver_stats_get_counter_ok(receiver));
-		printf("===\treceiver bytes:      %lu\n",
-		       (unsigned long)rle_receiver_stats_get_counter_bytes(receiver));
-		printf("===\treceiver lost:       %lu\n",
-		       (unsigned long)rle_receiver_stats_get_counter_lost(receiver));
-		printf("===\treceiver dropped:    %lu\n",
-		       (unsigned long)rle_receiver_stats_get_counter_dropped(receiver));
-		printf("\n");
+		{
+			u_int8_t frag_id;
+			for (frag_id = 0; frag_id < 8; ++frag_id) {
+				printf("===\tFrag ID %u\n", frag_id);
+				printf("===\treceiver received:          %zu\n",
+				       rle_receiver_stats_get_counter_sdus_received(receiver, frag_id));
+				printf("===\treceiver reassembled:       %zu\n",
+				       rle_receiver_stats_get_counter_sdus_reassembled(receiver, frag_id));
+				printf("===\treceiver lost:              %zu\n",
+				       rle_receiver_stats_get_counter_sdus_lost(receiver, frag_id));
+				printf("===\treceiver dropped:           %zu\n",
+				       rle_receiver_stats_get_counter_sdus_dropped(receiver, frag_id));
+				printf("===\treceiver bytes received:    %zu\n",
+				       rle_receiver_stats_get_counter_bytes_received(receiver, frag_id));
+				printf("===\treceiver bytes reassembled: %zu\n",
+				       rle_receiver_stats_get_counter_bytes_reassembled(receiver, frag_id));
+				printf("===\treceiver bytes dropped:     %zu\n",
+				       rle_receiver_stats_get_counter_bytes_dropped(receiver, frag_id));
+				printf("\n");
+			}
+		}
 
 		if (ret == -2) {
 			err_reception++;
