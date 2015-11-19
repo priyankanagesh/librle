@@ -593,13 +593,25 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 	printf("\n");
 
 	printf("=== statistics: \n");
-	printf("===\ttransmitter ok:       %lu\n",
-	       (unsigned long)rle_transmitter_stats_get_counter_ok(transmitter));
-	printf("===\ttransmitter bytes:    %lu\n",
-	       (unsigned long)rle_transmitter_stats_get_counter_bytes(transmitter));
-	printf("===\ttransmitter dropped:  %lu\n",
-	       (unsigned long)rle_transmitter_stats_get_counter_dropped(transmitter));
-	printf("\n");
+	{
+		u_int8_t frag_id;
+		for (frag_id = 0; frag_id < 8; ++frag_id) {
+			printf("===\tFrag ID %u\n", frag_id);
+			printf("===\ttransmitter in:             %zu\n",
+			       rle_transmitter_stats_get_counter_sdus_in(transmitter, frag_id));
+			printf("===\ttransmitter sent:           %zu\n",
+			       rle_transmitter_stats_get_counter_sdus_sent(transmitter, frag_id));
+			printf("===\ttransmitter dropped:        %zu\n",
+			       rle_transmitter_stats_get_counter_sdus_dropped(transmitter, frag_id));
+			printf("===\ttransmitter bytes in:       %zu\n",
+			       rle_transmitter_stats_get_counter_bytes_in(transmitter, frag_id));
+			printf("===\ttransmitter bytes sent:     %zu\n",
+			       rle_transmitter_stats_get_counter_bytes_sent(transmitter, frag_id));
+			printf("===\ttransmitter bytes dropped:  %zu\n",
+			       rle_transmitter_stats_get_counter_bytes_dropped(transmitter, frag_id));
+			printf("\n");
+		}
+	}
 
 	/* show the encapsulation results. */
 	printf("=== summary:\n");

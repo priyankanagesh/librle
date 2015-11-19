@@ -421,7 +421,7 @@ uint64_t rle_receiver_get_counter_bytes(struct rle_receiver *_this)
 
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
-		ctr_bytes += rle_ctx_get_counter_bytes(rle_ctx);
+		ctr_bytes += rle_ctx_get_counter_bytes_in(rle_ctx);
 	}
 
 	return ctr_bytes;

@@ -140,6 +140,7 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx, struct rle_configu
 
 	if (encap_check_pdu_validity(pdu_length) == C_ERROR) {
 		rle_ctx_incr_counter_dropped(rle_ctx);
+		rle_ctx_incr_counter_bytes_dropped(rle_ctx, pdu_length);
 		return C_ERROR;
 	}
 
@@ -147,6 +148,7 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx, struct rle_configu
 	                  pdu_buffer, pdu_length,
 	                  protocol_type) == C_ERROR) {
 		rle_ctx_incr_counter_dropped(rle_ctx);
+		rle_ctx_incr_counter_bytes_dropped(rle_ctx, pdu_length);
 		return C_ERROR;
 	}
 
