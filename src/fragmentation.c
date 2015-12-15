@@ -58,9 +58,7 @@ static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx)
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: with PDU length %zu & protocol type 0x%x CRC %x\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__,
-	      length, field_value, crc32);
+	      MODULE_NAME, __FILENAME__, __func__, __LINE__, length, field_value, crc32);
 #endif
 
 	return crc32;
@@ -72,8 +70,9 @@ static void add_trailer(struct rle_ctx_management *rle_ctx,
                         size_t burst_payload_length __attribute__ ((unused)))
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+	PRINT("DEBUG %s %s:%s:%d:i RLE ctx-> 0x%p, RLE conf -> 0x%p, burst buffer -> 0x%p, burst len = "
+	      "%zu\n", MODULE_NAME, __FILENAME__, __func__, __LINE__, rle_ctx, rle_conf,
+	      burst_payload_buffer, burst_payload_length);
 #endif
 
 	/* retrieve address beyond
@@ -118,8 +117,9 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
                             uint16_t protocol_type)
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+	PRINT("DEBUG %s %s:%s:%d: RLE ctx -> 0x%p, RLE conf -> 0x%p, burst buffer -> 0x%p, burst len = "
+	      "%zu, protocol type = %04x\n", MODULE_NAME, __FILENAME__, __func__, __LINE__, rle_ctx,
+	      rle_conf, burst_payload_buffer, burst_payload_length, protocol_type);
 #endif
 
 	const size_t size_ppdu_header = RLE_START_MANDATORY_HEADER_SIZE;
@@ -185,14 +185,8 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	SET_FRAG_ID(rle_s_hdr->header.head.b.LT_T_FID, frag_id);
 
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d: Set total length to %d "
-	      "ptype %zu ALPDU-PPDU size_header %zu proto_type suppressed %d\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__,
-	      rle_s_hdr->header.head_start.b.total_length,
-	      ptype_length,
-	      size_aldpu_ppdu_header,
-	      proto_type_supp);
+	PRINT("DEBUG %s %s:%s:%d: Set ptype %zu proto_type suppressed %d\n",
+	      MODULE_NAME, __FILENAME__, __func__, __LINE__, ptype_length, proto_type_supp);
 #endif
 
 	/* fill label_type field accordingly to the
@@ -215,10 +209,9 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	rle_s_hdr->ptrs.end = (char *)((char *)rle_ctx->pdu_buf + offset_payload);
 
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d: ptrs.start %p ptrs.end %p\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__,
-	      rle_s_hdr->ptrs.start, rle_s_hdr->ptrs.end);
+	PRINT("DEBUG %s %s:%s:%d: ptrs.start 0x%p ptrs.end 0x%p\n",
+	      MODULE_NAME, __FILENAME__, __func__, __LINE__, rle_s_hdr->ptrs.start,
+	      rle_s_hdr->ptrs.end);
 #endif
 
 	/* update rle context :
@@ -273,9 +266,10 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
                                        (unused)))
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+	PRINT("DEBUG %s %s:%s:%d: RLE ctx -> 0x%p, RLE conf -> 0x%p, burst buffer -> 0x%p, burst len = "
+	      "%zu, type frag = %d, protocol type = 0x%04x\n", MODULE_NAME, __FILENAME__, __func__,
+	      __LINE__, rle_ctx, rle_conf, burst_payload_buffer, burst_payload_length, type_rle_frag,
+	      protocol_type);
 #endif
 	struct zc_rle_header_cont_end *rle_c_e_hdr = NULL;
 	size_t trailer_size = 0;
@@ -296,10 +290,8 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	rle_c_e_hdr = (struct zc_rle_header_cont_end *)((void *)rle_ctx_get_end_address(rle_ctx));
 
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d: new fragment start @ %p\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__,
-	      rle_c_e_hdr);
+	PRINT("DEBUG %s %s:%s:%d: new fragment start @ 0x%p\n",
+	      MODULE_NAME, __FILENAME__, __func__, __LINE__, rle_c_e_hdr);
 #endif
 
 	/* fill RLE continuation or end header (same size) */
@@ -353,9 +345,7 @@ static int add_cont_end_header(struct rle_ctx_management *rle_ctx,
 	    (new_remaining_val < 0)) {
 		PRINT("ERROR %s %s:%s:%d: Invalid remaining data size"
 		      " while building an RLE END packet [%d]\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__,
-		      new_remaining_val);
+		      MODULE_NAME, __FILENAME__, __func__, __LINE__, new_remaining_val);
 		return C_ERROR;
 	}
 
@@ -392,9 +382,8 @@ static int get_fragment_type_from_ctx(struct rle_ctx_management *rle_ctx,
                                       size_t burst_payload_length)
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+	PRINT("DEBUG %s %s:%s:%d: RLE ctx -> 0x%p, burst len = %zu\n", MODULE_NAME, __FILENAME__,
+	      __func__, __LINE__, rle_ctx, burst_payload_length);
 #endif
 
 	int frag_type = RLE_PDU_START_FRAG;
@@ -421,9 +410,9 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
                                              (unused)))
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+	PRINT("DEBUG %s %s:%s:%d: RLE ctx -> 0x%p, RLE conf -> 0x%p, burst buffer -> 0x%p, burst len = "
+	      "%zu\n", MODULE_NAME, __FILENAME__, __func__, __LINE__, rle_ctx, rle_conf,
+	      burst_payload_buffer, burst_payload_length);
 #endif
 	struct zc_rle_header_complete_w_ptype *zc_buf =
 	        (struct zc_rle_header_complete_w_ptype *)rle_ctx->buf;
@@ -476,9 +465,10 @@ int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
                               uint16_t protocol_type)
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+	PRINT("DEBUG %s %s:%s:%d: RLE ctx -> 0x%p, RLE conf -> 0x%p, burst buffer -> 0x%p, burst len = "
+	      "%zu, frag type = %d, protocol type = 0x%04x\n", MODULE_NAME, __FILENAME__, __func__,
+	      __LINE__, rle_ctx, rle_conf, burst_payload_buffer, burst_payload_length, frag_type,
+	      protocol_type);
 #endif
 
 	int ret = C_OK;
@@ -496,13 +486,12 @@ int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
 	}
 
 	ret = fragmentation_add_header(rle_ctx, rle_conf, burst_payload_buffer, burst_payload_length,
-	                             frag_type, protocol_type);
+	                               frag_type, protocol_type);
 
 	/* If not OK or just a frag size error, return error. */
 	if ((ret != C_OK) && (ret != C_ERROR_FRAG_SIZE)) {
 		PRINT("ERROR %s %s:%s:%d: PDU fragmentation process failed\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__);
+		      MODULE_NAME, __FILENAME__, __func__, __LINE__);
 		ret = C_ERROR;
 		return ret;
 	}
@@ -513,10 +502,8 @@ int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
 int fragmentation_is_needed(struct rle_ctx_management *rle_ctx, size_t burst_payload_length)
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d: RLE length [%d] burst length [%zu]\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__,
-	      rle_ctx->remaining_pdu_length,
+	PRINT("DEBUG %s %s:%s:%d: RLE ctx -> 0x%p, RLE length = %d, burst length = %zu\n",
+	      MODULE_NAME, __FILENAME__, __func__, __LINE__, rle_ctx, rle_ctx->remaining_pdu_length,
 	      burst_payload_length);
 #endif
 	size_t total_rle_length = RLE_COMPLETE_HEADER_SIZE +
@@ -535,9 +522,9 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
                                uint16_t protocol_type)
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+	PRINT("DEBUG %s %s:%s:%d: RLE ctx -> 0x%p, RLE conf -> 0x%p, burst buffer -> 0x%p, burst len = "
+	      "%zu\n", MODULE_NAME, __FILENAME__, __func__, __LINE__, rle_ctx, rle_conf,
+	      burst_payload_buffer, burst_payload_length, protocol_type);
 #endif
 
 	int ret = C_ERROR;
@@ -545,8 +532,7 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 
 	if (!rle_ctx) {
 		PRINT("ERROR %s %s:%s:%d: RLE context is NULL\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__);
+		      MODULE_NAME, __FILENAME__, __func__, __LINE__);
 		goto return_ret;
 	}
 
@@ -567,8 +553,8 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
 	if ((frag_type == RLE_PDU_START_FRAG) &&
 	    (burst_payload_length < RLE_START_MANDATORY_HEADER_SIZE)) {
 		PRINT("ERROR %s %s:%s:%d: Burst payload too small for START fragment\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__);
+		      MODULE_NAME, __FILENAME__, __func__, __LINE__);
+		rle_ctx_set_is_fragmented(rle_ctx, C_FALSE);
 		goto return_ret;
 	}
 
@@ -594,11 +580,11 @@ int fragmentation_add_header(struct rle_ctx_management *rle_ctx, struct rle_conf
                              uint16_t protocol_type)
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+	PRINT("DEBUG %s %s:%s:%d: RLE ctx -> 0x%p, RLE conf -> 0x%p, burst buffer -> 0x%p, burst len = "
+	      "%zu, type frag = %d, protocol type = 0x%04x\n", MODULE_NAME, __FILENAME__, __func__,
+	      __LINE__, rle_ctx, rle_conf, burst_payload_buffer, burst_payload_length, type_rle_frag,
+	      protocol_type);
 #endif
-
 	int ret = C_ERROR;
 
 	switch (type_rle_frag) {
@@ -616,9 +602,7 @@ int fragmentation_add_header(struct rle_ctx_management *rle_ctx, struct rle_conf
 		break;
 	default:
 		PRINT("ERROR %s %s:%s:%d: RLE fragment type unknown [%d]\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__,
-		      type_rle_frag);
+		      MODULE_NAME, __FILENAME__, __func__, __LINE__, type_rle_frag);
 		break;
 	}
 

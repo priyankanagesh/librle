@@ -73,9 +73,14 @@ enum {
 #define MALLOC(size_bytes)      kmalloc(size_bytes, GFP_KERNEL) /* vmalloc(size_bytes); */
 #define FREE(buf_addr)          kfree(buf_addr) /* vfree(buf_addr); */
 #define PRINT(x ...)     do { \
-		printk(x); \
+		printk(KERN_ERR x); \
 } while (0)
 
+#define assert BUG_ON
+
 #endif
+
+#define __FILENAME__ \
+	(strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
 #endif /* __CONSTANTS_H__ */
