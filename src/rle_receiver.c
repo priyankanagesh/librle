@@ -261,8 +261,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 		if (*index_ctx < 0) {
 			PRINT("ERROR %s %s:%s:%d: no free reassembly context available "
 			      "for deencapsulation\n",
-			      MODULE_NAME,
-			      __FILE__, __func__, __LINE__);
+			      MODULE_NAME, __FILE__, __func__, __LINE__);
 			return C_ERROR;
 		}
 		break;
@@ -272,17 +271,14 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 		*index_ctx = get_fragment_id(data_buffer);
 #ifdef DEBUG
 		PRINT("DEBUG %s %s:%s:%d: fragment_id 0x%0x frag type %d\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__,
-		      *index_ctx, frag_type);
+		      MODULE_NAME, __FILE__, __func__, __LINE__, *index_ctx, frag_type);
 #endif
 		if ((*index_ctx < 0) || (*index_ctx > RLE_MAX_FRAG_ID)) {
 			PRINT("ERROR %s %s:%s:%d: invalid fragment id [%d]\n",
-			      MODULE_NAME,
-			      __FILE__, __func__, __LINE__,
-			      *index_ctx);
+			      MODULE_NAME, __FILE__, __func__, __LINE__, *index_ctx);
 			return C_ERROR;
 		}
+
 		break;
 	default:
 		return C_ERROR;

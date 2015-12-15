@@ -465,11 +465,10 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 	pdu_length = rle_header_start_get_packet_length(hdr->head_start) - header_size - trailer_size;
 
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d: RLE head_start.b.total_length %d PDU length %zu"
+	PRINT("DEBUG %s %s:%s:%d: RLE %d PDU length %zu"
 	      " label_type 0x%x proto_type_supp 0x%x\n",
 	      MODULE_NAME,
 	      __FILE__, __func__, __LINE__,
-	      hdr->head_start.b.total_length,
 	      pdu_length,
 	      hdr->head_start.b.label_type,
 	      hdr->head_start.b.proto_type_supp);
@@ -490,19 +489,19 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 	 * remaining length to receive */
 
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d: RLE START remaining_pdu %d total length %d rle length %d\n",
+	PRINT("DEBUG %s %s:%s:%d: RLE START remaining_pdu %d\n",
 	      MODULE_NAME,
 	      __FILE__, __func__, __LINE__,
-	      rle_ctx_get_remaining_pdu_length(rle_ctx),
-	      hdr->head_start.b.total_length, hdr->head.b.rle_packet_length);
+	      rle_ctx_get_remaining_pdu_length(rle_ctx));
 	PRINT("------ RECV START PACKET ------------\n");
 	PRINT("| SE |  RLEPL |  ID |  TL   |  LT  |  T  |  PTYPE  |\n");
 	PRINT("| %d%d |   %d   | 0x%0x |  %d  |  0x%0x | 0x%0x | 0x%04x  |\n",
 	      hdr->head.b.start_ind,
 	      hdr->head.b.end_ind,
-	      hdr->head.b.rle_packet_length,
+	      rle_header_all_get_packet_length(hdr->head),
 	      hdr->head.b.LT_T_FID,
-	      hdr->head_start.b.total_length,
+		  /* hdr->head_start.b.total_length, */
+	      ~0L, /* TODO method for total length ? */
 	      hdr->head_start.b.label_type,
 	      hdr->head_start.b.proto_type_supp,
 	      protocol_type);

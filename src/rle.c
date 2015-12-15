@@ -16,7 +16,6 @@
 #else
 
 #include <linux/string.h>
-#define assert BUG_ON
 
 #endif
 
