@@ -34,16 +34,6 @@ enum boolean test_frag_too_small(void);
 enum boolean test_frag_null_context(void);
 
 /**
- * @brief         Fragmentation test with an invalid burst size.
- *
- *                A burst size is invalid when the ALPDU protection bytes cannot be sent without
- *                being cut.
- *
- * @return        BOOL_TRUE if RLE_FRAG_ERR_INVALID_SIZE is raised, else BOOL_FALSE.
- */
-enum boolean test_frag_invalid_size(void);
-
-/**
  * @brief         Fragmentation test with real-world configurations.
  *
  *                Fragments with realistic values and configurations, IPv4 is the protocol type per

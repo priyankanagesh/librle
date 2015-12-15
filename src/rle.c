@@ -238,6 +238,8 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 	size_t remaining_alpdu = 0;
 	size_t burst_size = 0;
 
+	*ppdu_length = 0;
+
 	if (transmitter == NULL) {
 		status = RLE_FRAG_ERR_NULL_TRMT;
 		goto exit_label;
@@ -263,7 +265,6 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 
 	if (burst_size < min_burst_size) {
 		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
-		rle_transmitter_free_context(transmitter, frag_id);
 		goto exit_label;
 	}
 
@@ -278,9 +279,7 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 	 */
 	if ((burst_size > RLE_CONT_HEADER_SIZE + remaining_pdu) &&
 	    (burst_size < RLE_CONT_HEADER_SIZE + remaining_alpdu)) {
-		status = RLE_FRAG_ERR_INVALID_SIZE;
-		rle_transmitter_free_context(transmitter, frag_id);
-		goto exit_label;
+		burst_size = RLE_CONT_HEADER_SIZE + remaining_pdu;
 	}
 
 	if ((remaining_alpdu + RLE_CONT_HEADER_SIZE) < burst_size) {
@@ -294,6 +293,7 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 
 	if (ret == C_ERROR_FRAG_SIZE) {
 		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
+		*ppdu_length = 0;
 		goto exit_label;
 	}
 
