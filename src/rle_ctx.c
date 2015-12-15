@@ -175,6 +175,8 @@ void rle_ctx_invalid_ctx(struct rle_ctx_management *_this)
 	_this->pdu_length = 0;
 	_this->remaining_pdu_length = 0;
 	_this->rle_length = 0;
+	_this->alpdu_size = 0;
+	_this->remaining_alpdu_size = 0;
 	_this->proto_type = 0xffff;
 	_this->label_type = 0xff;
 	_this->pdu_buf = NULL;
