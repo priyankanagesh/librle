@@ -19,6 +19,7 @@
 
 #endif
 
+#include "encap.h"
 #include "fragmentation.h"
 #include "constants.h"
 #include "rle_ctx.h"
@@ -28,18 +29,12 @@
 
 #define MODULE_NAME "FRAGMENTATION"
 
-static int is_fragmented_pdu(struct rle_ctx_management *rle_ctx)
-{
-#ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
-#endif
-
-	return rle_ctx->is_fragmented;
-}
-
 static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx)
 {
+#ifdef DEBUG
+	PRINT("DEBUG %s %s:%s:%d: RLE ctx -> 0x%p\n", MODULE_NAME, __FILENAME__, __func__, __LINE__,
+	      rle_ctx);
+#endif
 	/* CRC must be computed on PDU data and the
 	 * original two bytes protocol type field
 	 * whatever it is suppressed or compressed */
@@ -134,6 +129,7 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	/* map RLE header to the already allocated buffer */
 	struct zc_rle_header_start_w_ptype *rle_s_hdr =
 	        (struct zc_rle_header_start_w_ptype *)rle_ctx->buf;
+
 	rle_s_hdr->ptrs.start = NULL;
 	rle_s_hdr->ptrs.end = NULL;
 
@@ -172,7 +168,18 @@ static int add_start_header(struct rle_ctx_management *rle_ctx, struct rle_confi
 	 * than an RLE START packet header */
 	if (burst_payload_length < size_alpdu_ppdu_header) {
 		/* Silently return the ERROR to the interface. */
-		return C_ERROR_FRAG_SIZE;
+		int ret_ch = C_ERROR;
+
+		void *const data_buffer = rle_ctx->pdu_buf;
+		const size_t data_length = rle_ctx->pdu_length;
+
+		ret_ch = create_header(rle_ctx, rle_conf, data_buffer, data_length, protocol_type);
+
+		if (ret_ch != C_ERROR) {
+			ret_ch = C_ERROR_FRAG_SIZE;
+		}
+
+		return ret_ch;
 	}
 
 	/* fill RLE start header */
@@ -389,7 +396,7 @@ static int get_fragment_type_from_ctx(struct rle_ctx_management *rle_ctx,
 	int frag_type = RLE_PDU_START_FRAG;
 	size_t remaining_alpdu_len = rle_ctx_get_remaining_alpdu_length(rle_ctx);
 
-	if (is_fragmented_pdu(rle_ctx)) {
+	if (rle_ctx_get_is_fragmented(rle_ctx)) {
 		/* not all PDU data has been sent, so
 		 * it's a CONT or END packet */
 		if ((remaining_alpdu_len + RLE_END_HEADER_SIZE) <=
