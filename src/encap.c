@@ -28,9 +28,8 @@
 
 #define MODULE_NAME "ENCAP"
 
-static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
-                         void *data_buffer, size_t data_length,
-                         uint16_t protocol_type)
+int create_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
+                  void *data_buffer, size_t data_length, uint16_t protocol_type)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
