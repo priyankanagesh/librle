@@ -443,6 +443,8 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 		offset += payload_label_size;
 	}
 
+	status = RLE_DECAP_OK;
+
 	/* parse all PPDUs that the FPDU contains until there is less than 2 bytes
 	 * in the FPDU payload and padding is not detected */
 	while ((offset + 1) < fpdu_length && !padding_detected) {
@@ -467,24 +469,24 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 			PRINT("Invalid fragment size, fragment length too big for FPDU\n");
 			PRINT("Fragment length: %zu, Remaining FPDU size: %zu\n",
 			      fragment_length, fpdu_length - offset);
+			status = RLE_DECAP_ERR;
 			goto exit_label;
 		}
 
 		/* parse the PPDU fragment */
 		ret = rle_receiver_deencap_data(receiver, (void *) &fpdu[offset], fragment_length,
 		                                &fragment_id);
-		if (ret != C_OK && ret != C_REASSEMBLY_OK) {
-			/* TODO cleaning, pkt dropping, etc... */
-			PRINT("Error during reassembly.\n");
-			status = RLE_FRAG_ERR;
-			goto exit_label;
-		}
 
 		/* PPDU fragment successfully parsed, skip it */
 		offset += fragment_length;
 
-		/* in case of complete or END fragment, decapsulate the reassembled PPDU */
-		if (fragment_type == FRAG_STATE_COMP || fragment_type == FRAG_STATE_END) {
+		if ((ret != C_OK) && (ret != C_REASSEMBLY_OK)) {
+			/* TODO cleaning, pkt dropping, etc... */
+			PRINT("Error during reassembly.\n");
+			rle_receiver_free_context(receiver, fragment_id);
+			status = RLE_DECAP_ERR;
+		} else if (fragment_type == FRAG_STATE_COMP || fragment_type == FRAG_STATE_END) {
+			/* in case of complete or END fragment, decapsulate the reassembled PPDU */
 			int sdu_proto = 0;
 			uint32_t sdu_len = 0;
 
@@ -492,14 +494,13 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 
 			ret = rle_receiver_get_packet(receiver, fragment_id, sdus[*sdus_nr].buffer,
 			                              &sdu_proto, &sdu_len);
+			/* reassembly and decapsulation are over, so free context resources */
+			rle_receiver_free_context(receiver, fragment_id);
 			if (ret != C_OK) {
 				/* TODO cleaning, pkt dropping, etc... */
 				PRINT("Error getting packet from context.\n");
-				status = RLE_FRAG_ERR;
+				status = RLE_DECAP_ERR;
 				goto exit_label;
-			} else {
-				/* reassembly and decapsulation are over, so free context resources */
-				rle_receiver_free_context(receiver, fragment_id);
 			}
 			sdus[*sdus_nr].size = (size_t) sdu_len;
 			sdus[*sdus_nr].protocol_type = (uint16_t) sdu_proto;
@@ -514,8 +515,6 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 			break; /* stop padding verification after first error */
 		}
 	}
-
-	status = RLE_DECAP_OK;
 
 exit_label:
 	return status;
