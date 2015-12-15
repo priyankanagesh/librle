@@ -664,6 +664,34 @@ error:
 	return status;
 }
 
+void rle_transmitter_stats_reset_counters(struct rle_transmitter *const transmitter,
+                                          const uint8_t fragment_id)
+{
+	struct rle_ctx_management ctx_man;
+
+	if (!transmitter) {
+		goto error;
+	}
+
+	if (fragment_id >= RLE_MAX_FRAG_ID) {
+		goto error;
+	}
+
+	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	rle_ctx_set_counter_in(&ctx_man, 0);
+	rle_ctx_set_counter_ok(&ctx_man, 0);
+	rle_ctx_set_counter_dropped(&ctx_man, 0);
+	rle_ctx_set_counter_bytes_in(&ctx_man, 0);
+	rle_ctx_set_counter_bytes_ok(&ctx_man, 0);
+	rle_ctx_set_counter_bytes_dropped(&ctx_man, 0);
+
+error:
+	return;
+}
+
 size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiver,
                                          const uint8_t fragment_id)
 {
@@ -824,6 +852,35 @@ int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
 
 error:
 	return status;
+}
+
+void rle_receiver_stats_reset_counters(struct rle_transmitter *const transmitter,
+                                       const uint8_t fragment_id)
+{
+	struct rle_ctx_management ctx_man;
+
+	if (!transmitter) {
+		goto error;
+	}
+
+	if (fragment_id >= RLE_MAX_FRAG_ID) {
+		goto error;
+	}
+
+	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	rle_ctx_set_counter_in(&ctx_man, 0);
+	rle_ctx_set_counter_ok(&ctx_man, 0);
+	rle_ctx_set_counter_dropped(&ctx_man, 0);
+	rle_ctx_set_counter_lost(&ctx_man, 0);
+	rle_ctx_set_counter_bytes_in(&ctx_man, 0);
+	rle_ctx_set_counter_bytes_ok(&ctx_man, 0);
+	rle_ctx_set_counter_bytes_dropped(&ctx_man, 0);
+
+error:
+	return;
 }
 
 enum rle_header_size_status rle_get_header_size(const struct rle_context_configuration *const conf,

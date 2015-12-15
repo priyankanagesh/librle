@@ -179,13 +179,6 @@ void rle_ctx_invalid_ctx(struct rle_ctx_management *_this)
 	_this->label_type = 0xff;
 	_this->pdu_buf = NULL;
 	_this->end_address = NULL;
-	_this->lk_status.counter_in = 0L;
-	_this->lk_status.counter_ok = 0L;
-	_this->lk_status.counter_dropped = 0L;
-	_this->lk_status.counter_lost = 0L;
-	_this->lk_status.counter_bytes_in = 0L;
-	_this->lk_status.counter_bytes_ok = 0L;
-	_this->lk_status.counter_bytes_dropped = 0L;
 }
 
 void rle_ctx_set_frag_id(struct rle_ctx_management *_this, uint8_t val)
