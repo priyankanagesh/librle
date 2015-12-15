@@ -391,6 +391,17 @@ int rle_transmitter_stats_get_counters(const struct rle_transmitter *const trans
                                        struct rle_transmitter_stats *const stats);
 
 /**
+ * @brief         Reset all the statistics of a given RLE transmitter queue in an RLE stats
+ *
+ * @param[in,out] transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @ingroup       RLE transmitter statistics
+ */
+void rle_transmitter_stats_reset_counters(struct rle_transmitter *const transmitter,
+                                          const uint8_t fragment_id);
+
+/**
  * @brief         Get occupied size of a queue (frag_id) in a RLE receiver queue.
  *
  * @param[in]     receiver                 The receiver module. Must be initialize.
@@ -519,6 +530,16 @@ int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
                                     const uint8_t fragment_id,
                                     struct rle_receiver_stats *const stats);
 
+/**
+ * @brief         Reset all the statistics of a given RLE receiver queue in an RLE stats
+ *
+ * @param[in,out] receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @ingroup       RLE transmitter statistics
+ */
+void rle_receiver_stats_reset_counters(struct rle_transmitter *const transmitter,
+                                       const uint8_t fragment_id);
 
 /**
  * @brief         Get the size of an RLE headers overhead (ALPDU + PPDU + FPDU headers).

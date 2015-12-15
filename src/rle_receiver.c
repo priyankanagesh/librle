@@ -27,6 +27,22 @@
 
 #define MODULE_NAME "RECEIVER"
 
+
+static int is_context_free(struct rle_receiver *_this, size_t index)
+{
+	int context_is_free = -1;
+
+	if (index >= RLE_MAX_FRAG_NUMBER) {
+		goto error;
+	}
+
+	context_is_free = (_this->free_ctx >> index) & 0x1;
+
+error:
+	return context_is_free;
+}
+
+
 static int get_first_free_frag_ctx(struct rle_receiver *_this)
 {
 	int i;
@@ -266,6 +282,25 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 		}
 		break;
 	case RLE_PDU_START_FRAG:
+		*index_ctx = get_fragment_id(data_buffer);
+#ifdef DEBUG
+		PRINT("DEBUG %s %s:%s:%d: fragment_id 0x%0x frag type %d\n",
+		      MODULE_NAME, __FILE__, __func__, __LINE__, *index_ctx, frag_type);
+#endif
+		if ((*index_ctx < 0) || (*index_ctx > RLE_MAX_FRAG_ID)) {
+			PRINT("ERROR %s %s:%s:%d: invalid fragment id [%d]\n",
+			      MODULE_NAME, __FILE__, __func__, __LINE__, *index_ctx);
+			return C_ERROR;
+		}
+		if (is_context_free(_this, *index_ctx) == 0) {
+			struct rle_ctx_management *const rle_ctx = &_this->rle_ctx_man[*index_ctx];
+			/* Context is not free, whereas it must be. an error must have occured. */
+			/* Freeing context, updating stats, andrestarting receiving. */
+			rle_ctx_incr_counter_dropped(rle_ctx);
+			rle_ctx_incr_counter_bytes_dropped(rle_ctx, rle_ctx_get_remaining_alpdu_length(rle_ctx));
+			rle_receiver_free_context(_this, *index_ctx);
+		}
+		break;
 	case RLE_PDU_CONT_FRAG:
 	case RLE_PDU_END_FRAG:
 		*index_ctx = get_fragment_id(data_buffer);
@@ -278,7 +313,18 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 			      MODULE_NAME, __FILE__, __func__, __LINE__, *index_ctx);
 			return C_ERROR;
 		}
+		if (is_context_free(_this, *index_ctx) == 0) {
+			struct rle_ctx_management *const rle_ctx = &_this->rle_ctx_man[*index_ctx];
+			/* Context is not free, whereas it must not. an error must have occured. */
+			/* Freeing context and updating stats. At least one packet is partialy lost.*/
 
+			rle_ctx_incr_counter_dropped(rle_ctx);
+			rle_ctx_incr_counter_lost(rle_ctx, 1);
+			rle_ctx_incr_counter_bytes_dropped(rle_ctx, rle_ctx_get_remaining_alpdu_length(rle_ctx));
+			rle_receiver_free_context(_this, *index_ctx);
+
+			return C_ERROR;
+		}
 		break;
 	default:
 		return C_ERROR;
