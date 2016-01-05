@@ -30,13 +30,15 @@
 
 static int is_context_free(struct rle_receiver *_this, size_t index)
 {
-	int context_is_free = -1;
+	int context_is_free = C_FALSE;
 
 	if (index >= RLE_MAX_FRAG_NUMBER) {
 		goto error;
 	}
 
-	context_is_free = (_this->free_ctx >> index) & 0x1;
+	if (((_this->free_ctx >> index) & 0x1) == 0) {
+		context_is_free = C_TRUE;
+	}
 
 error:
 	return context_is_free;
@@ -63,7 +65,7 @@ static void set_nonfree_frag_ctx(struct rle_receiver *_this, int index)
 
 static void set_free_frag_ctx(struct rle_receiver *_this, int index)
 {
-	_this->free_ctx = (0 << index) & 0xff;
+	_this->free_ctx &= ~(1 << index);
 }
 
 static void set_free_all_frag_ctx(struct rle_receiver *_this)
@@ -292,8 +294,10 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 			      MODULE_NAME, __FILE__, __func__, __LINE__, *index_ctx);
 			return C_ERROR;
 		}
-		if (is_context_free(_this, *index_ctx) == 0) {
+		if (is_context_free(_this, *index_ctx) == C_FALSE) {
 			struct rle_ctx_management *const rle_ctx = &_this->rle_ctx_man[*index_ctx];
+			PRINT("ERROR %s %s:%s:%d: invalid Start on context not free, frag id [%d]\n",
+			      MODULE_NAME, __FILE__, __func__, __LINE__, *index_ctx);
 			/* Context is not free, whereas it must be. an error must have occured. */
 			/* Freeing context, updating stats, andrestarting receiving. */
 			rle_ctx_incr_counter_dropped(rle_ctx);
@@ -313,9 +317,12 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 			      MODULE_NAME, __FILE__, __func__, __LINE__, *index_ctx);
 			return C_ERROR;
 		}
-		if (is_context_free(_this, *index_ctx) == 0) {
+		if (is_context_free(_this, *index_ctx) == C_TRUE) {
 			struct rle_ctx_management *const rle_ctx = &_this->rle_ctx_man[*index_ctx];
-			/* Context is not free, whereas it must not. an error must have occured. */
+			PRINT("ERROR %s %s:%s:%d: invalid %s on context free, frag id [%d]\n",
+			      MODULE_NAME, __FILE__, __func__, __LINE__,
+			      frag_type == RLE_PDU_CONT_FRAG ? "Cont" : "End", *index_ctx);
+			/* Context is free, whereas it must not. an error must have occured. */
 			/* Freeing context and updating stats. At least one packet is partialy lost.*/
 
 			rle_ctx_incr_counter_dropped(rle_ctx);
