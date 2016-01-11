@@ -115,6 +115,8 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx, void *d
 	      __FILE__, __func__, __LINE__);
 #endif
 
+	int ret = C_OK;
+
 	/* awaited sequence nb must be equal
 	 * to the received one.
 	 * Trailer addr is buffer addr + offset
@@ -125,26 +127,37 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx, void *d
 
 	if (trl->b.seq_no != rle_ctx->next_seq_nb) {
 		const size_t nb_lost_pkts = (rle_ctx->next_seq_nb - trl->b.seq_no) % RLE_MAX_SEQ_NO;
-		PRINT("ERROR %s %s:%s:%d: sequence number inconsistency,"
-		      " received [%d] expected [%d]\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__,
-		      trl->b.seq_no, rle_ctx->next_seq_nb);
+		if (trl->b.seq_no != 0) {
+			PRINT("ERROR %s %s:%s:%d: sequence number inconsistency,"
+			      " received [%d] expected [%d]\n",
+			      MODULE_NAME,
+			      __FILE__, __func__, __LINE__,
+			      trl->b.seq_no, rle_ctx->next_seq_nb);
+		}
+#ifdef DEBUG
+		if (trl->b.seq_no == 0) {
+			PRINT("WARNING %s %s:%s:%d: sequence number null, supposing relog,"
+			      " received [%d] expected [%d]\n",
+			      MODULE_NAME,
+			      __FILE__, __func__, __LINE__,
+			      trl->b.seq_no, rle_ctx->next_seq_nb);
+		}
+#endif
 		/* update sequence with received one
 		 * and increment it to resynchronize
 		 * with sender sequence */
 		rle_ctx_set_seq_nb(rle_ctx, trl->b.seq_no);
-		rle_ctx_incr_seq_nb(rle_ctx);
-		/* we must update lost & dropped packet
-		 * counter and */
-		rle_ctx_incr_counter_lost(rle_ctx, nb_lost_pkts);
+		/* we must update lost packet counter if not relog */
+		if (trl->b.seq_no != 0) {
+			rle_ctx_incr_counter_lost(rle_ctx, nb_lost_pkts);
+			ret = C_ERROR_DROP;
+		}
 
-		return C_ERROR_DROP;
 	}
 
 	rle_ctx_incr_seq_nb(rle_ctx);
 
-	return C_OK;
+	return ret;
 }
 
 static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx)
