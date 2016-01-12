@@ -113,25 +113,25 @@ struct rle_context_configuration {
  * RLE transmitter statistics.
  */
 struct rle_transmitter_stats {
-	size_t sdus_in;       /**< Number of SDUs received for sending.   */
-	size_t sdus_sent;     /**< Number of SDUs sent.                   */
-	size_t sdus_dropped;  /**< Number of SDUs dropped.                */
-	size_t bytes_in;      /**< Number of octets received for sending. */
-	size_t bytes_sent;    /**< Number of octets sent.                 */
-	size_t bytes_dropped; /**< Number of octets dropped.              */
+	uint64_t sdus_in;       /**< Number of SDUs received for sending.   */
+	uint64_t sdus_sent;     /**< Number of SDUs sent.                   */
+	uint64_t sdus_dropped;  /**< Number of SDUs dropped.                */
+	uint64_t bytes_in;      /**< Number of octets received for sending. */
+	uint64_t bytes_sent;    /**< Number of octets sent.                 */
+	uint64_t bytes_dropped; /**< Number of octets dropped.              */
 };
 
 /**
  * RLE receiver statistics.
  */
 struct rle_receiver_stats {
-	size_t sdus_received;     /**< Number of SDUs received.               */
-	size_t sdus_reassembled;  /**< Number of SDUs reassembled in SDUs.    */
-	size_t sdus_dropped;      /**< Number of SDUs dropped.                */
-	size_t sdus_lost;         /**< Number of SDUs lost.                   */
-	size_t bytes_received;    /**< Number of octets received for sending. */
-	size_t bytes_reassembled; /**< Number of octets sent.                 */
-	size_t bytes_dropped;     /**< Number of octets dropped.              */
+	uint64_t sdus_received;     /**< Number of SDUs received.               */
+	uint64_t sdus_reassembled;  /**< Number of SDUs reassembled in SDUs.    */
+	uint64_t sdus_dropped;      /**< Number of SDUs dropped.                */
+	uint64_t sdus_lost;         /**< Number of SDUs lost.                   */
+	uint64_t bytes_received;    /**< Number of octets received for sending. */
+	uint64_t bytes_reassembled; /**< Number of octets sent.                 */
+	uint64_t bytes_dropped;     /**< Number of octets dropped.              */
 };
 
 /**
@@ -303,7 +303,7 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
  *
  * @ingroup       RLE transmitter statistics
  */
-size_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter *const transmitter,
+uint64_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter *const transmitter,
                                                  const uint8_t fragment_id);
 
 /**
@@ -316,7 +316,7 @@ size_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter *c
  *
  * @ingroup       RLE transmitter statistics
  */
-size_t rle_transmitter_stats_get_counter_sdus_sent(const struct rle_transmitter *const transmitter,
+uint64_t rle_transmitter_stats_get_counter_sdus_sent(const struct rle_transmitter *const transmitter,
                                                    const uint8_t fragment_id);
 
 /**
@@ -332,7 +332,7 @@ size_t rle_transmitter_stats_get_counter_sdus_sent(const struct rle_transmitter 
  *
  * @ingroup       RLE transmitter statistics
  */
-size_t rle_transmitter_stats_get_counter_sdus_dropped(
+uint64_t rle_transmitter_stats_get_counter_sdus_dropped(
         const struct rle_transmitter *const transmitter, const uint8_t fragment_id);
 
 /**
@@ -345,7 +345,7 @@ size_t rle_transmitter_stats_get_counter_sdus_dropped(
  *
  * @ingroup       RLE transmitter statistics
  */
-size_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter *const transmitter,
+uint64_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter *const transmitter,
                                                   const uint8_t fragment_id);
 
 /**
@@ -358,7 +358,7 @@ size_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter *
  *
  * @ingroup       RLE transmitter statistics
  */
-size_t rle_transmitter_stats_get_counter_bytes_sent(const struct rle_transmitter *const transmitter,
+uint64_t rle_transmitter_stats_get_counter_bytes_sent(const struct rle_transmitter *const transmitter,
                                                   const uint8_t fragment_id);
 
 /**
@@ -371,7 +371,7 @@ size_t rle_transmitter_stats_get_counter_bytes_sent(const struct rle_transmitter
  *
  * @ingroup       RLE transmitter statistics
  */
-size_t rle_transmitter_stats_get_counter_bytes_dropped(
+uint64_t rle_transmitter_stats_get_counter_bytes_dropped(
         const struct rle_transmitter *const transmitter, const uint8_t fragment_id);
 
 /**
@@ -424,7 +424,7 @@ size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiv
  *
  * @ingroup       RLE receiver statistics
  */
-size_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver *const receiver,
                                                     const uint8_t fragment_id);
 
 /**
@@ -437,7 +437,7 @@ size_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver *c
  *
  * @ingroup       RLE receiver statistics
  */
-size_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiver *const receiver,
                                                        const uint8_t fragment_id);
 
 /**
@@ -452,7 +452,7 @@ size_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiver
  *
  * @ingroup       RLE receiver statistics
  */
-size_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *const receiver,
                                                    const uint8_t fragment_id);
 
 /**
@@ -470,7 +470,7 @@ size_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *co
  *
  * @ingroup       RLE receiver statistics
  */
-size_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *const receiver,
                                                 const uint8_t fragment_id);
 
 /**
@@ -484,7 +484,7 @@ size_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *const
  *
  * @ingroup       RLE receiver statistics
  */
-size_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver *const receiver,
                                                      const uint8_t fragment_id);
 
 /**
@@ -498,7 +498,7 @@ size_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver *
  *
  * @ingroup       RLE receiver statistics
  */
-size_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_receiver *const receiver,
                                                         const uint8_t fragment_id);
 
 /**
@@ -511,7 +511,7 @@ size_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_receive
  *
  * @ingroup       RLE receiver statistics
  */
-size_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver *const receiver,
                                                     const uint8_t fragment_id);
 
 /**

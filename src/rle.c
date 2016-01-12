@@ -536,7 +536,7 @@ error:
 	return stat;
 }
 
-size_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter *const transmitter,
+uint64_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter *const transmitter,
                                                  const uint8_t fragment_id)
 {
 	size_t stat = 0;
@@ -552,7 +552,7 @@ error:
 	return stat;
 }
 
-size_t rle_transmitter_stats_get_counter_sdus_sent(const struct rle_transmitter *const transmitter,
+uint64_t rle_transmitter_stats_get_counter_sdus_sent(const struct rle_transmitter *const transmitter,
                                                    const uint8_t fragment_id)
 {
 	size_t stat = 0;
@@ -568,7 +568,7 @@ error:
 	return stat;
 }
 
-size_t rle_transmitter_stats_get_counter_sdus_dropped(
+uint64_t rle_transmitter_stats_get_counter_sdus_dropped(
         const struct rle_transmitter *const transmitter, const uint8_t fragment_id)
 {
 	size_t stat = 0;
@@ -584,7 +584,7 @@ error:
 	return stat;
 }
 
-size_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter *const transmitter,
+uint64_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter *const transmitter,
                                                   const uint8_t fragment_id)
 {
 	size_t stat = 0;
@@ -600,7 +600,7 @@ error:
 	return stat;
 }
 
-size_t rle_transmitter_stats_get_counter_bytes_sent(const struct rle_transmitter *const transmitter,
+uint64_t rle_transmitter_stats_get_counter_bytes_sent(const struct rle_transmitter *const transmitter,
                                                   const uint8_t fragment_id)
 {
 	size_t stat = 0;
@@ -616,7 +616,7 @@ error:
 	return stat;
 }
 
-size_t rle_transmitter_stats_get_counter_bytes_dropped(
+uint64_t rle_transmitter_stats_get_counter_bytes_dropped(
         const struct rle_transmitter *const transmitter, const uint8_t fragment_id)
 {
 	size_t stat = 0;
@@ -707,7 +707,7 @@ error:
 	return stat;
 }
 
-size_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver *const receiver,
                                                     const uint8_t fragment_id)
 {
 	size_t stat = 0;
@@ -724,7 +724,7 @@ error:
 }
 
 
-size_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiver *const receiver,
                                                        const uint8_t fragment_id)
 {
 	size_t stat = 0;
@@ -740,7 +740,7 @@ size_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiver
 		return stat;
 }
 
-size_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *const receiver,
                                                    const uint8_t fragment_id)
 {
 	size_t stat = 0;
@@ -756,7 +756,7 @@ error:
 	return stat;
 }
 
-size_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *const receiver,
                                                 const uint8_t fragment_id)
 {
 	size_t stat = 0;
@@ -772,7 +772,7 @@ error:
 	return stat;
 }
 
-size_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver *const receiver,
                                                      const uint8_t fragment_id)
 {
 	size_t stat = 0;
@@ -788,7 +788,7 @@ size_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver *
 		return stat;
 }
 
-size_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_receiver *const receiver,
                                                         const uint8_t fragment_id)
 {
 	size_t stat = 0;
@@ -804,7 +804,7 @@ error:
 	return stat;
 }
 
-size_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver *const receiver,
+uint64_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver *const receiver,
                                                     const uint8_t fragment_id)
 {
 	size_t stat = 0;

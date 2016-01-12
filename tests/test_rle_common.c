@@ -423,7 +423,7 @@ void print_transmitter_stats(void)
 			NULL
 		};
 
-		size_t (*const stats_functions[]) (const struct rle_transmitter *const, const u_int8_t)
+		uint64_t (*const stats_functions[]) (const struct rle_transmitter *const, const u_int8_t)
 		        = {
 			rle_transmitter_stats_get_counter_sdus_in,
 			rle_transmitter_stats_get_counter_sdus_sent,
@@ -462,7 +462,7 @@ void print_receiver_stats(void)
 			"counter bytes dropped       ",
 			NULL
 		};
-		size_t (*const stats_functions[]) (const struct rle_receiver *const, const u_int8_t) = {
+		uint64_t (*const stats_functions[]) (const struct rle_receiver *const, const u_int8_t) = {
 			rle_receiver_stats_get_counter_sdus_received,
 			rle_receiver_stats_get_counter_sdus_reassembled,
 			rle_receiver_stats_get_counter_sdus_dropped,
