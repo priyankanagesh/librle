@@ -28,6 +28,9 @@ TARGET_LINK_LIBRARIES(test_non_regression_fpdu librle pcap)
 ADD_EXECUTABLE(test_perfs EXCLUDE_FROM_ALL test_perfs.c)
 TARGET_LINK_LIBRARIES(test_perfs librle pcap)
 
+ADD_EXECUTABLE(test_perfs_fpdu EXCLUDE_FROM_ALL test_perfs_fpdu.c)
+TARGET_LINK_LIBRARIES(test_perfs_fpdu librle pcap)
+
 ADD_EXECUTABLE(test_dump_fpdus EXCLUDE_FROM_ALL test_dump_fpdus.c)
 TARGET_LINK_LIBRARIES(test_dump_fpdus librle pcap)
 
@@ -42,6 +45,7 @@ ADD_TEST(test_rle test_rle)
 ADD_TEST(test_non_regression test_non_regression)
 ADD_TEST(test_non_regression_fpdu test_non_regression_fpdu)
 ADD_TEST(test_perfs test_perfs)
+ADD_TEST(test_perfs_fpdu test_perfs_fpdu)
 ADD_TEST(test_dump_fpdus test_dump_fpdus)
 ADD_CUSTOM_TARGET(tests DEPENDS test_rle test_non_regression
 	test_non_regression_fpdu test_dump_fpdus)
