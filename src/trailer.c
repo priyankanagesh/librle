@@ -166,9 +166,9 @@ int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer, const rle_r_bu
 		const uint8_t next_seq_no = rle_ctx_get_seq_nb(rle_ctx);
 		const uint8_t received_seq_no = trailer->seqno_trailer.seq_no;
 		if (received_seq_no != next_seq_no) {
-			status = 1;
-			*lost_packets = (received_seq_no - next_seq_no) % RLE_MAX_SEQ_NO;
 			if (received_seq_no != 0) {
+				status = 1;
+				*lost_packets = (received_seq_no - next_seq_no) % RLE_MAX_SEQ_NO;
 				PRINT_RLE_ERROR("sequence number inconsistency, received [%d] expected [%d]\n",
 				                received_seq_no, next_seq_no);
 #ifdef DEBUG
