@@ -434,15 +434,6 @@ void rle_ctx_incr_counter_in(struct rle_ctx_management *_this)
 	_this->lk_status.counter_in++;
 }
 
-uint64_t rle_ctx_get_counter_in(struct rle_ctx_management *_this)
-{
-	uint64_t ctr_packets_in = 0L;
-
-	ctr_packets_in = _this->lk_status.counter_in;
-
-	return ctr_packets_in;
-}
-
 void rle_ctx_set_counter_ok(struct rle_ctx_management *_this, uint64_t val)
 {
 	_this->lk_status.counter_ok = val;
@@ -529,15 +520,6 @@ void rle_ctx_incr_counter_bytes_ok(struct rle_ctx_management *_this, uint32_t va
 	_this->lk_status.counter_bytes_ok += val;
 }
 
-uint64_t rle_ctx_get_counter_bytes_ok(struct rle_ctx_management *_this)
-{
-	uint64_t ctr_packets_bytes_ok = 0L;
-
-	ctr_packets_bytes_ok = _this->lk_status.counter_bytes_ok;
-
-	return ctr_packets_bytes_ok;
-}
-
 void rle_ctx_set_counter_bytes_dropped(struct rle_ctx_management *_this, uint64_t val)
 {
 	_this->lk_status.counter_bytes_dropped = val;
@@ -546,15 +528,6 @@ void rle_ctx_set_counter_bytes_dropped(struct rle_ctx_management *_this, uint64_
 void rle_ctx_incr_counter_bytes_dropped(struct rle_ctx_management *_this, uint32_t val)
 {
 	_this->lk_status.counter_bytes_dropped += val;
-}
-
-uint64_t rle_ctx_get_counter_bytes_dropped(struct rle_ctx_management *_this)
-{
-	uint64_t ctr_packets_bytes_dropped = 0L;
-
-	ctr_packets_bytes_dropped = _this->lk_status.counter_bytes_dropped;
-
-	return ctr_packets_bytes_dropped;
 }
 
 static uint8_t check_ip_version(const void *const data_buffer)

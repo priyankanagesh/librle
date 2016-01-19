@@ -316,8 +316,8 @@ uint64_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter 
  *
  * @ingroup       RLE transmitter statistics
  */
-uint64_t rle_transmitter_stats_get_counter_sdus_sent(const struct rle_transmitter *const transmitter,
-                                                   const uint8_t fragment_id);
+uint64_t rle_transmitter_stats_get_counter_sdus_sent(
+        const struct rle_transmitter *const transmitter, const uint8_t fragment_id);
 
 /**
  * @brief         Get total number of dropped SDU of an RLE transmitter queue.
@@ -358,8 +358,8 @@ uint64_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter
  *
  * @ingroup       RLE transmitter statistics
  */
-uint64_t rle_transmitter_stats_get_counter_bytes_sent(const struct rle_transmitter *const transmitter,
-                                                  const uint8_t fragment_id);
+uint64_t rle_transmitter_stats_get_counter_bytes_sent(
+        const struct rle_transmitter *const transmitter, const uint8_t fragment_id);
 
 /**
  * @brief         Get total number of dropped octetsof an RLE transmitter queue.

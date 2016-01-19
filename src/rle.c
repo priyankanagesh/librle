@@ -116,84 +116,187 @@ error:
 
 struct rle_transmitter *rle_transmitter_new(const struct rle_context_configuration configuration)
 {
-	struct rle_transmitter *transmitter = rle_transmitter_module_new();
+	struct rle_transmitter *transmitter = NULL;
+	size_t iterator = 0;
+	struct rle_configuration **tx_conf;
 
 	if (configuration.implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
-		PRINT(
-		        "ERROR: could not initialize transmitter with 0x31 as implicit protocol type : "
-		        "Not supported yet.\n");
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		PRINT("ERROR: could not initialize transmitter with 0x31 as implicit protocol type : "
+		      "Not supported yet.\n");
+
 		goto exit_label;
 	}
 
-	if (transmitter != NULL) {
-		size_t iterator = 0;
+	transmitter = (struct rle_transmitter *)MALLOC(sizeof(struct rle_transmitter));
 
-		for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-			rle_ctx_set_alpdu_length(
-			        &((struct rle_transmitter *)transmitter)->rle_ctx_man[iterator], 0);
-			rle_ctx_set_pdu_length(
-			        &((struct rle_transmitter *)transmitter)->rle_ctx_man[iterator], 0);
-			rle_ctx_set_remaining_alpdu_length(
-			        &((struct rle_transmitter *)transmitter)->rle_ctx_man[iterator], 0);
-			rle_ctx_set_remaining_pdu_length(
-			        &((struct rle_transmitter *)transmitter)->rle_ctx_man[iterator], 0);
-		}
+	if (!transmitter) {
+		PRINT("ERROR %s:%s:%d: allocating transmitter module failed\n", __FILE__, __func__,
+		      __LINE__);
 
-		rle_conf_set_default_ptype(transmitter->rle_conf,
-		                           configuration.implicit_protocol_type);
-		rle_conf_set_crc_check(transmitter->rle_conf, configuration.use_alpdu_crc);
-		rle_conf_set_ptype_compression(transmitter->rle_conf,
-		                               configuration.use_compressed_ptype);
-		rle_conf_set_ptype_suppression(transmitter->rle_conf,
-		                               configuration.use_ptype_omission);
+		goto exit_label;
 	}
 
+	tx_conf = &transmitter->rle_conf;
+
+	/* allocate a new RLE configuration structure */
+	*tx_conf = rle_conf_new();
+
+	if (!*tx_conf) {
+		PRINT("ERROR %s:%s:%d: allocating RLE configuration failed\n", __FILE__, __func__,
+		      __LINE__);
+		/* free rle transmitter */
+		rle_transmitter_destroy(transmitter);
+		transmitter = NULL;
+
+		goto exit_label;
+	}
+
+	/* initialize both RLE transmitter & the configuration structure */
+	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
+		struct rle_ctx_management *const ctx_man = &transmitter->rle_ctx_man[iterator];
+
+		rle_ctx_init(ctx_man);
+		rle_ctx_set_frag_id(ctx_man, iterator);
+		rle_ctx_set_seq_nb(ctx_man, 0);
+		rle_ctx_set_alpdu_length(ctx_man, 0);
+		rle_ctx_set_pdu_length(ctx_man, 0);
+		rle_ctx_set_remaining_alpdu_length(ctx_man, 0);
+		rle_ctx_set_remaining_pdu_length(ctx_man, 0);
+	}
+
+	transmitter->free_ctx = 0;
+
+	rle_conf_set_default_ptype(*tx_conf, configuration.implicit_protocol_type);
+	rle_conf_set_crc_check(*tx_conf, configuration.use_alpdu_crc);
+	rle_conf_set_ptype_compression(*tx_conf, configuration.use_compressed_ptype);
+	rle_conf_set_ptype_suppression(*tx_conf, configuration.use_ptype_omission);
+
 exit_label:
+
 	return transmitter;
 }
 
 void rle_transmitter_destroy(struct rle_transmitter *const transmitter)
 {
-	rle_transmitter_module_destroy(transmitter);
+	size_t iterator;
+
+	if (!transmitter) {
+		/* Transmitter already NULL, nothing to do. */
+		goto exit_label;
+	}
+
+	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; iterator++) {
+		struct rle_ctx_management *const ctx_man = &transmitter->rle_ctx_man[iterator];
+
+		rle_ctx_destroy(ctx_man);
+	}
+
+	if (rle_conf_destroy(transmitter->rle_conf) != C_OK) {
+		PRINT("ERROR %s:%s:%d: destroying RLE configuration failed\n", __FILE__, __func__,
+		      __LINE__);
+	}
+
+	FREE(transmitter);
+
+exit_label:
+
+	/*
+	 * TODO For resetting transmitter to NULL, the pointer to the pointer of the transmitter must
+	 * be given as argument, but the interface will be modified.
+	 *
+	 * *p_transmitter = NULL;
+	 *
+	 */
+
+	return;
 }
 
 
 struct rle_receiver *rle_receiver_new(const struct rle_context_configuration configuration)
 {
-	struct rle_receiver *receiver = rle_receiver_module_new();
+	struct rle_receiver *receiver = NULL;
+	size_t iterator;
+	struct rle_configuration **rx_conf;
 
 	if (configuration.implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
 		PRINT("ERROR: could not initialize receiver with 0x31 as implicit protocol type : "
 		      "Not supported yet.\n");
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+
 		goto exit_label;
 	}
 
-	if (receiver != NULL) {
-		size_t iterator = 0;
+	receiver = (struct rle_receiver *)MALLOC(sizeof(struct rle_receiver));
 
-		for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-			rle_conf_set_default_ptype(receiver->rle_conf[iterator],
-			                           configuration.implicit_protocol_type);
-			rle_conf_set_crc_check(receiver->rle_conf[iterator],
-			                       configuration.use_alpdu_crc);
-			rle_conf_set_ptype_compression(receiver->rle_conf[iterator],
-			                               configuration.use_compressed_ptype);
-			rle_conf_set_ptype_suppression(receiver->rle_conf[iterator],
-			                               configuration.use_ptype_omission);
-		}
+	if (!receiver) {
+		PRINT("ERROR %s:%s:%d: allocating receiver module failed\n", __FILE__, __func__, __LINE__);
+
+		goto exit_label;
 	}
 
+	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
+		struct rle_ctx_management *const ctx_man = &receiver->rle_ctx_man[iterator];
+		rx_conf = &receiver->rle_conf[iterator];
+		*rx_conf = rle_conf_new();
+		if (!*rx_conf) {
+			PRINT("ERROR %s:%s:%d: allocating receiver module configuration failed\n", __FILE__,
+			      __func__, __LINE__);
+			rle_receiver_destroy(receiver);
+			receiver = NULL;
+
+			goto exit_label;
+		}
+		rle_ctx_init(ctx_man);
+		rle_ctx_set_frag_id(ctx_man, iterator);
+		rle_ctx_set_seq_nb(ctx_man, 0);
+		rle_conf_init(*rx_conf);
+		rle_conf_set_default_ptype(*rx_conf, configuration.implicit_protocol_type);
+		rle_conf_set_crc_check(*rx_conf, configuration.use_alpdu_crc);
+		rle_conf_set_ptype_compression(*rx_conf, configuration.use_compressed_ptype);
+		rle_conf_set_ptype_suppression(*rx_conf, configuration.use_ptype_omission);
+	}
+
+	receiver->free_ctx = 0;
+
 exit_label:
+
 	return receiver;
 }
 
 void rle_receiver_destroy(struct rle_receiver *const receiver)
 {
-	rle_receiver_module_destroy(receiver);
+	size_t iterator;
+
+	if (!receiver) {
+		/* Nothing to do. */
+		goto exit_label;
+	}
+
+	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
+		struct rle_configuration **const conf = &receiver->rle_conf[iterator];
+		struct rle_ctx_management *const ctx_man = &receiver->rle_ctx_man[iterator];
+
+		if (*conf) {
+			rle_conf_destroy(*conf);
+		}
+
+		if (ctx_man) {
+			rle_ctx_destroy(ctx_man);
+		}
+	}
+
+	FREE(receiver);
+
+exit_label:
+
+	/*
+	 * TODO For resetting receiver to NULL, the pointer to the pointer of the receiver must
+	 * be given as argument, but the interface will be modified.
+	 *
+	 * *p_receiver = NULL;
+	 *
+	 */
+
+	return;
 }
 
 
@@ -530,7 +633,7 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_remaining_alpdu_length(&ctx_man);
+	stat = ctx_man.remaining_alpdu_size;
 
 error:
 	return stat;
@@ -546,7 +649,7 @@ uint64_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter 
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_counter_in(&ctx_man);
+	stat = ctx_man.lk_status.counter_in;
 
 error:
 	return stat;
@@ -562,7 +665,7 @@ uint64_t rle_transmitter_stats_get_counter_sdus_sent(const struct rle_transmitte
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_counter_ok(&ctx_man);
+	stat = ctx_man.lk_status.counter_ok;
 
 error:
 	return stat;
@@ -578,7 +681,7 @@ uint64_t rle_transmitter_stats_get_counter_sdus_dropped(
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_counter_dropped(&ctx_man);
+	stat = ctx_man.lk_status.counter_dropped;
 
 error:
 	return stat;
@@ -594,7 +697,7 @@ uint64_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_counter_bytes_in(&ctx_man);
+	stat = ctx_man.lk_status.counter_bytes_in;
 
 error:
 	return stat;
@@ -610,7 +713,7 @@ uint64_t rle_transmitter_stats_get_counter_bytes_sent(const struct rle_transmitt
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_counter_bytes_ok(&ctx_man);
+	stat = ctx_man.lk_status.counter_bytes_ok;
 
 error:
 	return stat;
@@ -626,7 +729,7 @@ uint64_t rle_transmitter_stats_get_counter_bytes_dropped(
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_counter_bytes_dropped(&ctx_man);
+	stat = ctx_man.lk_status.counter_bytes_dropped;
 
 error:
 	return stat;
@@ -637,6 +740,7 @@ int rle_transmitter_stats_get_counters(const struct rle_transmitter *const trans
                                        struct rle_transmitter_stats *const stats)
 {
 	int status = 1;
+	struct rle_ctx_management ctx_man;
 
 	if (!transmitter) {
 		goto error;
@@ -646,16 +750,20 @@ int rle_transmitter_stats_get_counters(const struct rle_transmitter *const trans
 		goto error;
 	}
 
+	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
 	if (!stats) {
 		goto error;
 	}
 
-	stats->sdus_in       = rle_transmitter_stats_get_counter_sdus_in(transmitter, fragment_id);
-	stats->sdus_sent     = rle_transmitter_stats_get_counter_sdus_sent(transmitter, fragment_id);
-	stats->sdus_dropped  = rle_transmitter_stats_get_counter_sdus_dropped(transmitter, fragment_id);
-	stats->bytes_in      = rle_transmitter_stats_get_counter_bytes_in(transmitter, fragment_id);
-	stats->bytes_sent    = rle_transmitter_stats_get_counter_bytes_sent(transmitter, fragment_id);
-	stats->bytes_dropped = rle_transmitter_stats_get_counter_bytes_dropped(transmitter, fragment_id);
+	stats->sdus_in       = ctx_man.lk_status.counter_in;
+	stats->sdus_sent     = ctx_man.lk_status.counter_ok;
+	stats->sdus_dropped  = ctx_man.lk_status.counter_dropped;
+	stats->bytes_in      = ctx_man.lk_status.counter_bytes_in;
+	stats->bytes_sent    = ctx_man.lk_status.counter_bytes_ok;
+	stats->bytes_dropped = ctx_man.lk_status.counter_bytes_dropped;
 
 	status = 0;
 
@@ -680,12 +788,12 @@ void rle_transmitter_stats_reset_counters(struct rle_transmitter *const transmit
 		goto error;
 	}
 
-	rle_ctx_set_counter_in(&ctx_man, 0);
-	rle_ctx_set_counter_ok(&ctx_man, 0);
-	rle_ctx_set_counter_dropped(&ctx_man, 0);
-	rle_ctx_set_counter_bytes_in(&ctx_man, 0);
-	rle_ctx_set_counter_bytes_ok(&ctx_man, 0);
-	rle_ctx_set_counter_bytes_dropped(&ctx_man, 0);
+	ctx_man.lk_status.counter_in            = 0L;
+	ctx_man.lk_status.counter_ok            = 0L;
+	ctx_man.lk_status.counter_dropped       = 0L;
+	ctx_man.lk_status.counter_bytes_in      = 0L;
+	ctx_man.lk_status.counter_bytes_ok      = 0L;
+	ctx_man.lk_status.counter_bytes_dropped = 0L;
 
 error:
 	return;
@@ -701,7 +809,7 @@ size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiv
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_remaining_pdu_length(&ctx_man);
+	stat = ctx_man.remaining_alpdu_size;
 
 error:
 	return stat;
@@ -717,7 +825,7 @@ uint64_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver 
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_counter_in(&ctx_man);
+	stat = ctx_man.lk_status.counter_in;
 
 error:
 	return stat;
@@ -734,7 +842,7 @@ uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiv
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_counter_ok(&ctx_man);
+	stat = ctx_man.lk_status.counter_ok;
 
 	error:
 		return stat;
@@ -750,7 +858,7 @@ uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_counter_dropped(&ctx_man);
+	stat = ctx_man.lk_status.counter_dropped;
 
 error:
 	return stat;
@@ -766,7 +874,7 @@ uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *con
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_counter_lost(&ctx_man);
+	stat = ctx_man.lk_status.counter_lost;
 
 error:
 	return stat;
@@ -782,7 +890,7 @@ uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_counter_bytes_in(&ctx_man);
+	stat = ctx_man.lk_status.counter_bytes_in;
 
 	error:
 		return stat;
@@ -798,7 +906,7 @@ uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_recei
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_counter_bytes_ok(&ctx_man);
+	stat = ctx_man.lk_status.counter_bytes_ok;
 
 error:
 	return stat;
@@ -814,7 +922,7 @@ uint64_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver 
 		goto error;
 	}
 
-	stat = (size_t)rle_ctx_get_counter_bytes_dropped(&ctx_man);
+	stat = ctx_man.lk_status.counter_bytes_dropped;
 
 error:
 	return stat;
@@ -825,6 +933,7 @@ int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
                                     struct rle_receiver_stats *const stats)
 {
 	int status = 1;
+	struct rle_ctx_management ctx_man;
 
 	if (!receiver) {
 		goto error;
@@ -834,18 +943,21 @@ int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
 		goto error;
 	}
 
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
 	if (!stats) {
 		goto error;
 	}
 
-	stats->sdus_received     = rle_receiver_stats_get_counter_sdus_received(receiver, fragment_id);
-	stats->sdus_reassembled  = rle_receiver_stats_get_counter_sdus_reassembled(receiver,
-	                                                                           fragment_id);
-	stats->sdus_dropped      = rle_receiver_stats_get_counter_sdus_dropped(receiver, fragment_id);
-	stats->bytes_received    = rle_receiver_stats_get_counter_bytes_received(receiver, fragment_id);
-	stats->bytes_reassembled = rle_receiver_stats_get_counter_bytes_reassembled(receiver,
-	                                                                            fragment_id);
-	stats->bytes_dropped     = rle_receiver_stats_get_counter_bytes_dropped(receiver, fragment_id);
+	stats->sdus_received     = ctx_man.lk_status.counter_in;
+	stats->sdus_reassembled  = ctx_man.lk_status.counter_ok;
+	stats->sdus_dropped      = ctx_man.lk_status.counter_dropped;
+	stats->sdus_lost         = ctx_man.lk_status.counter_lost;
+	stats->bytes_received    = ctx_man.lk_status.counter_bytes_in;
+	stats->bytes_reassembled = ctx_man.lk_status.counter_bytes_ok;
+	stats->bytes_dropped     = ctx_man.lk_status.counter_bytes_dropped;
 
 	status = 0;
 
@@ -870,13 +982,13 @@ void rle_receiver_stats_reset_counters(struct rle_transmitter *const transmitter
 		goto error;
 	}
 
-	rle_ctx_set_counter_in(&ctx_man, 0);
-	rle_ctx_set_counter_ok(&ctx_man, 0);
-	rle_ctx_set_counter_dropped(&ctx_man, 0);
-	rle_ctx_set_counter_lost(&ctx_man, 0);
-	rle_ctx_set_counter_bytes_in(&ctx_man, 0);
-	rle_ctx_set_counter_bytes_ok(&ctx_man, 0);
-	rle_ctx_set_counter_bytes_dropped(&ctx_man, 0);
+	ctx_man.lk_status.counter_in            = 0L;
+	ctx_man.lk_status.counter_ok            = 0L;
+	ctx_man.lk_status.counter_dropped       = 0L;
+	ctx_man.lk_status.counter_lost          = 0L;
+	ctx_man.lk_status.counter_bytes_in      = 0L;
+	ctx_man.lk_status.counter_bytes_ok      = 0L;
+	ctx_man.lk_status.counter_bytes_dropped = 0L;
 
 error:
 	return;

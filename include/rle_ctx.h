@@ -571,20 +571,6 @@ void rle_ctx_set_counter_in(struct rle_ctx_management *_this, uint64_t val);
 void rle_ctx_incr_counter_in(struct rle_ctx_management *_this);
 
 /**
- *  @brief	Get current counter value for SDUs received (partially received) for transmission
- *  (reception)
- *
- *  @warning
- *
- *  @param	_this   Pointer to the RLE context structure
- *
- *  @return	SDU received (partially received) for transmission (reception)
- *
- *  @ingroup
- */
-uint64_t rle_ctx_get_counter_in(struct rle_ctx_management *_this);
-
-/**
  *  @brief	Set SDU successfully transmitted/received counter value
  *
  *  @warning
@@ -755,19 +741,6 @@ void rle_ctx_set_counter_bytes_ok(struct rle_ctx_management *_this, uint64_t val
 void rle_ctx_incr_counter_bytes_ok(struct rle_ctx_management *_this, uint32_t val);
 
 /**
- *  @brief	Get current number of sent/received bytes
- *
- *  @warning
- *
- *  @param	_this   Pointer to the RLE context structure
- *
- *  @return	Number of sent/received bytes
- *
- *  @ingroup
- */
-uint64_t rle_ctx_get_counter_bytes_ok(struct rle_ctx_management *_this);
-
-/**
  *  @brief	Set successfully sent/received number of Bytes
  *
  *  @warning
@@ -790,19 +763,6 @@ void rle_ctx_set_counter_bytes_dropped(struct rle_ctx_management *_this, uint64_
  *  @ingroup
  */
 void rle_ctx_incr_counter_bytes_dropped(struct rle_ctx_management *_this, uint32_t val);
-
-/**
- *  @brief	Get current number of dropped bytes
- *
- *  @warning
- *
- *  @param	_this   Pointer to the RLE context structure
- *
- *  @return	Number of dropped bytes
- *
- *  @ingroup
- */
-uint64_t rle_ctx_get_counter_bytes_dropped(struct rle_ctx_management *_this);
 
 /**
  *  @brief	Dump & print to stdout the content of a specific RLE context

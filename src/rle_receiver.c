@@ -68,11 +68,6 @@ static void set_free_frag_ctx(struct rle_receiver *_this, int index)
 	_this->free_ctx &= ~(1 << index);
 }
 
-static void set_free_all_frag_ctx(struct rle_receiver *_this)
-{
-	_this->free_ctx = 0;
-}
-
 static int get_recvd_fragment_type(void *data_buffer)
 {
 	union rle_header_all *head = (union rle_header_all *)data_buffer;
@@ -145,84 +140,6 @@ static uint16_t get_rle_packet_length(void *data_buffer)
 	union rle_header_all *head = (union rle_header_all *)data_buffer;
 
 	return rle_header_all_get_packet_length(*head);
-}
-
-static void init(struct rle_receiver *_this)
-{
-#ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
-#endif
-
-	int i;
-	/* allocating buffer for each frag_id
-	 * and initialize sequence number and
-	 * fragment id */
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		rle_ctx_init(&_this->rle_ctx_man[i]);
-		rle_conf_init(_this->rle_conf[i]);
-		rle_ctx_set_frag_id(&_this->rle_ctx_man[i], i);
-		rle_ctx_set_seq_nb(&_this->rle_ctx_man[i], 0);
-	}
-
-	/* all frag_id are set to idle */
-	set_free_all_frag_ctx(_this);
-}
-
-struct rle_receiver *rle_receiver_module_new(void)
-{
-#ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
-#endif
-
-	struct rle_receiver *_this = NULL;
-	int i = 0;
-
-	_this = MALLOC(sizeof(struct rle_receiver));
-
-	if (!_this) {
-		PRINT("ERROR %s %s:%s:%d: allocating receiver module failed\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__);
-		return NULL;
-	}
-
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		_this->rle_conf[i] = rle_conf_new();
-		if (!_this->rle_conf[i]) {
-			PRINT("ERROR %s %s:%s:%d: allocating receiver module"
-			      " configuration failed\n",
-			      MODULE_NAME,
-			      __FILE__, __func__, __LINE__);
-			return NULL;
-		}
-	}
-
-	init(_this);
-
-	return _this;
-}
-
-void rle_receiver_module_destroy(struct rle_receiver *_this)
-{
-#ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
-#endif
-	if (_this) {
-		int i;
-		for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-			rle_ctx_destroy(&_this->rle_ctx_man[i]);
-			rle_conf_destroy(_this->rle_conf[i]);
-		}
-
-		FREE(_this);
-	}
-	_this = NULL;
 }
 
 int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, size_t data_length,
