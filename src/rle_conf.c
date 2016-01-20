@@ -10,9 +10,19 @@
 #include "rle_conf.h"
 #include "constants.h"
 
+
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
 #define MODULE_NAME "RLE CONF"
 
 #define IS_NOT_A_BOOLEAN(x) ((x) < C_FALSE || (x) > C_TRUE)
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*-------------------------------- PRIVATE STRUCTS AND TYPEDEFS ----------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
 
 struct rle_configuration {
 	uint8_t default_ptype;
@@ -42,6 +52,11 @@ struct rle_configuration *rle_conf_new(void)
 
 	return _this;
 }
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
 
 int rle_conf_destroy(struct rle_configuration *_this)
 {
@@ -176,6 +191,76 @@ int ptype_is_omissible(const uint16_t ptype, const struct rle_configuration *con
 	if (ptype_is_signal) {
 		status = C_TRUE;
 	}
+
+	return status;
+}
+
+enum rle_header_size_status rle_get_header_size(const struct rle_context_configuration *const conf,
+                                                const enum rle_fpdu_types fpdu_type,
+                                                size_t *const rle_header_size)
+{
+	enum rle_header_size_status status = RLE_HEADER_SIZE_ERR;
+	size_t header_size = 0;
+
+	switch(fpdu_type)
+	{
+		case RLE_LOGON_FPDU:
+
+			/* FPDU header. */
+			/* payload label = 6 */
+			header_size = 6;
+
+			status = RLE_HEADER_SIZE_OK;
+			break;
+
+		case RLE_CTRL_FPDU:
+
+			/* FPDU header. */
+			/* payload label = 3 */
+			header_size = 3;
+
+			status = RLE_HEADER_SIZE_OK;
+			break;
+
+		case RLE_TRAFFIC_FPDU:
+
+			/* Unable to guess the headers overhead size */
+
+			status = RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC;
+			break;
+
+		case RLE_TRAFFIC_CTRL_FPDU:
+
+			/* FPDU header. */
+			/* payload label = 3 */
+			header_size = 3;
+
+			/* PPDU header. Only complete PPDU. */
+			/* se_length_ltt = 2 */
+			/* pdu_label     = 0 */
+			header_size += 2 + 0;
+
+			if (conf != NULL) {
+				/* ALPDU header. */
+				/* protocol_type    = 0. May depends on conf with a different implementation. */
+				/* alpdu_label      = 0 */
+				/* protection_bytes = 0 */
+				header_size += 0 + 0 + 0;
+			} else {
+				/* ALPDU header. */
+				/* protocol_type    = 0 */
+				/* alpdu_label      = 0 */
+				/* protection_bytes = 0 */
+				header_size += 0 + 0 + 0;
+			}
+
+			status = RLE_HEADER_SIZE_OK;
+			break;
+		default:
+			break;
+	}
+
+	*rle_header_size = header_size;
 
 	return status;
 }

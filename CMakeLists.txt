@@ -26,14 +26,15 @@ SET(SRC_LIBRLE
 	src/crc.c
 	src/deencap.c
 	src/encap.c
+	src/pack.c
+	src/header.c
 	src/fragmentation.c
 	src/reassembly.c
 	src/rle_ctx.c
 	src/rle_transmitter.c
 	src/rle_receiver.c
 	src/rle_conf.c
-    src/rle_header_proto_type_field.c
-    src/rle.c
+	src/rle_header_proto_type_field.c
 )
 
 add_definitions("-g -W -Wall -Wextra -Wuninitialized
@@ -48,12 +49,12 @@ TARGET_LINK_LIBRARIES(librle
 SET_TARGET_PROPERTIES(librle PROPERTIES SOVERSION ${ABI_VERSION_MAJOR} VERSION ${ABI_VERSION})
 
 IF (FUZZING)
-    set(ENV{AFL_USE_ASAN} 1)
-    set(ENV{AFL_HARDEN} 1)
-    set(CMAKE_C_COMPILER /usr/local/bin/afl-gcc)
-    add_definitions(-fno-omit-frame-pointer -g)
+	set(ENV{AFL_USE_ASAN} 1)
+	set(ENV{AFL_HARDEN} 1)
+	set(CMAKE_C_COMPILER /usr/local/bin/afl-gcc)
+	add_definitions(-fno-omit-frame-pointer -g)
 ELSE(FUZZING)
-    add_definitions("-Werror")
+	add_definitions("-Werror")
 ENDIF(FUZZING)
 
 IF (BUILD_TESTS)
@@ -61,7 +62,7 @@ IF (BUILD_TESTS)
 ENDIF(BUILD_TESTS)
 
 IF (BUILD_DOC)
-    ADD_SUBDIRECTORY(doc)
+	ADD_SUBDIRECTORY(doc)
 ENDIF(BUILD_DOC)
 
 IF (TIME_DEBUG)
@@ -69,11 +70,11 @@ IF (TIME_DEBUG)
 ENDIF(TIME_DEBUG)
 
 IF (COVERAGE)
-    add_definitions("-fprofile-arcs -ftest-coverage -O0")
-    TARGET_LINK_LIBRARIES(librle
-        gcov)
+	add_definitions("-fprofile-arcs -ftest-coverage -O0")
+	TARGET_LINK_LIBRARIES(librle
+		gcov)
 ELSE(COVERAGE)
-    add_definitions("-O2")
+	add_definitions("-O2")
 ENDIF(COVERAGE)
 
 INSTALL(TARGETS librle

@@ -19,7 +19,9 @@
 
 #endif
 
-#include "encap.h"
+#include "rle.h"
+#include "rle_transmitter.h"
+#include "header.h"
 #include "fragmentation.h"
 #include "constants.h"
 #include "rle_ctx.h"
@@ -27,7 +29,17 @@
 #include "crc.h"
 #include "rle_header_proto_type_field.h"
 
+
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
 #define MODULE_NAME "FRAGMENTATION"
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*----------------------------------- PRIVATE FUNCTIONS CODE -------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
 
 static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx)
 {
@@ -408,6 +420,96 @@ static int get_fragment_type_from_ctx(struct rle_ctx_management *rle_ctx,
 	}
 
 	return frag_type;
+}
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*----------------------------------- PUBLIC FUNCTIONS CODE --------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, const uint8_t frag_id,
+                                  const size_t remaining_burst_size, unsigned char *const ppdu,
+                                  size_t *const ppdu_length)
+{
+	enum rle_frag_status status = RLE_FRAG_ERR; /* Error by default. */
+
+	size_t min_burst_size = 0;
+	int ret = 0;
+	size_t remaining_pdu = 0;
+	size_t remaining_alpdu = 0;
+	size_t burst_size = 0;
+
+	*ppdu_length = 0;
+
+	if (transmitter == NULL) {
+		status = RLE_FRAG_ERR_NULL_TRMT;
+		goto exit_label;
+	}
+
+	min_burst_size = RLE_CONT_HEADER_SIZE;
+
+	remaining_pdu = rle_ctx_get_remaining_pdu_length(&transmitter->rle_ctx_man[frag_id]);
+	remaining_alpdu = rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id]);
+	burst_size = remaining_burst_size <
+	                     RLE_MAX_PPDU_PL_SIZE ? remaining_burst_size : RLE_MAX_PPDU_PL_SIZE;
+
+	if (remaining_alpdu == 0) {
+		status = RLE_FRAG_ERR_CONTEXT_IS_NULL;
+		rle_transmitter_free_context(transmitter, frag_id);
+		goto exit_label;
+	}
+
+	if (fragmentation_is_needed(&transmitter->rle_ctx_man[frag_id], remaining_burst_size) &&
+		!rle_ctx_get_is_fragmented(&transmitter->rle_ctx_man[frag_id])) {
+		min_burst_size = RLE_START_MANDATORY_HEADER_SIZE;
+	}
+
+	if (burst_size < min_burst_size) {
+		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
+		goto exit_label;
+	}
+
+	/*
+	 * The further statement checks if the remaining burst size is large enough to send SDU,
+	 * but not the ALPDU protection octets. If not, there is no framentation, and an error code is
+	 * returned. The user of the library must retry the fragmentation with either:
+	 * - a smaller burst size, in order to send partially or fully the ALPDU without its
+	 *   protection bytes. Those octets could not be split apart and should be sent together in a
+	 *   forthcoming burst.
+	 * - a bigger burst size, for the same reason as exposed previously.
+	 */
+	if ((burst_size > RLE_CONT_HEADER_SIZE + remaining_pdu) &&
+	    (burst_size < RLE_CONT_HEADER_SIZE + remaining_alpdu)) {
+		burst_size = RLE_CONT_HEADER_SIZE + remaining_pdu;
+	}
+
+	if ((remaining_alpdu + RLE_CONT_HEADER_SIZE) < burst_size) {
+		*ppdu_length = remaining_alpdu + RLE_CONT_HEADER_SIZE;
+	} else {
+		*ppdu_length = burst_size;
+	}
+
+	ret = rle_transmitter_get_packet(transmitter, ppdu, *ppdu_length, frag_id,
+	                                 rle_ctx_get_proto_type(&transmitter->rle_ctx_man[frag_id]));
+
+	if (ret == C_ERROR_FRAG_SIZE) {
+		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
+		*ppdu_length = 0;
+		goto exit_label;
+	}
+
+	remaining_alpdu = rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id]);
+
+	if (remaining_alpdu == 0) {
+		rle_transmitter_free_context(transmitter, frag_id);
+	}
+
+	if (ret == C_OK) {
+		status = RLE_FRAG_OK;
+	}
+
+exit_label:
+	return status;
 }
 
 int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,

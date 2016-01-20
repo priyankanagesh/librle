@@ -25,7 +25,64 @@
 #include "deencap.h"
 #include "reassembly.h"
 
+
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
 #define MODULE_NAME "RECEIVER"
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*------------------------------------- PRIVATE FUNCTIONS ----------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+/**
+ * @brief          Check if a receiver queue context is valid and extract it.
+ *
+ * @param[in]      receiver                 The receiver with the context to extract.
+ * @param[in]      fragment_id              The fragment ID linked to the context to extract.
+ * @param[out]     ctx_man                  The extracted context.
+ *
+ * @return         0 if OK, else 1.
+ */
+static int valid_receiver_context(const struct rle_receiver *const receiver,
+                                  const uint8_t fragment_id,
+                                  const struct rle_ctx_management **const ctx_man);
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*----------------------------------- PRIVATE FUNCTIONS CODE -------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+static int valid_receiver_context(const struct rle_receiver *const receiver,
+                                  const uint8_t fragment_id,
+                                  const struct rle_ctx_management **const ctx_man)
+{
+	int status = 1;
+
+	if (!receiver) {
+		/* receiver null. */
+		goto error;
+	}
+
+	if (fragment_id >= RLE_MAX_FRAG_ID) {
+		/* Out of bound */
+		goto error;
+	}
+
+	if (!ctx_man) {
+		/* Context manager null. */
+		goto error;
+	}
+
+	*ctx_man = &receiver->rle_ctx_man[fragment_id];
+
+	status = 1;
+
+error:
+	return status;
+}
 
 
 static int is_context_free(struct rle_receiver *_this, size_t index)
@@ -114,6 +171,97 @@ static uint16_t get_fragment_id(void *data_buffer)
 	return head->b.LT_T_FID;
 }
 
+
+/*------------------------------------------------------------------------------------------------*/
+/*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+struct rle_receiver *rle_receiver_new(const struct rle_context_configuration configuration)
+{
+	struct rle_receiver *receiver = NULL;
+	size_t iterator;
+	struct rle_configuration **rx_conf;
+
+	if (configuration.implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
+		PRINT("ERROR: could not initialize receiver with 0x31 as implicit protocol type : "
+		      "Not supported yet.\n");
+
+		goto exit_label;
+	}
+
+	receiver = (struct rle_receiver *)MALLOC(sizeof(struct rle_receiver));
+
+	if (!receiver) {
+		PRINT("ERROR %s:%s:%d: allocating receiver module failed\n", __FILE__, __func__, __LINE__);
+
+		goto exit_label;
+	}
+
+	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
+		struct rle_ctx_management *const ctx_man = &receiver->rle_ctx_man[iterator];
+		rx_conf = &receiver->rle_conf[iterator];
+		*rx_conf = rle_conf_new();
+		if (!*rx_conf) {
+			PRINT("ERROR %s:%s:%d: allocating receiver module configuration failed\n", __FILE__,
+			      __func__, __LINE__);
+			rle_receiver_destroy(receiver);
+			receiver = NULL;
+
+			goto exit_label;
+		}
+		rle_ctx_init(ctx_man);
+		rle_ctx_set_frag_id(ctx_man, iterator);
+		rle_ctx_set_seq_nb(ctx_man, 0);
+		rle_conf_init(*rx_conf);
+		rle_conf_set_default_ptype(*rx_conf, configuration.implicit_protocol_type);
+		rle_conf_set_crc_check(*rx_conf, configuration.use_alpdu_crc);
+		rle_conf_set_ptype_compression(*rx_conf, configuration.use_compressed_ptype);
+		rle_conf_set_ptype_suppression(*rx_conf, configuration.use_ptype_omission);
+	}
+
+	receiver->free_ctx = 0;
+
+exit_label:
+
+	return receiver;
+}
+
+void rle_receiver_destroy(struct rle_receiver *const receiver)
+{
+	size_t iterator;
+
+	if (!receiver) {
+		/* Nothing to do. */
+		goto exit_label;
+	}
+
+	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
+		struct rle_configuration **const conf = &receiver->rle_conf[iterator];
+		struct rle_ctx_management *const ctx_man = &receiver->rle_ctx_man[iterator];
+
+		if (*conf) {
+			rle_conf_destroy(*conf);
+		}
+
+		if (ctx_man) {
+			rle_ctx_destroy(ctx_man);
+		}
+	}
+
+	FREE(receiver);
+
+exit_label:
+
+	/*
+	 * TODO For resetting receiver to NULL, the pointer to the pointer of the receiver must
+	 * be given as argument, but the interface will be modified.
+	 *
+	 * *p_receiver = NULL;
+	 *
+	 */
+
+	return;
+}
 int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, size_t data_length,
                               int *index_ctx)
 {
@@ -311,4 +459,238 @@ void rle_receiver_free_context(struct rle_receiver *_this, uint8_t fragment_id)
 	/* set to idle this fragmentation context */
 	rle_ctx_flush_buffer(&_this->rle_ctx_man[fragment_id]);
 	set_free_frag_ctx(_this, fragment_id);
+}
+
+size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiver,
+                                         const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	const struct rle_ctx_management *ctx_man = NULL;
+
+	if (!valid_receiver_context(receiver, fragment_id,
+	                            (const struct rle_ctx_management **const)&ctx_man)) {
+		goto error;
+	}
+
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = ctx_man->remaining_alpdu_size;
+
+error:
+
+	return stat;
+}
+
+uint64_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver *const receiver,
+                                                      const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	const struct rle_ctx_management *ctx_man = NULL;
+
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_in(ctx_man);
+
+error:
+
+	return stat;
+}
+
+
+uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiver *const receiver,
+                                                         const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	const struct rle_ctx_management *ctx_man = NULL;
+
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_ok(ctx_man);
+
+error:
+
+	return stat;
+}
+
+uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *const receiver,
+                                                     const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	const struct rle_ctx_management *ctx_man = NULL;
+
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_dropped(ctx_man);
+
+error:
+
+	return stat;
+}
+
+uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *const receiver,
+                                                  const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	const struct rle_ctx_management *ctx_man = NULL;
+
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_lost(ctx_man);
+
+error:
+
+	return stat;
+}
+
+uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver *const receiver,
+                                                       const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	const struct rle_ctx_management *ctx_man = NULL;
+
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_bytes_in(ctx_man);
+
+error:
+
+	return stat;
+}
+
+uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_receiver *const receiver,
+                                                          const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	const struct rle_ctx_management *ctx_man = NULL;
+
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_bytes_ok(ctx_man);
+
+error:
+
+	return stat;
+}
+
+uint64_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver *const receiver,
+                                                      const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	const struct rle_ctx_management *ctx_man = NULL;
+
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_bytes_dropped(ctx_man);
+
+error:
+	return stat;
+}
+
+int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
+                                    const uint8_t fragment_id,
+                                    struct rle_receiver_stats *const stats)
+{
+	int status = 1;
+	const struct rle_ctx_management *ctx_man = NULL;
+
+	if (!receiver) {
+		goto error;
+	}
+
+	if (fragment_id >= RLE_MAX_FRAG_ID) {
+		goto error;
+	}
+
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	if (!stats) {
+		goto error;
+	}
+
+	stats->sdus_received     = rle_ctx_get_counter_in(ctx_man);
+	stats->sdus_reassembled  = rle_ctx_get_counter_ok(ctx_man);
+	stats->sdus_dropped      = rle_ctx_get_counter_dropped(ctx_man);
+	stats->sdus_lost         = rle_ctx_get_counter_lost(ctx_man);
+	stats->bytes_received    = rle_ctx_get_counter_bytes_in(ctx_man);
+	stats->bytes_reassembled = rle_ctx_get_counter_bytes_ok(ctx_man);
+	stats->bytes_dropped     = rle_ctx_get_counter_bytes_dropped(ctx_man);
+
+	status = 0;
+
+error:
+	return status;
+}
+
+void rle_receiver_stats_reset_counters(struct rle_receiver *const receiver,
+                                       const uint8_t fragment_id)
+{
+	struct rle_ctx_management *ctx_man = NULL;
+
+	if (!receiver) {
+		goto error;
+	}
+
+	if (fragment_id >= RLE_MAX_FRAG_ID) {
+		goto error;
+	}
+
+	if (!valid_receiver_context(receiver, fragment_id,
+	                            (const struct rle_ctx_management **)&ctx_man)) {
+		goto error;
+	}
+
+	if (!ctx_man) {
+		goto error;
+	}
+
+	rle_ctx_reset_counters(ctx_man);
+
+error:
+	return;
 }

@@ -23,6 +23,11 @@
 #include "rle_ctx.h"
 #include "header.h"
 
+
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------- PUBLIC STRUCTS AND TYPEDEFS ----------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
 /**
  * RLE receiver module used
  * for reassembly & deencapsulation.
@@ -35,38 +40,10 @@ struct rle_receiver {
 	uint8_t free_ctx;
 };
 
-/**
- *  @brief Create a RLE receiver module
- *
- *  @warning
- *
- *  @return Pointer to the receiver module
- *
- *  @ingroup
- */
-struct rle_receiver *rle_receiver_module_new(void);
 
-/**
- *  @brief Initialize a RLE receiver module
- *
- *  @warning
- *
- *  @param _this	The receiver module to initialize
- *
- *  @ingroup
- */
-void rle_receiver_module_init(struct rle_receiver *_this);
-
-/**
- *  @brief Destroy a RLE receiver module
- *
- *  @warning
- *
- *  @param _this	The receiver module to destroy
- *
- *  @ingroup
- */
-void rle_receiver_module_destroy(struct rle_receiver *_this);
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------------- PUBLIC FUNCTIONS ---------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
 
 /**
  *  @brief Deencapsulate RLE fragment from a buffer
@@ -111,6 +88,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 int rle_receiver_get_packet(struct rle_receiver *_this, uint8_t fragment_id, void *pdu_buffer,
                             int *pdu_proto_type,
                             uint32_t *pdu_length);
+
 /**
  *  @brief Set to idle the fragment context
  *
@@ -122,18 +100,5 @@ int rle_receiver_get_packet(struct rle_receiver *_this, uint8_t fragment_id, voi
  *  @ingroup
  */
 void rle_receiver_free_context(struct rle_receiver *_this, uint8_t fragment_id);
-
-/**
- *  @brief Get total number of dropped packets
- *
- *  @warning
- *
- *  @param _this		The receiver module
- *
- *  @return	Number of dropped packets
- *
- *  @ingroup
- */
-uint64_t rle_receiver_get_counter_dropped(struct rle_receiver *_this);
 
 #endif /* __RLE_RECEIVER_H__ */

@@ -48,4 +48,7 @@ EXPORT_SYMBOL(rle_receiver_stats_get_counter_bytes_reassembled);
 EXPORT_SYMBOL(rle_receiver_stats_get_counter_bytes_dropped);
 EXPORT_SYMBOL(rle_receiver_stats_get_counters);
 EXPORT_SYMBOL(rle_receiver_stats_reset_counters);
+EXPORT_SYMBOL(rle_header_ptype_decompression);
+EXPORT_SYMBOL(rle_header_ptype_is_compressible);
+EXPORT_SYMBOL(rle_header_ptype_compression);
 EXPORT_SYMBOL(rle_get_header_size);

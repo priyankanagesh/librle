@@ -14,6 +14,11 @@
 #include "trailer.h"
 #include "constants.h"
 
+
+/*------------------------------------------------------------------------------------------------*/
+/*---------------------------------- PUBLIC CONSTANTS AND MACROS ---------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
 /**
  * This define compute the size of the zc buffer, based on the hard coded values of the differents
  * headers, trailers and pointers sizes.
@@ -41,6 +46,11 @@
                             (((RLE_MAX_SEQ_NO)-2) * (int)(sizeof(struct zc_rle_header_cont_end))) + \
                             (1 * (int)(sizeof(struct zc_rle_header_cont_end))) + \
                             (1 * (int)(sizeof(struct zc_rle_trailer))))
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------- PUBLIC STRUCTS AND TYPEDEFS ----------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
 
 /**
  * Structure of pair or pointers

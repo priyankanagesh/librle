@@ -33,26 +33,29 @@
 
 #endif
 
+#include "rle.h"
 #include "rle_header_proto_type_field.h"
 
-/** Size of mandatory fields in a start packet in Bytes */
-#define RLE_START_MANDATORY_HEADER_SIZE         4
-/** Size of fields in a continuation packet in Bytes */
-#define RLE_CONT_HEADER_SIZE                    2
-/** Size of fields in a end packet in Bytes */
-#define RLE_END_HEADER_SIZE                     RLE_CONT_HEADER_SIZE
-/** Size of fields in a complete packet in Bytes without
- * protocol type field */
-#define RLE_COMPLETE_HEADER_SIZE                RLE_CONT_HEADER_SIZE
-/**  Max value of fragment_id */
-#define RLE_MAX_FRAG_ID                         7
-/**  Max number of fragment id */
-#define RLE_MAX_FRAG_NUMBER                     (RLE_MAX_FRAG_ID + 1)
+
+/*------------------------------------------------------------------------------------------------*/
+/*---------------------------------- PUBLIC CONSTANTS AND MACROS ---------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
 
 /** Macros to set Label Type,
  *  Protocol Type Suppressed
  *  and Fragment ID
  *  on a union rle_header_all */
+
+#define RLE_START_MANDATORY_HEADER_SIZE         4
+
+/** Size of fields in a continuation packet in Bytes */
+#define RLE_CONT_HEADER_SIZE                    2
+
+/** Size of fields in a end packet in Bytes */
+#define RLE_END_HEADER_SIZE                     RLE_CONT_HEADER_SIZE
+
+/** Size of fields in a complete packet in Bytes without protocol type field */
+#define RLE_COMPLETE_HEADER_SIZE                RLE_CONT_HEADER_SIZE
 
 #define SET_LABEL_TYPE(_y, _x)  do {                             \
 		(_y) = ((_y & 0x1) ^ (_x << 1));        \
@@ -78,6 +81,22 @@
 #else
 #error "Please fix <asm/byteorder.h>"
 #endif
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*-------------------------------- PROTECTED STRUCTS AND TYPEDEFS --------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+/** Stubs for visibility */
+struct rle_ctx_management;
+
+/** Stubs for visibility */
+struct rle_configuration;
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------- PUBLIC STRUCTS AND TYPEDEFS ----------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
 
 /*
  * common RLE packet header
@@ -201,5 +220,29 @@ struct rle_header_start {
 struct rle_header_cont_end {
 	union rle_header_all head;
 } __attribute__ ((packed));
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------------- PUBLIC FUNCTIONS ---------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+/**
+ *  @brief create header into an rle packet
+ *
+ *  @warning
+ *
+ *  @param rle_ctx              the rle fragment context
+ *  @param rle_conf             the rle configuration
+ *  @param data_buffer          data buffer's address to encapsulate
+ *  @param data_length          data length to encapsulate
+ *  @param protocol_type        the protocol type
+ *
+ *  @return C_ERROR if KO
+ *                C_OK if OK
+ *
+ *  @ingroup
+ */
+int create_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
+                  void *data_buffer, size_t data_length, uint16_t protocol_type);
 
 #endif /* __HEADER_H__ */

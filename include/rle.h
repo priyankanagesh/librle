@@ -22,6 +22,23 @@
 
 #endif
 
+
+/*------------------------------------------------------------------------------------------------*/
+/*---------------------------------- PUBLIC CONSTANTS AND MACROS ---------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+/** Max size of input packet (PDU) in Bytes */
+#define RLE_MAX_PDU_SIZE                        4088
+
+/** Max size of PPDU Payload (PPDU_PL) in Bytes */
+#define RLE_MAX_PPDU_PL_SIZE                    2047
+
+/**  Max value of fragment_id */
+#define RLE_MAX_FRAG_ID                         7
+
+/**  Max number of fragment id */
+#define RLE_MAX_FRAG_NUMBER                     (RLE_MAX_FRAG_ID + 1)
+
 /** Status of the encapsulation. */
 enum rle_encap_status {
 	RLE_ENCAP_OK,              /**< Ok.                                    */
@@ -76,6 +93,66 @@ enum rle_fpdu_types {
 	RLE_TRAFFIC_CTRL_FPDU, /**< Traffic and control FPDU. */
 };
 
+/** Protocol types field values compressed. */
+enum {
+	/* for signaling. */
+	RLE_PROTO_TYPE_SIGNAL_COMP              = 0x42,
+	/* for VLAN. */
+	RLE_PROTO_TYPE_VLAN_COMP                = 0x0f,
+	RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD = 0x31,
+	RLE_PROTO_TYPE_VLAN_QINQ_COMP           = 0x19,
+	RLE_PROTO_TYPE_VLAN_QINQ_LEGACY_COMP    = 0x1a,
+	/* for IPv4/v6. */
+	RLE_PROTO_TYPE_IP_COMP                  = 0x30,
+	RLE_PROTO_TYPE_IPV4_COMP                = 0x0d,
+	RLE_PROTO_TYPE_IPV6_COMP                = 0x11,
+	/* for ARP. */
+	/* TODO: ARP not in the RLE_ICD v.10 (19/02/2015). Should we considere to remove it ? */
+	RLE_PROTO_TYPE_ARP_COMP                 = 0x0e,
+	/* for SACH. */
+	/* TODO: SACH not in the RLE_ICD v.10 (19/02/2015). Should we considere to remove it ? */
+	RLE_PROTO_TYPE_SACH_COMP                = RLE_PROTO_TYPE_IP_COMP
+};
+
+/** Protocol types field values uncompressed. */
+enum {
+	/* for signaling */
+	RLE_PROTO_TYPE_SIGNAL_UNCOMP            = 0x0082,
+	/* for VLAN */
+	RLE_PROTO_TYPE_VLAN_UNCOMP              = 0x8100,
+	RLE_PROTO_TYPE_VLAN_QINQ_UNCOMP         = 0x88a8,
+	RLE_PROTO_TYPE_VLAN_QINQ_LEGACY_UNCOMP  = 0x9100,
+	/* for IPv4/v6 */
+	RLE_PROTO_TYPE_IPV4_UNCOMP              = 0x0800,
+	RLE_PROTO_TYPE_IPV6_UNCOMP              = 0x86dd,
+	/* for ARP */
+	/* TODO: ARP not in the ICD (19/02/2015). Should we considere to remove it ? */
+	RLE_PROTO_TYPE_ARP_UNCOMP               = 0x0806,
+	/* for SACH */
+	/* TODO: SACH not in the ICD (19/02/2015). Should we considere to remove it ? */
+	RLE_PROTO_TYPE_SACH_UNCOMP              = RLE_PROTO_TYPE_IPV4_UNCOMP
+};
+
+/**
+ * Special procotol type values.
+ *
+ * Chosen from among reserved values in IEEE public EtherType list.
+ * May evolve in the future.
+ *
+ * @see http://standards.ieee.org/develop/regauth/ethertype/eth.txt
+ */
+enum {
+	RLE_PROTO_TYPE_RESERVED                 = 0x0b04,
+	RLE_PROTO_TYPE_USER_DEFINED,
+	RLE_PROTO_TYPE_IPV4_OR_IPV6,
+	RLE_PROTO_TYPE_ADJACENT_2BYTES_PTYPE
+};
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*-------------------------------- PROTECTED STRUCTS AND TYPEDEFS --------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
 /**
  * RLE transmitter.
  * For encapsulation, fragmentation and packing.
@@ -87,6 +164,11 @@ struct rle_transmitter;
  * For decapsulation.
  */
 struct rle_receiver;
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------- PUBLIC STRUCTS AND TYPEDEFS ----------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
 
 /**
  * RLE Service Data Unit.
@@ -134,8 +216,15 @@ struct rle_receiver_stats {
 	uint64_t bytes_dropped;     /**< Number of octets dropped.              */
 };
 
+
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------------- PUBLIC FUNCTIONS ---------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
 /**
  * @brief         Create and initialize a RLE transmitter module.
+ *
+ *                TODO Function parameter 'configuration' should be passed by reference.
  *
  * @param[in]     configuration            The configuration of the RLE transmitter.
  *
@@ -156,6 +245,8 @@ void rle_transmitter_destroy(struct rle_transmitter *const transmitter);
 
 /**
  * @brief         Create and initialize a RLE receiver module.
+ *
+ *                TODO Function parameter 'configuration' should be passed by reference.
  *
  * @param[in]     configuration            The configuration of the RLE receiver.
  *
@@ -425,7 +516,7 @@ size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiv
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver *const receiver,
-                                                    const uint8_t fragment_id);
+                                                      const uint8_t fragment_id);
 
 /**
  * @brief         Get total number of successfully reassembled SDUs of an RLE receiver queue.
@@ -438,7 +529,7 @@ uint64_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver 
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiver *const receiver,
-                                                       const uint8_t fragment_id);
+                                                         const uint8_t fragment_id);
 
 /**
  * @brief         Get total number of dropped SDUs of an RLE receiver queue.
@@ -453,7 +544,7 @@ uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiv
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *const receiver,
-                                                   const uint8_t fragment_id);
+                                                     const uint8_t fragment_id);
 
 /**
  * @brief         Get total number of lost SDUs of an RLE receiver queue.
@@ -471,7 +562,7 @@ uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *const receiver,
-                                                const uint8_t fragment_id);
+                                                  const uint8_t fragment_id);
 
 /**
  * @brief         Get total number of received octets of partially received SDUs of an RLE receiver
@@ -485,7 +576,7 @@ uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *con
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver *const receiver,
-                                                     const uint8_t fragment_id);
+                                                       const uint8_t fragment_id);
 
 /**
  * @brief         Get total number of received octets of successfully reassembled in SDUs of an RLE
@@ -499,7 +590,7 @@ uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_receiver *const receiver,
-                                                        const uint8_t fragment_id);
+                                                          const uint8_t fragment_id);
 
 /**
  * @brief         Get total number of received octets of dropped SDUs of an RLE receiver queue.
@@ -512,7 +603,7 @@ uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_recei
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver *const receiver,
-                                                    const uint8_t fragment_id);
+                                                      const uint8_t fragment_id);
 
 /**
  * @brief         Dump all the statistics of a given RLE receiver queue in an RLE stats
@@ -538,8 +629,41 @@ int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
  *
  * @ingroup       RLE transmitter statistics
  */
-void rle_receiver_stats_reset_counters(struct rle_transmitter *const transmitter,
+void rle_receiver_stats_reset_counters(struct rle_receiver *const receiver,
                                        const uint8_t fragment_id);
+
+/**
+ * @brief       RLE header decompression of protocol type function.
+ *
+ * @param[in]   compressed_ptype                A compressed protocol type to uncompress.
+ *
+ * @return      The uncompressed protocol type.
+ *
+ * @ingroup
+ */
+uint16_t rle_header_ptype_decompression(uint8_t compressed_ptype);
+
+/**
+ * @brief       RLE header check if protocol type is compressible function.
+ *
+ * @param[in]   uncompressed_ptype  An uncompressed protocol type to compress.
+ *
+ * @return      0 if the protocol type is compressible else 1.
+ *
+ * @ingroup
+ */
+int rle_header_ptype_is_compressible(uint16_t uncompressed_ptype);
+
+/**
+ * @brief       RLE header compression of protocol type function.
+ *
+ * @param[in]   uncompressed_ptype  An uncompressed protocol type to compress.
+ *
+ * @return      The compressed protocol type.
+ *
+ * @ingroup
+ */
+uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype);
 
 /**
  * @brief         Get the size of an RLE headers overhead (ALPDU + PPDU + FPDU headers).

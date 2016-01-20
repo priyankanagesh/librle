@@ -19,6 +19,8 @@
 
 #endif
 
+#include "rle.h"
+#include "rle_transmitter.h"
 #include "encap.h"
 #include "constants.h"
 #include "rle_ctx.h"
@@ -26,105 +28,83 @@
 #include "rle_conf.h"
 #include "rle_header_proto_type_field.h"
 
+
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
 #define MODULE_NAME "ENCAP"
 
-int create_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
-                  void *data_buffer, size_t data_length, uint16_t protocol_type)
+
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------------- PRIVATE FUNCTIONS --------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+/**
+ *  @brief Check validity of input PDU
+ *
+ *  @warning
+ *
+ *  @param pdu_length		length of the buffer
+ *
+ *  @return	C_ERROR if KO
+ *		C_OK if OK
+ *
+ *  @ingroup
+ */
+static int encap_check_pdu_validity(const size_t pdu_length);
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*----------------------------------- PRIVATE FUNCTIONS CODE -------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+static int encap_check_pdu_validity(const size_t pdu_length)
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME, __FILE__, __func__, __LINE__);
 #endif
 
-	size_t size_header = RLE_COMPLETE_HEADER_SIZE;
-	size_t ptype_length = 0;
-	uint8_t proto_type_supp = RLE_T_PROTO_TYPE_NO_SUPP;
-
-	/* map RLE header to the already allocated buffer */
-	struct zc_rle_header_complete_w_ptype *rle_hdr =
-	        (struct zc_rle_header_complete_w_ptype *)rle_ctx->buf;
-	uint8_t label_type;
-
-	/* don't fill ALPDU ptype field if given ptype
-	 * is equal to the default one and suppression is active,
-	 * or if given ptype is for signalling packet */
-	if (!ptype_is_omissible(protocol_type, rle_conf)) {
-		/* remap a complete header with ptype field */
-		struct rle_header_complete_w_ptype *rle_c_hdr =
-		        (struct rle_header_complete_w_ptype *)&rle_hdr->header;
-
-		if (rle_conf_get_ptype_compression(rle_conf)) {
-			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
-			if (rle_header_ptype_is_compressible(protocol_type) == C_OK) {
-				rle_c_hdr->ptype_c_s.c.proto_type = rle_header_ptype_compression(
-				        protocol_type);
-			} else {
-				rle_c_hdr->ptype_c_s.e.proto_type = 0xFF;
-				rle_c_hdr->ptype_c_s.e.proto_type_uncompressed = ntohs(
-				        protocol_type);
-				ptype_length += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
-			}
-		} else {
-			rle_c_hdr->ptype_u_s.proto_type = ntohs(protocol_type);
-			rle_ctx_set_proto_type(rle_ctx, protocol_type);
-			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
-		}
-	} else {
-		/* no protocol type in this packet */
-		proto_type_supp = RLE_T_PROTO_TYPE_SUPP;
+	if (pdu_length > RLE_MAX_PDU_SIZE) {
+		PRINT("ERROR %s %s:%s:%d: PDU too large for RL Encapsulation, size [%zu]\n", MODULE_NAME,
+		      __FILE__, __func__, __LINE__, pdu_length);
+		return C_ERROR;
 	}
-	rle_ctx_set_proto_type(rle_ctx, protocol_type);
-
-	/* update total header size */
-	size_header += ptype_length;
-
-	/* initialize payload pointers */
-	rle_hdr->ptrs.start = NULL;
-	rle_hdr->ptrs.end = NULL;
-	/* fill RLE complete header */
-	rle_hdr->header.head.b.start_ind = 1;
-	rle_hdr->header.head.b.end_ind = 1;
-	rle_header_all_set_packet_length(&(rle_hdr->header.head), data_length);
-	SET_PROTO_TYPE_SUPP(rle_hdr->header.head.b.LT_T_FID, proto_type_supp);
-
-	/* fill label_type field accordingly to the
-	 * given protocol type (signal or implicit/indicated
-	 * by the NCC */
-	if (protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP) {
-		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_LT_PROTO_SIGNAL); /* RCS2 requirement */
-	} else if (proto_type_supp == RLE_T_PROTO_TYPE_SUPP) {
-		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_LT_IMPLICIT_PROTO_TYPE);
-	} else {
-		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_T_PROTO_TYPE_NO_SUPP);
-	}
-
-	/* update rle configuration */
-	/* rle_conf_set_ptype_suppression(rle_conf, proto_type_supp); */
-
-	/* set start & end PDU data pointers */
-	rle_hdr->ptrs.start = (char *)data_buffer;
-	rle_hdr->ptrs.end = (char *)((char *)data_buffer + data_length);
-	/* update rle context */
-	rle_ctx_set_end_address(rle_ctx,
-	                        (char *)((char *)rle_ctx->buf + size_header));
-	rle_ctx_set_is_fragmented(rle_ctx, C_FALSE);
-	rle_ctx_set_frag_counter(rle_ctx, 1);
-	rle_ctx_set_nb_frag_pdu(rle_ctx, 1);
-	rle_ctx_set_use_crc(rle_ctx, C_FALSE);
-	rle_ctx_set_pdu_length(rle_ctx, data_length);
-	rle_ctx_set_remaining_pdu_length(rle_ctx, data_length);
-	rle_ctx_set_alpdu_length(rle_ctx, data_length + ptype_length);
-	rle_ctx_set_remaining_alpdu_length(rle_ctx, data_length + ptype_length);
-	/* RLE packet length is the sum of packet label,
-	 * protocol type & payload length */
-	rle_ctx_set_rle_length(rle_ctx,
-	                       (data_length + ptype_length), ptype_length);
-	label_type = GET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID);
-	rle_ctx_set_label_type(rle_ctx, label_type);
-	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO update */
 
 	return C_OK;
+}
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
+                                      const struct rle_sdu sdu,
+                                      const uint8_t frag_id)
+{
+	enum rle_encap_status status = RLE_ENCAP_ERR;
+	int ret = 0;
+
+	if (transmitter == NULL) {
+		status = RLE_ENCAP_ERR_NULL_TRMT;
+		goto exit_label;
+	}
+
+	if (sdu.size > RLE_MAX_PDU_SIZE) {
+		status = RLE_ENCAP_ERR_SDU_TOO_BIG;
+		rle_transmitter_free_context(transmitter, frag_id);
+		goto exit_label;
+	}
+
+	ret = rle_transmitter_encap_data(transmitter, sdu.buffer, sdu.size, sdu.protocol_type, frag_id);
+
+	if (ret == C_OK) {
+		status = RLE_ENCAP_OK;
+	}
+
+exit_label:
+	return status;
 }
 
 int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
@@ -155,26 +135,6 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx, struct rle_configu
 
 	/* set PDU buffer address to the rle_ctx ptr */
 	rle_ctx->pdu_buf = pdu_buffer;
-
-	return C_OK;
-}
-
-int encap_check_pdu_validity(const size_t pdu_length)
-{
-#ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
-#endif
-
-	if (pdu_length > RLE_MAX_PDU_SIZE) {
-		PRINT("ERROR %s %s:%s:%d: PDU too large for RL Encapsulation,"
-		      " size [%zu]\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__,
-		      pdu_length);
-		return C_ERROR;
-	}
 
 	return C_OK;
 }
