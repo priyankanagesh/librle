@@ -21,6 +21,7 @@
 #endif
 
 #include "rle_conf.h"
+#include "constants.h"
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -1209,5 +1210,55 @@ void rle_header_start_set_packet_length(union rle_header_start_packet *const hea
  *  @return        the packet length
  */
 size_t rle_header_start_get_packet_length(const union rle_header_start_packet header);
+
+/**
+ *  @brief         Get the state of the frag_id-nth context.
+ *
+ *  @param[in]     contexts              The contexts
+ *  @param[in]     frag_id               The frag_id of the context checked
+ *
+ *  @return        C_FALSE if the context is in use, else C_TRUE if free.
+ */
+static inline int rle_ctx_is_free(uint8_t contexts, const size_t frag_id)
+{
+	int context_is_free = C_FALSE;
+
+	if (frag_id >= RLE_MAX_FRAG_NUMBER) {
+		goto error;
+	}
+
+	if (((contexts >> frag_id) & 0x1) == 0) {
+		context_is_free = C_TRUE;
+	}
+
+error:
+	return context_is_free;
+}
+
+/**
+ *  @brief         Set the state of the frag_id-nth context to NON FREE.
+ *
+ *  @param[in]     contexts              The contexts
+ *  @param[in]     frag_id               The frag_id of the context to be set
+ */
+static inline void rle_ctx_set_nonfree(uint8_t *const contexts, const size_t frag_id)
+{
+	*contexts |= (1 << frag_id);
+
+	return;
+}
+
+/**
+ *  @brief         Set the state of the frag_id-nth context to FREE.
+ *
+ *  @param[in]     contexts              The contexts
+ *  @param[in]     frag_id               The frag_id of the context to be set
+ */
+static inline void rle_ctx_set_free(uint8_t *const contexts, const size_t frag_id)
+{
+	*contexts &= ~(1 << frag_id);
+
+	return;
+}
 
 #endif /* __RLE_CTX_H__ */

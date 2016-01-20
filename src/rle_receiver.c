@@ -85,20 +85,9 @@ error:
 }
 
 
-static int is_context_free(struct rle_receiver *_this, size_t index)
+static int is_context_free(struct rle_receiver *const _this, const size_t index)
 {
-	int context_is_free = C_FALSE;
-
-	if (index >= RLE_MAX_FRAG_NUMBER) {
-		goto error;
-	}
-
-	if (((_this->free_ctx >> index) & 0x1) == 0) {
-		context_is_free = C_TRUE;
-	}
-
-error:
-	return context_is_free;
+	return rle_ctx_is_free(_this->free_ctx, index);
 }
 
 
@@ -115,14 +104,18 @@ static int get_first_free_frag_ctx(struct rle_receiver *_this)
 	return C_ERROR;
 }
 
-static void set_nonfree_frag_ctx(struct rle_receiver *_this, int index)
+static void set_nonfree_frag_ctx(struct rle_receiver *const _this, const size_t index)
 {
-	_this->free_ctx |= (1 << index);
+	rle_ctx_set_nonfree(&_this->free_ctx, index);
+
+	return;
 }
 
-static void set_free_frag_ctx(struct rle_receiver *_this, int index)
+static void set_free_frag_ctx(struct rle_receiver *const _this, const size_t index)
 {
-	_this->free_ctx &= ~(1 << index);
+	rle_ctx_set_free(&_this->free_ctx, index);
+
+	return;
 }
 
 static int get_recvd_fragment_type(void *data_buffer)

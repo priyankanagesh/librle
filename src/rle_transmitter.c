@@ -83,23 +83,23 @@ error:
 	return status;
 }
 
-static int is_frag_ctx_free(struct rle_transmitter *const _this, const uint8_t frag_id)
+static int is_frag_ctx_free(struct rle_transmitter *const _this, const size_t index)
 {
-	int is_free = C_FALSE;
-
-	is_free = ((_this->free_ctx >> frag_id) & 0x1) ? C_TRUE : C_FALSE;
-
-	return is_free;
+	return rle_ctx_is_free(_this->free_ctx, index);
 }
 
-static void set_nonfree_frag_ctx(struct rle_transmitter *_this, int index)
+static void set_nonfree_frag_ctx(struct rle_transmitter *const _this, const size_t index)
 {
-	_this->free_ctx |= (1 << index);
+	rle_ctx_set_nonfree(&_this->free_ctx, index);
+
+	return;
 }
 
-static void set_free_frag_ctx(struct rle_transmitter *_this, int index)
+static void set_free_frag_ctx(struct rle_transmitter *const _this, const size_t index)
 {
-	_this->free_ctx = (0 << index) & 0xff;
+	rle_ctx_set_free(&_this->free_ctx, index);
+
+	return;
 }
 
 
@@ -230,7 +230,7 @@ int rle_transmitter_encap_data(struct rle_transmitter *_this, void *data_buffer,
 		return ret;
 	}
 
-	if (is_frag_ctx_free(_this, frag_id)) {
+	if (is_frag_ctx_free(_this, frag_id) == C_FALSE) {
 		PRINT("ERROR %s:%s:%d: frag id is not free\n", __FILE__, __func__, __LINE__);
 		return ret;
 	}
