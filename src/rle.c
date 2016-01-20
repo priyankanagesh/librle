@@ -42,7 +42,7 @@
  */
 static int valid_transmitter_context(const struct rle_transmitter *const transmitter,
                                      const uint8_t fragment_id,
-                                     struct rle_ctx_management *const ctx_man);
+                                     const struct rle_ctx_management **const ctx_man);
 /**
  * @brief          Check if a receiver queue context is valid and extract it.
  *
@@ -54,11 +54,11 @@ static int valid_transmitter_context(const struct rle_transmitter *const transmi
  */
 static int valid_receiver_context(const struct rle_receiver *const receiver,
                                   const uint8_t fragment_id,
-                                  struct rle_ctx_management *const ctx_man);
+                                  const struct rle_ctx_management **const ctx_man);
 
 static int valid_transmitter_context(const struct rle_transmitter *const transmitter,
                                      const uint8_t fragment_id,
-                                     struct rle_ctx_management *const ctx_man)
+                                     const struct rle_ctx_management **const ctx_man)
 {
 	int status = 1;
 
@@ -77,7 +77,7 @@ static int valid_transmitter_context(const struct rle_transmitter *const transmi
 		goto error;
 	}
 
-	*ctx_man = transmitter->rle_ctx_man[fragment_id];
+	*ctx_man = &transmitter->rle_ctx_man[fragment_id];
 
 	status = 1;
 
@@ -87,7 +87,7 @@ error:
 
 static int valid_receiver_context(const struct rle_receiver *const receiver,
                                   const uint8_t fragment_id,
-                                  struct rle_ctx_management *const ctx_man)
+                                  const struct rle_ctx_management **const ctx_man)
 {
 	int status = 1;
 
@@ -106,7 +106,7 @@ static int valid_receiver_context(const struct rle_receiver *const receiver,
 		goto error;
 	}
 
-	*ctx_man = receiver->rle_ctx_man[fragment_id];
+	*ctx_man = &receiver->rle_ctx_man[fragment_id];
 
 	status = 1;
 
@@ -627,13 +627,17 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
                                             const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.remaining_alpdu_size;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = ctx_man->remaining_alpdu_size;
 
 error:
 	return stat;
@@ -643,13 +647,17 @@ uint64_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter 
                                                  const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.lk_status.counter_in;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_in(ctx_man);
 
 error:
 	return stat;
@@ -659,13 +667,17 @@ uint64_t rle_transmitter_stats_get_counter_sdus_sent(const struct rle_transmitte
                                                    const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.lk_status.counter_ok;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_ok(ctx_man);
 
 error:
 	return stat;
@@ -675,13 +687,17 @@ uint64_t rle_transmitter_stats_get_counter_sdus_dropped(
         const struct rle_transmitter *const transmitter, const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.lk_status.counter_dropped;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_dropped(ctx_man);
 
 error:
 	return stat;
@@ -691,13 +707,17 @@ uint64_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter
                                                   const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.lk_status.counter_bytes_in;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_bytes_in(ctx_man);
 
 error:
 	return stat;
@@ -707,13 +727,17 @@ uint64_t rle_transmitter_stats_get_counter_bytes_sent(const struct rle_transmitt
                                                   const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.lk_status.counter_bytes_ok;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_bytes_ok(ctx_man);
 
 error:
 	return stat;
@@ -723,13 +747,17 @@ uint64_t rle_transmitter_stats_get_counter_bytes_dropped(
         const struct rle_transmitter *const transmitter, const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.lk_status.counter_bytes_dropped;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_bytes_dropped(ctx_man);
 
 error:
 	return stat;
@@ -740,7 +768,7 @@ int rle_transmitter_stats_get_counters(const struct rle_transmitter *const trans
                                        struct rle_transmitter_stats *const stats)
 {
 	int status = 1;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!transmitter) {
 		goto error;
@@ -758,12 +786,16 @@ int rle_transmitter_stats_get_counters(const struct rle_transmitter *const trans
 		goto error;
 	}
 
-	stats->sdus_in       = ctx_man.lk_status.counter_in;
-	stats->sdus_sent     = ctx_man.lk_status.counter_ok;
-	stats->sdus_dropped  = ctx_man.lk_status.counter_dropped;
-	stats->bytes_in      = ctx_man.lk_status.counter_bytes_in;
-	stats->bytes_sent    = ctx_man.lk_status.counter_bytes_ok;
-	stats->bytes_dropped = ctx_man.lk_status.counter_bytes_dropped;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stats->sdus_in       = rle_ctx_get_counter_in(ctx_man);
+	stats->sdus_sent     = rle_ctx_get_counter_ok(ctx_man);
+	stats->sdus_dropped  = rle_ctx_get_counter_dropped(ctx_man);
+	stats->bytes_in      = rle_ctx_get_counter_bytes_in(ctx_man);
+	stats->bytes_sent    = rle_ctx_get_counter_bytes_ok(ctx_man);
+	stats->bytes_dropped = rle_ctx_get_counter_bytes_dropped(ctx_man);
 
 	status = 0;
 
@@ -774,7 +806,7 @@ error:
 void rle_transmitter_stats_reset_counters(struct rle_transmitter *const transmitter,
                                           const uint8_t fragment_id)
 {
-	struct rle_ctx_management ctx_man;
+	struct rle_ctx_management *ctx_man = NULL;
 
 	if (!transmitter) {
 		goto error;
@@ -784,16 +816,16 @@ void rle_transmitter_stats_reset_counters(struct rle_transmitter *const transmit
 		goto error;
 	}
 
-	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+	if (!valid_transmitter_context(transmitter, fragment_id,
+		                           (const struct rle_ctx_management **)&ctx_man)) {
 		goto error;
 	}
 
-	ctx_man.lk_status.counter_in            = 0L;
-	ctx_man.lk_status.counter_ok            = 0L;
-	ctx_man.lk_status.counter_dropped       = 0L;
-	ctx_man.lk_status.counter_bytes_in      = 0L;
-	ctx_man.lk_status.counter_bytes_ok      = 0L;
-	ctx_man.lk_status.counter_bytes_dropped = 0L;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	rle_ctx_reset_counters(ctx_man);
 
 error:
 	return;
@@ -803,126 +835,166 @@ size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiv
                                          const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
-	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+	if (!valid_receiver_context(receiver, fragment_id,
+		                        (const struct rle_ctx_management **const)&ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.remaining_alpdu_size;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = ctx_man->remaining_alpdu_size;
 
 error:
+
 	return stat;
 }
 
 uint64_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver *const receiver,
-                                                    const uint8_t fragment_id)
+                                                      const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.lk_status.counter_in;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_in(ctx_man);
 
 error:
+
 	return stat;
 }
 
 
 uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiver *const receiver,
-                                                       const uint8_t fragment_id)
+                                                         const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.lk_status.counter_ok;
+	if (!ctx_man) {
+		goto error;
+	}
 
-	error:
-		return stat;
+	stat = rle_ctx_get_counter_ok(ctx_man);
+
+error:
+
+	return stat;
 }
 
 uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *const receiver,
-                                                   const uint8_t fragment_id)
+                                                     const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.lk_status.counter_dropped;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_dropped(ctx_man);
 
 error:
+
 	return stat;
 }
 
 uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *const receiver,
-                                                const uint8_t fragment_id)
+                                                  const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.lk_status.counter_lost;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_lost(ctx_man);
 
 error:
+
 	return stat;
 }
 
 uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver *const receiver,
-                                                     const uint8_t fragment_id)
+                                                       const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.lk_status.counter_bytes_in;
+	if (!ctx_man) {
+		goto error;
+	}
 
-	error:
-		return stat;
+	stat = rle_ctx_get_counter_bytes_in(ctx_man);
+
+error:
+
+	return stat;
 }
 
 uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_receiver *const receiver,
-                                                        const uint8_t fragment_id)
+                                                          const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.lk_status.counter_bytes_ok;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_bytes_ok(ctx_man);
 
 error:
+
 	return stat;
 }
 
 uint64_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver *const receiver,
-                                                    const uint8_t fragment_id)
+                                                      const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
-	stat = ctx_man.lk_status.counter_bytes_dropped;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	stat = rle_ctx_get_counter_bytes_dropped(ctx_man);
 
 error:
 	return stat;
@@ -933,7 +1005,7 @@ int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
                                     struct rle_receiver_stats *const stats)
 {
 	int status = 1;
-	struct rle_ctx_management ctx_man;
+	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (!receiver) {
 		goto error;
@@ -951,13 +1023,13 @@ int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
 		goto error;
 	}
 
-	stats->sdus_received     = ctx_man.lk_status.counter_in;
-	stats->sdus_reassembled  = ctx_man.lk_status.counter_ok;
-	stats->sdus_dropped      = ctx_man.lk_status.counter_dropped;
-	stats->sdus_lost         = ctx_man.lk_status.counter_lost;
-	stats->bytes_received    = ctx_man.lk_status.counter_bytes_in;
-	stats->bytes_reassembled = ctx_man.lk_status.counter_bytes_ok;
-	stats->bytes_dropped     = ctx_man.lk_status.counter_bytes_dropped;
+	stats->sdus_received     = rle_ctx_get_counter_in(ctx_man);
+	stats->sdus_reassembled  = rle_ctx_get_counter_ok(ctx_man);
+	stats->sdus_dropped      = rle_ctx_get_counter_dropped(ctx_man);
+	stats->sdus_lost         = rle_ctx_get_counter_lost(ctx_man);
+	stats->bytes_received    = rle_ctx_get_counter_bytes_in(ctx_man);
+	stats->bytes_reassembled = rle_ctx_get_counter_bytes_ok(ctx_man);
+	stats->bytes_dropped     = rle_ctx_get_counter_bytes_dropped(ctx_man);
 
 	status = 0;
 
@@ -968,7 +1040,7 @@ error:
 void rle_receiver_stats_reset_counters(struct rle_transmitter *const transmitter,
                                        const uint8_t fragment_id)
 {
-	struct rle_ctx_management ctx_man;
+	struct rle_ctx_management *ctx_man = NULL;
 
 	if (!transmitter) {
 		goto error;
@@ -978,17 +1050,16 @@ void rle_receiver_stats_reset_counters(struct rle_transmitter *const transmitter
 		goto error;
 	}
 
-	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+	if (!valid_transmitter_context(transmitter, fragment_id,
+		                           (const struct rle_ctx_management **)&ctx_man)) {
 		goto error;
 	}
 
-	ctx_man.lk_status.counter_in            = 0L;
-	ctx_man.lk_status.counter_ok            = 0L;
-	ctx_man.lk_status.counter_dropped       = 0L;
-	ctx_man.lk_status.counter_lost          = 0L;
-	ctx_man.lk_status.counter_bytes_in      = 0L;
-	ctx_man.lk_status.counter_bytes_ok      = 0L;
-	ctx_man.lk_status.counter_bytes_dropped = 0L;
+	if (!ctx_man) {
+		goto error;
+	}
+
+	rle_ctx_reset_counters(ctx_man);
 
 error:
 	return;

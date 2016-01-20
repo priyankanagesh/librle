@@ -71,13 +71,9 @@ static void flush(struct rle_ctx_management *_this)
 	_this->label_type = 0xff;
 	_this->pdu_buf = NULL;
 	_this->end_address = NULL;
-	_this->lk_status.counter_in = 0L;
-	_this->lk_status.counter_ok = 0L;
-	_this->lk_status.counter_dropped = 0L;
-	_this->lk_status.counter_lost = 0L;
-	_this->lk_status.counter_bytes_in = 0L;
-	_this->lk_status.counter_bytes_ok = 0L;
-	_this->lk_status.counter_bytes_dropped = 0L;
+	rle_ctx_reset_counters(_this);
+
+	return;
 }
 
 /************************************************************************
@@ -419,115 +415,6 @@ void rle_ctx_set_end_address(struct rle_ctx_management *_this, char *addr)
 char *rle_ctx_get_end_address(struct rle_ctx_management *_this)
 {
 	return _this->end_address;
-}
-
-/*********************************
-* Link status getters & setters *
-*********************************/
-void rle_ctx_set_counter_in(struct rle_ctx_management *_this, uint64_t val)
-{
-	_this->lk_status.counter_in = val;
-}
-
-void rle_ctx_incr_counter_in(struct rle_ctx_management *_this)
-{
-	_this->lk_status.counter_in++;
-}
-
-void rle_ctx_set_counter_ok(struct rle_ctx_management *_this, uint64_t val)
-{
-	_this->lk_status.counter_ok = val;
-}
-
-void rle_ctx_incr_counter_ok(struct rle_ctx_management *_this)
-{
-	_this->lk_status.counter_ok++;
-}
-
-uint64_t rle_ctx_get_counter_ok(struct rle_ctx_management *_this)
-{
-	uint64_t ctr_packets_ok = 0L;
-
-	ctr_packets_ok = _this->lk_status.counter_ok;
-
-	return ctr_packets_ok;
-}
-
-void rle_ctx_set_counter_dropped(struct rle_ctx_management *_this, uint64_t val)
-{
-	_this->lk_status.counter_dropped = val;
-}
-
-void rle_ctx_incr_counter_dropped(struct rle_ctx_management *_this)
-{
-	_this->lk_status.counter_dropped++;
-}
-
-uint64_t rle_ctx_get_counter_dropped(struct rle_ctx_management *_this)
-{
-	uint64_t ctr_packets_dropped = 0L;
-
-	ctr_packets_dropped = _this->lk_status.counter_dropped;
-
-	return ctr_packets_dropped;
-}
-
-void rle_ctx_set_counter_lost(struct rle_ctx_management *_this, uint64_t val)
-{
-	_this->lk_status.counter_lost = val;
-}
-
-void rle_ctx_incr_counter_lost(struct rle_ctx_management *_this, uint32_t val)
-{
-	_this->lk_status.counter_lost += val;
-}
-
-uint64_t rle_ctx_get_counter_lost(struct rle_ctx_management *_this)
-{
-	uint64_t ctr_packets_lost = 0L;
-
-	ctr_packets_lost = _this->lk_status.counter_lost;
-
-	return ctr_packets_lost;
-}
-
-void rle_ctx_set_counter_bytes_in(struct rle_ctx_management *_this, uint64_t val)
-{
-	_this->lk_status.counter_bytes_in = val;
-}
-
-void rle_ctx_incr_counter_bytes_in(struct rle_ctx_management *_this, uint32_t val)
-{
-	_this->lk_status.counter_bytes_in += val;
-}
-
-uint64_t rle_ctx_get_counter_bytes_in(struct rle_ctx_management *_this)
-{
-	uint64_t ctr_packets_bytes_in = 0L;
-
-	ctr_packets_bytes_in = _this->lk_status.counter_bytes_in;
-
-	return ctr_packets_bytes_in;
-}
-
-void rle_ctx_set_counter_bytes_ok(struct rle_ctx_management *_this, uint64_t val)
-{
-	_this->lk_status.counter_bytes_ok = val;
-}
-
-void rle_ctx_incr_counter_bytes_ok(struct rle_ctx_management *_this, uint32_t val)
-{
-	_this->lk_status.counter_bytes_ok += val;
-}
-
-void rle_ctx_set_counter_bytes_dropped(struct rle_ctx_management *_this, uint64_t val)
-{
-	_this->lk_status.counter_bytes_dropped = val;
-}
-
-void rle_ctx_incr_counter_bytes_dropped(struct rle_ctx_management *_this, uint32_t val)
-{
-	_this->lk_status.counter_bytes_dropped += val;
 }
 
 static uint8_t check_ip_version(const void *const data_buffer)

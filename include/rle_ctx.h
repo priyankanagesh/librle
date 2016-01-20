@@ -544,6 +544,9 @@ void rle_ctx_set_end_address(struct rle_ctx_management *_this, char *addr);
  */
 char *rle_ctx_get_end_address(struct rle_ctx_management *_this);
 
+/*********************************
+ * Link status getters & setters *
+ *********************************/
 /**
  *  @brief	Set the number of SDUs received (partially received) for transmission (reception)
  *
@@ -554,7 +557,31 @@ char *rle_ctx_get_end_address(struct rle_ctx_management *_this);
  *
  *  @ingroup
  */
-void rle_ctx_set_counter_in(struct rle_ctx_management *_this, uint64_t val);
+static inline void rle_ctx_set_counter_in(struct rle_ctx_management *const _this,
+                                          const uint64_t val)
+{
+	_this->lk_status.counter_in = val;
+
+	return;
+}
+
+
+/**
+ *  @brief	Reset the number of SDUs received (partially received) for transmission (reception)
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @ingroup
+ */
+static inline void rle_ctx_reset_counter_in(struct rle_ctx_management *const _this)
+{
+	rle_ctx_set_counter_in(_this, 0L);
+
+	return;
+}
+
 
 /**
  *  @brief	Increment by one number of SDUs received (partially received) for transmission
@@ -568,7 +595,30 @@ void rle_ctx_set_counter_in(struct rle_ctx_management *_this, uint64_t val);
  *
  *  @ingroup
  */
-void rle_ctx_incr_counter_in(struct rle_ctx_management *_this);
+static inline void rle_ctx_incr_counter_in(struct rle_ctx_management *const _this)
+{
+	_this->lk_status.counter_in++;
+
+	return;
+}
+
+
+/**
+ *  @brief	Get current counter value for SDU to be transmitted/received
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @return	SDU to be transmitted/received counter value
+ *
+ *  @ingroup
+ */
+static inline uint64_t rle_ctx_get_counter_in(const struct rle_ctx_management *const _this)
+{
+	return _this->lk_status.counter_in;
+}
+
 
 /**
  *  @brief	Set SDU successfully transmitted/received counter value
@@ -580,7 +630,31 @@ void rle_ctx_incr_counter_in(struct rle_ctx_management *_this);
  *
  *  @ingroup
  */
-void rle_ctx_set_counter_ok(struct rle_ctx_management *_this, uint64_t val);
+static inline void rle_ctx_set_counter_ok(struct rle_ctx_management *const _this,
+                                          const uint64_t val)
+{
+	_this->lk_status.counter_ok = val;
+
+	return;
+}
+
+
+/**
+ *  @brief	Reset SDU successfully transmitted/received counter value
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @ingroup
+ */
+static inline void rle_ctx_reset_counter_ok(struct rle_ctx_management *const _this)
+{
+	rle_ctx_set_counter_ok(_this, 0L);
+
+	return;
+}
+
 
 /**
  *  @brief	Increment by one number of SDU successfully transmitted/received
@@ -592,7 +666,13 @@ void rle_ctx_set_counter_ok(struct rle_ctx_management *_this, uint64_t val);
  *
  *  @ingroup
  */
-void rle_ctx_incr_counter_ok(struct rle_ctx_management *_this);
+static inline void rle_ctx_incr_counter_ok(struct rle_ctx_management *const _this)
+{
+	_this->lk_status.counter_ok++;
+
+	return;
+}
+
 
 /**
  *  @brief	Get current counter value for SDU successfully transmitted/received
@@ -605,7 +685,11 @@ void rle_ctx_incr_counter_ok(struct rle_ctx_management *_this);
  *
  *  @ingroup
  */
-uint64_t rle_ctx_get_counter_ok(struct rle_ctx_management *_this);
+static inline uint64_t rle_ctx_get_counter_ok(const struct rle_ctx_management *const _this)
+{
+	return _this->lk_status.counter_ok;
+}
+
 
 /**
  *  @brief	Set dropped SDU counter value
@@ -617,7 +701,31 @@ uint64_t rle_ctx_get_counter_ok(struct rle_ctx_management *_this);
  *
  *  @ingroup
  */
-void rle_ctx_set_counter_dropped(struct rle_ctx_management *_this, uint64_t val);
+static inline void rle_ctx_set_counter_dropped(struct rle_ctx_management *const _this,
+                                               const uint64_t val)
+{
+	_this->lk_status.counter_dropped = val;
+
+	return;
+}
+
+
+/**
+ *  @brief	Reset dropped SDU counter value
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @ingroup
+ */
+static inline void rle_ctx_reset_counter_dropped(struct rle_ctx_management *const _this)
+{
+	rle_ctx_set_counter_dropped(_this, 0L);
+
+	return;
+}
+
 
 /**
  *  @brief	Increment by one dropped SDU counter value
@@ -628,7 +736,13 @@ void rle_ctx_set_counter_dropped(struct rle_ctx_management *_this, uint64_t val)
  *
  *  @ingroup
  */
-void rle_ctx_incr_counter_dropped(struct rle_ctx_management *_this);
+static inline void rle_ctx_incr_counter_dropped(struct rle_ctx_management *const _this)
+{
+	_this->lk_status.counter_dropped++;
+
+	return;
+}
+
 
 /**
  *  @brief	Get current dropped SDU counter value
@@ -641,7 +755,11 @@ void rle_ctx_incr_counter_dropped(struct rle_ctx_management *_this);
  *
  *  @ingroup
  */
-uint64_t rle_ctx_get_counter_dropped(struct rle_ctx_management *_this);
+static inline uint64_t rle_ctx_get_counter_dropped(const struct rle_ctx_management *const _this)
+{
+	return _this->lk_status.counter_dropped;
+}
+
 
 /**
  *  @brief	Set lost SDU counter value
@@ -653,7 +771,31 @@ uint64_t rle_ctx_get_counter_dropped(struct rle_ctx_management *_this);
  *
  *  @ingroup
  */
-void rle_ctx_set_counter_lost(struct rle_ctx_management *_this, uint64_t val);
+static inline void rle_ctx_set_counter_lost(struct rle_ctx_management *const _this,
+                                            const uint64_t val)
+{
+	_this->lk_status.counter_lost = val;
+
+	return;
+}
+
+
+/**
+ *  @brief	Reset lost SDU counter value
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @ingroup
+ */
+static inline void rle_ctx_reset_counter_lost(struct rle_ctx_management *const _this)
+{
+	rle_ctx_set_counter_lost(_this, 0L);
+
+	return;
+}
+
 
 /**
  *  @brief	Increment by one lost SDU counter value
@@ -664,7 +806,14 @@ void rle_ctx_set_counter_lost(struct rle_ctx_management *_this, uint64_t val);
  *
  *  @ingroup
  */
-void rle_ctx_incr_counter_lost(struct rle_ctx_management *_this, uint32_t val);
+static inline void rle_ctx_incr_counter_lost(struct rle_ctx_management *const _this,
+                                             const uint64_t val)
+{
+	_this->lk_status.counter_lost += val;
+
+	return;
+}
+
 
 /**
  *  @brief	Get current lost SDU counter value
@@ -677,7 +826,11 @@ void rle_ctx_incr_counter_lost(struct rle_ctx_management *_this, uint32_t val);
  *
  *  @ingroup
  */
-uint64_t rle_ctx_get_counter_lost(struct rle_ctx_management *_this);
+static inline uint64_t rle_ctx_get_counter_lost(const struct rle_ctx_management *const _this)
+{
+	return _this->lk_status.counter_lost;
+}
+
 
 /**
  *  @brief	Set to be sent/partially received SDUs bytes
@@ -689,7 +842,31 @@ uint64_t rle_ctx_get_counter_lost(struct rle_ctx_management *_this);
  *
  *  @ingroup
  */
-void rle_ctx_set_counter_bytes_in(struct rle_ctx_management *_this, uint64_t val);
+static inline void rle_ctx_set_counter_bytes_in(struct rle_ctx_management *const _this,
+                                                const uint64_t val)
+{
+	_this->lk_status.counter_bytes_in = val;
+
+	return;
+}
+
+
+/**
+ *  @brief	Reset to be sent/partially received SDUs bytes
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @ingroup
+ */
+static inline void rle_ctx_reset_counter_bytes_in(struct rle_ctx_management *const _this)
+{
+	rle_ctx_set_counter_bytes_in(_this, 0L);
+
+	return;
+}
+
 
 /**
  *  @brief	Increment by given value to be sent/partially received SDUs bytes
@@ -701,7 +878,14 @@ void rle_ctx_set_counter_bytes_in(struct rle_ctx_management *_this, uint64_t val
  *
  *  @ingroup
  */
-void rle_ctx_incr_counter_bytes_in(struct rle_ctx_management *_this, uint32_t val);
+static inline void rle_ctx_incr_counter_bytes_in(struct rle_ctx_management *const _this,
+                                                 const uint64_t val)
+{
+	_this->lk_status.counter_bytes_in += val;
+
+	return;
+}
+
 
 /**
  *  @brief	Get current number of to be sent/partially received SDUs bytes
@@ -714,7 +898,11 @@ void rle_ctx_incr_counter_bytes_in(struct rle_ctx_management *_this, uint32_t va
  *
  *  @ingroup
  */
-uint64_t rle_ctx_get_counter_bytes_in(struct rle_ctx_management *_this);
+static inline uint64_t rle_ctx_get_counter_bytes_in(const struct rle_ctx_management *const _this)
+{
+	return _this->lk_status.counter_bytes_in;
+}
+
 
 /**
  *  @brief	Set successfully sent/received number of bytes
@@ -726,7 +914,31 @@ uint64_t rle_ctx_get_counter_bytes_in(struct rle_ctx_management *_this);
  *
  *  @ingroup
  */
-void rle_ctx_set_counter_bytes_ok(struct rle_ctx_management *_this, uint64_t val);
+static inline void rle_ctx_set_counter_bytes_ok(struct rle_ctx_management *const _this,
+                                                const uint64_t val)
+{
+	_this->lk_status.counter_bytes_ok = val;
+
+	return;
+}
+
+
+/**
+ *  @brief	Reset successfully sent/received number of bytes
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @ingroup
+ */
+static inline void rle_ctx_reset_counter_bytes_ok(struct rle_ctx_management *const _this)
+{
+	rle_ctx_set_counter_bytes_ok(_this, 0L);
+
+	return;
+}
+
 
 /**
  *  @brief	Increment by given value sent/received bytes
@@ -738,7 +950,31 @@ void rle_ctx_set_counter_bytes_ok(struct rle_ctx_management *_this, uint64_t val
  *
  *  @ingroup
  */
-void rle_ctx_incr_counter_bytes_ok(struct rle_ctx_management *_this, uint32_t val);
+static inline void rle_ctx_incr_counter_bytes_ok(struct rle_ctx_management *const _this,
+                                                 const uint64_t val)
+{
+	_this->lk_status.counter_bytes_ok += val;
+
+	return;
+}
+
+
+/**
+ *  @brief	Get current number of sent/partially received SDUs bytes
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @return	Number of sent/partilly received SDUs Bytes
+ *
+ *  @ingroup
+ */
+static inline uint64_t rle_ctx_get_counter_bytes_ok(const struct rle_ctx_management *const _this)
+{
+	return _this->lk_status.counter_bytes_ok;
+}
+
 
 /**
  *  @brief	Set successfully sent/received number of Bytes
@@ -750,7 +986,31 @@ void rle_ctx_incr_counter_bytes_ok(struct rle_ctx_management *_this, uint32_t va
  *
  *  @ingroup
  */
-void rle_ctx_set_counter_bytes_dropped(struct rle_ctx_management *_this, uint64_t val);
+static inline void rle_ctx_set_counter_bytes_dropped(struct rle_ctx_management *const _this,
+                                                     const uint64_t val)
+{
+	_this->lk_status.counter_bytes_dropped = val;
+
+	return;
+}
+
+
+/**
+ *  @brief	Reset successfully sent/received number of Bytes
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @ingroup
+ */
+static inline void rle_ctx_reset_counter_bytes_dropped(struct rle_ctx_management *const _this)
+{
+	rle_ctx_set_counter_bytes_dropped(_this, 0L);
+
+	return;
+}
+
 
 /**
  *  @brief	Increment by given value dropped bytes counter
@@ -762,7 +1022,54 @@ void rle_ctx_set_counter_bytes_dropped(struct rle_ctx_management *_this, uint64_
  *
  *  @ingroup
  */
-void rle_ctx_incr_counter_bytes_dropped(struct rle_ctx_management *_this, uint32_t val);
+static inline void rle_ctx_incr_counter_bytes_dropped(struct rle_ctx_management *const _this,
+                                                      const uint64_t val)
+{
+	_this->lk_status.counter_bytes_dropped += val;
+
+	return;
+}
+
+
+/**
+ *  @brief	Get current number of dropped SDUs bytes
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @return	Number of to be dropped SDUs Bytes
+ *
+ *  @ingroup
+ */
+static inline uint64_t rle_ctx_get_counter_bytes_dropped(
+        const struct rle_ctx_management *const _this)
+{
+	return _this->lk_status.counter_bytes_dropped;
+}
+
+
+/**
+ *  @brief	Reset all counters
+ *
+ *  @warning
+ *
+ *  @param	_this   Pointer to the RLE context structure
+ *
+ *  @ingroup
+ */
+static inline void rle_ctx_reset_counters(struct rle_ctx_management *_this)
+{
+	rle_ctx_reset_counter_in(_this);
+	rle_ctx_reset_counter_ok(_this);
+	rle_ctx_reset_counter_dropped(_this);
+	rle_ctx_reset_counter_lost(_this);
+	rle_ctx_reset_counter_bytes_in(_this);
+	rle_ctx_reset_counter_bytes_ok(_this);
+	rle_ctx_reset_counter_bytes_dropped(_this);
+
+	return;
+}
 
 /**
  *  @brief	Dump & print to stdout the content of a specific RLE context
