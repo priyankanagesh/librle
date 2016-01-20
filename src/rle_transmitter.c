@@ -192,68 +192,6 @@ uint32_t rle_transmitter_get_queue_size(struct rle_transmitter *_this, uint8_t f
 	return rle_ctx_get_remaining_alpdu_length(&_this->rle_ctx_man[fragment_id]);
 }
 
-uint64_t rle_transmitter_get_counter_ok(struct rle_transmitter *_this)
-{
-	int i;
-	uint64_t ctr_packet_ok = 0L;
-
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
-		ctr_packet_ok += rle_ctx_get_counter_ok(rle_ctx);
-	}
-
-	return ctr_packet_ok;
-}
-
-uint64_t rle_transmitter_get_counter_dropped(struct rle_transmitter *_this)
-{
-	int i;
-	uint64_t ctr_packet_dropped = 0L;
-
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
-		ctr_packet_dropped += rle_ctx_get_counter_dropped(rle_ctx);
-	}
-
-	return ctr_packet_dropped;
-}
-
-uint64_t rle_transmitter_get_counter_lost(struct rle_transmitter *_this)
-{
-	int i;
-	uint64_t ctr_packet_lost = 0L;
-
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
-		ctr_packet_lost += rle_ctx_get_counter_lost(rle_ctx);
-	}
-
-	return ctr_packet_lost;
-}
-
-uint64_t rle_transmitter_get_counter_bytes(struct rle_transmitter *_this)
-{
-	int i;
-	uint64_t ctr_bytes = 0L;
-
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
-		ctr_bytes += rle_ctx_get_counter_bytes_in(rle_ctx);
-	}
-
-	return ctr_bytes;
-}
-
-void rle_transmitter_dump(struct rle_transmitter *_this)
-{
-	int i;
-
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		rle_ctx_dump(&_this->rle_ctx_man[i],
-		             _this->rle_conf);
-	}
-}
-
 void rle_transmitter_dump_alpdu(struct rle_transmitter *_this, uint8_t frag_id,
                                 unsigned char alpdu_buffer[], const size_t alpdu_buffer_size,
                                 size_t *const alpdu_length)

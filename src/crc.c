@@ -141,25 +141,3 @@ uint32_t compute_crc(unsigned char *data, size_t length, uint32_t crc_init)
 	}
 	return crc_init;
 }
-
-uint32_t compute_crc_zc(char *field, size_t field_len, char *pdu_buf, size_t pdu_len,
-                        uint32_t crc_init)
-{
-	char *p = NULL;
-	/* size_t total_len = (field_len + pdu_len);*/
-	size_t len = 0;
-
-	/* compute field CRC */
-	for (len += field_len, p = field; field_len--; ++p) {
-		COMPUTE(crc_init, *p);
-	}
-
-	len = 0;
-
-	/* continue crc computation with PDU data */
-	for (len += pdu_len, p = pdu_buf; pdu_len--; ++p) {
-		COMPUTE(crc_init, *p);
-	}
-
-	return crc_init;
-}

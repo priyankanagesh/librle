@@ -114,34 +114,6 @@ static uint16_t get_fragment_id(void *data_buffer)
 	return head->b.LT_T_FID;
 }
 
-/* provided data_buffer pointer needs
- * to be set after data payload */
-static uint8_t get_seq_no(void *data_buffer) __attribute__ ((unused));
-static uint8_t get_seq_no(void *data_buffer)
-{
-	struct rle_trailer *trl = (struct rle_trailer *)data_buffer;
-
-	return trl->b.seq_no;
-}
-
-/* provided data_buffer pointer needs
- * to be set after data payload */
-static uint32_t get_crc(void *data_buffer) __attribute__ ((unused));
-static uint32_t get_crc(void *data_buffer)
-{
-	struct rle_trailer *trl = (struct rle_trailer *)data_buffer;
-
-	return trl->crc;
-}
-
-static uint16_t get_rle_packet_length(void *data_buffer) __attribute__ ((unused));
-static uint16_t get_rle_packet_length(void *data_buffer)
-{
-	union rle_header_all *head = (union rle_header_all *)data_buffer;
-
-	return rle_header_all_get_packet_length(*head);
-}
-
 int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, size_t data_length,
                               int *index_ctx)
 {
@@ -339,81 +311,4 @@ void rle_receiver_free_context(struct rle_receiver *_this, uint8_t fragment_id)
 	/* set to idle this fragmentation context */
 	rle_ctx_flush_buffer(&_this->rle_ctx_man[fragment_id]);
 	set_free_frag_ctx(_this, fragment_id);
-}
-
-uint64_t rle_receiver_get_counter_ok(struct rle_receiver *_this)
-{
-	int i;
-	uint64_t ctr_packet_ok = 0L;
-
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
-		ctr_packet_ok += rle_ctx_get_counter_ok(rle_ctx);
-	}
-
-	return ctr_packet_ok;
-}
-
-uint64_t rle_receiver_get_counter_dropped(struct rle_receiver *_this)
-{
-	int i;
-	uint64_t ctr_packet_dropped = 0L;
-
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
-		ctr_packet_dropped += rle_ctx_get_counter_dropped(rle_ctx);
-	}
-
-	return ctr_packet_dropped;
-}
-
-uint64_t rle_receiver_get_counter_lost(struct rle_receiver *_this)
-{
-	int i;
-	uint64_t ctr_packet_lost = 0L;
-
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
-		ctr_packet_lost += rle_ctx_get_counter_lost(rle_ctx);
-	}
-
-	return ctr_packet_lost;
-}
-
-uint64_t rle_receiver_get_counter_bytes(struct rle_receiver *_this)
-{
-	int i;
-	uint64_t ctr_bytes = 0L;
-
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
-		ctr_bytes += rle_ctx_get_counter_bytes_in(rle_ctx);
-	}
-
-	return ctr_bytes;
-}
-
-void rle_receiver_dump(struct rle_receiver *_this)
-{
-	int i;
-
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		rle_ctx_dump(&_this->rle_ctx_man[i],
-		             _this->rle_conf[i]);
-	}
-}
-
-size_t rle_receiver_get_alpdu_protection_length(const struct rle_receiver *const _this,
-                                                const unsigned char *const buffer)
-{
-	size_t alpdu_protection_length = 0;
-	uint8_t frag_id = 0;
-	int use_crc = 0;
-	union rle_header_all *head = (union rle_header_all *)((void *)buffer);
-
-	frag_id = (uint8_t)head->b.LT_T_FID;
-	use_crc = rle_ctx_get_use_crc(&((struct rle_receiver *)(_this))->rle_ctx_man[frag_id]);
-	alpdu_protection_length = (size_t)(use_crc == 1 ? 4 : 1);
-
-	return alpdu_protection_length;
 }

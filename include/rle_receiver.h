@@ -124,20 +124,6 @@ int rle_receiver_get_packet(struct rle_receiver *_this, uint8_t fragment_id, voi
 void rle_receiver_free_context(struct rle_receiver *_this, uint8_t fragment_id);
 
 /**
- *  @brief Get total number of successfully
- *  sent/received packets
- *
- *  @warning
- *
- *  @param _this		The receiver module
- *
- *  @return	Number of packets sent/received successfully
- *
- *  @ingroup
- */
-uint64_t rle_receiver_get_counter_ok(struct rle_receiver *_this);
-
-/**
  *  @brief Get total number of dropped packets
  *
  *  @warning
@@ -149,60 +135,5 @@ uint64_t rle_receiver_get_counter_ok(struct rle_receiver *_this);
  *  @ingroup
  */
 uint64_t rle_receiver_get_counter_dropped(struct rle_receiver *_this);
-
-/**
- *  @brief Get total number of lost packets
- *
- *  @warning
- *
- *  @param _this		The receiver module
- *
- *  @return	Number of lost packets
- *
- *  @ingroup
- */
-uint64_t rle_receiver_get_counter_lost(struct rle_receiver *_this);
-
-/**
- *  @brief Get total number of sent/received Bytes
- *
- *  @warning
- *
- *  @param _this		The receiver module
- *
- *  @return	Number of Bytes sent/received
- *
- *  @ingroup
- */
-uint64_t rle_receiver_get_counter_bytes(struct rle_receiver *_this);
-
-/**
- *  @brief Dump an RLE receiver
- *
- *  @warning
- *
- *  @param _this		The receiver module
- *
- *  @ingroup
- */
-void rle_receiver_dump(struct rle_receiver *_this);
-
-/**
- *  @brief Get the length of the ALPDU protection mechanism, knowing the receiver and a buffer.
- *
- * The buffer must be an end PPDU, but this function  will also work on cont and comp PPDU. The
- * buffer is needed to get the fragment id, in order to extract the current configuration.
- *
- *  @warning
- *
- *  @param _this     The receiver module
- *  @param buffer    The buffer, an End PPDU
- *
- *  @return	Number of octets in the ALPDU protection mechanism.
- *
- *  @ingroup
- */
-size_t rle_receiver_get_alpdu_protection_length(const struct rle_receiver *const _this,
-                                                const unsigned char *const buffer);
 
 #endif /* __RLE_RECEIVER_H__ */
