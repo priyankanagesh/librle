@@ -29,6 +29,7 @@ SET(SRC_LIBRLE
 	src/pack.c
 	src/header.c
 	src/fragmentation.c
+	src/fragmentation_buffer.c
 	src/reassembly.c
 	src/rle_ctx.c
 	src/rle_transmitter.c

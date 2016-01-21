@@ -83,21 +83,21 @@ error:
 	return status;
 }
 
-static int is_frag_ctx_free(struct rle_transmitter *const _this, const size_t index)
+static int is_frag_ctx_free(struct rle_transmitter *const _this, const size_t ctx_index)
 {
-	return rle_ctx_is_free(_this->free_ctx, index);
+	return rle_ctx_is_free(_this->free_ctx, ctx_index);
 }
 
-static void set_nonfree_frag_ctx(struct rle_transmitter *const _this, const size_t index)
+static void set_nonfree_frag_ctx(struct rle_transmitter *const _this, const size_t ctx_index)
 {
-	rle_ctx_set_nonfree(&_this->free_ctx, index);
+	rle_ctx_set_nonfree(&_this->free_ctx, ctx_index);
 
 	return;
 }
 
-static void set_free_frag_ctx(struct rle_transmitter *const _this, const size_t index)
+static void set_free_frag_ctx(struct rle_transmitter *const _this, const size_t ctx_index)
 {
-	rle_ctx_set_free(&_this->free_ctx, index);
+	rle_ctx_set_free(&_this->free_ctx, ctx_index);
 
 	return;
 }

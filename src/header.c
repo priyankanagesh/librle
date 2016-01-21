@@ -19,9 +19,11 @@
 
 #endif
 
-#include "rle.h"
+#include "../include/rle.h"
+
 #include "rle_transmitter.h"
 #include "constants.h"
+#include "fragmentation_buffer.h"
 #include "rle_ctx.h"
 #include "zc_buffer.h"
 #include "rle_conf.h"

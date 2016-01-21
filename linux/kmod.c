@@ -52,3 +52,6 @@ EXPORT_SYMBOL(rle_header_ptype_decompression);
 EXPORT_SYMBOL(rle_header_ptype_is_compressible);
 EXPORT_SYMBOL(rle_header_ptype_compression);
 EXPORT_SYMBOL(rle_get_header_size);
+EXPORT_SYMBOL(rle_f_buff_new);
+EXPORT_SYMBOL(rle_f_buff_del);
+EXPORT_SYMBOL(rle_f_buff_init);

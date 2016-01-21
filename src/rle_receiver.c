@@ -85,9 +85,9 @@ error:
 }
 
 
-static int is_context_free(struct rle_receiver *const _this, const size_t index)
+static int is_context_free(struct rle_receiver *const _this, const size_t index_ctx)
 {
-	return rle_ctx_is_free(_this->free_ctx, index);
+	return rle_ctx_is_free(_this->free_ctx, index_ctx);
 }
 
 
@@ -104,16 +104,16 @@ static int get_first_free_frag_ctx(struct rle_receiver *_this)
 	return C_ERROR;
 }
 
-static void set_nonfree_frag_ctx(struct rle_receiver *const _this, const size_t index)
+static void set_nonfree_frag_ctx(struct rle_receiver *const _this, const size_t index_ctx)
 {
-	rle_ctx_set_nonfree(&_this->free_ctx, index);
+	rle_ctx_set_nonfree(&_this->free_ctx, index_ctx);
 
 	return;
 }
 
-static void set_free_frag_ctx(struct rle_receiver *const _this, const size_t index)
+static void set_free_frag_ctx(struct rle_receiver *const _this, const size_t index_ctx)
 {
-	rle_ctx_set_free(&_this->free_ctx, index);
+	rle_ctx_set_free(&_this->free_ctx, index_ctx);
 
 	return;
 }

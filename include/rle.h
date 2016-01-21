@@ -165,6 +165,14 @@ struct rle_transmitter;
  */
 struct rle_receiver;
 
+/**
+ * Fragmentation buffer.
+ * Used to stock an SDU, encapsulate it in ALPDU and fragment it in PPDU.
+ * Automaticaly manipulated in RLE context, but can be manually used, for traffics that don't need
+ * fragmentation context for instance.
+ */
+struct rle_fragmentation_buffer;
+
 
 /*------------------------------------------------------------------------------------------------*/
 /*--------------------------------- PUBLIC STRUCTS AND TYPEDEFS ----------------------------------*/
@@ -264,6 +272,48 @@ struct rle_receiver *rle_receiver_new(const struct rle_context_configuration con
  * @ingroup       RLE receiver
  */
 void rle_receiver_destroy(struct rle_receiver *const receiver);
+
+/**
+ * @brief         Create a new fragmentation buffer.
+ *
+ * @return        The fragmentation buffer if OK, else NULL.
+ *
+ * @ingroup       RLE Fragmentation buffer.
+ */
+struct rle_fragmentation_buffer *rle_f_buff_new(void);
+
+/**
+ * @brief         Destroy a fragmentation buffer.
+ *
+ * @param[in,out] f_buff                   The fragmentation buffer to destroy.
+ *
+ * @ingroup       RLE Fragmentation buffer.
+ */
+void rle_f_buff_del(struct rle_fragmentation_buffer **f_buff);
+
+/**
+ * @brief         Initialize (eventually reinitialize) a fragmentation buffer.
+ *
+ * @param[in,out] f_buff                   The fragmentation buffer to (re)initialize.
+ *
+ * @return        0 if OK, else 1.
+ *
+ * @ingroup       RLE Fragmentation buffer.
+ */
+int rle_f_buff_init(struct rle_fragmentation_buffer *const f_buff);
+
+/**
+ * @brief         Copy an SDU in a fragmentation buffer.
+ *
+ * @param[in,out] f_buff                   The fragmentation buffer.
+ * @param[in]     size                     The SDU to copy.
+ *
+ * @return        0 if OK, else 1.
+ *
+ * @ingroup       RLE Fragmentation buffer.
+ */
+int rle_f_buff_cpy_sdu(struct rle_fragmentation_buffer *const f_buff,
+                       const struct rle_sdu *const sdu);
 
 /**
  * @brief         RLE encapsulation. Encapsulate a SDU in a RLE ALPDU frame.
@@ -683,5 +733,6 @@ uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype);
 enum rle_header_size_status rle_get_header_size(const struct rle_context_configuration *const conf,
                                                 const enum rle_fpdu_types fpdu_type,
                                                 size_t *const rle_header_size);
+
 
 #endif /* __RLE_H__ */

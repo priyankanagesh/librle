@@ -133,7 +133,7 @@ int rle_conf_set_ptype_compression(struct rle_configuration *_this, int enable_p
  *
  *  @ingroup
  */
-int rle_conf_get_ptype_compression(struct rle_configuration *_this);
+int rle_conf_get_ptype_compression(const struct rle_configuration *const _this);
 
 /**
  *  @brief	Set the protocol type suppression flag

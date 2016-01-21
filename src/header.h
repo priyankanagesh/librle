@@ -33,9 +33,10 @@
 
 #endif
 
-#include "rle.h"
-#include "rle_header_proto_type_field.h"
+#include "../include/rle.h"
 
+#include "constants.h"
+#include "rle_header_proto_type_field.h"
 
 /*------------------------------------------------------------------------------------------------*/
 /*---------------------------------- PUBLIC CONSTANTS AND MACROS ---------------------------------*/
@@ -75,9 +76,24 @@
 
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 
-#define GET_RLE_PACKET_LENGTH
+#define RLE_SET_PPDU_LEN(PPDU, LEN) do { \
+	(PPDU)->rle_packet_length_1 = (uint8_t)((((uint16_t)(LEN) & 0x7ff) >> 5) & 0x3f); \
+	(PPDU)->rle_packet_length_2 = (uint8_t)(((uint16_t)(LEN) & 0x7ff) & 0x1f); \
+} while (0)
+
+#define RLE_GET_PPDU_LEN(PPDU) ((int16_t)(\
+        (((PPDU)->rle_packet_length_1 & 0x3f) << 5) + \
+        ( (PPDU)->rle_packet_length_2 & 0x1f)))
+
 
 #elif __BYTE_ORDER == __BIG_ENDIAN
+
+#define RLE_SET_PPDU_LEN(PPDU, LEN) do {\
+	(PPDU)->rle_packet_length = (uint16_t)(LEN);
+} while (0)
+
+#define RLE_GET_PPDU_LEN(PPDU) ((PPDU)->rle_packet_length)
+
 #else
 #error "Please fix <asm/byteorder.h>"
 #endif
@@ -221,6 +237,123 @@ struct rle_header_cont_end {
 	union rle_header_all head;
 } __attribute__ ((packed));
 
+/**
+ * RLE PPDU start header
+ *
+ * TODO Replacement of old structures
+ */
+struct rle_ppdu_header_start {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	uint32_t rle_packet_length_1   : 6;
+	uint32_t end_ind               : 1;
+	uint32_t start_ind             : 1;
+	uint32_t frag_id               : 3;
+	uint32_t rle_packet_length_2   : 5;
+	uint32_t total_length_1        : 7;
+	uint32_t use_crc               : 1;
+	uint32_t proto_type_supp       : 1;
+	uint32_t label_type            : 2;
+	uint32_t total_length_2        : 5;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	uint32_t start_ind             : 1;
+	uint32_t end_ind               : 1;
+	uint32_t rle_packet_length     : 11;
+	uint32_t frag_id               : 3;
+	uint32_t use_crc               : 1;
+	uint32_t total_length          : 12;
+	uint32_t label_type            : 2;
+	uint32_t proto_type_supp       : 1;
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+} __attribute__ ((packed));
+
+/** RLE PPDU start header definition */
+typedef struct rle_header_start rle_header_start_t;
+
+/** RLE PPDU completet header
+ *
+ * TODO Replacement of old structures
+ */
+struct rle_ppdu_header_comp {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	uint16_t rle_packet_length_1   : 6;
+	uint16_t end_ind               : 1;
+	uint16_t start_ind             : 1;
+	uint16_t proto_type_supp       : 1;
+	uint16_t label_type            : 2;
+	uint16_t rle_packet_length_2   : 5;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	uint16_t start_ind             : 1;
+	uint16_t end_ind               : 1;
+	uint16_t rle_packet_length     : 11;
+	uint16_t label_type            : 2;
+	uint16_t proto_type_supp       : 1;
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+} __attribute__ ((packed));
+
+/** RLE PPDU completet header definition */
+typedef struct rle_ppdu_header_comp rle_header_comp_t;
+
+/** RLE PPDU contininuation or end header
+ *
+ * TODO Replacement of old structures
+ */
+struct rle_ppdu_header_cont_end {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	uint16_t rle_packet_length_1   : 6;
+	uint16_t end_ind               : 1;
+	uint16_t start_ind             : 1;
+	uint16_t frag_id               : 3;
+	uint16_t rle_packet_length_2   : 5;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	uint16_t start_ind             : 1;
+	uint16_t end_ind               : 1;
+	uint16_t rle_packet_length     : 11;
+	uint16_t frag_id               : 3;
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+} __attribute__ ((packed));
+
+/** RLE PPDU contininuation or end header definition */
+typedef struct rle_ppdu_header_cont_end rle_header_cont_end_t;
+
+/** RLE PPDU header
+ *
+ * TODO Replacement of old structures
+ */
+union rle_ppdu_header {
+	rle_header_start_t    start;
+	rle_header_cont_end_t cont;
+	rle_header_cont_end_t end;
+	rle_header_comp_t     comp;
+} __attribute__ ((packed));
+
+/** RLE PPDU header definition */
+typedef union rle_ppdu_header rle_ppdu_header_t;
+
+union rle_alpdu_header {
+	struct {
+		uint16_t proto_type;
+	} __attribute__ ((packed)) uncompressed;
+	struct {
+		union {
+			struct {
+				uint8_t proto_type;
+			} __attribute__ ((packed)) supported;
+			struct {
+				uint8_t proto_type;
+				uint16_t proto_type_uncompressed;
+			} __attribute__ ((packed)) fallback;
+		};
+	} __attribute__ ((packed)) compressed;
+} __attribute__ ((packed));
+
+/** RLE ALPDU header definition */
+typedef union rle_alpdu_header rle_alpdu_header_t;
 
 /*------------------------------------------------------------------------------------------------*/
 /*--------------------------------------- PUBLIC FUNCTIONS ---------------------------------------*/

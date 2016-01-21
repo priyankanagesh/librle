@@ -34,4 +34,6 @@ struct rle_trailer {
 	};
 } __attribute__ ((packed));
 
+typedef struct rle_trailer rle_alpdu_trailer_t;
+
 #endif /* __TRAILER_H__ */
