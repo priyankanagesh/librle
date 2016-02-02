@@ -66,18 +66,7 @@ static void flush(struct rle_ctx_management *_this)
 {
 	_this->frag_id = 0xff;
 	_this->next_seq_nb = 0xff;
-	_this->is_fragmented = C_FALSE;
-	_this->frag_counter = 0;
-	_this->nb_frag_pdu = 0;
-	_this->qos_tag = 0xffffffff;
 	_this->use_crc = C_FALSE;
-	_this->pdu_length = 0;
-	_this->remaining_pdu_length = 0;
-	_this->rle_length = 0;
-	_this->proto_type = 0xffff;
-	_this->label_type = 0xff;
-	_this->pdu_buf = NULL;
-	_this->end_address = NULL;
 	rle_ctx_reset_counters(_this);
 
 	return;
@@ -118,11 +107,8 @@ int rle_ctx_init_f_buff(struct rle_ctx_management *_this)
 		goto out;
 	}
 
-	_this->buf = NULL;
 	_this->buff = (void *)rle_f_buff_new();
 
-	/* set useful data end address pointing to the buffer start address */
-	_this->end_address = (char *)_this->buf;
 	/* allocate enough memory space for the fragmentation */
 	if (!_this->buff) {
 		PRINT_RLE_ERROR("fragmentation buffer allocation failed.");
