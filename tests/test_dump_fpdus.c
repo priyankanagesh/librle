@@ -591,7 +591,7 @@ static int encap(struct rle_transmitter *const transmitter, size_t *const fpdu_c
 
 	/* Encapsulate the IP packet into a RLE packet */
 	printf_verbose("=== RLE encapsulation: start\n");
-	ret_encap = rle_encapsulate(transmitter, sdu_in, frag_id);
+	ret_encap = rle_encapsulate(transmitter, &sdu_in, frag_id);
 
 	switch (ret_encap) {
 	case RLE_ENCAP_OK:
@@ -613,7 +613,7 @@ static int encap(struct rle_transmitter *const transmitter, size_t *const fpdu_c
 		size_t fpdu_remaining_size = fpdu_size - *fpdu_current_pos;
 		printf_verbose("Remaining size : %zu\n", fpdu_remaining_size);
 
-		unsigned char ppdu[MAX_PPDU_SIZE];
+		unsigned char *ppdu;
 		size_t ppdu_length = 0;
 		size_t ppdu_needed;
 
@@ -630,7 +630,7 @@ static int encap(struct rle_transmitter *const transmitter, size_t *const fpdu_c
 		/* Fragmentation */
 		do {
 			printf_verbose("=== RLE fragmentation: start\n");
-			ret_frag = rle_fragment(transmitter, frag_id, ppdu_needed, ppdu, &ppdu_length);
+			ret_frag = rle_fragment(transmitter, frag_id, ppdu_needed, &ppdu, &ppdu_length);
 
 			switch (ret_frag) {
 			case RLE_FRAG_OK:
@@ -757,7 +757,7 @@ static int test_encap(const char device_name[], const char output[], const size_
 	/** Ethernet frame buffer for PCAP dumping */
 	unsigned char frame[ETHER_HDR_LEN + IP_HDR_LEN + MAX_FPDU_SIZE];
 
-	transmitter = rle_transmitter_new(conf);
+	transmitter = rle_transmitter_new(&conf);
 
 	if (transmitter == NULL) {
 		printf("ERROR: transmitter non initialized\n");
@@ -891,8 +891,7 @@ close_input:
 	pcap_close(handle);
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 
 error:

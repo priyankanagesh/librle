@@ -346,7 +346,7 @@ static int test_decap(const char *const device_name)
 		.use_ptype_omission = 1
 	};
 
-	receiver = rle_receiver_new(conf);
+	receiver = rle_receiver_new(&conf);
 
 	if (receiver == NULL) {
 		printf("ERROR: receiver non initialized\n");
@@ -465,8 +465,7 @@ static int test_decap(const char *const device_name)
 close_input:
 	pcap_close(handle);
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
 error:
 	return status;
