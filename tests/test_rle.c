@@ -157,11 +157,29 @@ static enum boolean misc_tests(void)
 	                                           test_request_rle_header_overhead_all };
 	const struct test request_overhead_traffic = { "Request overhead Traffic",
 	                                               test_request_rle_header_overhead_traffic };
+	const struct test allocation_transmitter = { "Transmitter allocation",
+	                                             test_rle_allocation_transmitter };
+	const struct test destruction_transmitter = { "Transmitter destruction",
+	                                              test_rle_destruction_transmitter };
+	const struct test allocation_receiver = { "Receiver allocation",
+	                                          test_rle_allocation_receiver };
+	const struct test destruction_receiver = { "Receiver destruction",
+	                                           test_rle_destruction_receiver };
+	const struct test allocation_f_buff = { "Fragmentation buffer allocation",
+	                                        test_rle_allocation_f_buff };
+	const struct test destruction_f_buff = { "Fragmentation buffer destruction",
+	                                         test_rle_destruction_f_buff };
 
 	const struct test *const miscellaneous_tests[] =
 	{
 		&request_overhead_all,
 		&request_overhead_traffic,
+		&allocation_transmitter,
+		&destruction_transmitter,
+		&allocation_receiver,
+		&destruction_receiver,
+		&allocation_f_buff,
+		&destruction_f_buff,
 		NULL
 	};
 
