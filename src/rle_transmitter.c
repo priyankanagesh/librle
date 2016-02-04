@@ -77,26 +77,6 @@ error:
 	return status;
 }
 
-static int is_frag_ctx_free(struct rle_transmitter *const _this, const size_t ctx_index)
-{
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
-
-	return rle_ctx_is_free(_this->free_ctx, ctx_index);
-}
-
-static void set_nonfree_frag_ctx(struct rle_transmitter *const _this, const size_t ctx_index)
-{
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
-
-	rle_ctx_set_nonfree(&_this->free_ctx, ctx_index);
-
-	return;
-}
-
 static void set_free_frag_ctx(struct rle_transmitter *const _this, const size_t ctx_index)
 {
 #ifdef DEBUG
@@ -207,65 +187,6 @@ void rle_transmitter_destroy(struct rle_transmitter **const transmitter)
 exit_label:
 
 	return;
-}
-
-int rle_transmitter_encap_data(struct rle_transmitter *_this, const struct rle_sdu *const sdu,
-                               uint8_t frag_id)
-{
-	int ret = C_ERROR;
-	enum rle_encap_status ret_encap;
-	struct rle_ctx_management *const rle_ctx = &_this->rle_ctx_man[frag_id];
-	rle_f_buff_t *const f_buff = (rle_f_buff_t *)rle_ctx->buff;
-
-#ifdef TIME_DEBUG
-	struct timeval tv_start = { .tv_sec = 0L, .tv_usec = 0L };
-	struct timeval tv_end = { .tv_sec = 0L, .tv_usec = 0L };
-	struct timeval tv_delta;
-	gettimeofday(&tv_start, NULL);
-#endif
-
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
-
-	if (is_frag_ctx_free(_this, frag_id) == C_FALSE) {
-		PRINT_RLE_ERROR("frag id %d is not free", frag_id);
-		goto out;
-	}
-
-	/* set to 'used' the previously free frag context */
-	set_nonfree_frag_ctx(_this, frag_id);
-
-	rle_f_buff_init(f_buff);
-	if (rle_f_buff_cpy_sdu(f_buff, sdu) != 0) {
-		PRINT_RLE_ERROR("unable to copy SDU in fragmentation buffer.");
-		goto out;
-	}
-
-	ret_encap = rle_encap_contextless(_this, f_buff);
-
-	rle_ctx_incr_counter_in(rle_ctx);
-	rle_ctx_incr_counter_bytes_in(rle_ctx, sdu->size);
-
-	if (ret_encap != RLE_ENCAP_OK) {
-		rle_ctx_incr_counter_dropped(rle_ctx);
-		rle_ctx_incr_counter_bytes_dropped(rle_ctx, sdu->size);
-		set_free_frag_ctx(_this, frag_id);
-		PRINT_RLE_ERROR("cannot encapsulate data.");
-		goto out;
-	}
-
-#ifdef TIME_DEBUG
-	gettimeofday(&tv_end, NULL);
-	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
-	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
-	PRINT_RLE_DEBUG("duration [%04ld.%06ld]\n", MODULE_NAME, tv_delta.tv_sec, tv_delta.tv_usec);
-#endif
-
-	ret = C_OK;
-
-out:
-	return ret;
 }
 
 void rle_transmitter_free_context(struct rle_transmitter *const _this, const uint8_t fragment_id)
