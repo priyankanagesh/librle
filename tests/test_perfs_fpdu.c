@@ -16,6 +16,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <assert.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <netinet/in.h>
 #include <pcap/pcap.h>
@@ -434,12 +435,12 @@ static int test_decap(const char *const device_name)
 		for (frag_id = 0; frag_id < 8; ++frag_id) {
 			rle_receiver_stats_get_counters(receiver, frag_id, &stats);
 			printf("===\tFrag ID %u\n", frag_id);
-			printf("===\treceiver received:          %zu\n", stats.sdus_received);
-			printf("===\treceiver reassembled:       %zu\n", stats.sdus_reassembled);
-			printf("===\treceiver dropped:           %zu\n", stats.sdus_dropped);
-			printf("===\treceiver bytes received:    %zu\n", stats.bytes_received);
-			printf("===\treceiver bytes reassembled: %zu\n", stats.bytes_reassembled);
-			printf("===\treceiver bytes dropped:     %zu\n", stats.bytes_dropped);
+			printf("===\treceiver received:          %" PRIu64 "\n", stats.sdus_received);
+			printf("===\treceiver reassembled:       %" PRIu64 "\n", stats.sdus_reassembled);
+			printf("===\treceiver dropped:           %" PRIu64 "\n", stats.sdus_dropped);
+			printf("===\treceiver bytes received:    %" PRIu64 "\n", stats.bytes_received);
+			printf("===\treceiver bytes reassembled: %" PRIu64 "\n", stats.bytes_reassembled);
+			printf("===\treceiver bytes dropped:     %" PRIu64 "\n", stats.bytes_dropped);
 			printf("\n");
 		}
 	}
