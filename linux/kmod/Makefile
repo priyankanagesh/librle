@@ -23,6 +23,7 @@ librle_common_sources = ../src/crc.c \
                         ../src/rle_conf.c \
                         ../src/rle_ctx.c \
                         ../src/header.c \
+						../src/trailer.c \
                         ../src/rle_header_proto_type_field.c \
                         ../src/rle_receiver.c \
                         ../src/rle_transmitter.c \

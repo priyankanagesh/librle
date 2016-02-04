@@ -66,142 +66,29 @@ struct rle_transmitter {
 /*------------------------------------------------------------------------------------------------*/
 
 /**
- *  @brief Create a RLE transmitter module
+ * @brief Encapsulate data into an RLE packet.
  *
- *  @warning
+ * @param[in,out] _this    The transmitter module to use for encapsulation.
+ * @param[in]     sdu      The SDU to encapsulate.
+ * @param[in]     frag_id  The fragment ID.
  *
- *  @return Pointer to the transmitter module
+ * @return  C_ERROR enable_crc_check is an invalid flag
+ *          C_OK    Otherwise
  *
- *  @ingroup
+ * @ingroup
  */
-struct rle_transmitter *rle_transmitter_module_new(void);
-
-/**
- *  @brief Initialize a RLE transmitter module
- *
- *  @warning
- *
- *  @param _this	The transmitter module to initialize
- *
- *  @ingroup
- */
-void rle_transmitter_module_init(struct rle_transmitter *_this);
-
-/**
- *  @brief Destroy a RLE transmitter module
- *
- *  @warning
- *
- *  @param _this	The transmitter module to destroy
- *
- *  @ingroup
- */
-void rle_transmitter_module_destroy(struct rle_transmitter *_this);
-
-/**
- *  @brief Encapsulate data into an RLE packet
- *
- *  @warning
- *
- *  @param _this	The transmitter module to use for encapsulation
- *  @param data_buffer	Data buffer's address to encapsulate
- *  @param data_length	Data length to encapsulate
- *
- *  @return	C_ERROR enable_crc_check is an invalid flag
- *		C_OK	Otherwise
- *
- *  @ingroup
- */
-int rle_transmitter_encap_data(struct rle_transmitter *_this, void *data_buffer, size_t data_length,
-                               uint16_t protocol_type,
+int rle_transmitter_encap_data(struct rle_transmitter *_this, const struct rle_sdu *const sdu,
                                uint8_t frag_id);
 
 /**
- *  @brief Fill burst payload with an RLE packet
+ * @brief Set to idle the fragment context
  *
- *  @warning
+ * @param[in,out] _this        The transmitter module to use for deencapsulation
+ * @param[in]     fragment_id  Fragmentation context to use to get the PDU
  *
- *  @param _this		The transmitter module to use for encapsulation
- *  @param burst_buffer		Burst buffer's address to fill
- *  @param burst_length		Burst length available
- *  @param fragment_id		Fragment id to use
- *  @param protocol_type	Protocol type to use in proto_type field
- *
- *  @return	C_ERROR enable_crc_check is an invalid flag
- *		C_OK	Otherwise
- *
- *  @ingroup
+ * @ingroup
  */
-int rle_transmitter_get_packet(struct rle_transmitter *_this, void *burst_buffer,
-                               size_t burst_length, uint8_t fragment_id,
-                               uint16_t protocol_type);
+void rle_transmitter_free_context(struct rle_transmitter *const _this, const uint8_t fragment_id);
 
-/**
- *  @brief Set to idle the fragment context
- *
- *  @warning
- *
- *  @param _this	The transmitter module to use for deencapsulation
- *  @param fragment_id	Fragmentation context to use to get the PDU
- *
- *  @ingroup
- */
-void rle_transmitter_free_context(struct rle_transmitter *_this, uint8_t fragment_id);
-
-/**
- *  @brief Get a queue (frag_id) state, filled or empty
- *
- *  @warning
- *
- *  @param _this		The transmitter module
- *  @param fragment_id		Fragment id to use
- *
- *  @return	C_TRUE if the queue is empty
- *		C_FALSE if the queue is full or has remaining PDU data
- *
- *  @ingroup
- */
-int rle_transmitter_get_queue_state(struct rle_transmitter *_this, uint8_t fragment_id);
-
-/**
- *  @brief Get occupied size of a queue (frag_id)
- *
- *  @warning
- *
- *  @param _this		The transmitter module
- *  @param fragment_id		Fragment id to use
- *
- *  @return	Number of Bytes present in a queue
- *
- *  @ingroup
- */
-uint32_t rle_transmitter_get_queue_size(struct rle_transmitter *_this, uint8_t fragment_id);
-
-/**
- *  @brief         Dump an ALPDU from a context link to a frag id of a transmitter in a buffer.
- *
- *                 This is intended to help testing encapsulation only. Please don't use this after
- *                 fragmentation and take care if you want to use it in another way.
- *
- *  @param[in]     _this               The transmitter module.
- *  @param[in]     frag_id             The fragment id with the context that will be dump.
- *  @param[in,out] alpdu_buffer        A preallocated buffer that will contain the ALPDU.
- *  @param[in]     alpdu_buffer_size   The size of the preallocated buffer
- *  @param[out]    alpdu_length        The size of the ALPDU
- */
-void rle_transmitter_dump_alpdu(struct rle_transmitter *_this, uint8_t frag_id,
-                                unsigned char alpdu_buffer[], const size_t alpdu_buffer_size,
-                                size_t *const alpdu_length);
-
-/**
- *  @brief         Check the fragementation integrity in a frag id of a transmitter
- *
- *  @param[in]     _this               The transmitter with the frag id context to check.
- *  @param[in]     frag_id             The frag id.
- *
- *  @return        FRAG_STATUS_OK if fragmentation in OK, else FRAG_STATUS_KO.
- */
-enum check_frag_status rle_transmitter_check_frag_integrity(
-        const struct rle_transmitter *const _this, uint8_t frag_id);
 
 #endif /* __RLE_TRANSMITTER_H__ */

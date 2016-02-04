@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
+#include <inttypes.h>
 #if HAVE_ARPA_INET_H == 1
 #include <arpa/inet.h>         /* for ntohs() on Linux */
 #endif
@@ -305,7 +306,7 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 			printf_verbose("\n=== packet #%zu:\n", packet_iterator + frag_id + 1);
 			/* Encapsulate the IP packet into a RLE packet */
 			printf_verbose("=== RLE encapsulation: start\n");
-			ret_encap = rle_encapsulate(transmitter, sdus_in[packet_iterator + frag_id],
+			ret_encap = rle_encapsulate(transmitter, &sdus_in[packet_iterator + frag_id],
 			                            frag_id);
 
 			switch (ret_encap) {
@@ -333,12 +334,12 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 			for (frag_id = 0; frag_id < max_frag_id; ++frag_id) {
 				if (rle_transmitter_stats_get_queue_size(transmitter,
 				                                         frag_id) != 0) {
-					unsigned char ppdu[fragment_size];
+					unsigned char *ppdu;
 					size_t ppdu_length = 0;
 					all_contexts_emptied = 0;
 
 					printf_verbose("=== RLE fragmentation: start\n");
-					ret_frag = rle_fragment(transmitter, frag_id, fragment_size, ppdu,
+					ret_frag = rle_fragment(transmitter, frag_id, fragment_size, &ppdu,
 					                        &ppdu_length);
 
 					switch (ret_frag) {
@@ -683,14 +684,14 @@ static int test_encap_and_decap(const char *const src_filename)
 		++counter_confs;
 
 		/* create the transmitter */
-		transmitter = rle_transmitter_new(**conf);
+		transmitter = rle_transmitter_new(*conf);
 		if (transmitter == NULL) {
 			printf("failed to create the transmitter.\n");
 			goto destroy_modules;
 		}
 
 		/* create the receiver */
-		receiver = rle_receiver_new(**conf);
+		receiver = rle_receiver_new(*conf);
 		if (receiver == NULL) {
 			printf("failed to create the receiver.\n");
 			goto destroy_modules;
@@ -714,35 +715,18 @@ static int test_encap_and_decap(const char *const src_filename)
 		printf("=== statistics: \n");
 		{
 			u_int8_t frag_id;
+			struct rle_transmitter_stats stats;
 			for (frag_id = 0; frag_id < 8; ++frag_id) {
+				rle_transmitter_stats_get_counters(transmitter, frag_id, &stats);
 				printf("===\tFrag ID %u\n", frag_id);
-				printf("===\ttransmitter in:             %llu\n",
-						(long long unsigned int)rle_transmitter_stats_get_counter_sdus_in(transmitter, frag_id));
-				printf("===\ttransmitter sent:           %llu\n",
-						(long long unsigned int)rle_transmitter_stats_get_counter_sdus_sent(transmitter, frag_id));
-				printf("===\ttransmitter dropped:        %llu\n",
-						(long long unsigned int)rle_transmitter_stats_get_counter_sdus_dropped(transmitter, frag_id));
-				printf("===\ttransmitter bytes in:       %llu\n",
-						(long long unsigned int)rle_transmitter_stats_get_counter_bytes_in(transmitter, frag_id));
-				printf("===\ttransmitter bytes sent:     %llu\n",
-						(long long unsigned int)rle_transmitter_stats_get_counter_bytes_sent(transmitter, frag_id));
-				printf("===\ttransmitter bytes dropped:  %llu\n",
-						(long long unsigned int)rle_transmitter_stats_get_counter_bytes_dropped(transmitter, frag_id));
-				printf("===\treceiver received:          %llu\n",
-						(long long unsigned int)rle_receiver_stats_get_counter_sdus_received(receiver, frag_id));
-				printf("===\treceiver reassembled:       %llu\n",
-						(long long unsigned int)rle_receiver_stats_get_counter_sdus_reassembled(receiver, frag_id));
-				printf("===\treceiver lost:              %llu\n",
-						(long long unsigned int)rle_receiver_stats_get_counter_sdus_lost(receiver, frag_id));
-				printf("===\treceiver dropped:           %llu\n",
-						(long long unsigned int)rle_receiver_stats_get_counter_sdus_dropped(receiver, frag_id));
-				printf("===\treceiver bytes received:    %llu\n",
-						(long long unsigned int)rle_receiver_stats_get_counter_bytes_received(receiver, frag_id));
-				printf("===\treceiver bytes reassembled: %llu\n",
-						(long long unsigned int)rle_receiver_stats_get_counter_bytes_reassembled(receiver, frag_id));
-				printf("===\treceiver bytes dropped:     %llu\n",
-						(long long unsigned int)rle_receiver_stats_get_counter_bytes_dropped(receiver, frag_id));
+				printf("===\ttransmitter in:             %" PRIu64 "\n", stats.sdus_in);
+				printf("===\ttransmitter sent:           %" PRIu64 "\n", stats.sdus_sent);
+				printf("===\ttransmitter dropped:        %" PRIu64 "\n", stats.sdus_dropped);
+				printf("===\ttransmitter bytes in:       %" PRIu64 "\n", stats.bytes_in);
+				printf("===\ttransmitter bytes sent:     %" PRIu64 "\n", stats.bytes_sent);
+				printf("===\ttransmitter bytes dropped:  %" PRIu64 "\n", stats.bytes_dropped);
 				printf("\n");
+				rle_transmitter_stats_reset_counters(transmitter, frag_id);
 			}
 		}
 
@@ -765,12 +749,10 @@ static int test_encap_and_decap(const char *const src_filename)
 		/* destroy the transmitter and the receiver. */
 destroy_modules:
 		if (transmitter != NULL) {
-			rle_transmitter_destroy(transmitter);
-			transmitter = NULL;
+			rle_transmitter_destroy(&transmitter);
 		}
 		if (receiver != NULL) {
-			rle_receiver_destroy(receiver);
-			receiver = NULL;
+			rle_receiver_destroy(&receiver);
 		}
 	}
 

@@ -54,6 +54,8 @@ enum rle_frag_status {
 	RLE_FRAG_OK,                  /**< Ok.                                                    */
 	RLE_FRAG_ERR,                 /**< Default error. SDU should be dropped.                  */
 	RLE_FRAG_ERR_NULL_TRMT,       /**< Error. The transmitter is NULL.                        */
+	RLE_FRAG_ERR_NULL_F_BUFF,     /**< Error. Fragmentation buffer is NULL.                   */
+	RLE_FRAG_ERR_N_INIT_F_BUFF,   /**< Error. Fragmentation buffer not init.                  */
 	RLE_FRAG_ERR_BURST_TOO_SMALL, /**< Error. Burst size is too small.                        */
 	RLE_FRAG_ERR_CONTEXT_IS_NULL, /**< Error. Context is NULL, ALPDU may be empty.            */
 	RLE_FRAG_ERR_INVALID_SIZE     /**< Error. Remaining data size may be invalid in End PPDU. */
@@ -235,15 +237,14 @@ struct rle_receiver_stats {
 /**
  * @brief         Create and initialize a RLE transmitter module.
  *
- *                TODO Function parameter 'configuration' should be passed by reference.
- *
  * @param[in]     configuration            The configuration of the RLE transmitter.
  *
  * @return        A pointer to the transmitter module.
  *
  * @ingroup       RLE transmitter
  */
-struct rle_transmitter *rle_transmitter_new(const struct rle_context_configuration configuration);
+struct rle_transmitter *rle_transmitter_new(
+        const struct rle_context_configuration *const configuration);
 
 /**
  * @brief         Destroy a RLE transmitter module.
@@ -252,12 +253,10 @@ struct rle_transmitter *rle_transmitter_new(const struct rle_context_configurati
  *
  * @ingroup       RLE transmitter
  */
-void rle_transmitter_destroy(struct rle_transmitter *const transmitter);
+void rle_transmitter_destroy(struct rle_transmitter **const transmitter);
 
 /**
  * @brief         Create and initialize a RLE receiver module.
- *
- *                TODO Function parameter 'configuration' should be passed by reference.
  *
  * @param[in]     configuration            The configuration of the RLE receiver.
  *
@@ -265,7 +264,8 @@ void rle_transmitter_destroy(struct rle_transmitter *const transmitter);
  *
  * @ingroup       RLE receiver
  */
-struct rle_receiver *rle_receiver_new(const struct rle_context_configuration configuration);
+struct rle_receiver *rle_receiver_new(
+        const struct rle_context_configuration *const configuration);
 
 /**
  * @brief         Destroy a RLE receiver module.
@@ -274,7 +274,7 @@ struct rle_receiver *rle_receiver_new(const struct rle_context_configuration con
  *
  * @ingroup       RLE receiver
  */
-void rle_receiver_destroy(struct rle_receiver *const receiver);
+void rle_receiver_destroy(struct rle_receiver **const receiver);
 
 /**
  * @brief         Create a new fragmentation buffer.
@@ -292,7 +292,7 @@ struct rle_fragmentation_buffer *rle_f_buff_new(void);
  *
  * @ingroup       RLE Fragmentation buffer.
  */
-void rle_f_buff_del(struct rle_fragmentation_buffer **f_buff);
+void rle_f_buff_del(struct rle_fragmentation_buffer **const f_buff);
 
 /**
  * @brief         Initialize (eventually reinitialize) a fragmentation buffer.
@@ -308,7 +308,11 @@ int rle_f_buff_init(struct rle_fragmentation_buffer *const f_buff);
 /**
  * @brief         Copy an SDU in a fragmentation buffer.
  *
- * @param[in,out] f_buff                   The fragmentation buffer.
+ *                SDU is copied in context when given for encapsulation, thus, the SDU given
+ *                as argument to this function can be freed once encapsulation is done.
+ *
+ * @param[in,out] f_buff                   The fragmentation buffer. Must contains an SDU and be
+ *                                         initialized.
  * @param[in]     size                     The SDU to copy.
  *
  * @return        0 if OK, else 1.
@@ -324,6 +328,8 @@ int rle_f_buff_cpy_sdu(struct rle_fragmentation_buffer *const f_buff,
  *                The ALPDU is stored in the internal context of the RLE transmitter
  *                waiting for eventual fragmentation. The fragments are retrieved
  *                by one or more calls to the \ref rle_fragment API function.
+ *                SDU is copied in context when given for encapsulation, thus, the SDU given
+ *                as argument to this function can be freed once encapsulation is done.
  *
  * @param[in,out] transmitter             The transmitter module.
  * @param[in]     sdu                     The RLE Service data unit to encapsulate.
@@ -334,8 +340,7 @@ int rle_f_buff_cpy_sdu(struct rle_fragmentation_buffer *const f_buff,
  * @ingroup       RLE transmitter
  */
 enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
-                                      const struct rle_sdu sdu,
-                                      const uint8_t frag_id);
+                                      const struct rle_sdu *const sdu, const uint8_t frag_id);
 
 /**
  * @brief         RLE encapsulation. Encapsulate a SDU in a RLE ALPDU frame.
@@ -359,6 +364,10 @@ enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transm
  *                \ref rle_transmitter_stats_get_queue_size to determine if there is
  *                some ALDPU data to fragment.
  *
+ * @warning       /!\ REAL ZERO COPY /!\ The PPDU returned belongs to the fragmentation buffer.
+ *                If the library user does not copy nor send it before asking for another one, the
+ *                first PPDU might be corrupted by the PPDU header of the second one.
+ *
  * @param[in,out] transmitter             The transmitter module.
  * @param[in]     frag_id                 Identify the ALPDU to which belongs the datas to fragment.
  * @param[in]     remaining_burst_size    Remaining size in the burst.
@@ -370,8 +379,36 @@ enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transm
  * @ingroup       RLE transmitter
  */
 enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, const uint8_t frag_id,
-                                  const size_t remaining_burst_size, unsigned char *const ppdu,
+                                  const size_t remaining_burst_size, unsigned char *ppdu[],
                                   size_t *const ppdu_length);
+
+/**
+ * @brief         RLE fragmentation. Get the next PPDU fragment.
+ *
+ *                RLE fragmentation of ALPDU created without context.
+ *                As there is not context, only COMPLETE PPDU is supported.
+ *
+ * @warning       /!\ REAL ZERO COPY /!\ The PPDU returned belongs to the fragmentation buffer.
+ *                If the library user does not copy nor send it before asking for another one, the
+ *                first PPDU might be corrupted by the PPDU header of the second one.
+ *
+ * @param[in,out] transmitter             The transmitter module. Used for its conf only, its
+ *                                        context is not use.
+ * @param[in,out] f_buff                  The fragmentation buffer (containing an ALPDU).
+ * @param[out]    ppdu                    Extracted Payload-adapted PDU (fragment of ALPDU).
+ * @param[in,out] ppdu_length             Asked size of the extracted PPDU. The size returned is the
+ *                                        one really extracted.
+ *                                        for instance, if the caller wants a 100 octets PPDU, but
+ *                                        the RLE library can only return 80 octets PPDU,
+ *                                        ppdu_length will be overwritten with 80.
+ *
+ * @return        Fragmentation status.
+ *
+ * @ingroup       RLE transmitter
+ */
+enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmitter,
+                                          struct rle_fragmentation_buffer *const f_buff,
+                                          unsigned char **const ppdu, size_t *const ppdu_length);
 
 /**
  * @brief         RLE frame packing. Pack the given PPDU in the given FPDU.

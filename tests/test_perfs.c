@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
+#include <inttypes.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <assert.h>
@@ -347,7 +348,7 @@ static int encap(struct rle_transmitter *const transmitter, const size_t fpdu_ma
 
 	/* Encapsulate the IP packet into a RLE packet */
 	printf_verbose("=== RLE encapsulation: start\n");
-	ret_encap = rle_encapsulate(transmitter, sdu_in, frag_id);
+	ret_encap = rle_encapsulate(transmitter, &sdu_in, frag_id);
 
 	switch (ret_encap) {
 	case RLE_ENCAP_OK:
@@ -369,7 +370,7 @@ static int encap(struct rle_transmitter *const transmitter, const size_t fpdu_ma
 		size_t fpdu_remaining_size = fpdu_max_size - *fpdu_current_pos;
 		printf_verbose("Remaining size : %zu\n", fpdu_remaining_size);
 
-		unsigned char ppdu[burst_size];
+		unsigned char *ppdu;
 		size_t ppdu_length = 0;
 		size_t ppdu_needed;
 
@@ -386,7 +387,7 @@ static int encap(struct rle_transmitter *const transmitter, const size_t fpdu_ma
 		/* Fragmentation */
 		do {
 			printf_verbose("=== RLE fragmentation: start\n");
-			ret_frag = rle_fragment(transmitter, frag_id, ppdu_needed, ppdu, &ppdu_length);
+			ret_frag = rle_fragment(transmitter, frag_id, ppdu_needed, &ppdu, &ppdu_length);
 
 			switch (ret_frag) {
 			case RLE_FRAG_OK:
@@ -504,7 +505,7 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 		.use_ptype_omission = 1
 	};
 
-	transmitter = rle_transmitter_new(conf);
+	transmitter = rle_transmitter_new(&conf);
 
 	if (transmitter == NULL) {
 		printf("ERROR: transmitter non initialized\n");
@@ -597,18 +598,18 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 		u_int8_t frag_id;
 		for (frag_id = 0; frag_id < 8; ++frag_id) {
 			printf("===\tFrag ID %u\n", frag_id);
-			printf("===\ttransmitter in:             %llu\n",
-					(long long unsigned int)rle_transmitter_stats_get_counter_sdus_in(transmitter, frag_id));
-			printf("===\ttransmitter sent:           %llu\n",
-					(long long unsigned int)rle_transmitter_stats_get_counter_sdus_sent(transmitter, frag_id));
-			printf("===\ttransmitter dropped:        %llu\n",
-					(long long unsigned int)rle_transmitter_stats_get_counter_sdus_dropped(transmitter, frag_id));
-			printf("===\ttransmitter bytes in:       %llu\n",
-					(long long unsigned int)rle_transmitter_stats_get_counter_bytes_in(transmitter, frag_id));
-			printf("===\ttransmitter bytes sent:     %llu\n",
-					(long long unsigned int)rle_transmitter_stats_get_counter_bytes_sent(transmitter, frag_id));
-			printf("===\ttransmitter bytes dropped:  %llu\n",
-					(long long unsigned int)rle_transmitter_stats_get_counter_bytes_dropped(transmitter, frag_id));
+			printf("===\ttransmitter in:             %" PRIu64 "\n",
+					rle_transmitter_stats_get_counter_sdus_in(transmitter, frag_id));
+			printf("===\ttransmitter sent:           %" PRIu64 "\n",
+					rle_transmitter_stats_get_counter_sdus_sent(transmitter, frag_id));
+			printf("===\ttransmitter dropped:        %" PRIu64 "\n",
+					rle_transmitter_stats_get_counter_sdus_dropped(transmitter, frag_id));
+			printf("===\ttransmitter bytes in:       %" PRIu64 "\n",
+					rle_transmitter_stats_get_counter_bytes_in(transmitter, frag_id));
+			printf("===\ttransmitter bytes sent:     %" PRIu64 "\n",
+					rle_transmitter_stats_get_counter_bytes_sent(transmitter, frag_id));
+			printf("===\ttransmitter bytes dropped:  %" PRIu64 "\n",
+					rle_transmitter_stats_get_counter_bytes_dropped(transmitter, frag_id));
 			printf("\n");
 		}
 	}
@@ -634,8 +635,7 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 close_input:
 	pcap_close(handle);
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 error:
 	return status;

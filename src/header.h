@@ -38,66 +38,6 @@
 #include "constants.h"
 #include "rle_header_proto_type_field.h"
 
-/*------------------------------------------------------------------------------------------------*/
-/*---------------------------------- PUBLIC CONSTANTS AND MACROS ---------------------------------*/
-/*------------------------------------------------------------------------------------------------*/
-
-/** Macros to set Label Type,
- *  Protocol Type Suppressed
- *  and Fragment ID
- *  on a union rle_header_all */
-
-#define RLE_START_MANDATORY_HEADER_SIZE         4
-
-/** Size of fields in a continuation packet in Bytes */
-#define RLE_CONT_HEADER_SIZE                    2
-
-/** Size of fields in a end packet in Bytes */
-#define RLE_END_HEADER_SIZE                     RLE_CONT_HEADER_SIZE
-
-/** Size of fields in a complete packet in Bytes without protocol type field */
-#define RLE_COMPLETE_HEADER_SIZE                RLE_CONT_HEADER_SIZE
-
-#define SET_LABEL_TYPE(_y, _x)  do {                             \
-		(_y) = ((_y & 0x1) ^ (_x << 1));        \
-} while (0)
-
-#define GET_LABEL_TYPE(_y) (((_y) >> 1) & 0x3)
-
-#define SET_PROTO_TYPE_SUPP(_y, _x) do {                 \
-		(_y) = ((_y & 0x6) ^ (_x));     \
-} while (0)
-
-#define GET_PROTO_TYPE_SUPP(_y) ((_y) & 0x1)
-
-#define SET_FRAG_ID(_y, _x) do {                         \
-		(_y) = (_x);                    \
-} while (0)
-
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-
-#define RLE_SET_PPDU_LEN(PPDU, LEN) do { \
-	(PPDU)->rle_packet_length_1 = (uint8_t)((((uint16_t)(LEN) & 0x7ff) >> 5) & 0x3f); \
-	(PPDU)->rle_packet_length_2 = (uint8_t)(((uint16_t)(LEN) & 0x7ff) & 0x1f); \
-} while (0)
-
-#define RLE_GET_PPDU_LEN(PPDU) ((int16_t)(\
-        (((PPDU)->rle_packet_length_1 & 0x3f) << 5) + \
-        ( (PPDU)->rle_packet_length_2 & 0x1f)))
-
-
-#elif __BYTE_ORDER == __BIG_ENDIAN
-
-#define RLE_SET_PPDU_LEN(PPDU, LEN) do {\
-	(PPDU)->rle_packet_length = (uint16_t)(LEN);
-} while (0)
-
-#define RLE_GET_PPDU_LEN(PPDU) ((PPDU)->rle_packet_length)
-
-#else
-#error "Please fix <asm/byteorder.h>"
-#endif
-
 
 /*------------------------------------------------------------------------------------------------*/
 /*-------------------------------- PROTECTED STRUCTS AND TYPEDEFS --------------------------------*/
@@ -114,134 +54,7 @@ struct rle_configuration;
 /*--------------------------------- PUBLIC STRUCTS AND TYPEDEFS ----------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-/*
- * common RLE packet header
- * for complete, START, CONT,
- * END packet
- * */
-union rle_header_all {
-	uint16_t all;
-	struct {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-		uint16_t rle_packet_length_1 : 6;
-		uint16_t end_ind : 1;
-		uint16_t start_ind : 1;
-		uint16_t LT_T_FID : 3;
-		uint16_t rle_packet_length_2 : 5;
-#elif __BYTE_ORDER == __BIG_ENDIAN
-		uint16_t start_ind : 1;
-		uint16_t end_ind : 1;
-		uint16_t rle_packet_length : 11;
-		uint16_t LT_T_FID : 3;
-#else
-#error "Please fix <asm/byteorder.h>"
-#endif
-	} b;
-};
-
-/*
- * RLE START packet header
- * specific part
- * */
-union rle_header_start_packet {
-	uint16_t all;
-	struct {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-		uint16_t total_length_1 : 7;
-		uint16_t use_crc : 1;
-		uint16_t proto_type_supp : 1;
-		uint16_t label_type : 2;
-		uint16_t total_length_2 : 5;
-#elif __BYTE_ORDER == __BIG_ENDIAN
-		uint16_t use_crc : 1;
-		uint16_t total_length : 12;
-		uint16_t label_type : 2; /* LT for fragmented packet */
-		uint16_t proto_type_supp : 1; /* T for fragmented packet */
-#else
-#error "Please fix <asm/byteorder.h>"
-#endif
-	} b;
-};
-
-/* RLE packet header
- * for complete PDU with
- * protocol type uncompressed &
- * compressed */
-struct rle_header_complete_w_ptype {
-	union rle_header_all head;
-	union {
-		struct {
-			uint16_t proto_type;
-		} __attribute__ ((packed)) ptype_u_s;
-
-		struct {
-			union {
-				struct {
-					uint8_t proto_type;
-				} __attribute__ ((packed)) c;
-				struct {
-					uint8_t proto_type;
-					uint16_t proto_type_uncompressed;
-				} __attribute__ ((packed)) e;
-			};
-		} __attribute__ ((packed)) ptype_c_s;
-	};
-} __attribute__ ((packed));
-
-/* RLE packet header for
- * complete PDU with
- * no protocol type */
-struct rle_header_complete {
-	union rle_header_all head;
-} __attribute__ ((packed));
-
-/* RLE START packet header
- * with protocol type
- * uncompressed
- * for fragmented
- * PDU */
-struct rle_header_start_w_ptype {
-	union rle_header_all head;
-	union rle_header_start_packet head_start;
-	union {
-		struct {
-			uint16_t proto_type;
-		} __attribute__ ((packed)) ptype_u_s;
-
-		struct {
-			union {
-				struct {
-					uint8_t proto_type;
-				} __attribute__ ((packed)) c;
-				struct {
-					uint8_t proto_type;
-					uint16_t proto_type_uncompressed;
-				} __attribute__ ((packed)) e;
-			};
-		} __attribute__ ((packed)) ptype_c_s;
-	};
-} __attribute__ ((packed));
-
-/* RLE packet header for
- * START packet with
- * no protocol type */
-struct rle_header_start {
-	union rle_header_all head;
-	union rle_header_start_packet head_start;
-} __attribute__ ((packed));
-
-/* RLE CONTINUATION & END packet header
- * for fragmented
- * PDU */
-struct rle_header_cont_end {
-	union rle_header_all head;
-} __attribute__ ((packed));
-
-/**
- * RLE PPDU start header
- *
- * TODO Replacement of old structures
- */
+/** * RLE PPDU start header */
 struct rle_ppdu_header_start {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 	uint32_t rle_packet_length_1   : 6;
@@ -271,10 +84,7 @@ struct rle_ppdu_header_start {
 /** RLE PPDU start header definition */
 typedef struct rle_ppdu_header_start rle_ppdu_header_start_t;
 
-/** RLE PPDU completet header
- *
- * TODO Replacement of old structures
- */
+/** RLE PPDU complete header */
 struct rle_ppdu_header_comp {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 	uint16_t rle_packet_length_1   : 6;
@@ -297,10 +107,7 @@ struct rle_ppdu_header_comp {
 /** RLE PPDU completet header definition */
 typedef struct rle_ppdu_header_comp rle_ppdu_header_comp_t;
 
-/** RLE PPDU contininuation or end header
- *
- * TODO Replacement of old structures
- */
+/** RLE PPDU continuation or end header */
 struct rle_ppdu_header_cont_end {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 	uint16_t rle_packet_length_1   : 6;
@@ -318,28 +125,38 @@ struct rle_ppdu_header_cont_end {
 #endif
 } __attribute__ ((packed));
 
-/** RLE PPDU contininuation or end header definition */
+/** RLE PPDU contininuation or end header definition. */
 typedef struct rle_ppdu_header_cont_end rle_ppdu_header_cont_end_t;
 
-/** RLE PPDU header
- *
- * TODO Replacement of old structures
- */
+/** RLE PPDU header.  */
 union rle_ppdu_header {
+	struct {
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+		uint16_t rle_packet_length_1 : 6;
+		uint16_t end_ind             : 1;
+		uint16_t start_ind           : 1;
+		uint16_t                     : 3;
+		uint16_t rle_packet_length_2 : 5;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+		uint16_t start_ind           : 1;
+		uint16_t end_ind             : 1;
+		uint16_t rle_packet_length   : 11;
+		uint16_t                     : 3;
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+	} __attribute__ ((packed)) common;
 	rle_ppdu_header_start_t    start;
 	rle_ppdu_header_cont_end_t cont;
 	rle_ppdu_header_cont_end_t end;
 	rle_ppdu_header_comp_t     comp;
 } __attribute__ ((packed));
 
-/** RLE PPDU header definition */
+/** RLE PPDU header definition. */
 typedef union rle_ppdu_header rle_ppdu_header_t;
 
 
-/** RLE uncompressed ALPDU header.
- *
- * TODO Replacement of old structures.
- */
+/** RLE uncompressed ALPDU header. */
 struct rle_alpdu_header_uncompressed {
 	uint16_t proto_type;
 } __attribute__ ((packed));
@@ -348,10 +165,7 @@ struct rle_alpdu_header_uncompressed {
 typedef struct rle_alpdu_header_uncompressed rle_alpdu_header_uncompressed_t;
 
 
-/** RLE compressed supported ALPDU header.
- *
- * TODO Replacement of old structures.
- */
+/** RLE compressed supported ALPDU header. */
 struct rle_alpdu_header_compressed_supported {
 	uint8_t proto_type;
 } __attribute__ ((packed));
@@ -360,10 +174,7 @@ struct rle_alpdu_header_compressed_supported {
 typedef struct rle_alpdu_header_compressed_supported rle_alpdu_header_compressed_supported_t;
 
 
-/** RLE compressed fallback ALPDU header.
- *
- * TODO Replacement of old structures.
- */
+/** RLE compressed fallback ALPDU header. */
 struct rle_alpdu_header_compressed_fallback {
 	rle_alpdu_header_compressed_supported_t compressed;
 	rle_alpdu_header_uncompressed_t uncompressed;
@@ -372,41 +183,20 @@ struct rle_alpdu_header_compressed_fallback {
 /** RLE compressed fallback ALPDU header definition. */
 typedef struct rle_alpdu_header_compressed_fallback rle_alpdu_header_compressed_fallback_t;
 
-/** RLE ALPDU header.
- *
- * TODO Replacement of old structures.
- */
+/** RLE ALPDU header. */
 union rle_alpdu_header {
 	rle_alpdu_header_uncompressed_t uncompressed;
 	rle_alpdu_header_compressed_supported_t compressed_supported;
-	rle_alpdu_header_compressed_fallback_t compressed;
+	rle_alpdu_header_compressed_fallback_t compressed_fallback;
 } __attribute__ ((packed));
 
 /** RLE ALPDU header definition. */
 typedef union rle_alpdu_header rle_alpdu_header_t;
 
+
 /*------------------------------------------------------------------------------------------------*/
 /*--------------------------------------- PUBLIC FUNCTIONS ---------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
-
-/**
- *  @brief create header into an rle packet
- *
- *  @warning
- *
- *  @param rle_ctx              the rle fragment context
- *  @param rle_conf             the rle configuration
- *  @param data_buffer          data buffer's address to encapsulate
- *  @param data_length          data length to encapsulate
- *  @param protocol_type        the protocol type
- *
- *  @return C_ERROR if KO
- *                C_OK if OK
- *
- *  @ingroup
- */
-int create_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
-                  void *data_buffer, size_t data_length, uint16_t protocol_type);
 
 /**
  *  @brief         create and push ALPDU header into a fragmentation buffer.
@@ -418,9 +208,403 @@ int create_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *
  *  @return C_ERROR if KO
  *                C_OK if OK
  *
- *  @ingroup
+ *  @ingroup RLE header
  */
 int push_alpdu_header(struct rle_fragmentation_buffer *const f_buff,
                       const struct rle_configuration *const rle_conf);
+
+/**
+ *  @brief         create and push PPDU header into a fragmentation buffer.
+ *
+ *
+ *  @param[in,out] f_buff               the fragmentation buffer in use.
+ *  @param[in]     rle_conf             the RLE configuration
+ *  @param[in,out] rle_ctx              the RLE context if needed (NULL if not).
+ *
+ *  @return        0 if OK, 1 if KO.
+ *
+ *  @ingroup RLE header
+ */
+int push_ppdu_header(struct rle_fragmentation_buffer *const f_buff,
+                     const struct rle_configuration *const rle_conf,
+                     const size_t ppdu_length, struct rle_ctx_management *const rle_ctx);
+
+/**
+ *  @brief         Extract ALPDU fragment from complete PPDU.
+ *
+ *
+ *  @param[in]     comp_ppdu            the complete PPDU.
+ *  @param[in]     ppdu_len             the length of the complete PPDU.
+ *  @param[out]    alpdu_fragment       the ALPDU fragment extracted.
+ *  @param[out]    alpdu_fragment_len   the length of the ALPDU fragment extracted.
+ *
+ *  @return        0 if OK, 1 if KO.
+ *
+ *  @ingroup RLE header
+ */
+int comp_ppdu_extract_alpdu_fragment(const unsigned char comp_ppdu[], const size_t ppdu_len,
+                                     const unsigned char *alpdu_fragment[],
+                                     size_t *alpdu_fragment_len);
+
+/**
+ *  @brief         Extract ALPDU fragment from start PPDU.
+ *
+ *
+ *  @param[in]     start_ppdu           the complete PPDU.
+ *  @param[in]     ppdu_len             the length of the complete PPDU.
+ *  @param[out]    alpdu_fragment       the ALPDU fragment extracted.
+ *  @param[out]    alpdu_fragment_len   the length of the ALPDU fragment extracted.
+ *  @param[out]    alpdu_total_len      the length of the full ALPDU.
+ *  @param[out]    is_crc_used          wether CRC is used or not.
+ *
+ *  @return        0 if OK, 1 if KO.
+ *
+ *  @ingroup RLE header
+ */
+int start_ppdu_extract_alpdu_fragment(const unsigned char start_ppdu[], const size_t ppdu_len,
+                                      const unsigned char *alpdu_fragment[],
+                                      size_t *const alpdu_fragment_len,
+                                      size_t *const alpdu_total_len, int *const is_crc_used);
+
+/**
+ *  @brief         Extract ALPDU fragment from cont or end PPDU.
+ *
+ *
+ *  @param[in]     cont_end_ppdu        the cont or end PPDU.
+ *  @param[in]     ppdu_len             the length of the complete PPDU.
+ *  @param[out]    alpdu_fragment       the ALPDU fragment extracted.
+ *  @param[out]    alpdu_fragment_len   the length of the ALPDU fragment extracted.
+ *
+ *  @return        0 if OK, 1 if KO.
+ *
+ *  @ingroup RLE header
+ */
+int cont_end_ppdu_extract_alpdu_fragment(const unsigned char cont_end_ppdu[], const size_t ppdu_len,
+                                         const unsigned char *alpdu_fragment[],
+                                         size_t *const alpdu_fragment_len);
+
+/**
+ *  @brief         Extract signel SDU from ALPDU.
+ *
+ *  @param[in]     alpdu_fragment       the ALPDU fragment containing the ALPDU header.
+ *  @param[in]     alpdu_fragment_len   the length of the ALPDU fragment.
+ *  @param[out]    protocol_type        the protocol type extracted from the ALPDU header.
+ *  @param[out]    sdu_fragment         the fragment of SDU extracted.
+ *  @param[out]    sdu_fragment_len     the length of the SDU fragment.
+ *
+ *  @return        0 if OK, 1 if KO.
+ *
+ *  @ingroup RLE header
+ */
+void signal_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
+                                       const size_t alpdu_fragment_len, uint16_t *protocol_type,
+                                       const unsigned char *sdu_fragment[],
+                                       size_t *const sdu_fragment_len);
+
+/**
+ *  @brief         Extract SDU from supressed ALPDU.
+ *
+ *  @param[in]     alpdu_fragment       the ALPDU fragment containing the ALPDU header.
+ *  @param[in]     alpdu_fragment_len   the length of the ALPDU fragment.
+ *  @param[out]    protocol_type        the protocol type extracted from the ALPDU header.
+ *  @param[out]    sdu_fragment         the fragment of SDU extracted.
+ *  @param[out]    sdu_fragment_len     the length of the SDU fragment.
+ *  @param[out]    rle_conf             the RLE configuration (for suppressed protocol type).
+ *
+ *  @return        0 if OK, 1 if KO.
+ *
+ *  @ingroup RLE header
+ */
+void suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
+                                           const size_t alpdu_fragment_len, uint16_t *protocol_type,
+                                           const unsigned char *sdu_fragment[],
+                                           size_t *const sdu_fragment_len,
+                                           const struct rle_configuration *const rle_conf);
+
+/**
+ *  @brief         Extract SDU fragment from uncompressed ALPDU.
+ *
+ *
+ *  @param[in]     alpdu_fragment       the ALPDU fragment containing the ALPDU header.
+ *  @param[in]     alpdu_fragment_len   the length of the ALPDU fragment.
+ *  @param[out]    protocol_type        the protocol type extracted from the ALPDU header.
+ *  @param[out]    sdu_fragment         the fragment of SDU extracted.
+ *  @param[out]    sdu_fragment_len     the length of the SDU fragment.
+ *
+ *  @return        0 if OK, 1 if KO.
+ *
+ *  @ingroup RLE header
+ */
+void uncompressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
+                                             const size_t alpdu_fragment_len,
+                                             uint16_t *protocol_type,
+                                             const unsigned char *sdu_fragment[],
+                                             size_t *const sdu_fragment_len);
+
+/**
+ *  @brief         Extract SDU fragment from compressed ALPDU.
+ *
+ *
+ *  @param[in]     alpdu_fragment       the ALPDU fragment containing the ALPDU header.
+ *  @param[in]     alpdu_fragment_len   the length of the ALPDU fragment.
+ *  @param[out]    protocol_type        the protocol type extracted from the ALPDU header.
+ *  @param[out]    sdu_fragment         the fragment of SDU extracted.
+ *  @param[out]    sdu_fragment_len     the length of the SDU fragment.
+ *  @param[out]    sdu_total_len        the total length of the SDU.
+ *
+ *
+ *  @return        0 if OK, 1 if KO.
+ *
+ *  @ingroup RLE header
+ */
+void compressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
+                                           const size_t alpdu_fragment_len, uint16_t *protocol_type,
+                                           const unsigned char *sdu_fragment[],
+                                           size_t *const sdu_fragment_len,
+                                           size_t *const sdu_total_len);
+
+/**
+ *  @brief         Set the PPDU length field of a PPDU header.
+ *
+ *
+ *  @param[in,out] ppdu_header          the PPDU header.
+ *  @param[in]     ppdu_length          the PPDU length field value.
+ *
+ *  @ingroup RLE header
+ */
+static inline void rle_ppdu_header_set_ppdu_length(rle_ppdu_header_t *const ppdu_header,
+                                                   const uint16_t ppdu_length);
+
+/**
+ *  @brief         Get the PPDU length field of a PPDU header.
+ *
+ *  @param[in,out] ppdu_header          the PPDU header.
+ *
+ *  @return        the PPDU length field value.
+ *
+ *  @ingroup RLE header
+ */
+static inline uint16_t rle_ppdu_header_get_ppdu_length(const rle_ppdu_header_t *const ppdu_header);
+
+/**
+ *  @brief         Set the total length field of a start PPDU header.
+ *
+ *
+ *  @param[in,out] ppdu_header          the PPDU header.
+ *  @param[in]     total_length         the PPDU length field value.
+ *
+ *  @ingroup RLE header
+ */
+static inline void rle_ppdu_header_start_set_total_length(
+        rle_ppdu_header_start_t *const ppdu_header, const uint16_t total_length);
+
+/**
+ *  @brief         Get the total length field of a start PPDU header.
+ *
+ *  @param[in,out] ppdu_header          the PPDU header.
+ *
+ *  @return        the PPDU total length field value.
+ *
+ *  @ingroup RLE header
+ */
+static inline uint16_t rle_ppdu_header_start_get_total_length(
+        const rle_ppdu_header_start_t *const ppdu_header);
+
+/**
+ *  @brief         Get if SDU in PPDU is signal.
+ *
+ *  @param[in,out] header               the PPDU header.
+ *
+ *  @return        the PPDU total length field value.
+ *
+ *  @ingroup RLE header
+ */
+static inline int rle_start_ppdu_header_get_is_signal(const rle_ppdu_header_start_t *const header);
+
+/**
+ *  @brief         Get if SDU in PPDU is signal.
+ *
+ *  @param[in,out] header               the PPDU header.
+ *
+ *  @return        1 if signal, else 0.
+ *
+ *  @ingroup RLE header
+ */
+static inline int rle_start_ppdu_header_get_is_suppressed(
+        const rle_ppdu_header_start_t *const header);
+
+/**
+ *  @brief         Get if ALPDU in PPDU use CRC.
+ *
+ *  @param[in,out] header               the PPDU header.
+ *
+ *  @return        1 if CRC, else 0.
+ *
+ *  @ingroup RLE header
+ */
+static inline int rle_start_ppdu_header_get_use_crc(const rle_ppdu_header_start_t *const header);
+
+/**
+ *  @brief         Get the fragment ID linked to a start PPDU.
+ *
+ *  @param[in,out] header               the PPDU header.
+ *
+ *  @return        the fragment id.
+ *
+ *  @ingroup RLE header
+ */
+static inline uint8_t rle_start_ppdu_header_get_fragment_id(
+        const rle_ppdu_header_start_t *const header);
+
+/**
+ *  @brief         Get the fragment ID linked to a cont/end PPDU.
+ *
+ *  @param[in,out] header               the PPDU header.
+ *
+ *  @return        the fragment id.
+ *
+ *  @ingroup RLE header
+ */
+static inline uint8_t rle_cont_end_ppdu_header_get_fragment_id(
+        const rle_ppdu_header_cont_end_t *const header);
+
+/**
+ *  @brief         Get the type of the PPDU fragment.
+ *
+ *  @param[in,out] header               the PPDU header.
+ *
+ *  @return        the type of the PPDU fragment.
+ *
+ *  @ingroup RLE header
+ */
+static inline int rle_ppdu_get_fragment_type(const rle_ppdu_header_t *const header);
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+static inline void rle_ppdu_header_set_ppdu_length(rle_ppdu_header_t *const ppdu_header,
+                                                   const uint16_t ppdu_length)
+{
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	ppdu_header->common.rle_packet_length_1 = ((ppdu_length & 0x7ff) >> 5) & 0x3f;
+	ppdu_header->common.rle_packet_length_2 = ppdu_length & 0x1f;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	ppdu_header->common.rle_packet_length = ppdu_length;
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+	return;
+}
+
+static inline uint16_t rle_ppdu_header_get_ppdu_length(const rle_ppdu_header_t *const ppdu_header)
+{
+	uint16_t ppdu_length = 0;
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	ppdu_length = ((ppdu_header->common.rle_packet_length_1 & 0x3f) << 5) & 0x7ff;
+	ppdu_length |= ppdu_header->common.rle_packet_length_2 & 0x1f;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	ppdu_length = ppdu_header->common.rle_packet_length;
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+
+	return ppdu_length;
+}
+
+static inline void rle_ppdu_header_start_set_total_length(
+        rle_ppdu_header_start_t *const ppdu_header, const uint16_t total_length)
+{
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	ppdu_header->total_length_1 = ((total_length & 0xfff) >> 5) & 0x7f;
+	ppdu_header->total_length_2 = total_length & 0x1f;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	ppdu_header->total_length = total_length;
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+	return;
+}
+
+static inline uint16_t rle_ppdu_header_start_get_total_length(
+        const rle_ppdu_header_start_t *const ppdu_header)
+{
+	uint16_t total_length = 0;
+
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	total_length = ((ppdu_header->total_length_1 & 0x7f) << 5) & 0xfff;
+	total_length |= ppdu_header->total_length_2 & 0x1f;
+#elif __BYTE_ORDER == __BIG_ENDIAN
+	total_length = ppdu_header->total_length;
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+
+	return total_length;
+}
+
+static inline int rle_comp_ppdu_header_get_is_signal(const rle_ppdu_header_comp_t *const header)
+{
+	return header->label_type == RLE_LT_PROTO_SIGNAL;
+}
+
+static inline int rle_comp_ppdu_header_get_is_suppressed(const rle_ppdu_header_comp_t *const header)
+{
+	return ((header->proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
+	        (header->label_type == RLE_LT_IMPLICIT_PROTO_TYPE));
+}
+
+static inline int rle_start_ppdu_header_get_is_signal(const rle_ppdu_header_start_t *const header)
+{
+	return header->label_type == RLE_LT_PROTO_SIGNAL;
+}
+
+static inline int rle_start_ppdu_header_get_is_suppressed(
+        const rle_ppdu_header_start_t *const header)
+{
+	return ((header->proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
+	        (header->label_type == RLE_LT_IMPLICIT_PROTO_TYPE));
+}
+
+static inline int rle_start_ppdu_header_get_use_crc(const rle_ppdu_header_start_t *const header)
+{
+	return header->use_crc;
+}
+
+static inline uint8_t rle_start_ppdu_header_get_fragment_id(
+        const rle_ppdu_header_start_t *const header)
+{
+	return header->frag_id;
+}
+
+static inline uint8_t rle_cont_end_ppdu_header_get_fragment_id(
+        const rle_ppdu_header_cont_end_t *const header)
+{
+	return header->frag_id;
+}
+
+static inline int rle_ppdu_get_fragment_type(const rle_ppdu_header_t *const header)
+{
+	int type_rle_frag;
+
+	if (header->common.start_ind) {
+		if (header->common.end_ind) {
+			type_rle_frag = RLE_PDU_COMPLETE;
+		} else {
+			type_rle_frag = RLE_PDU_START_FRAG;
+		}
+	} else {
+		if (header->common.end_ind) {
+			type_rle_frag = RLE_PDU_END_FRAG;
+		} else {
+			type_rle_frag = RLE_PDU_CONT_FRAG;
+		}
+	}
+
+	return type_rle_frag;
+}
+
 
 #endif /* __HEADER_H__ */

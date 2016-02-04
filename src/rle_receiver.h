@@ -29,15 +29,16 @@
 /*------------------------------------------------------------------------------------------------*/
 
 /**
- * RLE receiver module used
- * for reassembly & deencapsulation.
- * Provides a context structure for each
- * fragment_id.
+ * @brief RLE receiver module used for reassembly & deencapsulation.
+ *        Provides a context structure for each fragment_id.
+ *
+ * @ingroup RLE receiver
  */
 struct rle_receiver {
-	struct rle_ctx_management rle_ctx_man[RLE_MAX_FRAG_NUMBER];
-	struct rle_configuration *rle_conf[RLE_MAX_FRAG_NUMBER];
-	uint8_t free_ctx;
+	struct rle_ctx_management rle_ctx_man[RLE_MAX_FRAG_NUMBER]; /**< Reassembly contexts.       */
+	struct rle_configuration *rle_conf[RLE_MAX_FRAG_NUMBER];    /**< Configuration per context. */
+	struct rle_configuration *rle_conf_ctxtless; /**< Conf for fragment without context.        */
+	uint8_t free_ctx;                                           /**< List of free contexts.     */
 };
 
 
@@ -46,59 +47,85 @@ struct rle_receiver {
 /*------------------------------------------------------------------------------------------------*/
 
 /**
- *  @brief Deencapsulate RLE fragment from a buffer
- *		and bufferize/reassemble it while waiting for remaining data
- *		to be received
+ * @brief Deencapsulate RLE fragment from a buffer and bufferize/reassemble it while waiting for
+ *        remaining data to be received
  *
- *  @warning
+ * @param[in,out] _this        The receiver module to use for deencapsulation.
+ * @param[in]      ppdu        The PPDU to decapsulate.
+ * @param[in]      ppdu_length The PPDU length.
+ * @param[out]     index_ctx   The index of the context.
  *
- *  @param _this	The receiver module to use for deencapsulation
- *  @param data_buffer	Data buffer's address to deencapsulate
- *  @param data_length	Data length to deencapsulate
- *  @param index_ctx		The index of the context
+ * @return C_ERROR         if error occured while reassembling SDU
+ *         C_REASSEMBLY_OK if SDU is completely reassembled
+ *         C_OK            if deencapsulation and reassembly is successfull
  *
- *  @return	C_ERROR		if error occured while reassembling PDU
- *		C_ERROR_TOO_MUCH_FRAG	if the PDU was too fragmented (> 256 fragments)
- *		C_REASSEMBLY_OK	if PDU is completely reassembled
- *		C_OK		if deencapsulation and reassembly is successfull
- *
- *  @ingroup
+ * @ingroup RLE receiver
  */
-int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, size_t data_length,
-                              int *index_ctx);
+int rle_receiver_deencap_data(struct rle_receiver *_this, const unsigned char ppdu[],
+                              const size_t ppdu_length, int *const index_ctx,
+                              struct rle_sdu *const potential_sdu);
 
 /**
- *  @brief Retrieve reassembled PDU data and copy it
- *		to a buffer
+ * @brief Set to idle the fragment context.
  *
- *  @warning
+ * @param[in,out] _this        The receiver module to use for deencapsulation
+ * @param[in]     fragment_id  Fragmentation context to use to get the PDU
  *
- *  @param _this	The receiver module to use for deencapsulation
- *  @param fragment_id	Fragmentation context to use to get the PDU
- *  @param pdu_buffer	Destination of reassembled PDU
- *  @param pdu_proto_type	Reassembled PDU protocol type
- *  @param pdu_length	Reassembled PDU length
- *
- *  @return	C_ERROR		if error occured while retrieving PDU
- *		C_ERROR_BUF	if given buffer (PDU, protocol type or PDU length) is invalid
- *		C_OK		otherwise
- *
- *  @ingroup
- */
-int rle_receiver_get_packet(struct rle_receiver *_this, uint8_t fragment_id, void *pdu_buffer,
-                            int *pdu_proto_type,
-                            uint32_t *pdu_length);
-
-/**
- *  @brief Set to idle the fragment context
- *
- *  @warning
- *
- *  @param _this	The receiver module to use for deencapsulation
- *  @param fragment_id	Fragmentation context to use to get the PDU
- *
- *  @ingroup
+ * @ingroup RLE receiver
  */
 void rle_receiver_free_context(struct rle_receiver *_this, uint8_t fragment_id);
+
+/**
+ * @brief Set to non free the state to a given context knowing its fragment ID.
+ *
+ * @param[in,out] _this        The receiver module to use for deencapsulation.
+ * @param[in]     fragment_id  Fragmentation context to use to get the PDU
+ *
+ * @ingroup RLE receiver
+ */
+static inline void set_nonfree_frag_ctx(struct rle_receiver *const _this, const size_t fragment_id);
+
+/**
+ * @brief Set the state to free to a given context knowing its fragment ID.
+ *
+ * @param[in,out] _this        The receiver module to use for deencapsulation.
+ * @param[in]     fragment_id  Fragmentation context to use to get the PDU
+ *
+ * @ingroup RLE receiver
+ */
+static inline void set_free_frag_ctx(struct rle_receiver *const _this, const size_t fragment_id);
+
+/**
+ * @brief Return the state of a given context knowing its fragment ID.
+ *
+ * @param[in,out] _this        The receiver module to use for deencapsulation.
+ * @param[in]     fragment_id  Fragmentation context to use to get the SDU.
+ *
+ * @ingroup RLE receiver
+ */
+static inline int is_context_free(struct rle_receiver *const _this, const size_t fragment_id);
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+static inline void set_nonfree_frag_ctx(struct rle_receiver *const _this, const size_t fragment_id)
+{
+	rle_ctx_set_nonfree(&_this->free_ctx, fragment_id);
+	return;
+}
+
+static inline void set_free_frag_ctx(struct rle_receiver *const _this, const size_t fragment_id)
+{
+	rle_ctx_set_free(&_this->free_ctx, fragment_id);
+	return;
+}
+
+static inline int is_context_free(struct rle_receiver *const _this, const size_t fragment_id)
+{
+	return rle_ctx_is_free(_this->free_ctx, fragment_id);
+}
+
 
 #endif /* __RLE_RECEIVER_H__ */

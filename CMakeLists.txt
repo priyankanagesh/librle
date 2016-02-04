@@ -28,9 +28,11 @@ SET(SRC_LIBRLE
 	src/encap.c
 	src/pack.c
 	src/header.c
+	src/trailer.c
 	src/fragmentation.c
 	src/fragmentation_buffer.c
 	src/reassembly.c
+	src/reassembly_buffer.c
 	src/rle_ctx.c
 	src/rle_transmitter.c
 	src/rle_receiver.c

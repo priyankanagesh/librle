@@ -118,7 +118,7 @@ int rle_couple_init(struct rle_couple *couple)
 	couple->conf.use_compressed_ptype = param_use_compressed_ptype > 0 ? 1 : 0;
 
 	/* create the transmitter */
-	couple->transmitter = rle_transmitter_new(couple->conf);
+	couple->transmitter = rle_transmitter_new(&couple->conf);
 
 	if (couple->transmitter == NULL) {
 		pr_info("[%s] \t Error: RLE transmitter not created\n",
@@ -130,7 +130,7 @@ int rle_couple_init(struct rle_couple *couple)
 	        THIS_MODULE->name);
 
 	/* create the receiver */
-	couple->receiver = rle_receiver_new(couple->conf);
+	couple->receiver = rle_receiver_new(&couple->conf);
 
 	if (couple->receiver == NULL) {
 		pr_info("[%s] \t Error: RLE receiver not created\n",
@@ -150,7 +150,7 @@ int rle_couple_init(struct rle_couple *couple)
 	return 0;
 
 free_transmitter:
-	rle_transmitter_destroy(couple->transmitter);
+	rle_transmitter_destroy(&couple->transmitter);
 error:
 	return 1;
 }
@@ -167,10 +167,10 @@ void rle_couple_release(struct rle_couple *couple)
 
 	/* destroy modules */
 	if (couple->transmitter != NULL) {
-		rle_transmitter_destroy(couple->transmitter);
+		rle_transmitter_destroy(&couple->transmitter);
 	}
 	if (couple->receiver != NULL) {
-		rle_receiver_destroy(couple->receiver);
+		rle_receiver_destroy(&couple->receiver);
 	}
 
 	pr_info("[%s] RLE couple successfully released\n", THIS_MODULE->name);
@@ -259,7 +259,7 @@ ssize_t rle_proc_write(struct file *file, const char __user *buffer, size_t coun
 	err = -EFAULT;
 
 	/* Start encapsulation */
-	encap_status = rle_encapsulate(couple->transmitter, couple->sdu_in, frag_id);
+	encap_status = rle_encapsulate(couple->transmitter, &couple->sdu_in, frag_id);
 	if (encap_status != RLE_ENCAP_OK) {
 		pr_err("[%s] failed to encapsulate the SDU\n", THIS_MODULE->name);
 		goto error;
@@ -268,12 +268,12 @@ ssize_t rle_proc_write(struct file *file, const char __user *buffer, size_t coun
 
 	while (rle_transmitter_stats_get_queue_size(couple->transmitter, frag_id) != 0) {
 		size_t ppdu_length = 0;
-		unsigned char ppdu[burst_size];
+		unsigned char *ppdu;
 		size_t fpdu_prev_pos = fpdu_current_pos + current_payload_label_size;
 
 		/* Start fragmentation */
 		frag_status =
-		        rle_fragment(couple->transmitter, frag_id, burst_size, ppdu,
+		        rle_fragment(couple->transmitter, frag_id, burst_size, &ppdu,
 		                     &ppdu_length);
 		if (frag_status != RLE_FRAG_OK) {
 			pr_err("[%s] failed to fragment the ALPDU\n", THIS_MODULE->name);

@@ -33,6 +33,7 @@ clean:
 	    $(CURDIR)/kmod.o \
 	    $(CURDIR)/kmod_test.o \
 	    $(CURDIR)/src/*.o \
+	    $(CURDIR)/src/.*.o.cmd \
 	    $(CURDIR)/kmod/*.o \
 	    $(CURDIR)/kmod/$(librle_modname).ko \
 	    $(CURDIR)/kmod/$(librle_modname).mod.c \

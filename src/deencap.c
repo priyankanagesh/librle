@@ -24,6 +24,7 @@
 #include "rle_receiver.h"
 #include "rle_ctx.h"
 #include "constants.h"
+#include "reassembly_buffer.h"
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -54,32 +55,32 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 	/* checks inputs */
 	if (receiver == NULL) {
 		status = RLE_DECAP_ERR_NULL_RCVR;
-		goto exit_label;
+		goto out;
 	}
 
 	if ((fpdu == NULL) || (fpdu_length == 0)) {
 		status = RLE_DECAP_ERR_INV_FPDU;
-		goto exit_label;
+		goto out;
 	}
 
 	if ((fpdu_length < payload_label_size)) {
 		status = RLE_DECAP_ERR_INV_FPDU;
-		goto exit_label;
+		goto out;
 	}
 
 	if ((sdus == NULL) || (sdus_max_nr == 0)) {
 		status = RLE_DECAP_ERR_INV_SDUS;
-		goto exit_label;
+		goto out;
 	}
 
 	if ((payload_label == NULL) ^ (payload_label_size == 0)) {
 		status = RLE_DECAP_ERR_INV_PL;
-		goto exit_label;
+		goto out;
 	}
 
 	if ((payload_label_size != 0) && (payload_label_size != 3) && (payload_label_size != 6)) {
 		status = RLE_DECAP_ERR_INV_PL;
-		goto exit_label;
+		goto out;
 	}
 
 	/* copy payload label to user if present */
@@ -94,59 +95,42 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 	 * in the FPDU payload and padding is not detected */
 	while ((offset + 1) < fpdu_length && !padding_detected) {
 
-		enum frag_states fragment_type;
-		size_t fragment_length;
+		struct rle_sdu *const potential_sdu = &sdus[*sdus_nr];
+		const unsigned char *const ppdu = &fpdu[offset];
+		size_t ppdu_length;
 		int fragment_id;
 		int ret;
 
 		/* is there padding? */
-		if (fpdu[offset] == 0x00 && fpdu[offset + 1] == 0x00) {
+		if (ppdu[0] == 0x00 && ppdu[1] == 0x00) {
 			padding_detected = C_TRUE;
 			continue;
 		}
 
 		/* retrieve the fragment type and length in the first 2 bytes of the PPDU fragment */
-		fragment_type = get_fragment_type(&fpdu[offset]);
-		fragment_length = get_fragment_length(&fpdu[offset]);
+		ppdu_length = get_fragment_length(ppdu);
 
 		/* stop parsing the FPDU if the PPDU length is wrong */
-		if (fragment_length > (fpdu_length - offset)) {
+		if (ppdu_length > (fpdu_length - offset)) {
 			PRINT("Invalid fragment size, fragment length too big for FPDU\n");
-			PRINT("Fragment length: %zu, Remaining FPDU size: %zu\n", fragment_length,
+			PRINT("Fragment length: %zu, Remaining FPDU size: %zu\n", ppdu_length,
 			      fpdu_length - offset);
 			status = RLE_DECAP_ERR;
-			goto exit_label;
+			goto out;
 		}
 
 		/* parse the PPDU fragment */
-		ret = rle_receiver_deencap_data(receiver, (void *) &fpdu[offset], fragment_length,
-		                                &fragment_id);
+		ret = rle_receiver_deencap_data(receiver, ppdu, ppdu_length, &fragment_id, potential_sdu);
 
 		/* PPDU fragment successfully parsed, skip it */
-		offset += fragment_length;
+		offset += ppdu_length;
 
 		if ((ret != C_OK) && (ret != C_REASSEMBLY_OK)) {
 			PRINT("Error during reassembly.\n");
 			rle_receiver_free_context(receiver, fragment_id);
 			status = RLE_DECAP_ERR;
-		} else if (fragment_type == FRAG_STATE_COMP || fragment_type == FRAG_STATE_END) {
-			/* in case of complete or END fragment, decapsulate the reassembled PPDU */
-			int sdu_proto = 0;
-			uint32_t sdu_len = 0;
-
-			assert(fragment_id >= 0);
-
-			ret = rle_receiver_get_packet(receiver, fragment_id, sdus[*sdus_nr].buffer, &sdu_proto,
-			                              &sdu_len);
-			/* reassembly and decapsulation are over, so free context resources */
-			rle_receiver_free_context(receiver, fragment_id);
-			if (ret != C_OK) {
-				PRINT("Error getting packet from context.\n");
-				status = RLE_DECAP_ERR;
-				goto exit_label;
-			}
-			sdus[*sdus_nr].size = (size_t) sdu_len;
-			sdus[*sdus_nr].protocol_type = (uint16_t) sdu_proto;
+		} else if (ret == C_REASSEMBLY_OK) {
+			/* Potential SDU received. */
 			(*sdus_nr)++;
 		}
 	}
@@ -159,6 +143,6 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 		}
 	}
 
-exit_label:
+out:
 	return status;
 }

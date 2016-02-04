@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
+#include <inttypes.h>
 #include <arpa/inet.h>         /* for ntohs() on Linux */
 #include <errno.h>
 #include <assert.h>
@@ -424,7 +425,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 		++counter_confs;
 
 		/* create the receiver */
-		receiver = rle_receiver_new(**conf);
+		receiver = rle_receiver_new(*conf);
 		if (receiver == NULL) {
 			printf("failed to create the receiver.\n");
 			continue;
@@ -449,23 +450,21 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 		printf("=== statistics: \n");
 		{
 			u_int8_t frag_id;
+			struct rle_receiver_stats stats;
 			for (frag_id = 0; frag_id < 8; ++frag_id) {
+				rle_receiver_stats_get_counters(receiver, frag_id, &stats);
 				printf("===\tFrag ID %u\n", frag_id);
-				printf("===\treceiver received:          %llu\n",
-				       (long long unsigned int)rle_receiver_stats_get_counter_sdus_received(receiver, frag_id));
-				printf("===\treceiver reassembled:       %llu\n",
-						(long long unsigned int)rle_receiver_stats_get_counter_sdus_reassembled(receiver, frag_id));
-				printf("===\treceiver lost:              %llu\n",
-						(long long unsigned int)rle_receiver_stats_get_counter_sdus_lost(receiver, frag_id));
-				printf("===\treceiver dropped:           %llu\n",
-						(long long unsigned int)rle_receiver_stats_get_counter_sdus_dropped(receiver, frag_id));
-				printf("===\treceiver bytes received:    %llu\n",
-						(long long unsigned int)rle_receiver_stats_get_counter_bytes_received(receiver, frag_id));
-				printf("===\treceiver bytes reassembled: %llu\n",
-						(long long unsigned int)rle_receiver_stats_get_counter_bytes_reassembled(receiver, frag_id));
-				printf("===\treceiver bytes dropped:     %llu\n",
-						(long long unsigned int)rle_receiver_stats_get_counter_bytes_dropped(receiver, frag_id));
+				printf("===\treceiver received:          %" PRIu64 "\n", stats.sdus_received);
+				printf("===\treceiver reassembled:       %" PRIu64 "\n", stats.sdus_reassembled);
+				printf("===\treceiver lost:              %" PRIu64 "\n", stats.sdus_lost);
+				printf("===\treceiver dropped:           %" PRIu64 "\n", stats.sdus_dropped);
+				printf("===\treceiver bytes received:    %" PRIu64 "\n", stats.bytes_received);
+				printf("===\treceiver bytes reassembled: %" PRIu64 "\n", stats.bytes_reassembled);
+				printf("===\treceiver bytes dropped:     %" PRIu64 "\n", stats.bytes_dropped);
+				printf("===\tremaining size in queue:    %zu\n", rle_receiver_stats_get_queue_size(
+				                                                         receiver, frag_id));
 				printf("\n");
+				rle_receiver_stats_reset_counters(receiver, frag_id);
 			}
 		}
 
@@ -482,7 +481,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 
 		/* destroy the the receiver. */
 		if (receiver != NULL) {
-			rle_receiver_destroy(receiver);
+			rle_receiver_destroy(&receiver);
 			receiver = NULL;
 		}
 	}

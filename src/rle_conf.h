@@ -105,7 +105,7 @@ int rle_conf_set_default_ptype(struct rle_configuration *_this, uint8_t protocol
  *
  *  @ingroup
  */
-int rle_conf_get_default_ptype(struct rle_configuration *_this);
+int rle_conf_get_default_ptype(const struct rle_configuration *const _this);
 
 /**
  *  @brief	Set the protocol type compression flag

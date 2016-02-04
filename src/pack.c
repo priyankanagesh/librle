@@ -68,40 +68,14 @@ enum rle_pack_status rle_pack(const unsigned char *const ppdu, const size_t ppdu
 		goto exit_label;
 	}
 
-	{
-		void *mem_ret = NULL;
-
-		if (label_size != 0) {
-			mem_ret = memcpy((void *)(fpdu + *fpdu_current_pos), (const void *)label,
-			                 label_size);
-			if (mem_ret == NULL) {
-				mem_ret = memset((void *)(fpdu + *fpdu_current_pos), 0, label_size);
-				if (mem_ret == NULL) {
-					status = RLE_PACK_ERR_FPDU_TOO_SMALL;
-					goto exit_label;
-				}
-				status = RLE_PACK_ERR_INVALID_LAB;
-				goto exit_label;
-			}
-		}
-
-		mem_ret =
-		        memcpy((void *)(fpdu + *fpdu_current_pos + label_size), (const void *)ppdu,
-		               ppdu_length);
-		if (mem_ret == NULL) {
-			mem_ret = memset((void *)(fpdu + *fpdu_current_pos), 0,
-			                 label_size + ppdu_length);
-			if (mem_ret == NULL) {
-				status = RLE_PACK_ERR_FPDU_TOO_SMALL;
-				goto exit_label;
-			}
-			status = RLE_PACK_ERR_INVALID_PPDU;
-			goto exit_label;
-		}
-
-		*fpdu_current_pos += label_size + ppdu_length;
-		*fpdu_remaining_size -= label_size + ppdu_length;
+	if (label_size != 0) {
+		memcpy((void *)(fpdu + *fpdu_current_pos), (const void *)label, label_size);
 	}
+
+	memcpy((void *)(fpdu + *fpdu_current_pos + label_size), (const void *)ppdu, ppdu_length);
+
+	*fpdu_current_pos += label_size + ppdu_length;
+	*fpdu_remaining_size -= label_size + ppdu_length;
 
 	status = RLE_PACK_OK;
 

@@ -12,11 +12,13 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-#include <netinet/in.h>
+
+#include "../src/fragmentation_buffer.h"
+#include "../src/rle_transmitter.c"
+#include "../src/rle_transmitter.h"
 
 #include "test_rle_encap.h"
 
-#include "rle_transmitter.h"
 
 /**
  * @brief         Compare two packets.
@@ -186,7 +188,8 @@ static enum boolean test_encap(const uint16_t protocol_type,
 	unsigned char *theorical_alpdu_header = NULL;
 	size_t theorical_alpdu_header_size = 0;
 	unsigned char *alpdu = NULL;
-	size_t *alpdu_length = calloc((size_t)1, sizeof(size_t));
+	size_t alpdu_length;
+	rle_f_buff_t *f_buff;
 
 	struct rle_sdu sdu = {
 		.buffer = NULL,
@@ -195,10 +198,9 @@ static enum boolean test_encap(const uint16_t protocol_type,
 	};
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
-	transmitter = rle_transmitter_new(conf);
+	transmitter = rle_transmitter_new(&conf);
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
 		sdu.buffer = NULL;
@@ -209,7 +211,7 @@ static enum boolean test_encap(const uint16_t protocol_type,
 	sdu.size = length;
 
 	/* The function we are currently testing. */
-	ret_encap = rle_encapsulate(transmitter, sdu, frag_id);
+	ret_encap = rle_encapsulate(transmitter, &sdu, frag_id);
 
 	/* If the function did not work well, it is useless to continue the test. */
 	if (ret_encap != RLE_ENCAP_OK) {
@@ -273,23 +275,18 @@ static enum boolean test_encap(const uint16_t protocol_type,
 				/* Fallback */
 				compressed_ptype = 0xff;
 				theorical_alpdu_header_size += (size_t)2;
-				theorical_alpdu_header =
-				        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
+				theorical_alpdu_header = calloc(theorical_alpdu_header_size, sizeof(unsigned char));
 				theorical_alpdu_header[0] = compressed_ptype;
-				theorical_alpdu_header[1] =
-				        (unsigned char)(protocol_type & 0x00ff);
-				theorical_alpdu_header[2] =
-				        (unsigned char)((protocol_type & 0xff00) >> 8);
+				theorical_alpdu_header[1] = (unsigned char)((protocol_type & 0xff00) >> 8);
+				theorical_alpdu_header[2] = (unsigned char)(protocol_type & 0x00ff);
 			}
 		} else {
 			/* Protocol type is uncompressed */
 
 			theorical_alpdu_header_size = (size_t)2;
-			theorical_alpdu_header =
-			        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
-			theorical_alpdu_header[0] = (unsigned char)(protocol_type & 0x00ff);
-			theorical_alpdu_header[1] =
-			        (unsigned char)((protocol_type & 0xff00) >> 8);
+			theorical_alpdu_header = calloc(theorical_alpdu_header_size, sizeof(unsigned char));
+			theorical_alpdu_header[0] = (unsigned char)((protocol_type & 0xff00) >> 8);
+			theorical_alpdu_header[1] = (unsigned char)(protocol_type & 0x00ff);
 		}
 	} else {
 		/* Protocol type is omitted */
@@ -298,28 +295,20 @@ static enum boolean test_encap(const uint16_t protocol_type,
 		theorical_alpdu_header = NULL;
 	}
 
-	if (alpdu != NULL) {
-		free(alpdu);
-		alpdu = NULL;
-	}
+	f_buff = (rle_f_buff_t *)transmitter->rle_ctx_man[frag_id].buff;
+	alpdu_length = f_buff_get_remaining_alpdu_length(f_buff);
 
-	alpdu = calloc(theorical_alpdu_header_size + length, sizeof(unsigned char));
-
-	/* We dump the ALPDU from the transmitter. */
-	rle_transmitter_dump_alpdu(transmitter, frag_id, alpdu, theorical_alpdu_header_size +
-	                           length,
-	                           alpdu_length);
-
-	if (theorical_alpdu_header_size + length != *alpdu_length) {
+	if (theorical_alpdu_header_size + length != alpdu_length) {
 		PRINT_ERROR("dumped ALPDU has not the right length, %zu expected but we got %zu ",
 		            theorical_alpdu_header_size + length,
-		            *alpdu_length);
+		            alpdu_length);
 		goto exit_label;
 	}
 
 	/* We check if the theorical ALPDU and the dumped ALPDU are the same. */
+	alpdu = f_buff->alpdu.start;
 	output =
-	        check_encap(sdu.buffer, sdu.size, alpdu, *alpdu_length, theorical_alpdu_header,
+	        check_encap(sdu.buffer, sdu.size, alpdu, alpdu_length, theorical_alpdu_header,
 	                    theorical_alpdu_header_size);
 
 	if (output == BOOL_FALSE) {
@@ -334,8 +323,7 @@ exit_label:
 	print_modules_stats();
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
@@ -344,14 +332,6 @@ exit_label:
 	if (theorical_alpdu_header != NULL) {
 		free(theorical_alpdu_header);
 		theorical_alpdu_header = NULL;
-	}
-	if (alpdu != NULL) {
-		free(alpdu);
-		alpdu = NULL;
-	}
-	if (alpdu_length != NULL) {
-		free(alpdu_length);
-		alpdu_length = NULL;
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -374,8 +354,7 @@ enum boolean test_encap_null_transmitter(void)
 	};
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 
 	if (sdu.buffer != NULL) {
@@ -386,7 +365,7 @@ enum boolean test_encap_null_transmitter(void)
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, max_size);
 	sdu.size = max_size;
 
-	ret = rle_encapsulate(transmitter, sdu, frag_id);
+	ret = rle_encapsulate(transmitter, &sdu, frag_id);
 
 	if (ret != RLE_ENCAP_ERR_NULL_TRMT) {
 		PRINT_ERROR("encapsulation does not return null transmitter.");
@@ -431,10 +410,9 @@ enum boolean test_encap_too_big(void)
 	/* Good packet */
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
-	transmitter = rle_transmitter_new(conf);
+	transmitter = rle_transmitter_new(&conf);
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
 		sdu.buffer = NULL;
@@ -443,7 +421,7 @@ enum boolean test_encap_too_big(void)
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, max_size);
 	sdu.size = max_size;
 
-	ret = rle_encapsulate(transmitter, sdu, frag_id);
+	ret = rle_encapsulate(transmitter, &sdu, frag_id);
 
 	if (ret != RLE_ENCAP_OK) {
 		PRINT_ERROR("packet of good size not encapsulated.");
@@ -453,10 +431,9 @@ enum boolean test_encap_too_big(void)
 	/* Too big packet */
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
-	transmitter = rle_transmitter_new(conf);
+	transmitter = rle_transmitter_new(&conf);
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
 		sdu.buffer = NULL;
@@ -465,7 +442,7 @@ enum boolean test_encap_too_big(void)
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, max_size + 1);
 	sdu.size = max_size + 1;
 
-	ret = rle_encapsulate(transmitter, sdu, frag_id);
+	ret = rle_encapsulate(transmitter, &sdu, frag_id);
 
 	if (ret != RLE_ENCAP_ERR_SDU_TOO_BIG) {
 		PRINT_ERROR("too big packet encapsulated.");
@@ -477,8 +454,7 @@ enum boolean test_encap_too_big(void)
 exit_label:
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
@@ -501,17 +477,15 @@ enum boolean test_encap_inv_config(void)
 	};
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 
-	transmitter = rle_transmitter_new(conf);
+	transmitter = rle_transmitter_new(&conf);
 
 	output = (transmitter == NULL);
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 
 	PRINT_TEST_STATUS(output);
