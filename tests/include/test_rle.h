@@ -19,6 +19,7 @@
 #include "test_rle_common.h"
 #include "test_rle_encap.h"
 #include "test_rle_encap_ctxtless.h"
+#include "test_rle_frag_ctxtless.h"
 #include "test_rle_frag.h"
 #include "test_rle_pack.h"
 #include "test_rle_decap.h"
@@ -77,6 +78,14 @@ static enum boolean encap_ctxtless_tests(void);
  * @return        BOOL_TRUE if OK, else BOOL_FALSE.
  */
 static enum boolean frag_tests(void);
+
+
+/**
+ * @brief         Specific test function for fragmentation contextless.
+ *
+ * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ */
+static enum boolean frag_ctxtless_tests(void);
 
 /**
  * @brief         Specific test function for packing

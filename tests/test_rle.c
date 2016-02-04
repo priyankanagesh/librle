@@ -119,6 +119,34 @@ static enum boolean frag_tests(void)
 	return tests(fragmentation, fragmentation_tests);
 }
 
+static enum boolean frag_ctxtless_tests(void)
+{
+	const char *const fragmentation_ctxtless = "Fragmentation contextless";
+
+	const struct test null_transmitter = { "Null transmitter",
+	                                       test_frag_ctxtless_null_transmitter };
+	const struct test null_f_buff = { "NULL fragmentation buffer", test_frag_ctxtless_null_f_buff };
+	const struct test f_buff_not_init = { "Fragmentation buffer not initialized",
+	                                      test_frag_ctxtless_f_buff_not_init };
+	const struct test no_len = { "Fragmentation without length", test_frag_ctxtless_no_len };
+	const struct test too_small = { "Fragmentation with length too small",
+	                                test_frag_ctxtless_too_small };
+	const struct test too_big = { "Fragmentation with length too big", test_frag_ctxtless_too_big };
+
+	const struct test *const fragmentation_ctxtless_tests[] =
+	{
+		&null_transmitter,
+		&null_f_buff,
+		&f_buff_not_init,
+		&no_len,
+		&too_small,
+		&too_big,
+		NULL
+	};
+
+	return tests(fragmentation_ctxtless, fragmentation_ctxtless_tests);
+}
+
 static enum boolean pack_tests(void)
 {
 	const char *const packing = "Packing";
@@ -237,6 +265,12 @@ int main(void)
 	/*---------------------*/
 
 	tests_success &= frag_tests();
+
+	/*----------------------------------*/
+	/*--  Fragmentation  contextless  --*/
+	/*----------------------------------*/
+
+	tests_success &= frag_ctxtless_tests();
 
 	/*---------------*/
 	/*--  Packing  --*/
