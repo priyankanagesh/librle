@@ -27,6 +27,7 @@
 #include "zc_buffer.h"
 #include "rle_conf.h"
 #include "rle_header_proto_type_field.h"
+#include "fragmentation_buffer.h"
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -62,7 +63,7 @@ static int encap_check_pdu_validity(const size_t pdu_length);
 static int encap_check_pdu_validity(const size_t pdu_length)
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n", MODULE_NAME, __FILE__, __func__, __LINE__);
+	PRINT_RLE_DEBUG(MODULE_NAME);
 #endif
 
 	if (pdu_length > RLE_MAX_PDU_SIZE) {
@@ -85,6 +86,10 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 {
 	enum rle_encap_status status = RLE_ENCAP_ERR;
 	int ret = 0;
+
+#ifdef DEBUG
+	PRINT_RLE_DEBUG("", MODULE_NAME);
+#endif
 
 	if (transmitter == NULL) {
 		status = RLE_ENCAP_ERR_NULL_TRMT;
@@ -112,10 +117,9 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx, struct rle_configu
                           uint16_t protocol_type)
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+	PRINT_RLE_DEBUG(MODULE_NAME);
 #endif
+
 	rle_ctx_incr_counter_in(rle_ctx);
 	rle_ctx_incr_counter_bytes_in(rle_ctx, pdu_length);
 
@@ -138,3 +142,39 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx, struct rle_configu
 
 	return C_OK;
 }
+
+enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transmitter,
+                                            struct rle_fragmentation_buffer *const f_buff)
+{
+	enum rle_encap_status status = RLE_ENCAP_ERR;
+	struct rle_configuration *rle_conf;
+
+#ifdef DEBUG
+	PRINT_RLE_DEBUG("", MODULE_NAME);
+#endif
+
+	if (!transmitter) {
+		status = RLE_ENCAP_ERR_NULL_TRMT;
+		goto out;
+	}
+
+	rle_conf = transmitter->rle_conf;
+
+	if (!f_buff) {
+		status = RLE_ENCAP_ERR_NULL_F_BUFF;
+		goto out;
+	}
+
+	if (!f_buff_in_use(f_buff)) {
+		status = RLE_ENCAP_ERR_N_INIT_F_BUFF;
+		goto out;
+	}
+
+	if (push_alpdu_header(f_buff, rle_conf) == 0) {
+		status = RLE_ENCAP_OK;
+	}
+
+out:
+	return status;
+}
+

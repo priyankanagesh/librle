@@ -39,6 +39,77 @@
 
 
 /*------------------------------------------------------------------------------------------------*/
+
+/*------------------------------------------------------------------------------------------------*/
+/*------------------------------------ PRIVATE FUNCTIONS CODE ------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+static int push_uncompressed_alpdu_header(struct rle_fragmentation_buffer *const f_buff,
+                                          const uint16_t protocol_type)
+{
+	int status = 1;
+	rle_alpdu_header_uncompressed_t **p_alpdu_header;
+
+#ifdef DEBUG
+	PRINT_RLE_DEBUG("", MODULE_NAME);
+#endif
+
+	p_alpdu_header = (rle_alpdu_header_uncompressed_t **)&f_buff->alpdu.start;
+
+	status = f_buff_alpdu_push(f_buff, sizeof(**p_alpdu_header));
+
+	if (status == 0) {
+		(*p_alpdu_header)->proto_type = protocol_type;
+	}
+
+	return status;
+}
+
+static int push_compressed_supported_alpdu_header(struct rle_fragmentation_buffer *const f_buff,
+                                                  const uint8_t protocol_type)
+{
+	int status = 1;
+	rle_alpdu_header_compressed_supported_t **p_alpdu_header;
+
+#ifdef DEBUG
+	PRINT_RLE_DEBUG("", MODULE_NAME);
+#endif
+
+	p_alpdu_header = (rle_alpdu_header_compressed_supported_t **)&f_buff->alpdu.start;
+
+	status = f_buff_alpdu_push(f_buff, sizeof(**p_alpdu_header));
+
+	if (status == 0) {
+		(*p_alpdu_header)->proto_type = protocol_type;
+	}
+
+	return status;
+}
+
+static int push_compressed_fallback_alpdu_header(struct rle_fragmentation_buffer *const f_buff,
+                                                 const uint16_t protocol_type)
+{
+	int status = 1;
+	rle_alpdu_header_compressed_fallback_t **p_alpdu_header;
+
+#ifdef DEBUG
+	PRINT_RLE_DEBUG("", MODULE_NAME);
+#endif
+
+	p_alpdu_header = (rle_alpdu_header_compressed_fallback_t **)&f_buff->alpdu.start;
+
+	status = f_buff_alpdu_push(f_buff, sizeof(**p_alpdu_header));
+
+	if (status == 0) {
+		(*p_alpdu_header)->compressed.proto_type = RLE_PROTO_TYPE_FALLBACK;
+		(*p_alpdu_header)->uncompressed.proto_type = protocol_type;
+	}
+
+	return status;
+}
+
+
+/*------------------------------------------------------------------------------------------------*/
 /*------------------------------------- PUBLIC FUNCTIONS CODE-------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
@@ -46,9 +117,7 @@ int create_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *
                   void *data_buffer, size_t data_length, uint16_t protocol_type)
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+	PRINT_RLE_DEBUG(MODULE_NAME);
 #endif
 
 	size_t size_header = RLE_COMPLETE_HEADER_SIZE;
@@ -139,4 +208,46 @@ int create_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *
 	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO update */
 
 	return C_OK;
+}
+
+int push_alpdu_header(struct rle_fragmentation_buffer *const f_buff,
+                      const struct rle_configuration *const rle_conf)
+{
+	int status = 1;
+	uint16_t protocol_type;
+
+#ifdef DEBUG
+	PRINT_RLE_DEBUG("", MODULE_NAME);
+#endif
+
+	protocol_type = f_buff->sdu_info.protocol_type;
+
+	/* ALPDU: 4 cases, len € {0,1,2,3} */
+
+	/* don't fill ALPDU ptype field if given ptype is equal to the default one and suppression is
+	 * active, or if given ptype is for signalling packet */
+	if (!ptype_is_omissible(protocol_type, rle_conf)) {
+
+		const uint16_t net_protocol_type = ntohs(protocol_type);
+
+		if (!rle_conf_get_ptype_compression(rle_conf)) {
+			/* No compression, no suppression, ALPDU len = 2 */
+			status = push_uncompressed_alpdu_header(f_buff, net_protocol_type);
+		} else {
+			/* No suppression, compression */
+			if (rle_header_ptype_is_compressible(protocol_type) == C_OK) {
+				/* Supported case, ALPDU len = 1 */
+				uint8_t compressed_ptype = rle_header_ptype_compression(protocol_type);
+				status = push_compressed_supported_alpdu_header(f_buff, compressed_ptype);
+			} else {
+				/* Fallback case, ALPDU len = 3 */
+				status = push_compressed_fallback_alpdu_header(f_buff, net_protocol_type);
+			}
+		}
+	} else {
+		/* Nothing to do, ALDPU len == 0 */
+		status = 0;
+	}
+
+	return status;
 }

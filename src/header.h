@@ -269,7 +269,7 @@ struct rle_ppdu_header_start {
 } __attribute__ ((packed));
 
 /** RLE PPDU start header definition */
-typedef struct rle_header_start rle_header_start_t;
+typedef struct rle_ppdu_header_start rle_ppdu_header_start_t;
 
 /** RLE PPDU completet header
  *
@@ -295,7 +295,7 @@ struct rle_ppdu_header_comp {
 } __attribute__ ((packed));
 
 /** RLE PPDU completet header definition */
-typedef struct rle_ppdu_header_comp rle_header_comp_t;
+typedef struct rle_ppdu_header_comp rle_ppdu_header_comp_t;
 
 /** RLE PPDU contininuation or end header
  *
@@ -319,40 +319,70 @@ struct rle_ppdu_header_cont_end {
 } __attribute__ ((packed));
 
 /** RLE PPDU contininuation or end header definition */
-typedef struct rle_ppdu_header_cont_end rle_header_cont_end_t;
+typedef struct rle_ppdu_header_cont_end rle_ppdu_header_cont_end_t;
 
 /** RLE PPDU header
  *
  * TODO Replacement of old structures
  */
 union rle_ppdu_header {
-	rle_header_start_t    start;
-	rle_header_cont_end_t cont;
-	rle_header_cont_end_t end;
-	rle_header_comp_t     comp;
+	rle_ppdu_header_start_t    start;
+	rle_ppdu_header_cont_end_t cont;
+	rle_ppdu_header_cont_end_t end;
+	rle_ppdu_header_comp_t     comp;
 } __attribute__ ((packed));
 
 /** RLE PPDU header definition */
 typedef union rle_ppdu_header rle_ppdu_header_t;
 
-union rle_alpdu_header {
-	struct {
-		uint16_t proto_type;
-	} __attribute__ ((packed)) uncompressed;
-	struct {
-		union {
-			struct {
-				uint8_t proto_type;
-			} __attribute__ ((packed)) supported;
-			struct {
-				uint8_t proto_type;
-				uint16_t proto_type_uncompressed;
-			} __attribute__ ((packed)) fallback;
-		};
-	} __attribute__ ((packed)) compressed;
+
+/** RLE uncompressed ALPDU header.
+ *
+ * TODO Replacement of old structures.
+ */
+struct rle_alpdu_header_uncompressed {
+	uint16_t proto_type;
 } __attribute__ ((packed));
 
-/** RLE ALPDU header definition */
+/** RLE uncompressed ALPDU header definition. */
+typedef struct rle_alpdu_header_uncompressed rle_alpdu_header_uncompressed_t;
+
+
+/** RLE compressed supported ALPDU header.
+ *
+ * TODO Replacement of old structures.
+ */
+struct rle_alpdu_header_compressed_supported {
+	uint8_t proto_type;
+} __attribute__ ((packed));
+
+/** RLE compressed supported ALPDU header definition. */
+typedef struct rle_alpdu_header_compressed_supported rle_alpdu_header_compressed_supported_t;
+
+
+/** RLE compressed fallback ALPDU header.
+ *
+ * TODO Replacement of old structures.
+ */
+struct rle_alpdu_header_compressed_fallback {
+	rle_alpdu_header_compressed_supported_t compressed;
+	rle_alpdu_header_uncompressed_t uncompressed;
+} __attribute__ ((packed));
+
+/** RLE compressed fallback ALPDU header definition. */
+typedef struct rle_alpdu_header_compressed_fallback rle_alpdu_header_compressed_fallback_t;
+
+/** RLE ALPDU header.
+ *
+ * TODO Replacement of old structures.
+ */
+union rle_alpdu_header {
+	rle_alpdu_header_uncompressed_t uncompressed;
+	rle_alpdu_header_compressed_supported_t compressed_supported;
+	rle_alpdu_header_compressed_fallback_t compressed;
+} __attribute__ ((packed));
+
+/** RLE ALPDU header definition. */
 typedef union rle_alpdu_header rle_alpdu_header_t;
 
 /*------------------------------------------------------------------------------------------------*/
@@ -377,5 +407,20 @@ typedef union rle_alpdu_header rle_alpdu_header_t;
  */
 int create_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
                   void *data_buffer, size_t data_length, uint16_t protocol_type);
+
+/**
+ *  @brief         create and push ALPDU header into a fragmentation buffer.
+ *
+ *
+ *  @param[in,out] f_buff               the fragmentation buffer in use.
+ *  @param[in]     rle_conf             the RLE configuration
+ *
+ *  @return C_ERROR if KO
+ *                C_OK if OK
+ *
+ *  @ingroup
+ */
+int push_alpdu_header(struct rle_fragmentation_buffer *const f_buff,
+                      const struct rle_configuration *const rle_conf);
 
 #endif /* __HEADER_H__ */

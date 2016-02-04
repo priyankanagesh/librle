@@ -41,10 +41,12 @@
 
 /** Status of the encapsulation. */
 enum rle_encap_status {
-	RLE_ENCAP_OK,              /**< Ok.                                    */
-	RLE_ENCAP_ERR,             /**< Default error. SDU should be dropped.  */
-	RLE_ENCAP_ERR_NULL_TRMT,   /**< Error. The transmitter is NULL.        */
-	RLE_ENCAP_ERR_SDU_TOO_BIG  /**< Error. SDU too big to be encapsulated. */
+	RLE_ENCAP_OK,                /**< Ok.                                    */
+	RLE_ENCAP_ERR,               /**< Default error. SDU should be dropped.  */
+	RLE_ENCAP_ERR_NULL_TRMT,     /**< Error. The transmitter is NULL.        */
+	RLE_ENCAP_ERR_NULL_F_BUFF,   /**< Error. Fragmentation buffer is NULL.   */
+	RLE_ENCAP_ERR_N_INIT_F_BUFF, /**< Error. Fragmentation buffer not init.  */
+	RLE_ENCAP_ERR_SDU_TOO_BIG    /**< Error. SDU too big to be encapsulated. */
 };
 
 /** Status of the fragmentation. */
@@ -111,7 +113,8 @@ enum {
 	RLE_PROTO_TYPE_ARP_COMP                 = 0x0e,
 	/* for SACH. */
 	/* TODO: SACH not in the RLE_ICD v.10 (19/02/2015). Should we considere to remove it ? */
-	RLE_PROTO_TYPE_SACH_COMP                = RLE_PROTO_TYPE_IP_COMP
+	RLE_PROTO_TYPE_SACH_COMP                = RLE_PROTO_TYPE_IP_COMP,
+	RLE_PROTO_TYPE_FALLBACK                 = 0xff,
 };
 
 /** Protocol types field values uncompressed. */
@@ -333,6 +336,20 @@ int rle_f_buff_cpy_sdu(struct rle_fragmentation_buffer *const f_buff,
 enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
                                       const struct rle_sdu sdu,
                                       const uint8_t frag_id);
+
+/**
+ * @brief         RLE encapsulation. Encapsulate a SDU in a RLE ALPDU frame.
+ *
+ * @param[in,out] transmitter             The transmitter module. Used for its conf only, its
+ *                                        context is not use.
+ * @param[in,out] f_buff                  The fragmentation buffer (containing an SDU).
+ *
+ * @return        Encapsulation status.
+ *
+ * @ingroup       RLE transmitter
+ */
+enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transmitter,
+                                            struct rle_fragmentation_buffer *const f_buff);
 
 /**
  * @brief         RLE fragmentation. Get the next PPDU fragment.

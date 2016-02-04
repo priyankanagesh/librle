@@ -55,3 +55,5 @@ EXPORT_SYMBOL(rle_get_header_size);
 EXPORT_SYMBOL(rle_f_buff_new);
 EXPORT_SYMBOL(rle_f_buff_del);
 EXPORT_SYMBOL(rle_f_buff_init);
+EXPORT_SYMBOL(rle_f_buff_cpy_sdu);
+EXPORT_SYMBOL(rle_encap_contextless);

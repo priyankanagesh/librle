@@ -34,6 +34,28 @@ struct rle_trailer {
 	};
 } __attribute__ ((packed));
 
-typedef struct rle_trailer rle_alpdu_trailer_t;
+/** RLE packet Seq No trailer. */
+struct rle_alpdu_seqno_trailer {
+	uint8_t seq_no;
+} __attribute__ ((packed));
+
+/** RLE packet Seq No trailer definition. */
+typedef struct rle_alpdu_seqno_trailer rle_alpdu_seqno_trailer_t;
+
+/** RLE packet CRC trailer. */
+struct rle_alpdu_crc_trailer {
+	uint32_t crc;
+} __attribute__ ((packed));
+
+/** RLE packet CRC trailer definition. */
+typedef struct rle_alpdu_crc_trailer rle_alpdu_crc_trailer_t;
+
+/** RLE packet trailer definition. */
+union rle_alpdu_trailer {
+	rle_alpdu_seqno_trailer_t seqno_trailer;
+	rle_alpdu_crc_trailer_t crc_trailer;
+} __attribute__ ((packed));
+
+typedef union rle_alpdu_trailer rle_alpdu_trailer_t;
 
 #endif /* __TRAILER_H__ */
