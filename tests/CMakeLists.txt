@@ -4,6 +4,7 @@ LINK_DIRECTORIES(${CMAKE_BINARY_DIR})
 SET(SRC_LIBRLE_TESTS
 	test_rle_common.c
 	test_rle_encap.c
+	test_rle_encap_ctxtless.c
 	test_rle_frag.c
 	test_rle_pack.c
 	test_rle_decap.c

@@ -72,6 +72,30 @@ static enum boolean encap_tests(void)
 	return tests(encapsulation, encapsulation_tests);
 }
 
+static enum boolean encap_ctxtless_tests(void)
+{
+	const char *const encapsulation_contextless = "Encapsulation contextless";
+
+	const struct test null_transmitter = { "Null transmitter",
+	                                       test_encap_ctxtless_null_transmitter };
+	const struct test null_f_buff = { "Null fragmentation buffer",
+	                                  test_encap_ctxtless_null_f_buff };
+	const struct test f_buff_not_init = { "fragmentation buffer not initialized",
+	                                      test_encap_ctxtless_f_buff_not_init };
+	const struct test too_big = { "Too big", test_encap_ctxtless_too_big };
+
+	const struct test *const encapsulation_contextless_tests[] =
+	{
+		&null_transmitter,
+		&null_f_buff,
+		&f_buff_not_init,
+		&too_big,
+		NULL
+	};
+
+	return tests(encapsulation_contextless, encapsulation_contextless_tests);
+}
+
 static enum boolean frag_tests(void)
 {
 	const char *const fragmentation = "Fragmentation";
@@ -201,6 +225,12 @@ int main(void)
 	/*---------------------*/
 
 	tests_success &= encap_tests();
+
+	/*----------------------------------*/
+	/*--  Encapsulation  contextless  --*/
+	/*----------------------------------*/
+
+	tests_success &= encap_ctxtless_tests();
 
 	/*---------------------*/
 	/*--  Fragmentation  --*/

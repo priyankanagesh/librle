@@ -225,6 +225,8 @@ enum boolean test_rle_allocation_transmitter(void)
 
 	struct rle_transmitter *t = NULL;
 
+	PRINT_TEST("RLE transmitter allocation.\n");
+
 	t = rle_transmitter_new(&bad_conf);
 
 	if (t) {
@@ -246,6 +248,9 @@ out:
 
 	rle_transmitter_destroy(&t);
 
+	PRINT_TEST_STATUS(output);
+	printf("\n");
+
 	return output;
 }
 
@@ -258,6 +263,8 @@ enum boolean test_rle_destruction_transmitter(void)
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0,
 	};
+
+	PRINT_TEST("RLE transmitter destruction.\n");
 
 	struct rle_transmitter *t = NULL;
 
@@ -285,6 +292,9 @@ enum boolean test_rle_destruction_transmitter(void)
 
 out:
 
+	PRINT_TEST_STATUS(output);
+	printf("\n");
+
 	return output;
 }
 
@@ -306,6 +316,8 @@ enum boolean test_rle_allocation_receiver(void)
 
 	struct rle_receiver *r = NULL;
 
+	PRINT_TEST("RLE receiver allocation.\n");
+
 	r = rle_receiver_new(&bad_conf);
 
 	if (r) {
@@ -326,6 +338,9 @@ enum boolean test_rle_allocation_receiver(void)
 out:
 	rle_receiver_destroy(&r);
 
+	PRINT_TEST_STATUS(output);
+	printf("\n");
+
 	return output;
 }
 
@@ -340,6 +355,8 @@ enum boolean test_rle_destruction_receiver(void)
 	};
 
 	struct rle_receiver *r = NULL;
+
+	PRINT_TEST("RLE receiver destruction.\n");
 
 	/* Should print error, but no segfault. */
 	rle_receiver_destroy(NULL);
@@ -365,6 +382,9 @@ enum boolean test_rle_destruction_receiver(void)
 
 out:
 
+	PRINT_TEST_STATUS(output);
+	printf("\n");
+
 	return output;
 }
 
@@ -373,6 +393,8 @@ enum boolean test_rle_allocation_f_buff(void)
 	enum boolean output = BOOL_FALSE;
 
 	struct rle_fragmentation_buffer *f = NULL;
+
+	PRINT_TEST("RLE fragmentation buffer allocation.\n");
 
 	f = rle_f_buff_new();
 
@@ -386,6 +408,9 @@ enum boolean test_rle_allocation_f_buff(void)
 out:
 	rle_f_buff_del(&f);
 
+	PRINT_TEST_STATUS(output);
+	printf("\n");
+
 	return output;
 }
 
@@ -394,6 +419,8 @@ enum boolean test_rle_destruction_f_buff(void)
 	enum boolean output = BOOL_FALSE;
 
 	struct rle_fragmentation_buffer *f = NULL;
+
+	PRINT_TEST("RLE fragmentation buffer destruction.\n");
 
 	/* Should print error, but no segfault. */
 	rle_f_buff_del(NULL);
@@ -418,6 +445,9 @@ enum boolean test_rle_destruction_f_buff(void)
 	output = BOOL_TRUE;
 
 out:
+
+	PRINT_TEST_STATUS(output);
+	printf("\n");
 
 	return output;
 }
