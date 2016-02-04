@@ -1293,7 +1293,7 @@ enum boolean test_decap_context_free(void)
 	sdus[0].buffer = (unsigned char *)buffer_out;
 
 	size_t sdus_nr = 0;
-	size_t last_pos;
+	size_t last_pos = 0;
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x0d,

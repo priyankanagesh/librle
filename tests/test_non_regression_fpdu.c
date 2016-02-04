@@ -281,7 +281,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 
 	unsigned char *fpdu;
 
-	int counter;
+	int counter = 0;
 
 	struct rle_receiver *receiver;
 
