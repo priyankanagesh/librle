@@ -24,6 +24,7 @@
 #include <pcap.h>
 #include <getopt.h>
 #include <signal.h>
+#include <inttypes.h>
 
 #include "../include/rle.h"
 
@@ -852,17 +853,17 @@ static int test_encap(const char device_name[], const char output[], const size_
 		u_int8_t frag_id;
 		for (frag_id = 0; frag_id < 8; ++frag_id) {
 			printf("===\tFrag ID %u\n", frag_id);
-			printf("===\ttransmitter in:             %zu\n",
+			printf("===\ttransmitter in:             %" PRIu64 "\n",
 			       rle_transmitter_stats_get_counter_sdus_in(transmitter, frag_id));
-			printf("===\ttransmitter sent:           %zu\n",
+			printf("===\ttransmitter sent:           %" PRIu64 "\n",
 			       rle_transmitter_stats_get_counter_sdus_sent(transmitter, frag_id));
-			printf("===\ttransmitter dropped:        %zu\n",
+			printf("===\ttransmitter dropped:        %" PRIu64 "\n",
 			       rle_transmitter_stats_get_counter_sdus_dropped(transmitter, frag_id));
-			printf("===\ttransmitter bytes in:       %zu\n",
+			printf("===\ttransmitter bytes in:       %" PRIu64 "\n",
 			       rle_transmitter_stats_get_counter_bytes_in(transmitter, frag_id));
-			printf("===\ttransmitter bytes sent:     %zu\n",
+			printf("===\ttransmitter bytes sent:     %" PRIu64 "\n",
 			       rle_transmitter_stats_get_counter_bytes_sent(transmitter, frag_id));
-			printf("===\ttransmitter bytes dropped:  %zu\n",
+			printf("===\ttransmitter bytes dropped:  %" PRIu64 "\n",
 			       rle_transmitter_stats_get_counter_bytes_dropped(transmitter, frag_id));
 			printf("\n");
 		}
