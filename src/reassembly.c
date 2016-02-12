@@ -319,7 +319,7 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	rle_r_buff_t *r_buff;
 	struct rle_ctx_management *rle_ctx = NULL;
 	const rle_alpdu_trailer_t *rle_trailer = NULL;
-	size_t lost_packets;
+	size_t lost_packets = 0;
 
 #ifdef TIME_DEBUG
 	struct timeval tv_start = { .tv_sec = 0L, .tv_usec = 0L };
