@@ -169,9 +169,7 @@ void rle_receiver_destroy(struct rle_receiver **const receiver)
 			rle_conf_destroy(*conf);
 		}
 
-		if (ctx_man) {
-			rle_ctx_destroy_r_buff(ctx_man);
-		}
+		rle_ctx_destroy_r_buff(ctx_man);
 	}
 
 	FREE(*receiver);
