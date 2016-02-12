@@ -97,7 +97,7 @@ struct rle_transmitter *rle_transmitter_new(
         const struct rle_context_configuration *const configuration)
 {
 	struct rle_transmitter *transmitter = NULL;
-	size_t iterator = 0;
+	size_t iterator;
 	struct rle_configuration **tx_conf;
 
 #ifdef DEBUG
