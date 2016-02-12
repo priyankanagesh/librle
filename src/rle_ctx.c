@@ -254,6 +254,7 @@ size_t get_fragment_length(const unsigned char *const buffer)
 		fragment_length += sizeof(rle_ppdu_header_start_t);
 		break;
 	default:
+		PRINT_RLE_ERROR("Unhandled fragment type '%i'.", fragment_type);
 		break;
 	}
 

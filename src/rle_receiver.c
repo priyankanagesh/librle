@@ -227,6 +227,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, const unsigned char pp
 		break;
 
 	default:
+		PRINT_RLE_ERROR("Unhandled fragment type '%i'.", frag_type);
 		break;
 	}
 
