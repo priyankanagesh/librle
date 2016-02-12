@@ -553,12 +553,13 @@ void signal_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 	return;
 }
 
-void suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                           const size_t alpdu_fragment_len, uint16_t *protocol_type,
-                                           const unsigned char *sdu_fragment[],
-                                           size_t *const sdu_fragment_len,
-                                           const struct rle_configuration *const rle_conf)
+int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
+                                          const size_t alpdu_fragment_len, uint16_t *protocol_type,
+                                          const unsigned char *sdu_fragment[],
+                                          size_t *const sdu_fragment_len,
+                                          const struct rle_configuration *const rle_conf)
 {
+	int status = 0;
 	const uint8_t default_ptype = rle_conf_get_default_ptype(rle_conf);
 
 	*sdu_fragment = alpdu_fragment;
@@ -572,12 +573,15 @@ void suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 			*protocol_type = RLE_PROTO_TYPE_IPV6_UNCOMP;
 		} else {
 			PRINT_RLE_ERROR("Unsupported IP Version %d\n", ip_version);
+			status = 1;
+			goto out;
 		}
 	} else {
 		*protocol_type = rle_header_ptype_decompression(default_ptype);
 	}
 
-	return;
+out:
+	return status;
 }
 
 void uncompressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],

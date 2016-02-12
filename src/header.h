@@ -315,11 +315,11 @@ void signal_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
  *
  *  @ingroup RLE header
  */
-void suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                           const size_t alpdu_fragment_len, uint16_t *protocol_type,
-                                           const unsigned char *sdu_fragment[],
-                                           size_t *const sdu_fragment_len,
-                                           const struct rle_configuration *const rle_conf);
+int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
+                                          const size_t alpdu_fragment_len, uint16_t *protocol_type,
+                                          const unsigned char *sdu_fragment[],
+                                          size_t *const sdu_fragment_len,
+                                          const struct rle_configuration *const rle_conf);
 
 /**
  *  @brief         Extract SDU fragment from uncompressed ALPDU.

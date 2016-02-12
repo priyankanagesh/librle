@@ -74,8 +74,10 @@ int reassembly_comp_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 		signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
 		                                  &sdu_fragment, &sdu_fragment_len);
 	} else if (rle_comp_ppdu_header_get_is_suppressed(header)) {
-		suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
-		                                      &sdu_fragment, &sdu_fragment_len, rle_conf);
+		if (suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
+		                                          &sdu_fragment, &sdu_fragment_len, rle_conf)) {
+			goto out;
+		}
 	} else if (rle_conf_get_ptype_compression(rle_conf)) {
 		compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                      &protocol_type, &sdu_fragment, &sdu_fragment_len,
