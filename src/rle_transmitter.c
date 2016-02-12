@@ -45,20 +45,20 @@
  *
  * @return         0 if OK, else 1.
  */
-static int valid_transmitter_context(const struct rle_transmitter *const transmitter,
-                                     const uint8_t fragment_id,
-                                     const struct rle_ctx_management **const ctx_man);
+static int get_transmitter_context(const struct rle_transmitter *const transmitter,
+                                   const uint8_t fragment_id,
+                                   const struct rle_ctx_management **const ctx_man);
 
 
 /*------------------------------------------------------------------------------------------------*/
 /*----------------------------------- PRIVATE FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-static int valid_transmitter_context(const struct rle_transmitter *const transmitter,
-                                     const uint8_t fragment_id,
-                                     const struct rle_ctx_management **const ctx_man)
+static int get_transmitter_context(const struct rle_transmitter *const transmitter,
+                                   const uint8_t fragment_id,
+                                   const struct rle_ctx_management **const ctx_man)
 {
-	int status = 0;
+	int status = 1;
 
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);
@@ -71,7 +71,7 @@ static int valid_transmitter_context(const struct rle_transmitter *const transmi
 
 	*ctx_man = &transmitter->rle_ctx_man[fragment_id];
 
-	status = 1;
+	status = 0;
 
 error:
 	return status;
@@ -210,7 +210,7 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
@@ -237,7 +237,7 @@ uint64_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter 
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
@@ -262,7 +262,7 @@ uint64_t rle_transmitter_stats_get_counter_sdus_sent(
 PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
@@ -287,7 +287,7 @@ uint64_t rle_transmitter_stats_get_counter_sdus_dropped(
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
@@ -312,7 +312,7 @@ uint64_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
@@ -337,7 +337,7 @@ uint64_t rle_transmitter_stats_get_counter_bytes_sent(
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
@@ -362,7 +362,7 @@ uint64_t rle_transmitter_stats_get_counter_bytes_dropped(
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
@@ -396,7 +396,7 @@ int rle_transmitter_stats_get_counters(const struct rle_transmitter *const trans
 		goto error;
 	}
 
-	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
@@ -439,8 +439,8 @@ void rle_transmitter_stats_reset_counters(struct rle_transmitter *const transmit
 		goto error;
 	}
 
-	if (!valid_transmitter_context(transmitter, fragment_id,
-	                               (const struct rle_ctx_management **)&ctx_man)) {
+	if (get_transmitter_context(transmitter, fragment_id,
+	                            (const struct rle_ctx_management **)&ctx_man)) {
 		goto error;
 	}
 
