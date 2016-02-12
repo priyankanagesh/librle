@@ -392,10 +392,6 @@ int rle_transmitter_stats_get_counters(const struct rle_transmitter *const trans
 		goto error;
 	}
 
-	if (fragment_id >= RLE_MAX_FRAG_ID) {
-		goto error;
-	}
-
 	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
@@ -432,10 +428,6 @@ void rle_transmitter_stats_reset_counters(struct rle_transmitter *const transmit
 #endif
 
 	if (!transmitter) {
-		goto error;
-	}
-
-	if (fragment_id >= RLE_MAX_FRAG_ID) {
 		goto error;
 	}
 

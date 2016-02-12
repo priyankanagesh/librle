@@ -425,10 +425,6 @@ int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
 		goto error;
 	}
 
-	if (fragment_id >= RLE_MAX_FRAG_ID) {
-		goto error;
-	}
-
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
 	}
@@ -457,10 +453,6 @@ void rle_receiver_stats_reset_counters(struct rle_receiver *const receiver,
 	struct rle_ctx_management *ctx_man = NULL;
 
 	if (!receiver) {
-		goto error;
-	}
-
-	if (fragment_id >= RLE_MAX_FRAG_ID) {
 		goto error;
 	}
 
