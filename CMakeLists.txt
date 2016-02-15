@@ -54,7 +54,7 @@ SET_TARGET_PROPERTIES(librle PROPERTIES SOVERSION ${ABI_VERSION_MAJOR} VERSION $
 IF (FUZZING)
 	set(ENV{AFL_USE_ASAN} 1)
 	set(ENV{AFL_HARDEN} 1)
-	set(CMAKE_C_COMPILER /usr/local/bin/afl-gcc)
+	set(CMAKE_C_COMPILER afl-gcc)
 	add_definitions(-fno-omit-frame-pointer -g)
 ELSE(FUZZING)
 	add_definitions("-Werror")

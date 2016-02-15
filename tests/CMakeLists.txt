@@ -51,12 +51,12 @@ ADD_CUSTOM_TARGET(tests DEPENDS test_rle test_non_regression
 	test_non_regression_fpdu test_dump_fpdus)
 
 # Definitions of the system commands for the next targets.
-SET(SYS_CMD_GREP /bin/grep)
-SET(SYS_CMD_ECHO /bin/echo)
-SET(SYS_CMD_RM /bin/rm)
-SET(SYS_CMD_LCOV /usr/bin/lcov)
-SET(SYS_CMD_GENHTML /usr/bin/genhtml)
-SET(SYS_CMD_AFL_FUZZ /usr/local/bin/afl-fuzz)
+SET(SYS_CMD_GREP grep)
+SET(SYS_CMD_ECHO echo)
+SET(SYS_CMD_RM rm)
+SET(SYS_CMD_LCOV lcov)
+SET(SYS_CMD_GENHTML genhtml)
+SET(SYS_CMD_AFL_FUZZ afl-fuzz)
 
 # Check the tests with:
 #   $ make check
