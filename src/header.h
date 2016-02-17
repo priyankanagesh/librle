@@ -33,7 +33,7 @@
 
 #endif
 
-#include "../include/rle.h"
+#include "rle.h"
 
 #include "constants.h"
 #include "rle_header_proto_type_field.h"

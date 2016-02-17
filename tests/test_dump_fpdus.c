@@ -26,7 +26,7 @@
 #include <signal.h>
 #include <inttypes.h>
 
-#include "../include/rle.h"
+#include "rle.h"
 
 /** The program version */
 #define TEST_VERSION  "RLE dump FPDUs test application, version 0.0.1\n"

@@ -13,9 +13,9 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "../src/fragmentation_buffer.h"
-#include "../src/rle_transmitter.c"
-#include "../src/rle_transmitter.h"
+#include "fragmentation_buffer.h"
+#include "rle_transmitter.c"
+#include "rle_transmitter.h"
 
 #include "test_rle_encap.h"
 

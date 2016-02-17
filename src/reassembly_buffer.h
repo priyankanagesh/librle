@@ -10,7 +10,7 @@
 #ifndef __REASSEMBLY_BUFFER_H__
 #define __REASSEMBLY_BUFFER_H__
 
-#include "../include/rle.h"
+#include "rle.h"
 
 #include "constants.h"
 

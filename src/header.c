@@ -19,7 +19,7 @@
 
 #endif
 
-#include "../include/rle.h"
+#include "rle.h"
 
 #include "rle_transmitter.h"
 #include "constants.h"

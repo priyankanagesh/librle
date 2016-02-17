@@ -10,7 +10,7 @@
 #ifndef __FRAGMENTATION_BUFFER_H__
 #define __FRAGMENTATION_BUFFER_H__
 
-#include "../include/rle.h"
+#include "rle.h"
 
 #include "constants.h"
 #include "header.h"
