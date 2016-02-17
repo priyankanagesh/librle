@@ -7,7 +7,8 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-/* system includes */
+#include "rle.h"
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,17 +17,15 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <assert.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <sys/socket.h>
-#include <pcap/pcap.h>
-#include <pcap.h>
 #include <getopt.h>
 #include <signal.h>
-#include <inttypes.h>
-
-#include "rle.h"
+#include <pcap/pcap.h>
+#include <pcap.h>
 
 /** The program version */
 #define TEST_VERSION  "RLE dump FPDUs test application, version 0.0.1\n"

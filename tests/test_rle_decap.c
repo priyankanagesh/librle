@@ -7,17 +7,17 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
-
 #include "test_rle_decap.h"
 
 #include "rle_transmitter.h"
 #include "rle_receiver.h"
 #include "fragmentation_buffer.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <string.h>
 
 /**
  * @brief         Generic decapsulation test.

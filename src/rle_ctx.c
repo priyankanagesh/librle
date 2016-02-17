@@ -7,16 +7,16 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "rle_ctx.h"
+#include "constants.h"
+#include "fragmentation_buffer.h"
+#include "reassembly_buffer.h"
+
 #ifndef __KERNEL__
 
 #include <stddef.h>
 
 #endif
-
-#include "rle_ctx.h"
-#include "constants.h"
-#include "fragmentation_buffer.h"
-#include "reassembly_buffer.h"
 
 
 /*------------------------------------------------------------------------------------------------*/

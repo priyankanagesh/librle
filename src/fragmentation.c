@@ -7,6 +7,17 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "fragmentation_buffer.h"
+#include "rle_transmitter.h"
+#include "header.h"
+#include "fragmentation.h"
+#include "constants.h"
+#include "rle_ctx.h"
+#include "crc.h"
+#include "rle_header_proto_type_field.h"
+
+#include "rle.h"
+
 #ifndef __KERNEL__
 
 #include <stdio.h>
@@ -18,17 +29,6 @@
 #include <linux/types.h>
 
 #endif
-
-#include "rle.h"
-
-#include "fragmentation_buffer.h"
-#include "rle_transmitter.h"
-#include "header.h"
-#include "fragmentation.h"
-#include "constants.h"
-#include "rle_ctx.h"
-#include "crc.h"
-#include "rle_header_proto_type_field.h"
 
 
 /*------------------------------------------------------------------------------------------------*/

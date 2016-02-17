@@ -7,6 +7,13 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "deencap.h"
+#include "rle_receiver.h"
+#include "rle_ctx.h"
+#include "constants.h"
+#include "reassembly_buffer.h"
+#include "rle.h"
+
 #ifndef __KERNEL__
 
 #include <stdlib.h>
@@ -18,13 +25,6 @@
 #include <linux/string.h>
 
 #endif
-
-#include "rle.h"
-#include "deencap.h"
-#include "rle_receiver.h"
-#include "rle_ctx.h"
-#include "constants.h"
-#include "reassembly_buffer.h"
 
 
 /*------------------------------------------------------------------------------------------------*/

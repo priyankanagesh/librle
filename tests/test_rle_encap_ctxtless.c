@@ -7,17 +7,16 @@
  *   Copyright (C) 2016, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "test_rle_encap_ctxtless.h"
+
+#include "fragmentation_buffer.h"
+#include "rle_transmitter.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
-#include "fragmentation_buffer.h"
-#include "rle_transmitter.h"
-
-#include "test_rle_encap_ctxtless.h"
-
 
 enum boolean test_encap_ctxtless_null_transmitter(void)
 {

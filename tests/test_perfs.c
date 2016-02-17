@@ -24,7 +24,7 @@
 #include <getopt.h>
 #include <signal.h>
 
-#include <rle.h>
+#include "rle.h"
 
 /** The program version */
 #define TEST_VERSION  "RLE performances test application, version 0.0.1\n"

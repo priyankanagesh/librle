@@ -7,6 +7,14 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "rle_receiver.h"
+#include "reassembly.h"
+#include "rle_ctx.h"
+#include "constants.h"
+#include "header.h"
+#include "trailer.h"
+#include "deencap.h"
+
 #ifndef __KERNEL__
 
 #include <stdlib.h>
@@ -17,14 +25,6 @@
 #ifdef TIME_DEBUG
 #include <sys/time.h>
 #endif
-#include "rle_receiver.h"
-#include "reassembly.h"
-#include "rle_ctx.h"
-#include "constants.h"
-#include "header.h"
-#include "trailer.h"
-#include "deencap.h"
-
 
 /*------------------------------------------------------------------------------------------------*/
 /*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/

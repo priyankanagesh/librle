@@ -7,16 +7,16 @@
  *   Copyright (C) 2016, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "test_rle_frag_ctxtless.h"
+
+#include "rle_transmitter.h"
+#include "rle_ctx.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
-#include "test_rle_frag_ctxtless.h"
-
-#include "rle_transmitter.h"
-#include "rle_ctx.h"
 
 #define DEFAULT_SDU_LEN 100
 

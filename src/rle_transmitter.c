@@ -7,6 +7,13 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "rle_transmitter.h"
+#include "rle_ctx.h"
+#include "constants.h"
+#include "encap.h"
+#include "fragmentation.h"
+#include "trailer.h"
+
 #ifndef __KERNEL__
 
 #include <stdlib.h>
@@ -17,13 +24,6 @@
 #ifdef TIME_DEBUG
 #include <sys/time.h>
 #endif
-#include "rle_transmitter.h"
-#include "rle_ctx.h"
-#include "constants.h"
-#include "encap.h"
-#include "fragmentation.h"
-#include "trailer.h"
-
 
 /*------------------------------------------------------------------------------------------------*/
 /*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/

@@ -7,6 +7,14 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "reassembly.h"
+#include "rle_receiver.h"
+#include "constants.h"
+#include "header.h"
+#include "trailer.h"
+#include "crc.h"
+#include "rle_header_proto_type_field.h"
+
 #ifndef __KERNEL__
 
 #include <stdio.h>
@@ -17,14 +25,6 @@
 #include <linux/string.h>
 
 #endif
-
-#include "reassembly.h"
-#include "rle_receiver.h"
-#include "constants.h"
-#include "header.h"
-#include "trailer.h"
-#include "crc.h"
-#include "rle_header_proto_type_field.h"
 
 
 /*------------------------------------------------------------------------------------------------*/

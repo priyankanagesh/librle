@@ -7,16 +7,16 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "test_rle_misc.h"
+
+#include "rle.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 #include <netinet/in.h>
-
-#include "test_rle_misc.h"
-
-#include "rle.h"
 
 /** Test configuration structure */
 struct test_request {

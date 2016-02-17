@@ -7,6 +7,10 @@
  *   Copyright (C) 2016, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "rle.h"
+#include "constants.h"
+#include "fragmentation_buffer.h"
+
 #ifndef __KERNEL__
 
 #include <stdlib.h>
@@ -19,10 +23,6 @@
 #include <linux/string.h>
 
 #endif
-
-#include "rle.h"
-#include "constants.h"
-#include "fragmentation_buffer.h"
 
 
 /*------------------------------------------------------------------------------------------------*/

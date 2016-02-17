@@ -7,7 +7,8 @@
  *   Copyright (C) 2016, Thales Alenia Space France - All Rights Reserved
  */
 
-/* system includes */
+#include "rle.h"
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,12 +20,10 @@
 #include <inttypes.h>
 #include <stdarg.h>
 #include <netinet/in.h>
-#include <pcap/pcap.h>
-#include <pcap.h>
 #include <getopt.h>
 #include <signal.h>
-
-#include "rle.h"
+#include <pcap/pcap.h>
+#include <pcap.h>
 
 /** The program version */
 #define TEST_VERSION  "RLE FPDU performances test application, version 0.0.1\n"

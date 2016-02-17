@@ -7,15 +7,15 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "test_rle.h"
+
+#include "rle_transmitter.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
-#include "test_rle.h"
-
-#include "rle_transmitter.h"
 
 static enum boolean tests(const char *const test_name, const struct test *const current_tests[])
 {

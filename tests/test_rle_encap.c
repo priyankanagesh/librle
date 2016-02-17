@@ -7,18 +7,17 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "test_rle_encap.h"
+
+#include "rle_transmitter.h"
+#include "rle_receiver.h"
+#include "fragmentation_buffer.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
-#include "fragmentation_buffer.h"
-#include "rle_transmitter.c"
-#include "rle_transmitter.h"
-
-#include "test_rle_encap.h"
-
 
 /**
  * @brief         Compare two packets.
