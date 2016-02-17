@@ -15,29 +15,29 @@
 /**
  * @brief         Packing test when FPDU is too small.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_pack_fpdu_too_small(void);
+bool test_pack_fpdu_too_small(void);
 
 /**
  * @brief         Packing test when PPDU is invalid.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_pack_invalid_ppdu(void);
+bool test_pack_invalid_ppdu(void);
 
 /**
  * @brief         Packing test when label is invalid.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_pack_invalid_label(void);
+bool test_pack_invalid_label(void);
 
 /**
  * @brief         Packing test in general cases.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_pack_all(void);
+bool test_pack_all(void);
 
 #endif /* __TEST_RLE_PACK_H__ */

@@ -9,6 +9,7 @@
 
 #include "rle_conf.h"
 #include "constants.h"
+#include <stdbool.h>
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -17,7 +18,7 @@
 
 #define MODULE_NAME "RLE CONF"
 
-#define IS_NOT_A_BOOLEAN(x) ((x) < C_FALSE || (x) > C_TRUE)
+#define IS_NOT_A_BOOLEAN(x) ((x) < false || (x) > true)
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -91,7 +92,7 @@ void rle_conf_init(struct rle_configuration *_this)
 	_this->default_ptype = RLE_CONF_DEFAULT_PTYPE;
 	_this->enable_ptype_compressed = RLE_CONF_COMPRESS_PTYPE;
 	_this->enable_ptype_suppressed = RLE_CONF_SUPPRESS_PTYPE;
-	_this->enable_crc_check = C_FALSE;
+	_this->enable_crc_check = false;
 }
 
 int rle_conf_set_default_ptype(struct rle_configuration *_this, uint8_t protocol_type)
@@ -165,7 +166,7 @@ int rle_conf_get_crc_check(struct rle_configuration *_this)
 
 int ptype_is_omissible(const uint16_t ptype, const struct rle_configuration *const rle_conf)
 {
-	int status = C_FALSE;
+	int status = false;
 
 	const int is_suppressible =
 	        (rle_conf_get_ptype_suppression((struct rle_configuration *)rle_conf));
@@ -185,11 +186,11 @@ int ptype_is_omissible(const uint16_t ptype, const struct rle_configuration *con
 		}
 
 		if (ptype_is_default_ptype) {
-			status = C_TRUE;
+			status = true;
 		}
 	}
 	if (ptype_is_signal) {
-		status = C_TRUE;
+		status = true;
 	}
 
 	return status;

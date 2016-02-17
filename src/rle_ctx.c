@@ -15,6 +15,7 @@
 #ifndef __KERNEL__
 
 #include <stddef.h>
+#include <stdbool.h>
 
 #endif
 
@@ -66,7 +67,7 @@ static void flush(struct rle_ctx_management *_this)
 {
 	_this->frag_id = 0xff;
 	_this->next_seq_nb = 0xff;
-	_this->use_crc = C_FALSE;
+	_this->use_crc = false;
 	rle_ctx_reset_counters(_this);
 
 	return;

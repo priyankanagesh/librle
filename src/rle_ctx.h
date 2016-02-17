@@ -13,6 +13,7 @@
 #ifndef __KERNEL__
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #else
 
@@ -751,14 +752,14 @@ size_t get_fragment_length(const unsigned char *const buffer);
  * @param[in]     contexts              The contexts
  * @param[in]     frag_id               The frag_id of the context checked
  *
- * @return        C_FALSE if the context is in use, else C_TRUE if free.
+ * @return        false if the context is in use, else true if free.
  */
 static inline int rle_ctx_is_free(uint8_t contexts, const size_t frag_id)
 {
-	int context_is_free = C_FALSE;
+	int context_is_free = false;
 
 	if (((contexts >> frag_id) & 0x1) == 0) {
-		context_is_free = C_TRUE;
+		context_is_free = true;
 	}
 
 	return context_is_free;

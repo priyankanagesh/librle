@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 
 #define GET_CONF_VALUE(x) ((x) == 1 ? "True" : "False")
@@ -31,9 +32,9 @@
  * @param[in]     burst_size               The size of the burst that the fragmentation depends on
  * @param[in]     frag_id                  The fragment id
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean test_frag(const uint16_t protocol_type,
+static bool test_frag(const uint16_t protocol_type,
                               const struct rle_context_configuration conf, const size_t length,
                               const size_t burst_size,
                               const uint8_t frag_id);
@@ -134,7 +135,7 @@ enum frag_states test_get_fragment_type(const unsigned char ppdu_first_octet)
 	return fragment_type;
 }
 
-static enum boolean test_frag(const uint16_t protocol_type,
+static bool test_frag(const uint16_t protocol_type,
                               const struct rle_context_configuration conf, const size_t length,
                               const size_t burst_size,
                               const uint8_t frag_id)
@@ -145,7 +146,7 @@ static enum boolean test_frag(const uint16_t protocol_type,
 	           GET_CONF_VALUE(conf.use_compressed_ptype),
 	           GET_CONF_VALUE(conf.use_ptype_omission), conf.use_alpdu_crc == 1 ? "CRC" : "Seq No",
 	           length, burst_size, frag_id);
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 
 	struct rle_sdu sdu = {
@@ -214,7 +215,7 @@ static enum boolean test_frag(const uint16_t protocol_type,
 
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 
@@ -233,9 +234,9 @@ exit_label:
 	return output;
 }
 
-enum boolean test_frag_null_transmitter(void)
+bool test_frag_null_transmitter(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	const uint16_t protocol_type = 0x0800; /* Arbitrarly */
 	const uint8_t frag_id = 0; /* Arbitrarly */
 	const size_t sdu_length = 100;
@@ -270,7 +271,7 @@ enum boolean test_frag_null_transmitter(void)
 		}
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 
@@ -283,10 +284,10 @@ exit_label:
 	printf("\n");
 	return output;
 }
-enum boolean test_frag_too_small(void)
+bool test_frag_too_small(void)
 {
 	PRINT_TEST("Frag too small.");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 
 	const uint16_t protocol_type = 0x0800;
@@ -361,10 +362,10 @@ exit_label:
 	return output;
 }
 
-enum boolean test_frag_null_context(void)
+bool test_frag_null_context(void)
 {
 	PRINT_TEST("Null context");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	/* enum rle_encap_status ret_encap = RLE_ENCAP_ERR;*/
 
 	const uint16_t protocol_type = 0x0800;
@@ -430,10 +431,10 @@ exit_label:
 	return output;
 }
 
-enum boolean test_frag_real_world(void)
+bool test_frag_real_world(void)
 {
 	PRINT_TEST("Fragmentation with realistic values and Configuration.");
-	enum boolean output = BOOL_TRUE;
+	bool output = true;
 	const uint16_t protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP; /* IPv4 Arbitrarily. */
 	const uint8_t frag_id = 1;
 
@@ -457,10 +458,10 @@ enum boolean test_frag_real_world(void)
 		for (burst_sizes_it = 0; burst_sizes_it < sizeof(burst_sizes) / sizeof *(burst_sizes); 
 				++burst_sizes_it) {
 			const size_t burst_size = burst_sizes[burst_sizes_it];
-			const enum boolean ret = test_frag(protocol_type, conf, sdu_length, burst_size, frag_id);
-			if (ret == BOOL_FALSE) {
+			const bool ret = test_frag(protocol_type, conf, sdu_length, burst_size, frag_id);
+			if (ret == false) {
 				/* Only one fail means the encap test fail. */
-				output = BOOL_FALSE;
+				output = false;
 			}
 		}
 	}
@@ -470,10 +471,10 @@ enum boolean test_frag_real_world(void)
 	return output;
 }
 
-enum boolean test_frag_all(void)
+bool test_frag_all(void)
 {
 	PRINT_TEST("Test all the general fragmentation cases.");
-	enum boolean output = BOOL_TRUE;
+	bool output = true;
 	uint16_t protocol_type = 0x0800; /* IPv4 Arbitrarily. */
 	uint8_t frag_id = 1;
 	const size_t sdu_length = 100;
@@ -522,24 +523,24 @@ enum boolean test_frag_all(void)
 
 		/* We launch the test on each configuration. All the cases then are test. */
 		for (conf = confs; *conf; ++conf) {
-			const enum boolean ret =
+			const bool ret =
 			        test_frag(protocol_type, **conf, sdu_length,
 			                  burst_sizes[burst_iterator], frag_id);
-			if (ret == BOOL_FALSE) {
+			if (ret == false) {
 				/* Only one fail means the encap test fail. */
-				output = BOOL_FALSE;
+				output = false;
 			}
 		}
 
 		/* With CRC. */
 		for (conf = confs; *conf; ++conf) {
 			(**conf).use_alpdu_crc = 1;
-			const enum boolean ret =
+			const bool ret =
 			        test_frag(protocol_type, **conf, sdu_length,
 			                  burst_sizes[burst_iterator], frag_id);
-			if (ret == BOOL_FALSE) {
+			if (ret == false) {
 				/* Only one fail means the encap test fail. */
-				output = BOOL_FALSE;
+				output = false;
 			}
 		}
 	}

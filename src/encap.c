@@ -20,6 +20,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <net/ethernet.h>
 
 #else
@@ -102,7 +103,7 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 		goto out;
 	}
 
-	if (is_frag_ctx_free(transmitter, frag_id) == C_FALSE) {
+	if (is_frag_ctx_free(transmitter, frag_id) == false) {
 		PRINT_RLE_ERROR("frag id %d is not free", frag_id);
 		goto out;
 	}

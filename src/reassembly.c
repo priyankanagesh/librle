@@ -19,6 +19,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdbool.h>
 
 #else
 
@@ -150,7 +151,7 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 	rle_ctx_incr_counter_in(rle_ctx);
 	rle_ctx_incr_counter_bytes_in(rle_ctx, ppdu_length);
 
-	if (is_context_free(_this, *index_ctx) == C_FALSE) {
+	if (is_context_free(_this, *index_ctx) == false) {
 		PRINT_RLE_ERROR("invalid Start on context not free, frag id [%d].", *index_ctx);
 		/* Context is not free, whereas it must be. an error must have occured. */
 		/* Freeing context, updating stats, and restarting receiving. */
@@ -271,7 +272,7 @@ int reassembly_cont_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 
 	rle_ctx_incr_counter_bytes_in(rle_ctx, ppdu_length);
 
-	if (is_context_free(_this, *index_ctx) == C_TRUE) {
+	if (is_context_free(_this, *index_ctx) == true) {
 		PRINT_RLE_ERROR("invalid Cont on context free, frag id [%d].", *index_ctx);
 		/* Context is free, whereas it must not. an error must have occured. */
 		/* Freeing context and updating stats. At least one packet is partialy lost.*/
@@ -356,7 +357,7 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 
 	rle_ctx_incr_counter_bytes_in(rle_ctx, ppdu_length);
 
-	if (is_context_free(_this, *index_ctx) == C_TRUE) {
+	if (is_context_free(_this, *index_ctx) == true) {
 		PRINT_RLE_ERROR("invalid End on context free, frag id [%d].", *index_ctx);
 		/* Context is free, whereas it must not. an error must have occured. */
 		/* Freeing context and updating stats. At least one packet is partialy lost.*/

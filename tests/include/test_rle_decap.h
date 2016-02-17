@@ -18,36 +18,36 @@
  *                This test try to decapsulate with a null receiver. The decapsulation must
  *                return RLE_DECAP_ERR_NULL_RCVR.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_decap_null_receiver(void);
+bool test_decap_null_receiver(void);
 
 /**
  * @brief         Decapsulation test when FPDU is invalid.
  *
  *                Try to decap an invalid FPDU. Must return RLE_DECAP_ERR_INV_FPDU.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_decap_inv_fpdu(void);
+bool test_decap_inv_fpdu(void);
 
 /**
  * @brief         Decapsulation test when SDUs buffer is invalid.
  *
  *                Try to decap an invalid SDUs buffer. Must return RLE_DECAP_ERR_INV_SDUS.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_decap_inv_sdus(void);
+bool test_decap_inv_sdus(void);
 
 /**
  * @brief         Decapsulation test when payload label buffer is invalid.
  *
  *                Try to decap an invalid payload label buffer. Must return RLE_DECAP_ERR_INV_PL.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_decap_inv_pl(void);
+bool test_decap_inv_pl(void);
 
 /**
  * @brief         Decapsulation test when receiver configuration is invalid.
@@ -56,9 +56,9 @@ enum boolean test_decap_inv_pl(void);
  *                configuration (i.e. with a non supported implicit protocol type).
  *                Warning: An ERROR message will be printed.
  *
- * @return        BOOL_TRUE if receiver non initialized, else BOOL_FALSE.
+ * @return        true if receiver non initialized, else false.
  */
-enum boolean test_decap_inv_config(void);
+bool test_decap_inv_config(void);
 
 /**
  * @brief         Decapsulation test when FPDU contains padding with a non equal to 0 octet.
@@ -66,9 +66,9 @@ enum boolean test_decap_inv_config(void);
  *                No error should be raised, and decapsulation must be successful but a warning
  *                message will be printed.
  *
- * @return        BOOL_TRUE if decapsulation succeed, else BOOL_FALSE.
+ * @return        true if decapsulation succeed, else false.
  */
-enum boolean test_decap_not_null_padding(void);
+bool test_decap_not_null_padding(void);
 
 /**
  * @brief         Decapsulation test when an FPDU contains an invalid SeqNo, leading to a context
@@ -77,9 +77,9 @@ enum boolean test_decap_not_null_padding(void);
  *                No error should be raised, and decapsulation must be successful but a warning
  *                message will be printed.
  *
- * @return        BOOL_TRUE if decapsulation succeed, else BOOL_FALSE.
+ * @return        true if decapsulation succeed, else false.
  */
-enum boolean test_decap_flush_ctxt(void);
+bool test_decap_flush_ctxt(void);
 
 /**
  * @brief         Decapsulation test when an FPDU contains a null SeqNo.
@@ -87,18 +87,18 @@ enum boolean test_decap_flush_ctxt(void);
  *                No error should now be raised, and decapsulation must be successful but a warning
  *                message will be printed.
  *
- * @return        BOOL_TRUE if decapsulation succeed, else BOOL_FALSE.
+ * @return        true if decapsulation succeed, else false.
  */
-enum boolean test_decap_null_seqno(void);
+bool test_decap_null_seqno(void);
 
 /**
  * @brief         Fix context freeing index.
  *
  *                No error should now be raised, and decapsulation must be successful.
  *
- * @return        BOOL_TRUE if decapsulation succeed, else BOOL_FALSE.
+ * @return        true if decapsulation succeed, else false.
  */
-enum boolean test_decap_context_free(void);
+bool test_decap_context_free(void);
 
 /**
  * @brief         All the Decapsulation tests
@@ -108,8 +108,8 @@ enum boolean test_decap_context_free(void);
  *                different configurations, and different number of SDUs. One fail of decap means
  *                the test totaly fails.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_decap_all(void);
+bool test_decap_all(void);
 
 #endif /* __TEST_RLE_DECAP_H__ */

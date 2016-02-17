@@ -18,9 +18,9 @@
  *                This test try to encapsulate with a null transmitter. The encapsulation must
  *                return RLE_ENCAP_ERR_NULL_TRMT.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_encap_ctxtless_null_transmitter(void);
+bool test_encap_ctxtless_null_transmitter(void);
 
 /**
  * @brief         Encapsulation test when fragmentation buffer is null.
@@ -28,9 +28,9 @@ enum boolean test_encap_ctxtless_null_transmitter(void);
  *                This test try to encapsulate with a null fragmentation buffer. The encapsulation
  *                must return RLE_ENCAP_ERR_NULL_F_BUFF.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_encap_ctxtless_null_f_buff(void);
+bool test_encap_ctxtless_null_f_buff(void);
 
 /**
  * @brief         Encapsulation test when fragmentation buffer is not initialized.
@@ -38,9 +38,9 @@ enum boolean test_encap_ctxtless_null_f_buff(void);
  *                This test try to encapsulate with a fragmentation buffer not initialized. The
  *                encapsulation must return RLE_ENCAP_ERR_NULL_F_BUFF.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_encap_ctxtless_f_buff_not_init(void);
+bool test_encap_ctxtless_f_buff_not_init(void);
 
 /**
  * @brief         Encapsulation test when payload is too big.
@@ -49,9 +49,9 @@ enum boolean test_encap_ctxtless_f_buff_not_init(void);
  *                acceptable size and will be encapsulate. The second one is one octet too big and
  *                will raise an error.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_encap_ctxtless_too_big(void);
+bool test_encap_ctxtless_too_big(void);
 
 
 #endif /* __TEST_RLE_ENCAP_CTXTLESS_H__ */

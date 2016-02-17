@@ -18,6 +18,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <inttypes.h>
+#include <stdbool.h>
 #include <stdarg.h>
 #include <netinet/in.h>
 #include <pcap/pcap.h>

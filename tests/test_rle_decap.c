@@ -17,6 +17,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 
 /**
@@ -32,9 +33,9 @@
  * @param[in]     burst_size               The size of the burst for fragmentation
  * @param[in]     label_length             The length of the payload label
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean test_decap(const uint16_t protocol_type,
+static bool test_decap(const uint16_t protocol_type,
                                const struct rle_context_configuration conf,
                                const size_t number_of_sdus, const size_t sdu_length,
                                const uint8_t frag_id, const size_t burst_size,
@@ -47,7 +48,7 @@ static void print_modules_stats(void)
 	return;
 }
 
-static enum boolean test_decap(const uint16_t protocol_type,
+static bool test_decap(const uint16_t protocol_type,
                                const struct rle_context_configuration conf,
                                const size_t number_of_sdus, const size_t sdu_length,
                                const uint8_t frag_id, const size_t burst_size,
@@ -63,7 +64,7 @@ static enum boolean test_decap(const uint16_t protocol_type,
 	        conf.use_alpdu_crc == 0 ? "SeqNo" : "CRC",
 	        burst_size, label_length);
 
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 	enum rle_frag_status ret_frag = RLE_FRAG_ERR;
@@ -225,15 +226,15 @@ static enum boolean test_decap(const uint16_t protocol_type,
 			     number_of_sdus_iterator <= number_of_sdus;
 			     ++number_of_sdus_iterator) {
 				size_t iterator = 0;
-				enum boolean equal = BOOL_TRUE;
+				bool equal = true;
 				for (iterator = 0; iterator < sdu.size; ++iterator) {
 					if (sdu.buffer[iterator] != sdus[0].buffer[iterator]) {
 						PRINT_ERROR( "SDUs are different, at %zu, expected 0x%02x, get 0x%02x",
 						             iterator, sdu.buffer[iterator], sdus[0].buffer[iterator]);
-						equal = BOOL_FALSE;
+						equal = false;
 					}
 				}
-				if (equal == BOOL_FALSE) {
+				if (equal == false) {
 					PRINT_ERROR("SDUs %zu are different.",
 					            number_of_sdus_iterator);
 					goto free_sdus;
@@ -241,7 +242,7 @@ static enum boolean test_decap(const uint16_t protocol_type,
 			}
 		}
 
-		output = BOOL_TRUE;
+		output = true;
 
 free_sdus:
 
@@ -275,10 +276,10 @@ exit_label:
 	return output;
 }
 
-enum boolean test_decap_null_receiver(void)
+bool test_decap_null_receiver(void)
 {
 	PRINT_TEST("Special case : Decapsulation with a null receiver.");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_decap_status ret_decap = RLE_DECAP_ERR;
 
 	const size_t fpdu_length = 5000;
@@ -310,7 +311,7 @@ enum boolean test_decap_null_receiver(void)
 		goto exit_label;
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 
@@ -319,10 +320,10 @@ exit_label:
 	return output;
 }
 
-enum boolean test_decap_inv_fpdu(void)
+bool test_decap_inv_fpdu(void)
 {
 	PRINT_TEST("Special case : Decapsulation with an invalid FPDU buffer.");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_decap_status ret_decap = RLE_DECAP_ERR;
 
 	const size_t sdus_max_nr = 10;
@@ -397,7 +398,7 @@ enum boolean test_decap_inv_fpdu(void)
 		}
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 
@@ -410,10 +411,10 @@ exit_label:
 	return output;
 }
 
-enum boolean test_decap_inv_sdus(void)
+bool test_decap_inv_sdus(void)
 {
 	PRINT_TEST("Special case : Decapsulation with an invalid SDUs buffer.");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_decap_status ret_decap = RLE_DECAP_ERR;
 
 	const size_t fpdu_length = 5000;
@@ -472,7 +473,7 @@ enum boolean test_decap_inv_sdus(void)
 		}
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 
@@ -485,10 +486,10 @@ exit_label:
 	return output;
 }
 
-enum boolean test_decap_inv_pl(void)
+bool test_decap_inv_pl(void)
 {
 	PRINT_TEST("Special case : Decapsulation with an invalid payload label buffer.");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_decap_status ret_decap = RLE_DECAP_ERR;
 
 	const size_t fpdu_length = 5000;
@@ -563,7 +564,7 @@ enum boolean test_decap_inv_pl(void)
 		}
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 
@@ -576,11 +577,11 @@ exit_label:
 	return output;
 }
 
-enum boolean test_decap_inv_config(void)
+bool test_decap_inv_config(void)
 {
 	PRINT_TEST("Special test: try to create an RLE receiver module with an invalid conf. "
 	           "Warning: An error message may be printed.");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x31
@@ -603,11 +604,11 @@ enum boolean test_decap_inv_config(void)
 	return output;
 }
 
-enum boolean test_decap_not_null_padding(void)
+bool test_decap_not_null_padding(void)
 {
 	PRINT_TEST("Special case : Decapsulation with an invalid FPDU padding. "
 	           "Must succeed but print a warning message .");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 	enum rle_frag_status ret_frag = RLE_FRAG_ERR;
 	enum rle_pack_status ret_pack = RLE_PACK_ERR;
@@ -714,7 +715,7 @@ enum boolean test_decap_not_null_padding(void)
 		}
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 	if (receiver != NULL) {
@@ -731,12 +732,12 @@ exit_label:
 }
 
 
-enum boolean test_decap_flush_ctxt(void)
+bool test_decap_flush_ctxt(void)
 {
 	PRINT_TEST("Special case : Decapsulation with a wrong SeqNo leading to a context flush. "
 	           "Must succeed but print a ERROR REASSEMBLY and ERROR RECEIVER messages .");
 
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 	enum rle_frag_status ret_frag = RLE_FRAG_ERR;
 	enum rle_pack_status ret_pack = RLE_PACK_ERR;
@@ -873,7 +874,7 @@ enum boolean test_decap_flush_ctxt(void)
 		}
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 	if (receiver != NULL) {
@@ -891,10 +892,10 @@ exit_label:
 }
 
 
-enum boolean test_decap_all(void)
+bool test_decap_all(void)
 {
 	PRINT_TEST("All general cases.");
-	enum boolean output = BOOL_TRUE;
+	bool output = true;
 
 	const size_t sdu_length = 100; /* Arbitrarly */
 
@@ -1071,12 +1072,12 @@ enum boolean test_decap_all(void)
 						     number_of_sdus_iterator < number_of_numbers_of_sdus;
 						     ++number_of_sdus_iterator) {
 							const size_t number_of_sdus = numbers_of_sdus[ number_of_sdus_iterator];
-							const enum boolean ret =
+							const bool ret =
 							        test_decap(protocol_type, **conf, number_of_sdus, sdu_length,
 							                   frag_id, burst_size, pl_length);
-							if (ret == BOOL_FALSE) {
+							if (ret == false) {
 								/* Only one fail means the decap test fail. */
-								output = BOOL_FALSE;
+								output = false;
 							}
 						}
 					}
@@ -1091,13 +1092,13 @@ enum boolean test_decap_all(void)
 }
 
 
-enum boolean test_decap_null_seqno(void)
+bool test_decap_null_seqno(void)
 {
 	PRINT_TEST("In order to allow automatic resynchronizing with transmitter in receiver, "
 				"the SeqNo checking algorithm now considers wrong SeqNo as valid when "
 				"received SeqNo is 0 (ie. the transmitter has relogged)..");
 
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 	enum rle_frag_status ret_frag = RLE_FRAG_ERR;
 	enum rle_pack_status ret_pack = RLE_PACK_ERR;
@@ -1235,7 +1236,7 @@ enum boolean test_decap_null_seqno(void)
 		}
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 	if (receiver != NULL) {
@@ -1253,11 +1254,11 @@ exit_label:
 }
 
 
-enum boolean test_decap_context_free(void)
+bool test_decap_context_free(void)
 {
 	PRINT_TEST("Fix context freeing index..");
 
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 	enum rle_frag_status ret_frag = RLE_FRAG_ERR;
 	enum rle_pack_status ret_pack = RLE_PACK_ERR;
@@ -1366,12 +1367,12 @@ enum boolean test_decap_context_free(void)
 		}
 
 		// All 2 contexts should be free
-		if (is_context_free(receiver, 0) == C_FALSE) {
+		if (is_context_free(receiver, 0) == false) {
 			PRINT_ERROR("Context 0 is not free NOK.");
 			goto exit_label;
 		}
 
-		if (is_context_free(receiver, 1) == C_FALSE) {
+		if (is_context_free(receiver, 1) == false) {
 			PRINT_ERROR("Context 1 is not free NOK.");
 			goto exit_label;
 		}
@@ -1392,12 +1393,12 @@ enum boolean test_decap_context_free(void)
 
 
 		// All 2 contexts should be occupied
-		if (is_context_free(receiver, 0) == C_TRUE) {
+		if (is_context_free(receiver, 0) == true) {
 			PRINT_ERROR("Context 0 is free NOK.");
 			goto exit_label;
 		}
 
-		if (is_context_free(receiver, 1) == C_TRUE) {
+		if (is_context_free(receiver, 1) == true) {
 			PRINT_ERROR("Context 1 is free NOK.");
 			goto exit_label;
 		}
@@ -1411,19 +1412,19 @@ enum boolean test_decap_context_free(void)
 		}
 
 		// First context should be free, and second occupied
-		if (is_context_free(receiver, 0) == C_FALSE) {
+		if (is_context_free(receiver, 0) == false) {
 			PRINT_ERROR("Context 0 is not free NOK.");
 			goto exit_label;
 		}
 
-		if (is_context_free(receiver, 1) == C_TRUE) {
+		if (is_context_free(receiver, 1) == true) {
 			PRINT_ERROR("Context 1 is free NOK.");
 			goto exit_label;
 		}
 
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 	if (receiver != NULL) {

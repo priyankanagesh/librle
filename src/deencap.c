@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdbool.h>
 #include <assert.h>
 
 #else
@@ -46,7 +47,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
                                       const size_t payload_label_size)
 {
 	enum rle_decap_status status = RLE_DECAP_ERR;
-	int padding_detected = C_FALSE;
+	int padding_detected = false;
 	size_t offset = 0;
 
 	/* no SDUs decapsulated yet */
@@ -103,7 +104,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 
 		/* is there padding? */
 		if (ppdu[0] == 0x00 && ppdu[1] == 0x00) {
-			padding_detected = C_TRUE;
+			padding_detected = true;
 			continue;
 		}
 

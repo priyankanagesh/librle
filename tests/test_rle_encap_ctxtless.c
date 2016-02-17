@@ -16,11 +16,12 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 
-enum boolean test_encap_ctxtless_null_transmitter(void)
+bool test_encap_ctxtless_null_transmitter(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret;
 
 	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
@@ -62,7 +63,7 @@ enum boolean test_encap_ctxtless_null_transmitter(void)
 	switch (ret) {
 		case RLE_ENCAP_ERR_NULL_TRMT:
 			PRINT_TEST("NULL transmitter detected, test sucessfull.");
-			output = BOOL_TRUE;
+			output = true;
 			break;
 		case RLE_ENCAP_OK:
 			PRINT_TEST("Encapsulation is OK, Big error.");
@@ -87,9 +88,9 @@ out:
 	return output;
 }
 
-enum boolean test_encap_ctxtless_null_f_buff(void)
+bool test_encap_ctxtless_null_f_buff(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret;
 
 	const struct rle_context_configuration conf = {
@@ -125,7 +126,7 @@ enum boolean test_encap_ctxtless_null_f_buff(void)
 	switch (ret) {
 		case RLE_ENCAP_ERR_NULL_F_BUFF:
 			PRINT_TEST("NULL fragmentation buffer detected, test sucessfull.");
-			output = BOOL_TRUE;
+			output = true;
 			break;
 		case RLE_ENCAP_OK:
 			PRINT_TEST("Encapsulation is OK, Big error.");
@@ -150,9 +151,9 @@ out:
 	return output;
 }
 
-enum boolean test_encap_ctxtless_f_buff_not_init(void)
+bool test_encap_ctxtless_f_buff_not_init(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret;
 
 	const struct rle_context_configuration conf = {
@@ -188,7 +189,7 @@ enum boolean test_encap_ctxtless_f_buff_not_init(void)
 		case RLE_ENCAP_ERR_N_INIT_F_BUFF:
 			PRINT_TEST("Not initialized fragmentation buffer transmitter detected, "
 			           "test sucessfull.");
-			output = BOOL_TRUE;
+			output = true;
 			break;
 		case RLE_ENCAP_OK:
 			PRINT_TEST("Encapsulation is OK, Big error.");
@@ -213,9 +214,9 @@ out:
 	return output;
 }
 
-enum boolean test_encap_ctxtless_too_big(void)
+bool test_encap_ctxtless_too_big(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret;
 
 	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
@@ -284,7 +285,7 @@ enum boolean test_encap_ctxtless_too_big(void)
 	if (rle_f_buff_cpy_sdu(f_buff, &sdu_ko) == 0) {
 		PRINT_ERROR("Too big SDU accepted in fragmentation buffer.");
 	} else {
-		output = BOOL_TRUE;
+		output = true;
 	}
 
 out:
