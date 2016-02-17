@@ -1,11 +1,11 @@
-INCLUDE_DIRECTORIES(include ${CMAKE_SOURCE_DIR}/include)
+INCLUDE_DIRECTORIES(include ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/src)
 LINK_DIRECTORIES(${CMAKE_BINARY_DIR})
-
-INCLUDE_DIRECTORIES(include)
 
 SET(SRC_LIBRLE_TESTS
 	test_rle_common.c
 	test_rle_encap.c
+	test_rle_encap_ctxtless.c
+	test_rle_frag_ctxtless.c
 	test_rle_frag.c
 	test_rle_pack.c
 	test_rle_decap.c
@@ -28,6 +28,12 @@ TARGET_LINK_LIBRARIES(test_non_regression_fpdu librle pcap)
 ADD_EXECUTABLE(test_perfs EXCLUDE_FROM_ALL test_perfs.c)
 TARGET_LINK_LIBRARIES(test_perfs librle pcap)
 
+ADD_EXECUTABLE(test_perfs_fpdu EXCLUDE_FROM_ALL test_perfs_fpdu.c)
+TARGET_LINK_LIBRARIES(test_perfs_fpdu librle pcap)
+
+ADD_EXECUTABLE(test_dump_fpdus EXCLUDE_FROM_ALL test_dump_fpdus.c)
+TARGET_LINK_LIBRARIES(test_dump_fpdus librle pcap)
+
 # By default, tests are not generated. You can either generate tests with:
 # The RLE library test:
 #   $ make test_rle
@@ -39,16 +45,18 @@ ADD_TEST(test_rle test_rle)
 ADD_TEST(test_non_regression test_non_regression)
 ADD_TEST(test_non_regression_fpdu test_non_regression_fpdu)
 ADD_TEST(test_perfs test_perfs)
+ADD_TEST(test_perfs_fpdu test_perfs_fpdu)
+ADD_TEST(test_dump_fpdus test_dump_fpdus)
 ADD_CUSTOM_TARGET(tests DEPENDS test_rle test_non_regression
-	test_non_regression_fpdu test_perfs)
+	test_non_regression_fpdu test_dump_fpdus)
 
 # Definitions of the system commands for the next targets.
-SET(SYS_CMD_GREP /bin/grep)
-SET(SYS_CMD_ECHO /bin/echo)
-SET(SYS_CMD_RM /bin/rm)
-SET(SYS_CMD_LCOV /usr/bin/lcov)
-SET(SYS_CMD_GENHTML /usr/bin/genhtml)
-SET(SYS_CMD_AFL_FUZZ /usr/local/bin/afl-fuzz)
+SET(SYS_CMD_GREP grep)
+SET(SYS_CMD_ECHO echo)
+SET(SYS_CMD_RM rm)
+SET(SYS_CMD_LCOV lcov)
+SET(SYS_CMD_GENHTML genhtml)
+SET(SYS_CMD_AFL_FUZZ afl-fuzz)
 
 # Check the tests with:
 #   $ make check

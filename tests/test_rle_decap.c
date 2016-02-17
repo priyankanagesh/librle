@@ -16,6 +16,8 @@
 #include "test_rle_decap.h"
 
 #include "rle_transmitter.h"
+#include "rle_receiver.h"
+#include "fragmentation_buffer.h"
 
 /**
  * @brief         Generic decapsulation test.
@@ -85,20 +87,20 @@ static enum boolean test_decap(const uint16_t protocol_type,
 	size_t number_of_sdus_iterator = 0;
 
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
-	receiver = rle_receiver_new(conf);
+
+	receiver = rle_receiver_new(&conf);
+
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver");
 		goto exit_label;
 	}
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
-	transmitter = rle_transmitter_new(conf);
+	transmitter = rle_transmitter_new(&conf);
 	if (transmitter == NULL) {
 		PRINT_ERROR("Error allocating transmitter");
 		goto exit_label;
@@ -129,8 +131,7 @@ static enum boolean test_decap(const uint16_t protocol_type,
 		}
 
 		sdu.size = sdu_length;
-
-		ret_encap = rle_encapsulate(transmitter, sdu, frag_id);
+		ret_encap = rle_encapsulate(transmitter, &sdu, frag_id);
 		if (ret_encap != RLE_ENCAP_OK) {
 			PRINT_ERROR("Encap does not return OK.");
 			goto exit_label;
@@ -154,25 +155,18 @@ static enum boolean test_decap(const uint16_t protocol_type,
 				label = NULL;
 				current_label_length = 0;
 			}
-			while (rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id
-			                                          ]) !=
-			       0) {
-				unsigned char ppdu[burst_size];
+			while (rle_transmitter_stats_get_queue_size(transmitter, frag_id)) {
+				unsigned char *ppdu;
 				size_t ppdu_length = 0;
 
-				ret_frag = rle_fragment(transmitter, frag_id, burst_size, ppdu,
-				                        &ppdu_length);
-
+				ret_frag = rle_fragment(transmitter, frag_id, burst_size, &ppdu, &ppdu_length);
 				if (ret_frag != RLE_FRAG_OK) {
 					PRINT_ERROR("Frag does not return OK.");
 					goto exit_label;
 				}
 
-				ret_pack =
-				        rle_pack(ppdu, ppdu_length, label, current_label_length,
-				                 fpdu,
-				                 &fpdu_current_pos,
-				                 &fpdu_remaining_size);
+				ret_pack = rle_pack(ppdu, ppdu_length, label, current_label_length, fpdu,
+				                    &fpdu_current_pos, &fpdu_remaining_size);
 
 				if (ret_pack != RLE_PACK_OK) {
 					PRINT_ERROR("Pack does not return OK.");
@@ -184,13 +178,6 @@ static enum boolean test_decap(const uint16_t protocol_type,
 			}
 		}
 	}
-
-	/* {
-	 *      size_t it = 0;
-	 *      for (it = 0; it < fpdu_length; ++it) {
-	 *              printf("%02x%s", fpdu[it], it % 16 == 15 ? "\n" : " ");
-	 *      }
-	 * } */
 
 	{
 		const size_t sdus_max_nr = 10; /* Arbitrarly */
@@ -206,19 +193,15 @@ static enum boolean test_decap(const uint16_t protocol_type,
 
 		for (sdu_iterator = 0; sdu_iterator < sdus_max_nr; ++sdu_iterator) {
 			sdus[sdu_iterator].size = (size_t)RLE_MAX_PDU_SIZE;
-			sdus[sdu_iterator].buffer =
-			        calloc(sdus[sdu_iterator].size, sizeof(unsigned char));
+			sdus[sdu_iterator].buffer = calloc(sdus[sdu_iterator].size, sizeof(unsigned char));
 			if (sdus[sdu_iterator].buffer == NULL) {
-				PRINT_ERROR(
-				        "Error during SDUs buffer allocation, before decapsulation.");
+				PRINT_ERROR("Error during SDUs buffer allocation, before decapsulation.");
 				goto free_sdus;
 			}
 		}
 
-		ret_decap =
-		        rle_decapsulate(receiver, (const unsigned char *)fpdu, fpdu_length, sdus,
-		                        sdus_max_nr, &sdus_nr, label,
-		                        label_length);
+		ret_decap = rle_decapsulate(receiver, (const unsigned char *)fpdu, fpdu_length, sdus,
+		                            sdus_max_nr, &sdus_nr, label, label_length);
 
 		if (ret_decap != RLE_DECAP_OK) {
 			PRINT_ERROR("Decap does not return OK.");
@@ -245,10 +228,8 @@ static enum boolean test_decap(const uint16_t protocol_type,
 				enum boolean equal = BOOL_TRUE;
 				for (iterator = 0; iterator < sdu.size; ++iterator) {
 					if (sdu.buffer[iterator] != sdus[0].buffer[iterator]) {
-						PRINT_ERROR(
-						        "SDUs are different, at %zu, expected 0x%02x, get 0x%02x",
-						        iterator, sdu.buffer[iterator],
-						        sdus[0].buffer[iterator]);
+						PRINT_ERROR( "SDUs are different, at %zu, expected 0x%02x, get 0x%02x",
+						             iterator, sdu.buffer[iterator], sdus[0].buffer[iterator]);
 						equal = BOOL_FALSE;
 					}
 				}
@@ -277,13 +258,11 @@ exit_label:
 	print_modules_stats();
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
 
 	if (sdu.buffer != NULL) {
@@ -318,8 +297,7 @@ enum boolean test_decap_null_receiver(void)
 	unsigned char payload_label[payload_label_size];
 
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
 
 	ret_decap =
@@ -363,10 +341,9 @@ enum boolean test_decap_inv_fpdu(void)
 	};
 
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
-	receiver = rle_receiver_new(conf);
+	receiver = rle_receiver_new(&conf);
 
 	{
 		const size_t fpdu_length = 0;
@@ -425,8 +402,7 @@ enum boolean test_decap_inv_fpdu(void)
 exit_label:
 
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -460,10 +436,9 @@ enum boolean test_decap_inv_sdus(void)
 	};
 
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
-	receiver = rle_receiver_new(conf);
+	receiver = rle_receiver_new(&conf);
 
 	{
 		const size_t sdus_max_nr = 0;
@@ -502,8 +477,7 @@ enum boolean test_decap_inv_sdus(void)
 exit_label:
 
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -537,10 +511,9 @@ enum boolean test_decap_inv_pl(void)
 	};
 
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
-	receiver = rle_receiver_new(conf);
+	receiver = rle_receiver_new(&conf);
 
 	{
 		const size_t payload_label_size = 0;
@@ -595,8 +568,7 @@ enum boolean test_decap_inv_pl(void)
 exit_label:
 
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -615,17 +587,15 @@ enum boolean test_decap_inv_config(void)
 	};
 
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
 
-	receiver = rle_receiver_new(conf);
+	receiver = rle_receiver_new(&conf);
 
 	output = (receiver == NULL);
 
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -678,26 +648,24 @@ enum boolean test_decap_not_null_padding(void)
 	};
 
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
-	receiver = rle_receiver_new(conf);
+	receiver = rle_receiver_new(&conf);
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver.");
 		goto exit_label;
 	}
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
-	transmitter = rle_transmitter_new(conf);
+	transmitter = rle_transmitter_new(&conf);
 	if (transmitter == NULL) {
 		PRINT_ERROR("Error allocating transmitter.");
 		goto exit_label;
 	}
 
-	ret_encap = rle_encapsulate(transmitter, sdu, frag_id);
+	ret_encap = rle_encapsulate(transmitter, &sdu, frag_id);
 	if (ret_encap != RLE_ENCAP_OK) {
 		PRINT_ERROR("Encap does not return OK.");
 		goto exit_label;
@@ -709,14 +677,11 @@ enum boolean test_decap_not_null_padding(void)
 		size_t fpdu_current_pos = 0;
 		size_t fpdu_remaining_size = fpdu_length;
 		const size_t burst_size = 30;
-		while (rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id
-		                                          ]) !=
-		       0) {
-			unsigned char ppdu[burst_size];
+		while (rle_transmitter_stats_get_queue_size(transmitter, frag_id)) {
+			unsigned char *ppdu;
 			size_t ppdu_length = 0;
 
-			ret_frag = rle_fragment(transmitter, frag_id, burst_size, ppdu,
-			                        &ppdu_length);
+			ret_frag = rle_fragment(transmitter, frag_id, burst_size, &ppdu, &ppdu_length);
 
 			if (ret_frag != RLE_FRAG_OK) {
 				PRINT_ERROR("Frag does not return OK.");
@@ -753,13 +718,11 @@ enum boolean test_decap_not_null_padding(void)
 
 exit_label:
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -820,20 +783,18 @@ enum boolean test_decap_flush_ctxt(void)
 	};
 
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
-	receiver = rle_receiver_new(conf);
+	receiver = rle_receiver_new(&conf);
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver.");
 		goto exit_label;
 	}
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
-	transmitter = rle_transmitter_new(conf);
+	transmitter = rle_transmitter_new(&conf);
 	if (transmitter == NULL) {
 		PRINT_ERROR("Error allocating transmitter.");
 		goto exit_label;
@@ -850,18 +811,18 @@ enum boolean test_decap_flush_ctxt(void)
 			fpdu_current_pos = 0;
 			fpdu_remaining_size = fpdu_length;
 
-			ret_encap = rle_encapsulate(transmitter, sdu, frag_id);
+			ret_encap = rle_encapsulate(transmitter, &sdu, frag_id);
 			if (ret_encap != RLE_ENCAP_OK) {
 				PRINT_ERROR("Encap does not return OK.");
 				goto exit_label;
 			}
 
-			while (rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id]) != 0) {
+			while (rle_transmitter_stats_get_queue_size(transmitter, frag_id)) {
 				const size_t burst_size = 30;
-				unsigned char ppdu[burst_size];
+				unsigned char *ppdu;
 				size_t ppdu_length = 0;
 
-				ret_frag = rle_fragment(transmitter, frag_id, burst_size, ppdu, &ppdu_length);
+				ret_frag = rle_fragment(transmitter, frag_id, burst_size, &ppdu, &ppdu_length);
 
 				if (ret_frag != RLE_FRAG_OK) {
 					PRINT_ERROR("Frag does not return OK.");
@@ -916,13 +877,11 @@ enum boolean test_decap_flush_ctxt(void)
 
 exit_label:
 	if (receiver != NULL) {
-		rle_receiver_destroy(receiver);
-		receiver = NULL;
+		rle_receiver_destroy(&receiver);
 	}
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -1103,28 +1062,18 @@ enum boolean test_decap_all(void)
 					     ++label_length_iterator) {
 						/* fpdu sizes, payload labels */
 
-						const size_t pl_length =
-						        label_length[label_length_iterator];
+						const size_t pl_length = label_length[label_length_iterator];
 						const size_t number_of_numbers_of_sdus = 2;
 						const size_t numbers_of_sdus[] = { 1, 2 };
 						size_t number_of_sdus_iterator = 0;
 
 						for (number_of_sdus_iterator = 0;
-						     number_of_sdus_iterator <
-						     number_of_numbers_of_sdus;
+						     number_of_sdus_iterator < number_of_numbers_of_sdus;
 						     ++number_of_sdus_iterator) {
-							const size_t number_of_sdus =
-							        numbers_of_sdus[
-							                number_of_sdus_iterator];
+							const size_t number_of_sdus = numbers_of_sdus[ number_of_sdus_iterator];
 							const enum boolean ret =
-							        test_decap(
-							                protocol_type,
-							                **conf,
-							                number_of_sdus,
-							                sdu_length,
-							                frag_id,
-							                burst_size,
-							                pl_length);
+							        test_decap(protocol_type, **conf, number_of_sdus, sdu_length,
+							                   frag_id, burst_size, pl_length);
 							if (ret == BOOL_FALSE) {
 								/* Only one fail means the decap test fail. */
 								output = BOOL_FALSE;
@@ -1140,3 +1089,354 @@ enum boolean test_decap_all(void)
 	printf("\n");
 	return output;
 }
+
+
+enum boolean test_decap_null_seqno(void)
+{
+	PRINT_TEST("In order to allow automatic resynchronizing with transmitter in receiver, "
+				"the SeqNo checking algorithm now considers wrong SeqNo as valid when "
+				"received SeqNo is 0 (ie. the transmitter has relogged)..");
+
+	enum boolean output = BOOL_FALSE;
+	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
+	enum rle_frag_status ret_frag = RLE_FRAG_ERR;
+	enum rle_pack_status ret_pack = RLE_PACK_ERR;
+	enum rle_decap_status ret_decap = RLE_DECAP_ERR;
+
+	const size_t fpdu_length = 5000;
+	const size_t nb_fpdu = 3;
+	unsigned char fpdu[nb_fpdu][fpdu_length];
+	size_t fpdu_iterator = 0;
+
+	for (fpdu_iterator = 0; fpdu_iterator < fpdu_length; ++fpdu_iterator) {
+		size_t it;
+		for (it = 0; it < nb_fpdu; ++it) {
+			fpdu[it][fpdu_iterator] = '\0';
+		}
+	}
+
+	const uint8_t frag_id = 0;
+
+	const size_t sdu_length = 100;
+
+	unsigned char *const buffer_in[sdu_length];
+	unsigned char *const buffer_out[sdu_length];
+
+	struct rle_sdu sdu = {
+		.buffer = (unsigned char *)buffer_in,
+		.size = sdu_length
+	};
+
+	memcpy((void *)sdu.buffer, (const void *)payload_initializer, sdu_length);
+	sdu.buffer[0] = 0x40; /* IPv4 */
+
+	const size_t sdus_max_nr = 1;
+	struct rle_sdu sdus[sdus_max_nr];
+	sdus[0].buffer = (unsigned char *)buffer_out;
+
+	size_t sdus_nr = 0;
+
+	const struct rle_context_configuration conf = {
+		.implicit_protocol_type = 0x0d,
+		.use_alpdu_crc = 0,
+		.use_ptype_omission = 0,
+		.use_compressed_ptype = 0
+	};
+
+	if (receiver != NULL) {
+		rle_receiver_destroy(&receiver);
+	}
+
+	receiver = rle_receiver_new(&conf);
+
+	if (receiver == NULL) {
+		PRINT_ERROR("Error allocating receiver.");
+		goto exit_label;
+	}
+
+	if (transmitter != NULL) {
+		rle_transmitter_destroy(&transmitter);
+	}
+
+	transmitter = rle_transmitter_new(&conf);
+	if (transmitter == NULL) {
+		PRINT_ERROR("Error allocating transmitter.");
+		goto exit_label;
+	}
+
+	{
+		const size_t payload_label_size = 0;
+		unsigned char *payload_label = NULL;
+		size_t fpdu_current_pos;
+		size_t fpdu_remaining_size;
+		size_t it;
+
+		for (it = 0; it < nb_fpdu; ++ it) {
+			fpdu_current_pos = 0;
+			fpdu_remaining_size = fpdu_length;
+
+			ret_encap = rle_encapsulate(transmitter, &sdu, frag_id);
+			if (ret_encap != RLE_ENCAP_OK) {
+				PRINT_ERROR("Encap does not return OK.");
+				goto exit_label;
+			}
+
+			while (rle_transmitter_stats_get_queue_size(transmitter, frag_id)) {
+				const size_t burst_size = 30;
+				unsigned char *ppdu;
+				size_t ppdu_length = 0;
+
+				ret_frag = rle_fragment(transmitter, frag_id, burst_size, &ppdu, &ppdu_length);
+
+				if (ret_frag != RLE_FRAG_OK) {
+					PRINT_ERROR("Frag does not return OK.");
+					goto exit_label;
+				}
+
+				ret_pack = rle_pack(ppdu, ppdu_length, payload_label, payload_label_size, fpdu[it],
+				                    &fpdu_current_pos, &fpdu_remaining_size);
+
+				if (ret_pack != RLE_PACK_OK) {
+					PRINT_ERROR("Pack does not return OK.");
+					goto exit_label;
+				}
+			}
+		}
+
+		/* Modifying the seq no of the third FPDU to null */
+		fpdu[2][fpdu_current_pos - 1] = 0;
+
+		for (it = 0; it < nb_fpdu; ++ it) {
+			rle_pad(fpdu[it], fpdu_current_pos, fpdu_remaining_size);
+		}
+
+		ret_decap = rle_decapsulate(receiver, fpdu[0], fpdu_length, sdus, sdus_max_nr, &sdus_nr,
+		                            payload_label, payload_label_size);
+
+		if (ret_decap != RLE_DECAP_OK) {
+			PRINT_ERROR("Decap does not return OK.");
+			goto exit_label;
+		}
+
+		ret_decap = rle_decapsulate(receiver, fpdu[1], fpdu_length, sdus, sdus_max_nr, &sdus_nr,
+                                  payload_label, payload_label_size);
+
+		if (ret_decap != RLE_DECAP_OK) {
+			PRINT_ERROR("Decap does not return OK.");
+			goto exit_label;
+		}
+
+		ret_decap = rle_decapsulate(receiver, fpdu[2], fpdu_length, sdus, sdus_max_nr, &sdus_nr,
+                                  payload_label, payload_label_size);
+
+		if (ret_decap != RLE_DECAP_OK) {
+			PRINT_ERROR("Decap does not return OK.");
+			goto exit_label;
+		}
+	}
+
+	output = BOOL_TRUE;
+
+exit_label:
+	if (receiver != NULL) {
+		rle_receiver_destroy(&receiver);
+	}
+
+	if (transmitter != NULL) {
+		rle_transmitter_destroy(&transmitter);
+	}
+
+	PRINT_TEST_STATUS(output);
+	printf("\n");
+
+	return output;
+}
+
+
+enum boolean test_decap_context_free(void)
+{
+	PRINT_TEST("Fix context freeing index..");
+
+	enum boolean output = BOOL_FALSE;
+	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
+	enum rle_frag_status ret_frag = RLE_FRAG_ERR;
+	enum rle_pack_status ret_pack = RLE_PACK_ERR;
+	enum rle_decap_status ret_decap = RLE_DECAP_ERR;
+
+	const size_t fpdu_length = 5000;
+	const size_t nb_fpdu = 2;
+	unsigned char fpdu[nb_fpdu][fpdu_length];
+	size_t fpdu_iterator = 0;
+
+	for (fpdu_iterator = 0; fpdu_iterator < fpdu_length; ++fpdu_iterator) {
+		size_t it;
+		for (it = 0; it < nb_fpdu; ++it) {
+			fpdu[it][fpdu_iterator] = '\0';
+		}
+	}
+
+	const size_t sdu_length = 100;
+
+	unsigned char *const buffer_in[sdu_length];
+	unsigned char *const buffer_out[sdu_length];
+
+	struct rle_sdu sdu = {
+		.buffer = (unsigned char *)buffer_in,
+		.size = sdu_length
+	};
+
+	memcpy((void *)sdu.buffer, (const void *)payload_initializer, sdu_length);
+	sdu.buffer[0] = 0x40; /* IPv4 */
+
+	const size_t sdus_max_nr = 1;
+	struct rle_sdu sdus[sdus_max_nr];
+	sdus[0].buffer = (unsigned char *)buffer_out;
+
+	size_t sdus_nr = 0;
+	size_t last_pos = 0;
+
+	const struct rle_context_configuration conf = {
+		.implicit_protocol_type = 0x0d,
+		.use_alpdu_crc = 0,
+		.use_ptype_omission = 0,
+		.use_compressed_ptype = 0
+	};
+
+	if (receiver != NULL) {
+		rle_receiver_destroy(&receiver);
+	}
+	receiver = rle_receiver_new(&conf);
+	if (receiver == NULL) {
+		PRINT_ERROR("Error allocating receiver.");
+		goto exit_label;
+	}
+
+	if (transmitter != NULL) {
+		rle_transmitter_destroy(&transmitter);
+	}
+	transmitter = rle_transmitter_new(&conf);
+	if (transmitter == NULL) {
+		PRINT_ERROR("Error allocating transmitter.");
+		goto exit_label;
+	}
+
+	{
+		const size_t payload_label_size = 0;
+		unsigned char *payload_label = NULL;
+		size_t fpdu_current_pos;
+		size_t fpdu_remaining_size;
+		size_t it;
+
+		for (it = 0; it < nb_fpdu; ++ it) {
+			fpdu_current_pos = 0;
+			fpdu_remaining_size = fpdu_length;
+
+			ret_encap = rle_encapsulate(transmitter, &sdu, it);
+			if (ret_encap != RLE_ENCAP_OK) {
+				PRINT_ERROR("Encap does not return OK.");
+				goto exit_label;
+			}
+
+
+			while (rle_transmitter_stats_get_queue_size(transmitter, it)) {
+				const size_t burst_size = 30;
+				unsigned char *ppdu;
+				size_t ppdu_length = 0;
+
+				ret_frag = rle_fragment(transmitter, it, burst_size, &ppdu, &ppdu_length);
+
+				if (ret_frag != RLE_FRAG_OK) {
+					PRINT_ERROR("Frag does not return OK.");
+					goto exit_label;
+				}
+
+				last_pos = fpdu_current_pos;
+				ret_pack = rle_pack(ppdu, ppdu_length, payload_label, payload_label_size, fpdu[it],
+				                    &fpdu_current_pos, &fpdu_remaining_size);
+
+				if (ret_pack != RLE_PACK_OK) {
+					PRINT_ERROR("Pack does not return OK.");
+					goto exit_label;
+				}
+			}
+		}
+
+		for (it = 0; it < nb_fpdu; ++ it) {
+			rle_pad(fpdu[it], fpdu_current_pos, fpdu_remaining_size);
+		}
+
+		// All 2 contexts should be free
+		if (is_context_free(receiver, 0) == C_FALSE) {
+			PRINT_ERROR("Context 0 is not free NOK.");
+			goto exit_label;
+		}
+
+		if (is_context_free(receiver, 1) == C_FALSE) {
+			PRINT_ERROR("Context 1 is not free NOK.");
+			goto exit_label;
+		}
+
+		ret_decap = rle_decapsulate(receiver, fpdu[0], last_pos, sdus, sdus_max_nr, &sdus_nr,
+		                            payload_label, payload_label_size);
+		if (ret_decap != RLE_DECAP_OK) {
+			PRINT_ERROR("Decap does not return OK.");
+			goto exit_label;
+		}
+
+		ret_decap = rle_decapsulate(receiver, fpdu[1], last_pos, sdus, sdus_max_nr, &sdus_nr,
+		                            payload_label, payload_label_size);
+		if (ret_decap != RLE_DECAP_OK) {
+			PRINT_ERROR("Decap does not return OK.");
+			goto exit_label;
+		}
+
+
+		// All 2 contexts should be occupied
+		if (is_context_free(receiver, 0) == C_TRUE) {
+			PRINT_ERROR("Context 0 is free NOK.");
+			goto exit_label;
+		}
+
+		if (is_context_free(receiver, 1) == C_TRUE) {
+			PRINT_ERROR("Context 1 is free NOK.");
+			goto exit_label;
+		}
+
+		ret_decap = rle_decapsulate(receiver, &fpdu[0][last_pos], fpdu_length - last_pos, sdus, sdus_max_nr, &sdus_nr,
+									NULL, 0);
+
+		if (ret_decap != RLE_DECAP_OK) {
+			PRINT_ERROR("Decap does not return OK.");
+			goto exit_label;
+		}
+
+		// First context should be free, and second occupied
+		if (is_context_free(receiver, 0) == C_FALSE) {
+			PRINT_ERROR("Context 0 is not free NOK.");
+			goto exit_label;
+		}
+
+		if (is_context_free(receiver, 1) == C_TRUE) {
+			PRINT_ERROR("Context 1 is free NOK.");
+			goto exit_label;
+		}
+
+	}
+
+	output = BOOL_TRUE;
+
+exit_label:
+	if (receiver != NULL) {
+		rle_receiver_destroy(&receiver);
+	}
+
+	if (transmitter != NULL) {
+		rle_transmitter_destroy(&transmitter);
+	}
+
+	PRINT_TEST_STATUS(output);
+	printf("\n");
+
+	return output;
+}
+

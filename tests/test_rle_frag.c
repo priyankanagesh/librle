@@ -16,6 +16,7 @@
 #include "test_rle_frag.h"
 
 #include "rle_transmitter.h"
+#include "rle_ctx.h"
 
 #define GET_CONF_VALUE(x) ((x) == 1 ? "True" : "False")
 
@@ -37,10 +38,100 @@ static enum boolean test_frag(const uint16_t protocol_type,
                               const size_t burst_size,
                               const uint8_t frag_id);
 
+/**
+ *  @brief         Check if a fragmentation transition is OK.
+ *
+ *  @param[in]     current_state       The current state.
+ *  @param[in]     next_state          The future state.
+ *
+ *  @return        FRAG_STATUS_OK if legal transition, else FRAG_STATUS_KO.
+ */
+static enum check_frag_status test_check_frag_transition(const enum frag_states old_state,
+                                                         const enum frag_states new_state);
+
+/**
+ *  @brief         Get the type of the fragment in the buffer
+ *
+ *  @param[in]     ppdu_first_octet       The first octet of the PPDU.
+ *
+ *  @return        the fragment type @see enum frag_states
+ */
+static enum frag_states test_get_fragment_type(const unsigned char ppdu_first_octet);
+
 static void print_modules_stats(void)
 {
 	print_transmitter_stats();
 	return;
+}
+
+static enum check_frag_status test_check_frag_transition(const enum frag_states old_state,
+                                                         const enum frag_states new_state)
+{
+	enum check_frag_status status = FRAG_STATUS_KO; /* KO states explicitly pass silently */
+
+	/*
+	 * Possible transitions:
+	 *
+	 *                +-------------------------------+
+	 *                |                               |
+	 *                |                               v
+	 *              Start -------> Continue -------> End => OK
+	 *                ^            ^      |
+	 *                |            |      |
+	 * Uninit --------+            +------+
+	 *                |
+	 *                v
+	 *              Comp => OK
+	 */
+
+	switch (old_state) {
+	case FRAG_STATE_UNINIT:
+		switch (new_state) {
+		case FRAG_STATE_START:
+		case FRAG_STATE_COMP:
+			status = FRAG_STATUS_OK;
+			break;
+		default:
+			break;
+		}
+		break;
+	case FRAG_STATE_START:
+	case FRAG_STATE_CONT:
+		switch (new_state) {
+		case FRAG_STATE_CONT:
+		case FRAG_STATE_END:
+			status = FRAG_STATUS_OK;
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return status;
+}
+
+enum frag_states test_get_fragment_type(const unsigned char ppdu_first_octet)
+{
+	enum frag_states fragment_type = RLE_PDU_COMPLETE;
+
+	if (ppdu_first_octet & 0x80) {
+		if (ppdu_first_octet & 0x40) {
+			fragment_type = FRAG_STATE_COMP;
+		} else {
+			fragment_type = FRAG_STATE_START;
+		}
+	} else {
+		if (ppdu_first_octet & 0x40) {
+			fragment_type = FRAG_STATE_END;
+		} else {
+			fragment_type = FRAG_STATE_CONT;
+		}
+	}
+
+	return fragment_type;
 }
 
 static enum boolean test_frag(const uint16_t protocol_type,
@@ -49,10 +140,11 @@ static enum boolean test_frag(const uint16_t protocol_type,
                               const uint8_t frag_id)
 {
 	PRINT_TEST("protocole type 0x%04x, conf (omitted protocol type %02x, compression %s, "
-			     "omission %s) with %s protection. SDU length %zu, burst sizes %zu, frag id %d",
-			     protocol_type, conf.implicit_protocol_type, GET_CONF_VALUE(conf.use_compressed_ptype),
-				  GET_CONF_VALUE(conf.use_ptype_omission), conf.use_alpdu_crc == 1 ? "CRC" : "Seq No",
-				  length, burst_size, frag_id);
+	           "omission %s) with %s protection. SDU length %zu, burst sizes %zu, frag id %d",
+	           protocol_type, conf.implicit_protocol_type,
+	           GET_CONF_VALUE(conf.use_compressed_ptype),
+	           GET_CONF_VALUE(conf.use_ptype_omission), conf.use_alpdu_crc == 1 ? "CRC" : "Seq No",
+	           length, burst_size, frag_id);
 	enum boolean output = BOOL_FALSE;
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 
@@ -63,10 +155,9 @@ static enum boolean test_frag(const uint16_t protocol_type,
 	};
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
-	transmitter = rle_transmitter_new(conf);
+	transmitter = rle_transmitter_new(&conf);
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
 		sdu.buffer = NULL;
@@ -79,7 +170,7 @@ static enum boolean test_frag(const uint16_t protocol_type,
 	}
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, sdu.size);
 
-	ret_encap = rle_encapsulate(transmitter, sdu, frag_id);
+	ret_encap = rle_encapsulate(transmitter, &sdu, frag_id);
 
 	if (ret_encap != RLE_ENCAP_OK) {
 		PRINT_ERROR("Encap error in frag test.");
@@ -90,30 +181,37 @@ static enum boolean test_frag(const uint16_t protocol_type,
 		enum rle_frag_status ret_frag = RLE_FRAG_ERR;
 		enum check_frag_status frag_status = FRAG_STATUS_KO;
 		size_t frag_size = burst_size;
-		unsigned char ppdu[frag_size];
-		size_t *real_size = calloc((size_t)1, sizeof(size_t));
+		unsigned char *ppdu;
+		size_t real_size;
+		enum frag_states old_state = FRAG_STATE_UNINIT;
+		enum frag_states new_state;
+		size_t queue_size = rle_transmitter_stats_get_queue_size(transmitter, frag_id);
 
-		while (rle_transmitter_get_queue_state(transmitter, frag_id) != BOOL_TRUE) {
-			if ((RLE_CONT_HEADER_SIZE +
-			     rle_transmitter_get_queue_size(transmitter, frag_id)) < frag_size) {
-				frag_size = rle_transmitter_get_queue_size(transmitter, frag_id);
-				frag_size += RLE_CONT_HEADER_SIZE; /* Size of Complete header */
+		while (queue_size != 0) {
+			if ((sizeof(rle_ppdu_header_cont_end_t) + queue_size) < frag_size) {
+				frag_size = queue_size + sizeof(rle_ppdu_header_cont_end_t);
 			}
 
-			ret_frag = rle_fragment(transmitter, frag_id, frag_size, ppdu, real_size);
+			ret_frag = rle_fragment(transmitter, frag_id, frag_size, &ppdu, &real_size);
 
 			if (ret_frag != RLE_FRAG_OK) {
 				PRINT_ERROR("fragmentation error.");
 				goto exit_label;
 			}
+
+			new_state = test_get_fragment_type(ppdu[0]);
+
+			frag_status = test_check_frag_transition(old_state, new_state);
+
+			if (frag_status != FRAG_STATUS_OK) {
+				PRINT_ERROR("Check integrity.");
+				goto exit_label;
+			}
+
+			old_state = new_state;
+			queue_size = rle_transmitter_stats_get_queue_size(transmitter, frag_id);
 		}
 
-		frag_status = rle_transmitter_check_frag_integrity(transmitter, frag_id);
-
-		if (frag_status != FRAG_STATUS_OK) {
-			PRINT_ERROR("Check integrity.");
-			goto exit_label;
-		}
 	}
 
 	output = BOOL_TRUE;
@@ -123,8 +221,7 @@ exit_label:
 	print_modules_stats();
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
@@ -150,8 +247,7 @@ enum boolean test_frag_null_transmitter(void)
 	};
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 
 	if (sdu.buffer != NULL) {
@@ -163,11 +259,11 @@ enum boolean test_frag_null_transmitter(void)
 	sdu.size = sdu_length;
 
 	{
-		unsigned char ppdu[burst_size];
-		size_t *real_size = calloc((size_t)1, sizeof(size_t));
+		unsigned char *ppdu;
+		size_t real_size;
 		enum rle_frag_status status = RLE_FRAG_ERR;
 
-		status = rle_fragment(transmitter, frag_id, burst_size, ppdu, real_size);
+		status = rle_fragment(transmitter, frag_id, burst_size, &ppdu, &real_size);
 		if (status != RLE_FRAG_ERR_NULL_TRMT) {
 			PRINT_ERROR("Fragmentation on null transmitter.");
 			goto exit_label;
@@ -214,10 +310,9 @@ enum boolean test_frag_too_small(void)
 	};
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
-	transmitter = rle_transmitter_new(conf);
+	transmitter = rle_transmitter_new(&conf);
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
 		sdu.buffer = NULL;
@@ -231,7 +326,7 @@ enum boolean test_frag_too_small(void)
 	}
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, sdu.size);
 
-	ret_encap = rle_encapsulate(transmitter, sdu, frag_id);
+	ret_encap = rle_encapsulate(transmitter, &sdu, frag_id);
 
 	if (ret_encap != RLE_ENCAP_OK) {
 		PRINT_ERROR("Encap error in frag test.");
@@ -239,14 +334,14 @@ enum boolean test_frag_too_small(void)
 	}
 
 	{
-		unsigned char ppdu[burst_size];
+		unsigned char *ppdu;
 		size_t real_size;
-		if (rle_transmitter_get_queue_state(transmitter, frag_id) == BOOL_TRUE) {
+		if (rle_transmitter_stats_get_queue_size(transmitter, frag_id) == 0) {
 			PRINT_ERROR("Nothing to frag");
 			goto exit_label;
 		}
 
-		status = rle_fragment(transmitter, frag_id, burst_size, ppdu, &real_size);
+		status = rle_fragment(transmitter, frag_id, burst_size, &ppdu, &real_size);
 	}
 
 	output = (status == RLE_FRAG_ERR_BURST_TOO_SMALL);
@@ -254,8 +349,7 @@ enum boolean test_frag_too_small(void)
 exit_label:
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
@@ -296,10 +390,9 @@ enum boolean test_frag_null_context(void)
 	};
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
-	transmitter = rle_transmitter_new(conf);
+	transmitter = rle_transmitter_new(&conf);
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
 		sdu.buffer = NULL;
@@ -315,10 +408,10 @@ enum boolean test_frag_null_context(void)
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, sdu.size);
 
 	{
-		unsigned char ppdu[burst_size];
-		size_t *real_size = calloc((size_t)1, sizeof(size_t));
+		unsigned char *ppdu;
+		size_t real_size;
 
-		status = rle_fragment(transmitter, frag_id, burst_size, ppdu, real_size);
+		status = rle_fragment(transmitter, frag_id, burst_size, &ppdu, &real_size);
 	}
 
 	output = (status == RLE_FRAG_ERR_CONTEXT_IS_NULL);
@@ -326,8 +419,7 @@ enum boolean test_frag_null_context(void)
 exit_label:
 
 	if (transmitter != NULL) {
-		rle_transmitter_destroy(transmitter);
-		transmitter = NULL;
+		rle_transmitter_destroy(&transmitter);
 	}
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);

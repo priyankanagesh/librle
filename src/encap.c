@@ -19,162 +19,161 @@
 
 #endif
 
+#include "rle.h"
+#include "rle_transmitter.h"
 #include "encap.h"
 #include "constants.h"
 #include "rle_ctx.h"
-#include "zc_buffer.h"
 #include "rle_conf.h"
 #include "rle_header_proto_type_field.h"
+#include "fragmentation_buffer.h"
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
 
 #define MODULE_NAME "ENCAP"
 
-int create_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
-                  void *data_buffer, size_t data_length, uint16_t protocol_type)
+
+/*------------------------------------------------------------------------------------------------*/
+/*----------------------------------- PRIVATE FUNCTIONS CODE -------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+static int is_frag_ctx_free(struct rle_transmitter *const _this, const size_t ctx_index)
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	size_t size_header = RLE_COMPLETE_HEADER_SIZE;
-	size_t ptype_length = 0;
-	uint8_t proto_type_supp = RLE_T_PROTO_TYPE_NO_SUPP;
-
-	/* map RLE header to the already allocated buffer */
-	struct zc_rle_header_complete_w_ptype *rle_hdr =
-	        (struct zc_rle_header_complete_w_ptype *)rle_ctx->buf;
-	uint8_t label_type;
-
-	/* don't fill ALPDU ptype field if given ptype
-	 * is equal to the default one and suppression is active,
-	 * or if given ptype is for signalling packet */
-	if (!ptype_is_omissible(protocol_type, rle_conf)) {
-		/* remap a complete header with ptype field */
-		struct rle_header_complete_w_ptype *rle_c_hdr =
-		        (struct rle_header_complete_w_ptype *)&rle_hdr->header;
-
-		if (rle_conf_get_ptype_compression(rle_conf)) {
-			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_COMP;
-			if (rle_header_ptype_is_compressible(protocol_type) == C_OK) {
-				rle_c_hdr->ptype_c_s.c.proto_type = rle_header_ptype_compression(
-				        protocol_type);
-			} else {
-				rle_c_hdr->ptype_c_s.e.proto_type = 0xFF;
-				rle_c_hdr->ptype_c_s.e.proto_type_uncompressed = ntohs(
-				        protocol_type);
-				ptype_length += RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
-			}
-		} else {
-			rle_c_hdr->ptype_u_s.proto_type = ntohs(protocol_type);
-			rle_ctx_set_proto_type(rle_ctx, protocol_type);
-			ptype_length = RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP;
-		}
-	} else {
-		/* no protocol type in this packet */
-		proto_type_supp = RLE_T_PROTO_TYPE_SUPP;
-	}
-	rle_ctx_set_proto_type(rle_ctx, protocol_type);
-
-	/* update total header size */
-	size_header += ptype_length;
-
-	/* initialize payload pointers */
-	rle_hdr->ptrs.start = NULL;
-	rle_hdr->ptrs.end = NULL;
-	/* fill RLE complete header */
-	rle_hdr->header.head.b.start_ind = 1;
-	rle_hdr->header.head.b.end_ind = 1;
-	rle_header_all_set_packet_length(&(rle_hdr->header.head), data_length);
-	SET_PROTO_TYPE_SUPP(rle_hdr->header.head.b.LT_T_FID, proto_type_supp);
-
-	/* fill label_type field accordingly to the
-	 * given protocol type (signal or implicit/indicated
-	 * by the NCC */
-	if (protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP) {
-		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_LT_PROTO_SIGNAL); /* RCS2 requirement */
-	} else if (proto_type_supp == RLE_T_PROTO_TYPE_SUPP) {
-		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_LT_IMPLICIT_PROTO_TYPE);
-	} else {
-		SET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID, RLE_T_PROTO_TYPE_NO_SUPP);
-	}
-
-	/* update rle configuration */
-	/* rle_conf_set_ptype_suppression(rle_conf, proto_type_supp); */
-
-	/* set start & end PDU data pointers */
-	rle_hdr->ptrs.start = (char *)data_buffer;
-	rle_hdr->ptrs.end = (char *)((char *)data_buffer + data_length);
-	/* update rle context */
-	rle_ctx_set_end_address(rle_ctx,
-	                        (char *)((char *)rle_ctx->buf + size_header));
-	rle_ctx_set_is_fragmented(rle_ctx, C_FALSE);
-	rle_ctx_set_frag_counter(rle_ctx, 1);
-	rle_ctx_set_nb_frag_pdu(rle_ctx, 1);
-	rle_ctx_set_use_crc(rle_ctx, C_FALSE);
-	rle_ctx_set_pdu_length(rle_ctx, data_length);
-	rle_ctx_set_remaining_pdu_length(rle_ctx, data_length);
-	rle_ctx_set_alpdu_length(rle_ctx, data_length + ptype_length);
-	rle_ctx_set_remaining_alpdu_length(rle_ctx, data_length + ptype_length);
-	/* RLE packet length is the sum of packet label,
-	 * protocol type & payload length */
-	rle_ctx_set_rle_length(rle_ctx,
-	                       (data_length + ptype_length), ptype_length);
-	label_type = GET_LABEL_TYPE(rle_hdr->header.head.b.LT_T_FID);
-	rle_ctx_set_label_type(rle_ctx, label_type);
-	rle_ctx_set_qos_tag(rle_ctx, 0); /* TODO update */
-
-	return C_OK;
+	return rle_ctx_is_free(_this->free_ctx, ctx_index);
 }
 
-int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
-                          void *pdu_buffer, size_t pdu_length,
-                          uint16_t protocol_type)
+static void set_nonfree_frag_ctx(struct rle_transmitter *const _this, const size_t ctx_index)
 {
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
+
+	rle_ctx_set_nonfree(&_this->free_ctx, ctx_index);
+
+	return;
+}
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
+enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
+                                      const struct rle_sdu *const sdu, const uint8_t frag_id)
+{
+	enum rle_encap_status status = RLE_ENCAP_ERR;
+	enum rle_encap_status ret_encap;
+	struct rle_ctx_management *rle_ctx;
+	rle_f_buff_t *f_buff;
+
+#ifdef TIME_DEBUG
+	struct timeval tv_start = { .tv_sec = 0L, .tv_usec = 0L };
+	struct timeval tv_end = { .tv_sec = 0L, .tv_usec = 0L };
+	struct timeval tv_delta;
+	gettimeofday(&tv_start, NULL);
+#endif
+
+#ifdef DEBUG
+	PRINT_RLE_DEBUG("", MODULE_NAME);
+#endif
+
+	if (transmitter == NULL) {
+		status = RLE_ENCAP_ERR_NULL_TRMT;
+		goto out;
+	}
+
+	if (frag_id >= RLE_MAX_FRAG_NUMBER) {
+		goto out;
+	}
+
+	rle_ctx = &transmitter->rle_ctx_man[frag_id];
+	f_buff = (rle_f_buff_t *)rle_ctx->buff;
+
+	if (sdu->size > RLE_MAX_PDU_SIZE) {
+		status = RLE_ENCAP_ERR_SDU_TOO_BIG;
+		rle_transmitter_free_context(transmitter, frag_id);
+		goto out;
+	}
+
+	if (is_frag_ctx_free(transmitter, frag_id) == C_FALSE) {
+		PRINT_RLE_ERROR("frag id %d is not free", frag_id);
+		goto out;
+	}
+
+	/* set to 'used' the previously free frag context */
+	set_nonfree_frag_ctx(transmitter, frag_id);
+
+	rle_f_buff_init(f_buff);
+	if (rle_f_buff_cpy_sdu(f_buff, sdu) != 0) {
+		PRINT_RLE_ERROR("unable to copy SDU in fragmentation buffer.");
+		goto out;
+	}
+
+	ret_encap = rle_encap_contextless(transmitter, f_buff);
+
 	rle_ctx_incr_counter_in(rle_ctx);
-	rle_ctx_incr_counter_bytes_in(rle_ctx, pdu_length);
+	rle_ctx_incr_counter_bytes_in(rle_ctx, sdu->size);
 
-	if (encap_check_pdu_validity(pdu_length) == C_ERROR) {
+	if (ret_encap != RLE_ENCAP_OK) {
 		rle_ctx_incr_counter_dropped(rle_ctx);
-		rle_ctx_incr_counter_bytes_dropped(rle_ctx, pdu_length);
-		return C_ERROR;
+		rle_ctx_incr_counter_bytes_dropped(rle_ctx, sdu->size);
+		rle_ctx_set_free(&transmitter->free_ctx, frag_id);
+		PRINT_RLE_ERROR("cannot encapsulate data.");
+		goto out;
 	}
 
-	if (create_header(rle_ctx, rle_conf,
-	                  pdu_buffer, pdu_length,
-	                  protocol_type) == C_ERROR) {
-		rle_ctx_incr_counter_dropped(rle_ctx);
-		rle_ctx_incr_counter_bytes_dropped(rle_ctx, pdu_length);
-		return C_ERROR;
-	}
-
-	/* set PDU buffer address to the rle_ctx ptr */
-	rle_ctx->pdu_buf = pdu_buffer;
-
-	return C_OK;
-}
-
-int encap_check_pdu_validity(const size_t pdu_length)
-{
-#ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d:\n",
-	      MODULE_NAME,
-	      __FILE__, __func__, __LINE__);
+#ifdef TIME_DEBUG
+	gettimeofday(&tv_end, NULL);
+	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
+	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
+	PRINT_RLE_DEBUG("duration [%04ld.%06ld]\n", MODULE_NAME, tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
-	if (pdu_length > RLE_MAX_PDU_SIZE) {
-		PRINT("ERROR %s %s:%s:%d: PDU too large for RL Encapsulation,"
-		      " size [%zu]\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__,
-		      pdu_length);
-		return C_ERROR;
+	status = RLE_ENCAP_OK;
+
+out:
+	return status;
+}
+
+enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transmitter,
+                                            struct rle_fragmentation_buffer *const f_buff)
+{
+	enum rle_encap_status status = RLE_ENCAP_ERR;
+	struct rle_configuration *rle_conf;
+
+#ifdef DEBUG
+	PRINT_RLE_DEBUG("", MODULE_NAME);
+#endif
+
+	if (!transmitter) {
+		status = RLE_ENCAP_ERR_NULL_TRMT;
+		goto out;
 	}
 
-	return C_OK;
+	rle_conf = transmitter->rle_conf;
+
+	if (!f_buff) {
+		status = RLE_ENCAP_ERR_NULL_F_BUFF;
+		goto out;
+	}
+
+	if (!f_buff_in_use(f_buff)) {
+		status = RLE_ENCAP_ERR_N_INIT_F_BUFF;
+		goto out;
+	}
+
+	if (push_alpdu_header(f_buff, rle_conf) == 0) {
+		status = RLE_ENCAP_OK;
+	}
+
+out:
+	return status;
 }
+

@@ -82,6 +82,25 @@ enum boolean test_decap_not_null_padding(void);
 enum boolean test_decap_flush_ctxt(void);
 
 /**
+ * @brief         Decapsulation test when an FPDU contains a null SeqNo.
+ *
+ *                No error should now be raised, and decapsulation must be successful but a warning
+ *                message will be printed.
+ *
+ * @return        BOOL_TRUE if decapsulation succeed, else BOOL_FALSE.
+ */
+enum boolean test_decap_null_seqno(void);
+
+/**
+ * @brief         Fix context freeing index.
+ *
+ *                No error should now be raised, and decapsulation must be successful.
+ *
+ * @return        BOOL_TRUE if decapsulation succeed, else BOOL_FALSE.
+ */
+enum boolean test_decap_context_free(void);
+
+/**
  * @brief         All the Decapsulation tests
  *
  *                Decapsulation test for different protocol types (IPv4, v6, VLAN, QinQ,

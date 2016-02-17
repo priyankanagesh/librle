@@ -31,4 +31,59 @@ enum boolean test_request_rle_header_overhead_traffic(void);
  */
 enum boolean test_request_rle_header_overhead_all(void);
 
+/**
+ * @brief         Test the transmitter allocation
+ *
+ *                Deactivate all the tests but this ones to check memory allocation.
+ *
+ * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ */
+enum boolean test_rle_allocation_transmitter(void);
+
+/**
+ * @brief         Test the transmitter allocation
+ *
+ * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ */
+enum boolean test_rle_destruction_transmitter(void);
+
+/**
+ * @brief         Test the receiver allocation
+ *
+ *                Deactivate all the tests but this ones to check memory allocation.
+ *
+ * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ */
+enum boolean test_rle_allocation_receiver(void);
+
+/**
+ * @brief         Test the receiver allocation
+ *
+ *                Deactivate all the tests but this ones to check memory allocation.
+ *
+ * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ */
+enum boolean test_rle_destruction_receiver(void);
+
+/**
+ * @brief         Test the fragmentation buffer allocation
+ *
+ *                Deactivate all the tests but this ones to check memory allocation.
+ *
+ * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ */
+enum boolean test_rle_allocation_f_buff(void);
+
+/**
+ * @brief         Test the fragmentation buffer allocation
+ *
+ *                Deactivate all the tests but this ones to check memory allocation.
+ *
+ * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ */
+enum boolean test_rle_destruction_f_buff(void);
+
+/* Further tests can be done here, especially to check fragmentation and reassembly buffers. */
+
+
 #endif /* __TEST_RLE_MISC_H__ */

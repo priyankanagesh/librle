@@ -11,7 +11,52 @@
 
 #include "constants.h"
 
+
+/*------------------------------------------------------------------------------------------------*/
+/*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
+
 #define RLE_PROTO_TYPE_IPV4_OR_IPV6 0
+
+/**
+ * Lots of define to easily populate the array of protocol references, that allow to concatenate
+ * initializing value for arrays. The concat initializer are based on the binary arithmetic and more
+ * especially on the powers of two.
+ *
+ * For instance CONCAT_INITIALIZER_POW_2(RLE_PROTO_TYPE_RESERVED) is replaced by
+ * "RLE_PROTO_TYPE_RESERVED, RLE_PROTO_TYPE_RESERVED" by the preprocessor.
+ * We can write array "arr[2] = { CONCAT_INITIALIZER_POW_2(RLE_PROTO_TYPE_RESERVED) };"
+ * and the preprocessor replaces it by
+ * "arr[2] = { RLE_PROTO_TYPE_RESERVED, RLE_PROTO_TYPE_RESERVED };"
+ */
+#define CONCAT_INITIALIZER_POW_2(_x)  (_x), (_x)
+#define CONCAT_INITIALIZER_POW_4(_x)  CONCAT_INITIALIZER_POW_2(_x), CONCAT_INITIALIZER_POW_2(_x)
+#define CONCAT_INITIALIZER_POW_8(_x)  CONCAT_INITIALIZER_POW_4(_x), CONCAT_INITIALIZER_POW_4(_x)
+#define CONCAT_INITIALIZER_POW_16(_x) CONCAT_INITIALIZER_POW_8(_x), CONCAT_INITIALIZER_POW_8(_x)
+#define CONCAT_INITIALIZER_POW_32(_x) CONCAT_INITIALIZER_POW_16(_x), CONCAT_INITIALIZER_POW_16(_x)
+#define CONCAT_INITIALIZER_POW_64(_x) CONCAT_INITIALIZER_POW_32(_x), CONCAT_INITIALIZER_POW_32(_x)
+
+/** 16 reserved protocol type for range 0x32 -> 0x41 */
+#define RLE_PROTO_TYPE_RESERVED_16      CONCAT_INITIALIZER_POW_16(RLE_PROTO_TYPE_RESERVED)
+
+/** 21 reserved protocol type for range 0x1b -> 0x2f */
+#define RLE_PROTO_TYPE_RESERVED_21      CONCAT_INITIALIZER_POW_16(RLE_PROTO_TYPE_RESERVED), \
+		CONCAT_INITIALIZER_POW_4(RLE_PROTO_TYPE_RESERVED), \
+		RLE_PROTO_TYPE_RESERVED
+
+/** 56 reserved protocol type for range 0x48 -> 0x7f */
+#define RLE_PROTO_TYPE_RESERVED_56      CONCAT_INITIALIZER_POW_32(RLE_PROTO_TYPE_RESERVED), \
+		CONCAT_INITIALIZER_POW_16(RLE_PROTO_TYPE_RESERVED), \
+		CONCAT_INITIALIZER_POW_8(RLE_PROTO_TYPE_RESERVED)
+
+/** 127 user defined protocol type for range 0x80 -> 0xfe */
+#define RLE_PROTO_TYPE_USER_DEFINED_127 CONCAT_INITIALIZER_POW_64(RLE_PROTO_TYPE_USER_DEFINED), \
+		CONCAT_INITIALIZER_POW_32(RLE_PROTO_TYPE_USER_DEFINED), \
+		CONCAT_INITIALIZER_POW_16(RLE_PROTO_TYPE_USER_DEFINED), \
+		CONCAT_INITIALIZER_POW_8(RLE_PROTO_TYPE_USER_DEFINED), \
+		CONCAT_INITIALIZER_POW_4(RLE_PROTO_TYPE_USER_DEFINED), \
+		CONCAT_INITIALIZER_POW_2(RLE_PROTO_TYPE_USER_DEFINED), \
+		RLE_PROTO_TYPE_USER_DEFINED
 
 /* Protocol type references decompression array. ref: Table 7-3 p. 110 ETSI EN 301 545-2 v.1.2.1 */
 const uint16_t rle_header_ptype_decomp[RLE_PROTO_TYPE_MAX_COMP_VALUE + 1] = {
@@ -67,6 +112,11 @@ const uint16_t rle_header_ptype_decomp[RLE_PROTO_TYPE_MAX_COMP_VALUE + 1] = {
 	/* 0xff */
 	RLE_PROTO_TYPE_ADJACENT_2BYTES_PTYPE
 };
+
+
+/*------------------------------------------------------------------------------------------------*/
+/*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
+/*------------------------------------------------------------------------------------------------*/
 
 uint16_t rle_header_ptype_decompression(uint8_t compressed_ptype)
 {
@@ -140,3 +190,19 @@ uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype)
 
 	return compressed_ptype;
 }
+
+int get_alpdu_label_type(const uint16_t protocol_type, const int is_protocol_type_suppressed)
+{
+	int alpdu_label_type = 0; /* 0 by default. */
+
+	if (protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP) {
+		/* RCS2 requirement */
+		alpdu_label_type = RLE_LT_PROTO_SIGNAL;
+	} else if (is_protocol_type_suppressed) {
+		alpdu_label_type = RLE_LT_IMPLICIT_PROTO_TYPE;
+	}
+
+	return alpdu_label_type;
+}
+
+

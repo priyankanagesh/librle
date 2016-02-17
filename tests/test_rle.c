@@ -72,6 +72,30 @@ static enum boolean encap_tests(void)
 	return tests(encapsulation, encapsulation_tests);
 }
 
+static enum boolean encap_ctxtless_tests(void)
+{
+	const char *const encapsulation_contextless = "Encapsulation contextless";
+
+	const struct test null_transmitter = { "Null transmitter",
+	                                       test_encap_ctxtless_null_transmitter };
+	const struct test null_f_buff = { "Null fragmentation buffer",
+	                                  test_encap_ctxtless_null_f_buff };
+	const struct test f_buff_not_init = { "fragmentation buffer not initialized",
+	                                      test_encap_ctxtless_f_buff_not_init };
+	const struct test too_big = { "Too big", test_encap_ctxtless_too_big };
+
+	const struct test *const encapsulation_contextless_tests[] =
+	{
+		&null_transmitter,
+		&null_f_buff,
+		&f_buff_not_init,
+		&too_big,
+		NULL
+	};
+
+	return tests(encapsulation_contextless, encapsulation_contextless_tests);
+}
+
 static enum boolean frag_tests(void)
 {
 	const char *const fragmentation = "Fragmentation";
@@ -93,6 +117,34 @@ static enum boolean frag_tests(void)
 	};
 
 	return tests(fragmentation, fragmentation_tests);
+}
+
+static enum boolean frag_ctxtless_tests(void)
+{
+	const char *const fragmentation_ctxtless = "Fragmentation contextless";
+
+	const struct test null_transmitter = { "Null transmitter",
+	                                       test_frag_ctxtless_null_transmitter };
+	const struct test null_f_buff = { "NULL fragmentation buffer", test_frag_ctxtless_null_f_buff };
+	const struct test f_buff_not_init = { "Fragmentation buffer not initialized",
+	                                      test_frag_ctxtless_f_buff_not_init };
+	const struct test no_len = { "Fragmentation without length", test_frag_ctxtless_no_len };
+	const struct test too_small = { "Fragmentation with length too small",
+	                                test_frag_ctxtless_too_small };
+	const struct test too_big = { "Fragmentation with length too big", test_frag_ctxtless_too_big };
+
+	const struct test *const fragmentation_ctxtless_tests[] =
+	{
+		&null_transmitter,
+		&null_f_buff,
+		&f_buff_not_init,
+		&no_len,
+		&too_small,
+		&too_big,
+		NULL
+	};
+
+	return tests(fragmentation_ctxtless, fragmentation_ctxtless_tests);
 }
 
 static enum boolean pack_tests(void)
@@ -128,6 +180,8 @@ static enum boolean decap_tests(void)
 	const struct test inv_config = { "Invalid receiver configuration", test_decap_inv_config };
 	const struct test inv_padding = { "Invalid padding", test_decap_not_null_padding };
 	const struct test ctxt_flush = { "Context Flushing", test_decap_flush_ctxt };
+	const struct test null_seqno = { "Null sequence number", test_decap_null_seqno };
+	const struct test context_free = { "Context freeing index", test_decap_context_free };
 
 	const struct test *const decapsulation_tests[] =
 	{
@@ -139,6 +193,8 @@ static enum boolean decap_tests(void)
 		&inv_config,
 		&inv_padding,
 		&ctxt_flush,
+		&null_seqno,
+		&context_free,
 		NULL
 	};
 
@@ -153,11 +209,29 @@ static enum boolean misc_tests(void)
 	                                           test_request_rle_header_overhead_all };
 	const struct test request_overhead_traffic = { "Request overhead Traffic",
 	                                               test_request_rle_header_overhead_traffic };
+	const struct test allocation_transmitter = { "Transmitter allocation",
+	                                             test_rle_allocation_transmitter };
+	const struct test destruction_transmitter = { "Transmitter destruction",
+	                                              test_rle_destruction_transmitter };
+	const struct test allocation_receiver = { "Receiver allocation",
+	                                          test_rle_allocation_receiver };
+	const struct test destruction_receiver = { "Receiver destruction",
+	                                           test_rle_destruction_receiver };
+	const struct test allocation_f_buff = { "Fragmentation buffer allocation",
+	                                        test_rle_allocation_f_buff };
+	const struct test destruction_f_buff = { "Fragmentation buffer destruction",
+	                                         test_rle_destruction_f_buff };
 
 	const struct test *const miscellaneous_tests[] =
 	{
 		&request_overhead_all,
 		&request_overhead_traffic,
+		&allocation_transmitter,
+		&destruction_transmitter,
+		&allocation_receiver,
+		&destruction_receiver,
+		&allocation_f_buff,
+		&destruction_f_buff,
 		NULL
 	};
 
@@ -180,11 +254,23 @@ int main(void)
 
 	tests_success &= encap_tests();
 
+	/*----------------------------------*/
+	/*--  Encapsulation  contextless  --*/
+	/*----------------------------------*/
+
+	tests_success &= encap_ctxtless_tests();
+
 	/*---------------------*/
 	/*--  Fragmentation  --*/
 	/*---------------------*/
 
 	tests_success &= frag_tests();
+
+	/*----------------------------------*/
+	/*--  Fragmentation  contextless  --*/
+	/*----------------------------------*/
+
+	tests_success &= frag_ctxtless_tests();
 
 	/*---------------*/
 	/*--  Packing  --*/
