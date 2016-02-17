@@ -28,9 +28,8 @@
 
 #define MODULE_NAME "ENCAP"
 
-static int create_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
-                         void *data_buffer, size_t data_length,
-                         uint16_t protocol_type)
+int create_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
+                  void *data_buffer, size_t data_length, uint16_t protocol_type)
 {
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d:\n",
@@ -137,6 +136,8 @@ int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx, struct rle_configu
 	      MODULE_NAME,
 	      __FILE__, __func__, __LINE__);
 #endif
+	rle_ctx_incr_counter_in(rle_ctx);
+	rle_ctx_incr_counter_bytes_in(rle_ctx, pdu_length);
 
 	if (encap_check_pdu_validity(pdu_length) == C_ERROR) {
 		rle_ctx_incr_counter_dropped(rle_ctx);

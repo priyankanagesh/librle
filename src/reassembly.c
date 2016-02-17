@@ -115,6 +115,8 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx, void *d
 	      __FILE__, __func__, __LINE__);
 #endif
 
+	int ret = C_OK;
+
 	/* awaited sequence nb must be equal
 	 * to the received one.
 	 * Trailer addr is buffer addr + offset
@@ -125,26 +127,37 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx, void *d
 
 	if (trl->b.seq_no != rle_ctx->next_seq_nb) {
 		const size_t nb_lost_pkts = (rle_ctx->next_seq_nb - trl->b.seq_no) % RLE_MAX_SEQ_NO;
-		PRINT("ERROR %s %s:%s:%d: sequence number inconsistency,"
-		      " received [%d] expected [%d]\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__,
-		      trl->b.seq_no, rle_ctx->next_seq_nb);
+		if (trl->b.seq_no != 0) {
+			PRINT("ERROR %s %s:%s:%d: sequence number inconsistency,"
+			      " received [%d] expected [%d]\n",
+			      MODULE_NAME,
+			      __FILE__, __func__, __LINE__,
+			      trl->b.seq_no, rle_ctx->next_seq_nb);
+		}
+#ifdef DEBUG
+		if (trl->b.seq_no == 0) {
+			PRINT("WARNING %s %s:%s:%d: sequence number null, supposing relog,"
+			      " received [%d] expected [%d]\n",
+			      MODULE_NAME,
+			      __FILE__, __func__, __LINE__,
+			      trl->b.seq_no, rle_ctx->next_seq_nb);
+		}
+#endif
 		/* update sequence with received one
 		 * and increment it to resynchronize
 		 * with sender sequence */
 		rle_ctx_set_seq_nb(rle_ctx, trl->b.seq_no);
-		rle_ctx_incr_seq_nb(rle_ctx);
-		/* we must update lost & dropped packet
-		 * counter and */
-		rle_ctx_incr_counter_lost(rle_ctx, nb_lost_pkts);
+		/* we must update lost packet counter if not relog */
+		if (trl->b.seq_no != 0) {
+			rle_ctx_incr_counter_lost(rle_ctx, nb_lost_pkts);
+			ret = C_ERROR_DROP;
+		}
 
-		return C_ERROR_DROP;
 	}
 
 	rle_ctx_incr_seq_nb(rle_ctx);
 
-	return C_OK;
+	return ret;
 }
 
 static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx)
@@ -465,11 +478,10 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 	pdu_length = rle_header_start_get_packet_length(hdr->head_start) - header_size - trailer_size;
 
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d: RLE head_start.b.total_length %d PDU length %zu"
+	PRINT("DEBUG %s %s:%s:%d: RLE %d PDU length %zu"
 	      " label_type 0x%x proto_type_supp 0x%x\n",
 	      MODULE_NAME,
 	      __FILE__, __func__, __LINE__,
-	      hdr->head_start.b.total_length,
 	      pdu_length,
 	      hdr->head_start.b.label_type,
 	      hdr->head_start.b.proto_type_supp);
@@ -490,19 +502,19 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 	 * remaining length to receive */
 
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d: RLE START remaining_pdu %d total length %d rle length %d\n",
+	PRINT("DEBUG %s %s:%s:%d: RLE START remaining_pdu %d\n",
 	      MODULE_NAME,
 	      __FILE__, __func__, __LINE__,
-	      rle_ctx_get_remaining_pdu_length(rle_ctx),
-	      hdr->head_start.b.total_length, hdr->head.b.rle_packet_length);
+	      rle_ctx_get_remaining_pdu_length(rle_ctx));
 	PRINT("------ RECV START PACKET ------------\n");
 	PRINT("| SE |  RLEPL |  ID |  TL   |  LT  |  T  |  PTYPE  |\n");
 	PRINT("| %d%d |   %d   | 0x%0x |  %d  |  0x%0x | 0x%0x | 0x%04x  |\n",
 	      hdr->head.b.start_ind,
 	      hdr->head.b.end_ind,
-	      hdr->head.b.rle_packet_length,
+	      rle_header_all_get_packet_length(hdr->head),
 	      hdr->head.b.LT_T_FID,
-	      hdr->head_start.b.total_length,
+		  /* hdr->head_start.b.total_length, */
+	      ~0L, /* TODO method for total length ? */
 	      hdr->head_start.b.label_type,
 	      hdr->head_start.b.proto_type_supp,
 	      protocol_type);

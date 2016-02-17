@@ -175,17 +175,12 @@ void rle_ctx_invalid_ctx(struct rle_ctx_management *_this)
 	_this->pdu_length = 0;
 	_this->remaining_pdu_length = 0;
 	_this->rle_length = 0;
+	_this->alpdu_size = 0;
+	_this->remaining_alpdu_size = 0;
 	_this->proto_type = 0xffff;
 	_this->label_type = 0xff;
 	_this->pdu_buf = NULL;
 	_this->end_address = NULL;
-	_this->lk_status.counter_in = 0L;
-	_this->lk_status.counter_ok = 0L;
-	_this->lk_status.counter_dropped = 0L;
-	_this->lk_status.counter_lost = 0L;
-	_this->lk_status.counter_bytes_in = 0L;
-	_this->lk_status.counter_bytes_ok = 0L;
-	_this->lk_status.counter_bytes_dropped = 0L;
 }
 
 void rle_ctx_set_frag_id(struct rle_ctx_management *_this, uint8_t val)
@@ -600,12 +595,12 @@ void rle_ctx_dump(struct rle_ctx_management *_this, struct rle_configuration *rl
 	PRINT("\tlabel_type		\t= [0x%0x]\n", _this->label_type);
 	PRINT("\tend address		\t= [%p]\n", _this->end_address);
 	PRINT("\tLink Status:\n");
-	PRINT("\tPackets sent/received	\t= [%lu]\n", (long unsigned int)_this->lk_status.counter_ok);
-	PRINT("\tPackets lost		\t= [%lu]\n", (long unsigned int)_this->lk_status.counter_lost);
-	PRINT("\tPackets dropped	\t\t= [%lu]\n",
-	      (long unsigned int)_this->lk_status.counter_dropped);
-	PRINT("\tBytes sent/received	\t= [%lu]\n",
-	      (long unsigned int)_this->lk_status.counter_bytes_ok);
+	PRINT("\tPackets sent/received	\t= [%llu]\n", (long long unsigned int)_this->lk_status.counter_ok);
+	PRINT("\tPackets lost		\t= [%llu]\n", (long long unsigned int)_this->lk_status.counter_lost);
+	PRINT("\tPackets dropped	\t\t= [%llu]\n",
+	      (long long unsigned int)_this->lk_status.counter_dropped);
+	PRINT("\tBytes sent/received	\t= [%llu]\n",
+	      (long long unsigned int)_this->lk_status.counter_bytes_ok);
 
 	if (_this->frag_counter == 0) {
 		PRINT("\n--------------------------------------------------\n");
