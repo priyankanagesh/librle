@@ -176,7 +176,7 @@ struct rle_receiver;
  * Automaticaly manipulated in RLE context, but can be manually used, for traffics that don't need
  * fragmentation context for instance.
  */
-struct rle_fragmentation_buffer;
+struct rle_frag_buf;
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -283,7 +283,7 @@ void rle_receiver_destroy(struct rle_receiver **const receiver);
  *
  * @ingroup       RLE Fragmentation buffer.
  */
-struct rle_fragmentation_buffer *rle_f_buff_new(void);
+struct rle_frag_buf *rle_frag_buf_new(void);
 
 /**
  * @brief         Destroy a fragmentation buffer.
@@ -292,7 +292,7 @@ struct rle_fragmentation_buffer *rle_f_buff_new(void);
  *
  * @ingroup       RLE Fragmentation buffer.
  */
-void rle_f_buff_del(struct rle_fragmentation_buffer **const f_buff);
+void rle_frag_buf_del(struct rle_frag_buf **const f_buff);
 
 /**
  * @brief         Initialize (eventually reinitialize) a fragmentation buffer.
@@ -303,7 +303,7 @@ void rle_f_buff_del(struct rle_fragmentation_buffer **const f_buff);
  *
  * @ingroup       RLE Fragmentation buffer.
  */
-int rle_f_buff_init(struct rle_fragmentation_buffer *const f_buff);
+int rle_frag_buf_init(struct rle_frag_buf *const f_buff);
 
 /**
  * @brief         Copy an SDU in a fragmentation buffer.
@@ -319,8 +319,8 @@ int rle_f_buff_init(struct rle_fragmentation_buffer *const f_buff);
  *
  * @ingroup       RLE Fragmentation buffer.
  */
-int rle_f_buff_cpy_sdu(struct rle_fragmentation_buffer *const f_buff,
-                       const struct rle_sdu *const sdu);
+int rle_frag_buf_cpy_sdu(struct rle_frag_buf *const f_buff,
+                         const struct rle_sdu *const sdu);
 
 /**
  * @brief         RLE encapsulation. Encapsulate a SDU in a RLE ALPDU frame.
@@ -354,7 +354,7 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
  * @ingroup       RLE transmitter
  */
 enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transmitter,
-                                            struct rle_fragmentation_buffer *const f_buff);
+                                            struct rle_frag_buf *const f_buff);
 
 /**
  * @brief         RLE fragmentation. Get the next PPDU fragment.
@@ -407,7 +407,7 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
  * @ingroup       RLE transmitter
  */
 enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmitter,
-                                          struct rle_fragmentation_buffer *const f_buff,
+                                          struct rle_frag_buf *const f_buff,
                                           unsigned char **const ppdu, size_t *const ppdu_length);
 
 /**

@@ -67,16 +67,16 @@ enum {
 
 #define MALLOC(size_bytes)      malloc(size_bytes)
 #define FREE(buf_addr)          free(buf_addr)
-#define PRINT(x, ...)           printf((x), ##__VA_ARGS__)
-#define PRINT(x, ...)           printf((x), ##__VA_ARGS__)
+#define PRINT(x, ...)           printf((x), ## __VA_ARGS__)
+#define PRINT(x, ...)           printf((x), ## __VA_ARGS__)
 #define PRINT_RLE_DEBUG(x, module, ...) \
-	printf("RLE DEBUG: %s %s:l.%d %s: " x "\n", module, __FILE__, __LINE__, __func__, \
-	        ##__VA_ARGS__)
+        printf("RLE DEBUG: %s %s:l.%d %s: " x "\n", module, __FILE__, __LINE__, __func__, \
+               ## __VA_ARGS__)
 #define PRINT_RLE_WARNING(x, ...) \
-	printf("RLE WARNING: %s:l.%d %s: " x "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+        printf("RLE WARNING: %s:l.%d %s: " x "\n", __FILE__, __LINE__, __func__, ## __VA_ARGS__)
 
 #define PRINT_RLE_ERROR(x, ...) \
-	printf("RLE ERROR: %s:l.%d %s: " x "\n", __FILE__, __LINE__, __func__, ##__VA_ARGS__)
+        printf("RLE ERROR: %s:l.%d %s: " x "\n", __FILE__, __LINE__, __func__, ## __VA_ARGS__)
 
 #else
 
@@ -85,17 +85,17 @@ enum {
  * kmalloc allocates size with power of two so for 20520B it would alloc 32K */
 #define MALLOC(size_bytes)      kmalloc(size_bytes, GFP_KERNEL) /* vmalloc(size_bytes); */
 #define FREE(buf_addr)          kfree(buf_addr) /* vfree(buf_addr); */
-#define PRINT(x, ...)           printk(KERN_ERR x, ##__VA_ARGS__)
+#define PRINT(x, ...)           printk(KERN_ERR x, ## __VA_ARGS__)
 #define PRINT_RLE_DEBUG(x, module, ...) \
-	printk(KERN_ERR "RLE DEBUG: %s %s:l.%d %s: " x "\n", module, __FILE__, __LINE__, __func__, \
-	       ##__VA_ARGS__)
+        printk(KERN_ERR "RLE DEBUG: %s %s:l.%d %s: " x "\n", module, __FILE__, __LINE__, __func__, \
+               ## __VA_ARGS__)
 #define PRINT_RLE_WARNING(x, ...) \
-	printk(KERN_ERR "RLE WARNING: %s:l.%d %s: " x "\n", __FILE__, __LINE__, __func__, \
-	       ##__VA_ARGS__)
+        printk(KERN_ERR "RLE WARNING: %s:l.%d %s: " x "\n", __FILE__, __LINE__, __func__, \
+               ## __VA_ARGS__)
 
 #define PRINT_RLE_ERROR(x, ...) \
-	printk(KERN_ERR "RLE ERROR: %s:l.%d %s: " x "\n", __FILE__, __LINE__, __func__, \
-	       ##__VA_ARGS__)
+        printk(KERN_ERR "RLE ERROR: %s:l.%d %s: " x "\n", __FILE__, __LINE__, __func__, \
+               ## __VA_ARGS__)
 
 #define assert BUG_ON
 

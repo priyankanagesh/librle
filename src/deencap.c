@@ -95,7 +95,6 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 	/* parse all PPDUs that the FPDU contains until there is less than 2 bytes
 	 * in the FPDU payload and padding is not detected */
 	while ((offset + 1) < fpdu_length && !padding_detected) {
-
 		struct rle_sdu *const potential_sdu = &sdus[*sdus_nr];
 		const unsigned char *const ppdu = &fpdu[offset];
 		size_t ppdu_length;
@@ -121,7 +120,8 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 		}
 
 		/* parse the PPDU fragment */
-		ret = rle_receiver_deencap_data(receiver, ppdu, ppdu_length, &fragment_id, potential_sdu);
+		ret = rle_receiver_deencap_data(receiver, ppdu, ppdu_length, &fragment_id,
+		                                potential_sdu);
 
 		/* PPDU fragment successfully parsed, skip it */
 		offset += ppdu_length;
@@ -137,7 +137,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 	}
 
 	/* remaining FPDU bytes are padding: they should be all zero, warn if it is not the case */
-	for ( ; offset < fpdu_length; offset++) {
+	for (; offset < fpdu_length; offset++) {
 		if (fpdu[offset] != 0x00) {
 			PRINT("WARNING: Current padding contains octets non equal to 0x00.\n");
 			break; /* stop padding verification after first error */

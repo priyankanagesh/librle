@@ -2,7 +2,7 @@
  *
  * Most part of this code is under the following copyright:
  *
- **-
+ *
  * Copyright (c) 1991, 1993
  *  The Regents of the University of California.  All rights reserved.
  *
@@ -148,4 +148,3 @@ uint32_t compute_crc(unsigned char *data, size_t length, uint32_t crc_init)
 	}
 	return crc_init;
 }
-

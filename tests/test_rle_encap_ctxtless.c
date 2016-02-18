@@ -24,7 +24,7 @@ bool test_encap_ctxtless_null_transmitter(void)
 	bool output = false;
 	enum rle_encap_status ret;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_sdu sdu = {
 		.buffer        = (unsigned char *)payload_initializer,
@@ -48,12 +48,12 @@ bool test_encap_ctxtless_null_transmitter(void)
 		goto out;
 	}
 
-	if (rle_f_buff_init(f_buff) != 0) {
+	if (rle_frag_buf_init(f_buff) != 0) {
 		PRINT_ERROR("Unable to initialize fragmentation buffer.");
 		goto out;
 	}
 
-	if (rle_f_buff_cpy_sdu(f_buff, &sdu) != 0) {
+	if (rle_frag_buf_cpy_sdu(f_buff, &sdu) != 0) {
 		PRINT_ERROR("Unable to copy SDU in fragmentation buffer.");
 		goto out;
 	}
@@ -80,7 +80,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -100,7 +100,7 @@ bool test_encap_ctxtless_null_f_buff(void)
 		.use_compressed_ptype                   = 0,
 	};
 
-	struct rle_fragmentation_buffer *f_buff = NULL;
+	struct rle_frag_buf *f_buff = NULL;
 
 	PRINT_TEST("Special case : Encapsulation with a null fragmentation buffer.");
 
@@ -143,7 +143,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -163,7 +163,7 @@ bool test_encap_ctxtless_f_buff_not_init(void)
 		.use_compressed_ptype = 0,
 	};
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	PRINT_TEST("Special case : Encapsulation with a fragmentation buffer not initialized.");
 
@@ -206,7 +206,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -219,7 +219,7 @@ bool test_encap_ctxtless_too_big(void)
 	bool output = false;
 	enum rle_encap_status ret;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_sdu sdu_ok = {
 		.buffer        = (unsigned char *)payload_initializer,
@@ -258,12 +258,12 @@ bool test_encap_ctxtless_too_big(void)
 		goto out;
 	}
 
-	if (rle_f_buff_init(f_buff) != 0) {
+	if (rle_frag_buf_init(f_buff) != 0) {
 		PRINT_ERROR("Unable to initialize fragmentation buffer.");
 		goto out;
 	}
 
-	if (rle_f_buff_cpy_sdu(f_buff, &sdu_ok) != 0) {
+	if (rle_frag_buf_cpy_sdu(f_buff, &sdu_ok) != 0) {
 		PRINT_ERROR("Unable to copy SDU in fragmentation buffer.");
 		goto out;
 	}
@@ -277,12 +277,12 @@ bool test_encap_ctxtless_too_big(void)
 		goto out;
 	}
 
-	if (rle_f_buff_init(f_buff) != 0) {
+	if (rle_frag_buf_init(f_buff) != 0) {
 		PRINT_ERROR("Unable to initialize fragmentation buffer.");
 		goto out;
 	}
 
-	if (rle_f_buff_cpy_sdu(f_buff, &sdu_ko) == 0) {
+	if (rle_frag_buf_cpy_sdu(f_buff, &sdu_ko) == 0) {
 		PRINT_ERROR("Too big SDU accepted in fragmentation buffer.");
 	} else {
 		output = true;
@@ -295,7 +295,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);

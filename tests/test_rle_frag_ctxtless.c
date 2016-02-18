@@ -32,11 +32,11 @@
  * @return  true if encapsulation is OK, else false.
  */
 static int quick_encapsulation(struct rle_transmitter *const t,
-                               struct rle_fragmentation_buffer *const f_buff,
+                               struct rle_frag_buf *const f_buff,
                                const size_t *const sdu_len);
 
 static int quick_encapsulation(struct rle_transmitter *const t,
-                               struct rle_fragmentation_buffer *const f_buff,
+                               struct rle_frag_buf *const f_buff,
                                const size_t *const sdu_len)
 {
 	bool output = false;
@@ -53,12 +53,12 @@ static int quick_encapsulation(struct rle_transmitter *const t,
 		goto out;
 	}
 
-	if (rle_f_buff_init(f_buff) != 0) {
+	if (rle_frag_buf_init(f_buff) != 0) {
 		PRINT_ERROR("Unable to initialize fragmentation buffer.");
 		goto out;
 	}
 
-	if (rle_f_buff_cpy_sdu(f_buff, &sdu) != 0) {
+	if (rle_frag_buf_cpy_sdu(f_buff, &sdu) != 0) {
 		PRINT_ERROR("Unable to copy SDU in fragmentation buffer.");
 		goto out;
 	}
@@ -79,7 +79,7 @@ bool test_frag_ctxtless_null_transmitter(void)
 	bool output = false;
 	enum rle_frag_status ret = RLE_FRAG_ERR;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
@@ -122,7 +122,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -135,7 +135,7 @@ bool test_frag_ctxtless_null_f_buff(void)
 	bool output = false;
 	enum rle_frag_status ret = RLE_FRAG_ERR;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
@@ -180,7 +180,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -198,7 +198,7 @@ bool test_frag_ctxtless_f_buff_not_init(void)
 	bool output = false;
 	enum rle_frag_status ret = RLE_FRAG_ERR;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
@@ -237,7 +237,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -257,7 +257,7 @@ bool test_frag_ctxtless_no_len(void)
 	bool output = false;
 	enum rle_frag_status ret = RLE_FRAG_ERR;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
@@ -299,7 +299,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -317,7 +317,7 @@ bool test_frag_ctxtless_too_small(void)
 	bool output = false;
 	enum rle_frag_status ret = RLE_FRAG_ERR;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
@@ -362,7 +362,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -380,7 +380,7 @@ bool test_frag_ctxtless_too_big(void)
 	bool output = false;
 	enum rle_frag_status ret = RLE_FRAG_ERR;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
@@ -450,7 +450,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);

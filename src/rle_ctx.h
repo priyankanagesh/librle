@@ -101,7 +101,7 @@ struct rle_ctx_management {
  *
  * @ingroup RLE context
  */
-int rle_ctx_init_f_buff(struct rle_ctx_management *_this);
+int rle_ctx_init_frag_buf(struct rle_ctx_management *_this);
 
 /**
  * @brief  Initialize RLE context structure with reassembly buffers.
@@ -113,7 +113,7 @@ int rle_ctx_init_f_buff(struct rle_ctx_management *_this);
  *
  * @ingroup RLE context
  */
-int rle_ctx_init_r_buff(struct rle_ctx_management *_this);
+int rle_ctx_init_rasm_buf(struct rle_ctx_management *_this);
 
 /**
  * @brief  Destroy RLE context with fragmentation buffers structure and free memory
@@ -125,7 +125,7 @@ int rle_ctx_init_r_buff(struct rle_ctx_management *_this);
  *
  * @ingroup RLE context
  */
-int rle_ctx_destroy_f_buff(struct rle_ctx_management *_this);
+int rle_ctx_destroy_frag_buf(struct rle_ctx_management *_this);
 
 /**
  * @brief  Destroy RLE context with reassembly buffers structure and free memory
@@ -137,7 +137,7 @@ int rle_ctx_destroy_f_buff(struct rle_ctx_management *_this);
  *
  * @ingroup RLE context
  */
-int rle_ctx_destroy_r_buff(struct rle_ctx_management *_this);
+int rle_ctx_destroy_rasm_buf(struct rle_ctx_management *_this);
 
 /**
  * @brief  Set fragment id
@@ -240,8 +240,7 @@ uint32_t rle_ctx_get_alpdu_length(const struct rle_ctx_management *const _this);
  *
  * @ingroup RLE context
  */
-void rle_ctx_decr_remaining_alpdu_length(struct rle_ctx_management *const _this,
-                                         const uint32_t val);
+void rle_ctx_decr_remaining_alpdu_length(struct rle_ctx_management *const _this, const uint32_t val);
 
 /**
  * @brief  Get remaining ALPDU length
@@ -269,7 +268,7 @@ uint16_t rle_ctx_get_proto_type(struct rle_ctx_management *const _this);
  * @brief  Set Label Type value
  *
  * @param[in,out] _this   Pointer to the RLE context structure
- * 	val    New Label Type value
+ *      val    New Label Type value
  *
  * @ingroup RLE context
  */

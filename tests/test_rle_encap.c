@@ -189,7 +189,7 @@ static bool test_encap(const uint16_t protocol_type,
 	size_t theorical_alpdu_header_size = 0;
 	unsigned char *alpdu = NULL;
 	size_t alpdu_length;
-	rle_f_buff_t *f_buff;
+	rle_frag_buf_t *f_buff;
 
 	struct rle_sdu sdu = {
 		.buffer = NULL,
@@ -295,8 +295,8 @@ static bool test_encap(const uint16_t protocol_type,
 		theorical_alpdu_header = NULL;
 	}
 
-	f_buff = (rle_f_buff_t *)transmitter->rle_ctx_man[frag_id].buff;
-	alpdu_length = f_buff_get_remaining_alpdu_length(f_buff);
+	f_buff = (rle_frag_buf_t *)transmitter->rle_ctx_man[frag_id].buff;
+	alpdu_length = frag_buf_get_remaining_alpdu_length(f_buff);
 
 	if (theorical_alpdu_header_size + length != alpdu_length) {
 		PRINT_ERROR("dumped ALPDU has not the right length, %zu expected but we got %zu ",

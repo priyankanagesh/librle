@@ -49,7 +49,7 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 	enum rle_frag_status status = RLE_FRAG_ERR; /* Error by default. */
 
 	int ret_push = 0;
-	rle_f_buff_t *f_buff;
+	rle_frag_buf_t *frag_buf;
 	struct rle_ctx_management *rle_ctx;
 	const struct rle_configuration *rle_conf;
 
@@ -77,11 +77,11 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 		goto out;
 	}
 
-	f_buff = (rle_f_buff_t *)rle_ctx->buff;
+	frag_buf = (rle_frag_buf_t *)rle_ctx->buff;
 
-	f_buff_ppdu_init(f_buff);
+	frag_buf_ppdu_init(frag_buf);
 
-	ret_push = push_ppdu_header(f_buff, rle_conf, remaining_burst_size, rle_ctx);
+	ret_push = push_ppdu_header(frag_buf, rle_conf, remaining_burst_size, rle_ctx);
 
 	if (ret_push != 0) {
 		if (ret_push == 2) {
@@ -91,10 +91,10 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 		goto out;
 	}
 
-	*ppdu = f_buff->ppdu.start;
-	*ppdu_length = f_buff_get_current_ppdu_len(f_buff);
+	*ppdu = frag_buf->ppdu.start;
+	*ppdu_length = frag_buf_get_current_ppdu_len(frag_buf);
 
-	if (f_buff_get_remaining_alpdu_length(f_buff) == 0) {
+	if (frag_buf_get_remaining_alpdu_length(frag_buf) == 0) {
 		rle_transmitter_free_context(transmitter, frag_id);
 		rle_ctx_incr_counter_ok(rle_ctx);
 	}
@@ -107,8 +107,9 @@ out:
 }
 
 enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmitter,
-                                          struct rle_fragmentation_buffer *const f_buff,
-                                          unsigned char **const ppdu, size_t *const ppdu_length)
+                                          struct rle_frag_buf *const frag_buf,
+                                          unsigned char **const ppdu,
+                                          size_t *const ppdu_length)
 {
 	enum rle_frag_status status = RLE_FRAG_ERR;
 	const struct rle_configuration *rle_conf;
@@ -124,12 +125,12 @@ enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmit
 
 	rle_conf = transmitter->rle_conf;
 
-	if (!f_buff) {
+	if (!frag_buf) {
 		status = RLE_FRAG_ERR_NULL_F_BUFF;
 		goto out;
 	}
 
-	if (!f_buff_in_use(f_buff)) {
+	if (!frag_buf_in_use(frag_buf)) {
 		status = RLE_FRAG_ERR_N_INIT_F_BUFF;
 		goto out;
 	}
@@ -144,15 +145,15 @@ enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmit
 		goto out;
 	}
 
-	f_buff_ppdu_init(f_buff);
+	frag_buf_ppdu_init(frag_buf);
 
-	if (push_ppdu_header(f_buff, rle_conf, *ppdu_length, NULL) != 0) {
+	if (push_ppdu_header(frag_buf, rle_conf, *ppdu_length, NULL) != 0) {
 		goto out;
 	}
 
-	*ppdu_length = f_buff_get_current_ppdu_len(f_buff);
+	*ppdu_length = frag_buf_get_current_ppdu_len(frag_buf);
 
-	*ppdu = f_buff->ppdu.start;
+	*ppdu = frag_buf->ppdu.start;
 
 	status = RLE_FRAG_OK;
 

@@ -393,11 +393,11 @@ bool test_rle_allocation_f_buff(void)
 {
 	bool output = false;
 
-	struct rle_fragmentation_buffer *f = NULL;
+	struct rle_frag_buf *f = NULL;
 
 	PRINT_TEST("RLE fragmentation buffer allocation.\n");
 
-	f = rle_f_buff_new();
+	f = rle_frag_buf_new();
 
 	if (!f) {
 		PRINT_ERROR("Fragmentation buffer should be allocated.");
@@ -407,7 +407,7 @@ bool test_rle_allocation_f_buff(void)
 	output = true;
 
 out:
-	rle_f_buff_del(&f);
+	rle_frag_buf_del(&f);
 
 	PRINT_TEST_STATUS(output);
 	printf("\n");
@@ -419,24 +419,24 @@ bool test_rle_destruction_f_buff(void)
 {
 	bool output = false;
 
-	struct rle_fragmentation_buffer *f = NULL;
+	struct rle_frag_buf *f = NULL;
 
 	PRINT_TEST("RLE fragmentation buffer destruction.\n");
 
 	/* Should print error, but no segfault. */
-	rle_f_buff_del(NULL);
+	rle_frag_buf_del(NULL);
 
 	/* Should print error, but no segfault. */
-	rle_f_buff_del(&f);
+	rle_frag_buf_del(&f);
 
-	f = rle_f_buff_new();
+	f = rle_frag_buf_new();
 
 	if (!f) {
 		PRINT_ERROR("Fragmentation buffer should be allocated. Can't test destruction.");
 		goto out;
 	}
 
-	rle_f_buff_del(&f);
+	rle_frag_buf_del(&f);
 
 	if (f) {
 		PRINT_ERROR("Fragmentation buffer should not be freed.");

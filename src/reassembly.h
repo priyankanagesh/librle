@@ -42,7 +42,7 @@ int reassembly_get_pdu(struct rle_ctx_management *rle_ctx, void *pdu_buffer, int
  *  @warning
  *
  *  @param rle_ctx			the rle reassembly context
- *  @param rle_conf 			the rle configuration
+ *  @param rle_conf                     the rle configuration
  *  @param data_buffer		data buffer's address to reassemble
  *  @param data_length		the data_buffer's length
  *
@@ -87,7 +87,8 @@ int comp_ppdu_extract_alpdu_fragment(const unsigned char comp_ppdu[], const size
 int start_ppdu_extract_alpdu_fragment(const unsigned char start_ppdu[], const size_t ppdu_len,
                                       const unsigned char *alpdu_fragment[],
                                       size_t *const alpdu_fragment_len,
-                                      size_t *const alpdu_total_len, int *const is_crc_used);
+                                      size_t *const alpdu_total_len,
+                                      int *const is_crc_used);
 
 /**
  * @brief Extract an ALPDU fragment from a continue or end PPDU.
@@ -116,7 +117,8 @@ int cont_end_ppdu_extract_alpdu_fragment(const unsigned char cont_end_ppdu[], co
  * @ingroup RLE receiver
  */
 int reassembly_comp_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
-                         const size_t ppdu_length, struct rle_sdu *const reassembled_sdu);
+                         const size_t ppdu_length,
+                         struct rle_sdu *const reassembled_sdu);
 
 /**
  * @brief Start reassembly with start PPDU.
@@ -129,7 +131,8 @@ int reassembly_comp_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
  * @ingroup RLE receiver
  */
 int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
-                          const size_t ppdu_length, int *const index_ctx);
+                          const size_t ppdu_length,
+                          int *const index_ctx);
 
 /**
  * @brief Continue reassembly with cont PPDU.
@@ -142,7 +145,8 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
  * @ingroup RLE receiver
  */
 int reassembly_cont_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
-                          const size_t ppdu_length, int *const index_ctx);
+                         const size_t ppdu_length,
+                         int *const index_ctx);
 
 /**
  * @brief End reassembly with end PPDU.

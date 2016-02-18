@@ -146,10 +146,10 @@ union rle_ppdu_header {
 #error "Please fix <asm/byteorder.h>"
 #endif
 	} __attribute__ ((packed)) common;
-	rle_ppdu_header_start_t    start;
+	rle_ppdu_header_start_t start;
 	rle_ppdu_header_cont_end_t cont;
 	rle_ppdu_header_cont_end_t end;
-	rle_ppdu_header_comp_t     comp;
+	rle_ppdu_header_comp_t comp;
 } __attribute__ ((packed));
 
 /** RLE PPDU header definition. */
@@ -202,7 +202,7 @@ typedef union rle_alpdu_header rle_alpdu_header_t;
  *  @brief         create and push ALPDU header into a fragmentation buffer.
  *
  *
- *  @param[in,out] f_buff               the fragmentation buffer in use.
+ *  @param[in,out] frag_buf               the fragmentation buffer in use.
  *  @param[in]     rle_conf             the RLE configuration
  *
  *  @return C_ERROR if KO
@@ -210,14 +210,14 @@ typedef union rle_alpdu_header rle_alpdu_header_t;
  *
  *  @ingroup RLE header
  */
-int push_alpdu_header(struct rle_fragmentation_buffer *const f_buff,
+int push_alpdu_header(struct rle_frag_buf *const frag_buf,
                       const struct rle_configuration *const rle_conf);
 
 /**
  *  @brief         create and push PPDU header into a fragmentation buffer.
  *
  *
- *  @param[in,out] f_buff               the fragmentation buffer in use.
+ *  @param[in,out] frag_buf               the fragmentation buffer in use.
  *  @param[in]     rle_conf             the RLE configuration
  *  @param[in,out] rle_ctx              the RLE context if needed (NULL if not).
  *
@@ -225,9 +225,9 @@ int push_alpdu_header(struct rle_fragmentation_buffer *const f_buff,
  *
  *  @ingroup RLE header
  */
-int push_ppdu_header(struct rle_fragmentation_buffer *const f_buff,
-                     const struct rle_configuration *const rle_conf,
-                     const size_t ppdu_length, struct rle_ctx_management *const rle_ctx);
+int push_ppdu_header(struct rle_frag_buf *const frag_buf,
+                     const struct rle_configuration *const rle_conf, const size_t ppdu_length,
+                     struct rle_ctx_management *const rle_ctx);
 
 /**
  *  @brief         Extract ALPDU fragment from complete PPDU.
@@ -264,7 +264,8 @@ int comp_ppdu_extract_alpdu_fragment(const unsigned char comp_ppdu[], const size
 int start_ppdu_extract_alpdu_fragment(const unsigned char start_ppdu[], const size_t ppdu_len,
                                       const unsigned char *alpdu_fragment[],
                                       size_t *const alpdu_fragment_len,
-                                      size_t *const alpdu_total_len, int *const is_crc_used);
+                                      size_t *const alpdu_total_len,
+                                      int *const is_crc_used);
 
 /**
  *  @brief         Extract ALPDU fragment from cont or end PPDU.
@@ -552,8 +553,8 @@ static inline int rle_comp_ppdu_header_get_is_signal(const rle_ppdu_header_comp_
 
 static inline int rle_comp_ppdu_header_get_is_suppressed(const rle_ppdu_header_comp_t *const header)
 {
-	return ((header->proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
-	        (header->label_type == RLE_LT_IMPLICIT_PROTO_TYPE));
+	return (header->proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
+	       (header->label_type == RLE_LT_IMPLICIT_PROTO_TYPE);
 }
 
 static inline int rle_start_ppdu_header_get_is_signal(const rle_ppdu_header_start_t *const header)
@@ -564,8 +565,8 @@ static inline int rle_start_ppdu_header_get_is_signal(const rle_ppdu_header_star
 static inline int rle_start_ppdu_header_get_is_suppressed(
         const rle_ppdu_header_start_t *const header)
 {
-	return ((header->proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
-	        (header->label_type == RLE_LT_IMPLICIT_PROTO_TYPE));
+	return (header->proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
+	       (header->label_type == RLE_LT_IMPLICIT_PROTO_TYPE);
 }
 
 static inline int rle_start_ppdu_header_get_use_crc(const rle_ppdu_header_start_t *const header)
