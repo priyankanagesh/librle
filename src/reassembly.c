@@ -71,20 +71,22 @@ int reassembly_comp_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	}
 
 	if (rle_comp_ppdu_header_get_is_signal(header)) {
-		signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
-		                                  &sdu_fragment, &sdu_fragment_len);
-	} else if (rle_comp_ppdu_header_get_is_suppressed(header)) {
-		if (suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
-		                                          &sdu_fragment, &sdu_fragment_len, rle_conf)) {
-			goto out;
-		}
-	} else if (rle_conf_get_ptype_compression(rle_conf)) {
-		compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
-		                                      &protocol_type, &sdu_fragment, &sdu_fragment_len,
-		                                      NULL);
-	} else {
-		uncompressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+		ret = signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                        &protocol_type, &sdu_fragment, &sdu_fragment_len);
+	} else if (rle_comp_ppdu_header_get_is_suppressed(header)) {
+		ret = suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
+		                                            &sdu_fragment, &sdu_fragment_len, rle_conf);
+	} else if (rle_conf_get_ptype_compression(rle_conf)) {
+		ret = compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
+		                                            &sdu_fragment, &sdu_fragment_len, NULL);
+	} else {
+		ret = uncompressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+		                                            &protocol_type, &sdu_fragment, &sdu_fragment_len);
+	}
+
+	if (ret) {
+		ret = C_ERROR;
+		goto out;
 	}
 
 	reassembled_sdu->size = sdu_fragment_len;
@@ -165,18 +167,23 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 	sdu_total_len = alpdu_total_len;
 
 	if (rle_start_ppdu_header_get_is_signal(header)) {
-		signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
-		                                  &sdu_fragment, &sdu_fragment_len);
+		ret = signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
+		                                        &sdu_fragment, &sdu_fragment_len);
 	} else if (rle_start_ppdu_header_get_is_suppressed(header)) {
-		suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
-		                                      &sdu_fragment, &sdu_fragment_len, rle_conf);
+		ret = suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
+		                                            &sdu_fragment, &sdu_fragment_len, rle_conf);
 	} else if (rle_conf_get_ptype_compression(rle_conf)) {
-		compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
-		                                      &sdu_fragment, &sdu_fragment_len, &sdu_total_len);
+		ret = compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
+		                                            &sdu_fragment, &sdu_fragment_len, &sdu_total_len);
 	} else {
 		sdu_total_len -= sizeof(rle_alpdu_header_uncompressed_t);
-		uncompressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
-		                                        &sdu_fragment, &sdu_fragment_len);
+		ret = uncompressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+		                                              &protocol_type, &sdu_fragment, &sdu_fragment_len);
+	}
+
+	if (ret) {
+		ret = C_ERROR;
+		goto out;
 	}
 
 	if (is_crc_used) {
