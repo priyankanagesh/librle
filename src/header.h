@@ -296,10 +296,10 @@ int cont_end_ppdu_extract_alpdu_fragment(const unsigned char cont_end_ppdu[], co
  *
  *  @ingroup RLE header
  */
-void signal_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                       const size_t alpdu_fragment_len, uint16_t *protocol_type,
-                                       const unsigned char *sdu_fragment[],
-                                       size_t *const sdu_fragment_len);
+int signal_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
+                                      const size_t alpdu_fragment_len, uint16_t *protocol_type,
+                                      const unsigned char *sdu_fragment[],
+                                      size_t *const sdu_fragment_len);
 
 /**
  *  @brief         Extract SDU from supressed ALPDU.
@@ -335,11 +335,11 @@ int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
  *
  *  @ingroup RLE header
  */
-void uncompressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                             const size_t alpdu_fragment_len,
-                                             uint16_t *protocol_type,
-                                             const unsigned char *sdu_fragment[],
-                                             size_t *const sdu_fragment_len);
+int uncompressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
+                                            const size_t alpdu_fragment_len,
+                                            uint16_t *protocol_type,
+                                            const unsigned char *sdu_fragment[],
+                                            size_t *const sdu_fragment_len);
 
 /**
  *  @brief         Extract SDU fragment from compressed ALPDU.
@@ -357,11 +357,11 @@ void uncompressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[
  *
  *  @ingroup RLE header
  */
-void compressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                           const size_t alpdu_fragment_len, uint16_t *protocol_type,
-                                           const unsigned char *sdu_fragment[],
-                                           size_t *const sdu_fragment_len,
-                                           size_t *const sdu_total_len);
+int compressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
+                                          const size_t alpdu_fragment_len, uint16_t *protocol_type,
+                                          const unsigned char *sdu_fragment[],
+                                          size_t *const sdu_fragment_len,
+                                          size_t *const sdu_total_len);
 
 /**
  *  @brief         Set the PPDU length field of a PPDU header.
