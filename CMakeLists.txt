@@ -1,4 +1,4 @@
-PROJECT(librle C)
+PROJECT(rle C)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 INCLUDE(${INFRA_PREFIX}deps/infra/cmake/a9780.cmake)
@@ -13,9 +13,8 @@ OPTION(FUZZING "Instrumentation for fuzzing with AFL and ASAN. (requires AFL and
 
 INCLUDE_DIRECTORIES(include)
 
-SET(PACKAGE_NAME librle)
 SET(DESCRIPTION_SUMMARY "Return Link Encapsulation library")
-SET(TARGET_NAME librle)
+SET(TARGET_NAME rle)
 
 SET(ABI_VERSION_MAJOR "2")
 SET(ABI_VERSION_MINOR "0")
@@ -44,12 +43,10 @@ add_definitions("-g -W -Wall -Wextra -Wuninitialized
 -Wstrict-prototypes -Wcast-align -Wmissing-prototypes -Wchar-subscripts
 -Wpointer-arith -Winline  -Wno-conversion -Wshadow -fno-strict-aliasing")
 
-ADD_LIBRARY(librle SHARED ${SRC_LIBRLE})
+ADD_LIBRARY(rle SHARED ${SRC_LIBRLE})
 
-TARGET_LINK_LIBRARIES(librle
-	pthread
-)
-SET_TARGET_PROPERTIES(librle PROPERTIES SOVERSION ${ABI_VERSION_MAJOR} VERSION ${ABI_VERSION})
+TARGET_LINK_LIBRARIES(rle)
+SET_TARGET_PROPERTIES(rle PROPERTIES SOVERSION ${ABI_VERSION_MAJOR} VERSION ${ABI_VERSION})
 
 IF (FUZZING)
 	set(ENV{AFL_USE_ASAN} 1)
@@ -73,18 +70,18 @@ IF (TIME_DEBUG)
 ENDIF(TIME_DEBUG)
 
 IF (COVERAGE)
-	add_definitions("-fprofile-arcs -ftest-coverage -O0")
-	TARGET_LINK_LIBRARIES(librle
-		gcov)
+    add_definitions("-fprofile-arcs -ftest-coverage -O0")
+    TARGET_LINK_LIBRARIES(rle
+        gcov)
 ELSE(COVERAGE)
 	add_definitions("-O2")
 ENDIF(COVERAGE)
 
-INSTALL(TARGETS librle
+INSTALL(TARGETS rle
 	DESTINATION lib/)
 
 INSTALL(FILES
 	include/rle.h
 	DESTINATION include/)
 
-gen_pkg_config("librle" "${DESCRIPTION_SUMMARY}" "" "")
+gen_pkg_config("${TARGET_NAME}" "${DESCRIPTION_SUMMARY}" "" "")
