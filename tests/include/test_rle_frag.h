@@ -15,23 +15,23 @@
 /**
  * @brief         Fragmentation test with a null transmitter.
  *
- * @return        BOOL_TRUE if the RLE_FRAG_ERR_BURST_TOO_SMALL is raised, else BOOL_FALSE.
+ * @return        true if the RLE_FRAG_ERR_BURST_TOO_SMALL is raised, else false.
  */
-enum boolean test_frag_null_transmitter(void);
+bool test_frag_null_transmitter(void);
 
 /**
  * @brief         Fragmentation test with a too small burst size.
  *
- * @return        BOOL_TRUE if the RLE_FRAG_ERR_BURST_TOO_SMALL is raised, else BOOL_FALSE.
+ * @return        true if the RLE_FRAG_ERR_BURST_TOO_SMALL is raised, else false.
  */
-enum boolean test_frag_too_small(void);
+bool test_frag_too_small(void);
 
 /**
  * @brief         Fragmentation test with a null context.
  *
- * @return        BOOL_TRUE if the RLE_FRAG_ERR_CONTEXT_IS_NULL is raised, else BOOL_FALSE.
+ * @return        true if the RLE_FRAG_ERR_CONTEXT_IS_NULL is raised, else false.
  */
-enum boolean test_frag_null_context(void);
+bool test_frag_null_context(void);
 
 /**
  * @brief         Fragmentation test with real-world configurations.
@@ -41,15 +41,15 @@ enum boolean test_frag_null_context(void);
  *                mandatory burst sizes (14, 24, 38, 51, 55, 59, 62, 69, 84, 85, 93, 96, 100, 115,
  *                123, 130, 144, 170, 175, 188, 264, 298, 355, 400, 438, 444, 539, 599).
  *
- * @return        BOOL_TRUE if RLE_FRAG_ERR_INVALID_SIZE is raised, else BOOL_FALSE.
+ * @return        true if RLE_FRAG_ERR_INVALID_SIZE is raised, else false.
  */
-enum boolean test_frag_real_world(void);
+bool test_frag_real_world(void);
 
 /**
  * @brief         Fragmentation tests in general cases.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_frag_all(void);
+bool test_frag_all(void);
 
 #endif /* __TEST_RLE_FRAG_H__ */

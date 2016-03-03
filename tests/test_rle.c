@@ -7,22 +7,23 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
-
 #include "test_rle.h"
 
 #include "rle_transmitter.h"
 
-static enum boolean tests(const char *const test_name, const struct test *const current_tests[])
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
+
+static bool tests(const char *const test_name, const struct test *const current_tests[])
 {
 	printf("\tTest %s\n\n", test_name);
 
 	/* Success is True by default. False if a single test fail. */
-	enum boolean test_success = BOOL_TRUE;
+	bool test_success = true;
 
 	/* Iterator */
 	const struct test *const *current_test;
@@ -31,7 +32,7 @@ static enum boolean tests(const char *const test_name, const struct test *const 
 	size_t number_of_succ_tests = 0;
 
 	for (current_test = current_tests; *current_test; ++current_test) {
-		enum boolean success = BOOL_FALSE;
+		bool success = false;
 		printf("Test %s\n", (**current_test).name);
 		success = (**current_test).function();
 		number_of_tests++;
@@ -44,14 +45,14 @@ static enum boolean tests(const char *const test_name, const struct test *const 
 	total_number_of_tests += number_of_tests;
 	total_number_of_succ_tests += number_of_succ_tests;
 
-	printf("%s tests %s. %zu/%zu.\n\n", test_name, test_success == BOOL_TRUE ? "OK" : "KO",
+	printf("%s tests %s. %zu/%zu.\n\n", test_name, test_success == true ? "OK" : "KO",
 	       number_of_succ_tests,
 	       number_of_tests);
 
 	return test_success;
 }
 
-static enum boolean encap_tests(void)
+static bool encap_tests(void)
 {
 	const char *const encapsulation = "Encapsulation";
 
@@ -72,7 +73,7 @@ static enum boolean encap_tests(void)
 	return tests(encapsulation, encapsulation_tests);
 }
 
-static enum boolean encap_ctxtless_tests(void)
+static bool encap_ctxtless_tests(void)
 {
 	const char *const encapsulation_contextless = "Encapsulation contextless";
 
@@ -96,7 +97,7 @@ static enum boolean encap_ctxtless_tests(void)
 	return tests(encapsulation_contextless, encapsulation_contextless_tests);
 }
 
-static enum boolean frag_tests(void)
+static bool frag_tests(void)
 {
 	const char *const fragmentation = "Fragmentation";
 
@@ -119,7 +120,7 @@ static enum boolean frag_tests(void)
 	return tests(fragmentation, fragmentation_tests);
 }
 
-static enum boolean frag_ctxtless_tests(void)
+static bool frag_ctxtless_tests(void)
 {
 	const char *const fragmentation_ctxtless = "Fragmentation contextless";
 
@@ -147,7 +148,7 @@ static enum boolean frag_ctxtless_tests(void)
 	return tests(fragmentation_ctxtless, fragmentation_ctxtless_tests);
 }
 
-static enum boolean pack_tests(void)
+static bool pack_tests(void)
 {
 	const char *const packing = "Packing";
 
@@ -168,7 +169,7 @@ static enum boolean pack_tests(void)
 	return tests(packing, packing_tests);
 }
 
-static enum boolean decap_tests(void)
+static bool decap_tests(void)
 {
 	const char *const decapsulation = "Decapsulation";
 
@@ -201,7 +202,7 @@ static enum boolean decap_tests(void)
 	return tests(decapsulation, decapsulation_tests);
 }
 
-static enum boolean misc_tests(void)
+static bool misc_tests(void)
 {
 	const char *const miscellaneous = "Miscellaneous";
 
@@ -243,7 +244,7 @@ int main(void)
 	PRINT_TEST("Lib RLE tests.\n");
 
 	/* Success is True by default. False if a single test fail. */
-	enum boolean tests_success = BOOL_TRUE;
+	bool tests_success = true;
 
 	total_number_of_tests = 0;
 	total_number_of_succ_tests = 0;
@@ -290,8 +291,8 @@ int main(void)
 
 	tests_success &= misc_tests();
 
-	printf("Tests %s. %zu/%zu\n\n", tests_success == BOOL_TRUE ? "OK" : "KO",
+	printf("Tests %s. %zu/%zu\n\n", tests_success == true ? "OK" : "KO",
 	       total_number_of_succ_tests,
 	       total_number_of_tests);
-	return tests_success == BOOL_TRUE ? EXIT_SUCCESS : EXIT_FAILURE;
+	return tests_success == true ? EXIT_SUCCESS : EXIT_FAILURE;
 }

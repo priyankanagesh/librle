@@ -20,9 +20,9 @@
 /** Default protocol type */
 #define RLE_CONF_DEFAULT_PTYPE  RLE_PROTO_TYPE_IPV4_COMP
 /** Default protocol type compression flag */
-#define RLE_CONF_COMPRESS_PTYPE C_FALSE
+#define RLE_CONF_COMPRESS_PTYPE false
 /** Default protocol type suppression flag */
-#define RLE_CONF_SUPPRESS_PTYPE C_FALSE
+#define RLE_CONF_SUPPRESS_PTYPE false
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -200,7 +200,7 @@ int rle_conf_get_crc_check(struct rle_configuration *_this);
  *  @param	ptype    The protocol type
  *  @param	rle_conf The configuration
  *
- *  @return	C_TRUE if omissible, else C_FALSE
+ *  @return	true if omissible, else false
  *
  *  @ingroup
  */

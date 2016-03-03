@@ -18,9 +18,9 @@
  *                This test try to encapsulate with a null transmitter. The encapsulation must
  *                return RLE_ENCAP_ERR_NULL_TRMT.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_encap_null_transmitter(void);
+bool test_encap_null_transmitter(void);
 
 /**
  * @brief         Encapsulation test when payload is too big.
@@ -29,9 +29,9 @@ enum boolean test_encap_null_transmitter(void);
  *                acceptable size and will be encapsulate. The second one is one octet too big and
  *                will raise an error.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_encap_too_big(void);
+bool test_encap_too_big(void);
 
 /**
  * @brief         Encapsulation test when transmitter configuration is invalid.
@@ -40,9 +40,9 @@ enum boolean test_encap_too_big(void);
  *                configuration (i.e. with a non supported implicit protocol type).
  *                Warning: An ERROR message will be printed.
  *
- * @return        BOOL_TRUE if transmitter non initialized, else BOOL_FALSE.
+ * @return        true if transmitter non initialized, else false.
  */
-enum boolean test_encap_inv_config(void);
+bool test_encap_inv_config(void);
 
 /**
  * @brief         All the Encapsulation tests
@@ -51,8 +51,8 @@ enum boolean test_encap_inv_config(void);
  *                QinQ legacy, ARP, signalling and miscalenous), for the 8 frag id, and for
  *                different configurations. One fail of encap means the test totaly fails.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_encap_all(void);
+bool test_encap_all(void);
 
 #endif /* __TEST_RLE_ENCAP_H__ */

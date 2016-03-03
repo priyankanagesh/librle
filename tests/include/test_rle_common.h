@@ -13,20 +13,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include <stdint.h>
 
 #include "rle.h"
 
 #define PRINT_TEST(S, ...) printf("TEST %s:l.%d "S "\n", __func__, __LINE__, ## __VA_ARGS__)
 #define PRINT_TEST_STATUS(status) printf("RET %s:l.%d: %s\n", __func__, __LINE__, status == \
-                                         BOOL_TRUE ? "OK" : "KO")
+                                         true ? "OK" : "KO")
 #define PRINT_ERROR(S, ...) printf("ERROR %s:l.%d: "S "\n", __func__, __LINE__, ## __VA_ARGS__)
 
-/** Boolean values, in order to perform cleaner tests. */
-enum boolean {
-	BOOL_FALSE, /**< Boolean representation of False. */
-	BOOL_TRUE   /**< Boolean representation of True.  */
-};
 
 /**
  * Payload initializer,
@@ -49,14 +45,14 @@ struct rle_receiver *receiver;       /**< Receiver module used by our tests */
 /**
  * @brief         Specific statistics printer for transmitter
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
 void print_transmitter_stats(void);
 
 /**
  * @brief         Specific statistics printer for receiver
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
 void print_receiver_stats(void);
 

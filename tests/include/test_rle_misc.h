@@ -17,9 +17,9 @@
  *
  *                RLE headers overhead for traffic is non deterministic, and must return an error.
  *
- * @return        BOOL_TRUE if RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC returned by the request.
+ * @return        true if RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC returned by the request.
  */
-enum boolean test_request_rle_header_overhead_traffic(void);
+bool test_request_rle_header_overhead_traffic(void);
 
 /**
  * @brief         All the RLE headers overhead tests
@@ -27,61 +27,61 @@ enum boolean test_request_rle_header_overhead_traffic(void);
  *                Request RLE headers overhead for logon, control, and traffic control.
  *                Traffic control requests will be done with different configurations.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_request_rle_header_overhead_all(void);
+bool test_request_rle_header_overhead_all(void);
 
 /**
  * @brief         Test the transmitter allocation
  *
  *                Deactivate all the tests but this ones to check memory allocation.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_rle_allocation_transmitter(void);
+bool test_rle_allocation_transmitter(void);
 
 /**
  * @brief         Test the transmitter allocation
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_rle_destruction_transmitter(void);
+bool test_rle_destruction_transmitter(void);
 
 /**
  * @brief         Test the receiver allocation
  *
  *                Deactivate all the tests but this ones to check memory allocation.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_rle_allocation_receiver(void);
+bool test_rle_allocation_receiver(void);
 
 /**
  * @brief         Test the receiver allocation
  *
  *                Deactivate all the tests but this ones to check memory allocation.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_rle_destruction_receiver(void);
+bool test_rle_destruction_receiver(void);
 
 /**
  * @brief         Test the fragmentation buffer allocation
  *
  *                Deactivate all the tests but this ones to check memory allocation.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_rle_allocation_f_buff(void);
+bool test_rle_allocation_f_buff(void);
 
 /**
  * @brief         Test the fragmentation buffer allocation
  *
  *                Deactivate all the tests but this ones to check memory allocation.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-enum boolean test_rle_destruction_f_buff(void);
+bool test_rle_destruction_f_buff(void);
 
 /* Further tests can be done here, especially to check fragmentation and reassembly buffers. */
 

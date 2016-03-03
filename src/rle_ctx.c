@@ -7,16 +7,17 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef __KERNEL__
-
-#include <stddef.h>
-
-#endif
-
 #include "rle_ctx.h"
 #include "constants.h"
 #include "fragmentation_buffer.h"
 #include "reassembly_buffer.h"
+
+#ifndef __KERNEL__
+
+#include <stddef.h>
+#include <stdbool.h>
+
+#endif
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -46,7 +47,7 @@ static void flush(struct rle_ctx_management *_this);
  *
  *  @ingroup RLE context
  */
-static void flush_ctxt_f_buff(struct rle_ctx_management *_this);
+static void flush_ctxt_frag_buf(struct rle_ctx_management *_this);
 
 /**
  *  @brief  Flush all data and pointer of a RLE context structure with reassembly buffers.
@@ -55,7 +56,7 @@ static void flush_ctxt_f_buff(struct rle_ctx_management *_this);
  *
  *  @ingroup RLE context
  */
-static void flush_ctxt_r_buff(struct rle_ctx_management *_this);
+static void flush_ctxt_rasm_buf(struct rle_ctx_management *_this);
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -66,25 +67,24 @@ static void flush(struct rle_ctx_management *_this)
 {
 	_this->frag_id = 0xff;
 	_this->next_seq_nb = 0xff;
-	_this->use_crc = C_FALSE;
+	_this->use_crc = false;
 	rle_ctx_reset_counters(_this);
 
 	return;
 }
 
-static void flush_ctxt_f_buff(struct rle_ctx_management *_this)
+static void flush_ctxt_frag_buf(struct rle_ctx_management *_this)
 {
 	flush(_this);
-	rle_f_buff_init((rle_f_buff_t *)_this->buff);
+	rle_frag_buf_init((rle_frag_buf_t *)_this->buff);
 
 	return;
 }
 
-static void flush_ctxt_r_buff(struct rle_ctx_management *_this)
+static void flush_ctxt_rasm_buf(struct rle_ctx_management *_this)
 {
-
 	flush(_this);
-	r_buff_init((rle_r_buff_t *)_this->buff);
+	rasm_buf_init((rle_rasm_buf_t *)_this->buff);
 
 	return;
 }
@@ -94,7 +94,7 @@ static void flush_ctxt_r_buff(struct rle_ctx_management *_this)
 /*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-int rle_ctx_init_f_buff(struct rle_ctx_management *_this)
+int rle_ctx_init_frag_buf(struct rle_ctx_management *_this)
 {
 	int status = C_ERROR;
 
@@ -107,7 +107,7 @@ int rle_ctx_init_f_buff(struct rle_ctx_management *_this)
 		goto out;
 	}
 
-	_this->buff = (void *)rle_f_buff_new();
+	_this->buff = (void *)rle_frag_buf_new();
 
 	/* allocate enough memory space for the fragmentation */
 	if (!_this->buff) {
@@ -116,7 +116,7 @@ int rle_ctx_init_f_buff(struct rle_ctx_management *_this)
 	}
 
 	/* set to zero or invalid values all variables */
-	flush_ctxt_f_buff(_this);
+	flush_ctxt_frag_buf(_this);
 
 	status = C_OK;
 
@@ -124,7 +124,7 @@ out:
 	return status;
 }
 
-int rle_ctx_init_r_buff(struct rle_ctx_management *_this)
+int rle_ctx_init_rasm_buf(struct rle_ctx_management *_this)
 {
 	int status = C_ERROR;
 
@@ -138,14 +138,14 @@ int rle_ctx_init_r_buff(struct rle_ctx_management *_this)
 	}
 
 	/* allocate enough memory space for the reassembly */
-	_this->buff = (void *)r_buff_new();
+	_this->buff = (void *)rasm_buf_new();
 	if (!_this->buff) {
 		PRINT_RLE_ERROR("reassembly buffer allocation failed.");
 		goto out;
 	}
 
 	/* set to zero or invalid values all variables */
-	flush_ctxt_r_buff(_this);
+	flush_ctxt_rasm_buf(_this);
 
 	status = C_OK;
 
@@ -153,7 +153,7 @@ out:
 	return status;
 }
 
-int rle_ctx_destroy_f_buff(struct rle_ctx_management *_this)
+int rle_ctx_destroy_frag_buf(struct rle_ctx_management *_this)
 {
 	int status = C_ERROR;
 
@@ -169,7 +169,7 @@ int rle_ctx_destroy_f_buff(struct rle_ctx_management *_this)
 	flush(_this);
 
 	if (_this->buff) {
-		rle_f_buff_del((rle_f_buff_t **)&_this->buff);
+		rle_frag_buf_del((rle_frag_buf_t **)&_this->buff);
 	}
 
 	status = C_OK;
@@ -178,7 +178,7 @@ out:
 	return status;
 }
 
-int rle_ctx_destroy_r_buff(struct rle_ctx_management *_this)
+int rle_ctx_destroy_rasm_buf(struct rle_ctx_management *_this)
 {
 	int status = C_ERROR;
 
@@ -191,7 +191,7 @@ int rle_ctx_destroy_r_buff(struct rle_ctx_management *_this)
 		goto out;
 	}
 
-	r_buff_del((rle_r_buff_t **)&_this->buff);
+	rasm_buf_del((rle_rasm_buf_t **)&_this->buff);
 
 	status = C_OK;
 

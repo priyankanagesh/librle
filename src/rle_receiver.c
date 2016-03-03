@@ -7,6 +7,14 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "rle_receiver.h"
+#include "reassembly.h"
+#include "rle_ctx.h"
+#include "constants.h"
+#include "header.h"
+#include "trailer.h"
+#include "deencap.h"
+
 #ifndef __KERNEL__
 
 #include <stdlib.h>
@@ -17,14 +25,6 @@
 #ifdef TIME_DEBUG
 #include <sys/time.h>
 #endif
-#include "rle_receiver.h"
-#include "reassembly.h"
-#include "rle_ctx.h"
-#include "constants.h"
-#include "header.h"
-#include "trailer.h"
-#include "deencap.h"
-
 
 /*------------------------------------------------------------------------------------------------*/
 /*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
@@ -88,8 +88,9 @@ struct rle_receiver *rle_receiver_new(const struct rle_context_configuration *co
 	struct rle_configuration **rx_conf;
 
 	if (configuration->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
-		PRINT_RLE_ERROR("could not initialize receiver with 0x31 as implicit protocol type : "
-		                "Not supported yet.");
+		PRINT_RLE_ERROR(
+		        "could not initialize receiver with 0x31 as implicit protocol type : "
+		        "Not supported yet.");
 		goto out;
 	}
 
@@ -119,14 +120,14 @@ struct rle_receiver *rle_receiver_new(const struct rle_context_configuration *co
 		struct rle_ctx_management *const ctx_man = &receiver->rle_ctx_man[iterator];
 		rx_conf = &receiver->rle_conf[iterator];
 		*rx_conf = rle_conf_new();
-	if (!*rx_conf) {
+		if (!*rx_conf) {
 			PRINT_RLE_ERROR("allocating receiver module configuration failed.");
 			rle_receiver_destroy(&receiver);
 			receiver = NULL;
 
 			goto out;
 		}
-		rle_ctx_init_r_buff(ctx_man);
+		rle_ctx_init_rasm_buf(ctx_man);
 		rle_ctx_set_frag_id(ctx_man, iterator);
 		rle_ctx_set_seq_nb(ctx_man, 0);
 		rle_conf_init(*rx_conf);
@@ -169,7 +170,7 @@ void rle_receiver_destroy(struct rle_receiver **const receiver)
 			rle_conf_destroy(*conf);
 		}
 
-		rle_ctx_destroy_r_buff(ctx_man);
+		rle_ctx_destroy_rasm_buf(ctx_man);
 	}
 
 	FREE(*receiver);
@@ -263,7 +264,7 @@ size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiv
 		goto out;
 	}
 
-	stat = r_buff_get_reassembled_sdu_length((rle_r_buff_t *)ctx_man->buff);
+	stat = rasm_buf_get_reassembled_sdu_length((rle_rasm_buf_t *)ctx_man->buff);
 
 out:
 
@@ -432,13 +433,13 @@ int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
 		goto error;
 	}
 
-	stats->sdus_received     = rle_ctx_get_counter_in(ctx_man);
-	stats->sdus_reassembled  = rle_ctx_get_counter_ok(ctx_man);
-	stats->sdus_dropped      = rle_ctx_get_counter_dropped(ctx_man);
-	stats->sdus_lost         = rle_ctx_get_counter_lost(ctx_man);
-	stats->bytes_received    = rle_ctx_get_counter_bytes_in(ctx_man);
+	stats->sdus_received = rle_ctx_get_counter_in(ctx_man);
+	stats->sdus_reassembled = rle_ctx_get_counter_ok(ctx_man);
+	stats->sdus_dropped = rle_ctx_get_counter_dropped(ctx_man);
+	stats->sdus_lost = rle_ctx_get_counter_lost(ctx_man);
+	stats->bytes_received = rle_ctx_get_counter_bytes_in(ctx_man);
 	stats->bytes_reassembled = rle_ctx_get_counter_bytes_ok(ctx_man);
-	stats->bytes_dropped     = rle_ctx_get_counter_bytes_dropped(ctx_man);
+	stats->bytes_dropped = rle_ctx_get_counter_bytes_dropped(ctx_man);
 
 	status = 0;
 
@@ -455,7 +456,8 @@ void rle_receiver_stats_reset_counters(struct rle_receiver *const receiver,
 		goto error;
 	}
 
-	if (get_receiver_context(receiver, fragment_id, (const struct rle_ctx_management **)&ctx_man)) {
+	if (get_receiver_context(receiver, fragment_id,
+	                         (const struct rle_ctx_management **)&ctx_man)) {
 		goto error;
 	}
 

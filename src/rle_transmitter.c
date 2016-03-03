@@ -7,6 +7,13 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "rle_transmitter.h"
+#include "rle_ctx.h"
+#include "constants.h"
+#include "encap.h"
+#include "fragmentation.h"
+#include "trailer.h"
+
 #ifndef __KERNEL__
 
 #include <stdlib.h>
@@ -17,13 +24,6 @@
 #ifdef TIME_DEBUG
 #include <sys/time.h>
 #endif
-#include "rle_transmitter.h"
-#include "rle_ctx.h"
-#include "constants.h"
-#include "encap.h"
-#include "fragmentation.h"
-#include "trailer.h"
-
 
 /*------------------------------------------------------------------------------------------------*/
 /*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
@@ -105,8 +105,9 @@ struct rle_transmitter *rle_transmitter_new(
 #endif
 
 	if (configuration->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
-		PRINT_RLE_ERROR("could not initialize transmitter with 0x31 as implicit protocol type : "
-		                "Not supported yet.\n");
+		PRINT_RLE_ERROR(
+		        "could not initialize transmitter with 0x31 as implicit protocol type : "
+		        "Not supported yet.\n");
 
 		goto exit_label;
 	}
@@ -136,7 +137,7 @@ struct rle_transmitter *rle_transmitter_new(
 	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
 		struct rle_ctx_management *const ctx_man = &transmitter->rle_ctx_man[iterator];
 
-		rle_ctx_init_f_buff(ctx_man);
+		rle_ctx_init_frag_buf(ctx_man);
 		rle_ctx_set_frag_id(ctx_man, iterator);
 		rle_ctx_set_seq_nb(ctx_man, 0);
 	}
@@ -173,7 +174,7 @@ void rle_transmitter_destroy(struct rle_transmitter **const transmitter)
 	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; iterator++) {
 		struct rle_ctx_management *const ctx_man = &(*transmitter)->rle_ctx_man[iterator];
 
-		rle_ctx_destroy_f_buff(ctx_man);
+		rle_ctx_destroy_frag_buf(ctx_man);
 	}
 
 	if (rle_conf_destroy((*transmitter)->rle_conf) != C_OK) {
@@ -204,7 +205,7 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
 {
 	size_t stat = 0;
 	const struct rle_ctx_management *ctx_man = NULL;
-	const rle_f_buff_t *f_buff = NULL;
+	const rle_frag_buf_t *frag_buf = NULL;
 
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);
@@ -218,9 +219,9 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
 		goto error;
 	}
 
-	f_buff = (rle_f_buff_t *)ctx_man->buff;
+	frag_buf = (rle_frag_buf_t *)ctx_man->buff;
 
-	stat = f_buff_get_remaining_alpdu_length(f_buff);
+	stat = frag_buf_get_remaining_alpdu_length(frag_buf);
 
 error:
 
@@ -259,7 +260,7 @@ uint64_t rle_transmitter_stats_get_counter_sdus_sent(
 	const struct rle_ctx_management *ctx_man = NULL;
 
 #ifdef DEBUG
-PRINT_RLE_DEBUG("", MODULE_NAME);
+	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
 	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
@@ -404,11 +405,11 @@ int rle_transmitter_stats_get_counters(const struct rle_transmitter *const trans
 		goto error;
 	}
 
-	stats->sdus_in       = rle_ctx_get_counter_in(ctx_man);
-	stats->sdus_sent     = rle_ctx_get_counter_ok(ctx_man);
-	stats->sdus_dropped  = rle_ctx_get_counter_dropped(ctx_man);
-	stats->bytes_in      = rle_ctx_get_counter_bytes_in(ctx_man);
-	stats->bytes_sent    = rle_ctx_get_counter_bytes_ok(ctx_man);
+	stats->sdus_in = rle_ctx_get_counter_in(ctx_man);
+	stats->sdus_sent = rle_ctx_get_counter_ok(ctx_man);
+	stats->sdus_dropped = rle_ctx_get_counter_dropped(ctx_man);
+	stats->bytes_in = rle_ctx_get_counter_bytes_in(ctx_man);
+	stats->bytes_sent = rle_ctx_get_counter_bytes_ok(ctx_man);
 	stats->bytes_dropped = rle_ctx_get_counter_bytes_dropped(ctx_man);
 
 	status = 0;

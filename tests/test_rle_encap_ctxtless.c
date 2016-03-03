@@ -7,24 +7,24 @@
  *   Copyright (C) 2016, Thales Alenia Space France - All Rights Reserved
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
+#include "test_rle_encap_ctxtless.h"
 
 #include "fragmentation_buffer.h"
 #include "rle_transmitter.h"
 
-#include "test_rle_encap_ctxtless.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
 
-
-enum boolean test_encap_ctxtless_null_transmitter(void)
+bool test_encap_ctxtless_null_transmitter(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_sdu sdu = {
 		.buffer        = (unsigned char *)payload_initializer,
@@ -48,12 +48,12 @@ enum boolean test_encap_ctxtless_null_transmitter(void)
 		goto out;
 	}
 
-	if (rle_f_buff_init(f_buff) != 0) {
+	if (rle_frag_buf_init(f_buff) != 0) {
 		PRINT_ERROR("Unable to initialize fragmentation buffer.");
 		goto out;
 	}
 
-	if (rle_f_buff_cpy_sdu(f_buff, &sdu) != 0) {
+	if (rle_frag_buf_cpy_sdu(f_buff, &sdu) != 0) {
 		PRINT_ERROR("Unable to copy SDU in fragmentation buffer.");
 		goto out;
 	}
@@ -63,7 +63,7 @@ enum boolean test_encap_ctxtless_null_transmitter(void)
 	switch (ret) {
 		case RLE_ENCAP_ERR_NULL_TRMT:
 			PRINT_TEST("NULL transmitter detected, test sucessfull.");
-			output = BOOL_TRUE;
+			output = true;
 			break;
 		case RLE_ENCAP_OK:
 			PRINT_TEST("Encapsulation is OK, Big error.");
@@ -80,7 +80,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -88,9 +88,9 @@ out:
 	return output;
 }
 
-enum boolean test_encap_ctxtless_null_f_buff(void)
+bool test_encap_ctxtless_null_f_buff(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret;
 
 	const struct rle_context_configuration conf = {
@@ -100,7 +100,7 @@ enum boolean test_encap_ctxtless_null_f_buff(void)
 		.use_compressed_ptype                   = 0,
 	};
 
-	struct rle_fragmentation_buffer *f_buff = NULL;
+	struct rle_frag_buf *f_buff = NULL;
 
 	PRINT_TEST("Special case : Encapsulation with a null fragmentation buffer.");
 
@@ -126,7 +126,7 @@ enum boolean test_encap_ctxtless_null_f_buff(void)
 	switch (ret) {
 		case RLE_ENCAP_ERR_NULL_F_BUFF:
 			PRINT_TEST("NULL fragmentation buffer detected, test sucessfull.");
-			output = BOOL_TRUE;
+			output = true;
 			break;
 		case RLE_ENCAP_OK:
 			PRINT_TEST("Encapsulation is OK, Big error.");
@@ -143,7 +143,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -151,9 +151,9 @@ out:
 	return output;
 }
 
-enum boolean test_encap_ctxtless_f_buff_not_init(void)
+bool test_encap_ctxtless_f_buff_not_init(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret;
 
 	const struct rle_context_configuration conf = {
@@ -163,7 +163,7 @@ enum boolean test_encap_ctxtless_f_buff_not_init(void)
 		.use_compressed_ptype = 0,
 	};
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	PRINT_TEST("Special case : Encapsulation with a fragmentation buffer not initialized.");
 
@@ -189,7 +189,7 @@ enum boolean test_encap_ctxtless_f_buff_not_init(void)
 		case RLE_ENCAP_ERR_N_INIT_F_BUFF:
 			PRINT_TEST("Not initialized fragmentation buffer transmitter detected, "
 			           "test sucessfull.");
-			output = BOOL_TRUE;
+			output = true;
 			break;
 		case RLE_ENCAP_OK:
 			PRINT_TEST("Encapsulation is OK, Big error.");
@@ -206,7 +206,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -214,12 +214,12 @@ out:
 	return output;
 }
 
-enum boolean test_encap_ctxtless_too_big(void)
+bool test_encap_ctxtless_too_big(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_sdu sdu_ok = {
 		.buffer        = (unsigned char *)payload_initializer,
@@ -258,12 +258,12 @@ enum boolean test_encap_ctxtless_too_big(void)
 		goto out;
 	}
 
-	if (rle_f_buff_init(f_buff) != 0) {
+	if (rle_frag_buf_init(f_buff) != 0) {
 		PRINT_ERROR("Unable to initialize fragmentation buffer.");
 		goto out;
 	}
 
-	if (rle_f_buff_cpy_sdu(f_buff, &sdu_ok) != 0) {
+	if (rle_frag_buf_cpy_sdu(f_buff, &sdu_ok) != 0) {
 		PRINT_ERROR("Unable to copy SDU in fragmentation buffer.");
 		goto out;
 	}
@@ -277,15 +277,15 @@ enum boolean test_encap_ctxtless_too_big(void)
 		goto out;
 	}
 
-	if (rle_f_buff_init(f_buff) != 0) {
+	if (rle_frag_buf_init(f_buff) != 0) {
 		PRINT_ERROR("Unable to initialize fragmentation buffer.");
 		goto out;
 	}
 
-	if (rle_f_buff_cpy_sdu(f_buff, &sdu_ko) == 0) {
+	if (rle_frag_buf_cpy_sdu(f_buff, &sdu_ko) == 0) {
 		PRINT_ERROR("Too big SDU accepted in fragmentation buffer.");
 	} else {
-		output = BOOL_TRUE;
+		output = true;
 	}
 
 out:
@@ -295,7 +295,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);

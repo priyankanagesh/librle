@@ -7,33 +7,33 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "test_rle_encap.h"
+
+#include "rle_transmitter.h"
+#include "rle_receiver.h"
+#include "fragmentation_buffer.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
-
-#include "../src/fragmentation_buffer.h"
-#include "../src/rle_transmitter.c"
-#include "../src/rle_transmitter.h"
-
-#include "test_rle_encap.h"
-
 
 /**
  * @brief         Compare two packets.
  *
  *                If pkt_1_length and pkt_2_length are different, there is no use to run the test,
- *                it will return BOOL_FALSE.
+ *                it will return false.
  *
  * @param[in]     pkt_1                    The first packet
  * @param[in]     pkt_1_length             The size of the first packet
  * @param[in]     pkt_2                    The second packet
  * @param[in]     pkt_2_length             The size of the second packet
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean compare_packets(const unsigned char pkt_1[], const size_t pkt_1_length,
+static bool compare_packets(const unsigned char pkt_1[], const size_t pkt_1_length,
                                     const unsigned char pkt_2[],
                                     const size_t pkt_2_length);
 
@@ -53,9 +53,9 @@ static void print_modules_stats(void)
  * @param[in]     alpdu_header             the ALPDU header we should have
  * @param[in]     alpdu_header_length      the ALPDU size we should have
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean check_encap(const unsigned char sdu[], const size_t sdu_length,
+static bool check_encap(const unsigned char sdu[], const size_t sdu_length,
                                 const unsigned char alpdu[], const size_t alpdu_length,
                                 const unsigned char alpdu_header[],
                                 const size_t alpdu_header_length);
@@ -71,18 +71,18 @@ static enum boolean check_encap(const unsigned char sdu[], const size_t sdu_leng
  * @param[in]     length                   The protocol length of the SDU
  * @param[in]     frag_id                  The fragment id
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean test_encap(const uint16_t protocol_type,
+static bool test_encap(const uint16_t protocol_type,
                                const struct rle_context_configuration conf, const size_t length,
                                const uint8_t frag_id);
 
-static enum boolean compare_packets(const unsigned char pkt_1[], const size_t pkt_1_length,
+static bool compare_packets(const unsigned char pkt_1[], const size_t pkt_1_length,
                                     const unsigned char pkt_2[],
                                     const size_t pkt_2_length)
 {
 	PRINT_TEST("subtest. sizes : %zu - %zu", pkt_1_length, pkt_2_length);
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	size_t iterator = 0;
 
 	/* Checking the sizes. */
@@ -93,13 +93,13 @@ static enum boolean compare_packets(const unsigned char pkt_1[], const size_t pk
 	}
 
 	/* Checking octet by octet. */
-	output = BOOL_TRUE;
+	output = true;
 	for (iterator = 0; iterator < pkt_1_length; ++iterator) {
 		if (pkt_1[iterator] != pkt_2[iterator]) {
 			PRINT_ERROR(
 			        "packets are different: pkt index %zu, expected 0x%02x, get 0x%02x",
 			        iterator + 1, pkt_1[iterator], pkt_2[iterator]);
-			output = BOOL_FALSE;
+			output = false;
 		}
 	}
 
@@ -108,7 +108,7 @@ exit_label:
 	return output;
 }
 
-static enum boolean check_encap(const unsigned char sdu[], const size_t sdu_length,
+static bool check_encap(const unsigned char sdu[], const size_t sdu_length,
                                 const unsigned char alpdu[], const size_t alpdu_length,
                                 const unsigned char alpdu_header[],
                                 const size_t alpdu_header_length)
@@ -116,7 +116,7 @@ static enum boolean check_encap(const unsigned char sdu[], const size_t sdu_leng
 	PRINT_TEST("subtest. sizes : SDU %zu, header %zu, ALPDU %zu", sdu_length,
 	           alpdu_header_length,
 	           alpdu_length);
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	size_t theorical_alpdu_length = sdu_length + alpdu_header_length;
 	unsigned char theorical_alpdu[theorical_alpdu_length];
 
@@ -137,13 +137,13 @@ exit_label:
 	return output;
 }
 
-static enum boolean is_suppressible(uint16_t protocol_type, uint8_t default_ptype)
+static bool is_suppressible(uint16_t protocol_type, uint8_t default_ptype)
 {
-	enum boolean suppressible = BOOL_FALSE;
+	bool suppressible = false;
 
 	switch (protocol_type) {
 	case 0x0082:
-		suppressible = BOOL_TRUE;
+		suppressible = true;
 		break;
 	case 0x8100:
 		suppressible = (default_ptype == 0x0f);
@@ -172,7 +172,7 @@ static enum boolean is_suppressible(uint16_t protocol_type, uint8_t default_ptyp
 	return suppressible;
 }
 
-static enum boolean test_encap(const uint16_t protocol_type,
+static bool test_encap(const uint16_t protocol_type,
                                const struct rle_context_configuration conf, const size_t length,
                                const uint8_t frag_id)
 {
@@ -183,13 +183,13 @@ static enum boolean test_encap(const uint16_t protocol_type,
 	        (conf.use_compressed_ptype == 0 ?  "uncompressed" : "compressed") :
 	        (conf.implicit_protocol_type == 0x00) ?  "non omitted" :
 	        (conf.implicit_protocol_type == 0x30 ? "ip omitted" : "omitted"));
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 	unsigned char *theorical_alpdu_header = NULL;
 	size_t theorical_alpdu_header_size = 0;
 	unsigned char *alpdu = NULL;
 	size_t alpdu_length;
-	rle_f_buff_t *f_buff;
+	rle_frag_buf_t *f_buff;
 
 	struct rle_sdu sdu = {
 		.buffer = NULL,
@@ -295,8 +295,8 @@ static enum boolean test_encap(const uint16_t protocol_type,
 		theorical_alpdu_header = NULL;
 	}
 
-	f_buff = (rle_f_buff_t *)transmitter->rle_ctx_man[frag_id].buff;
-	alpdu_length = f_buff_get_remaining_alpdu_length(f_buff);
+	f_buff = (rle_frag_buf_t *)transmitter->rle_ctx_man[frag_id].buff;
+	alpdu_length = frag_buf_get_remaining_alpdu_length(f_buff);
 
 	if (theorical_alpdu_header_size + length != alpdu_length) {
 		PRINT_ERROR("dumped ALPDU has not the right length, %zu expected but we got %zu ",
@@ -311,12 +311,12 @@ static enum boolean test_encap(const uint16_t protocol_type,
 	        check_encap(sdu.buffer, sdu.size, alpdu, alpdu_length, theorical_alpdu_header,
 	                    theorical_alpdu_header_size);
 
-	if (output == BOOL_FALSE) {
+	if (output == false) {
 		goto exit_label;
 	}
 
 	/* It works, the dump ALPDU from the transmitter context is the theorical one. */
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 
@@ -339,10 +339,10 @@ exit_label:
 	return output;
 }
 
-enum boolean test_encap_null_transmitter(void)
+bool test_encap_null_transmitter(void)
 {
 	PRINT_TEST("Special case : Encapsulation with a null transmitter.");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	const size_t max_size = RLE_MAX_PDU_SIZE;
 	const uint16_t protocol_type = 0x0800; /* Arbitrarly */
 	const uint8_t frag_id = 0; /* Arbitrarly */
@@ -372,7 +372,7 @@ enum boolean test_encap_null_transmitter(void)
 		goto exit_label;
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 
@@ -386,10 +386,10 @@ exit_label:
 	return output;
 }
 
-enum boolean test_encap_too_big(void)
+bool test_encap_too_big(void)
 {
 	PRINT_TEST("Test the special case of too big encapsulation. ");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	const size_t max_size = RLE_MAX_PDU_SIZE;
 	const uint16_t protocol_type = 0x0800; /* Arbitrarly */
 	const uint8_t frag_id = 0; /* Arbitrarly */
@@ -449,7 +449,7 @@ enum boolean test_encap_too_big(void)
 		goto exit_label;
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 
@@ -466,11 +466,11 @@ exit_label:
 	return output;
 }
 
-enum boolean test_encap_inv_config(void)
+bool test_encap_inv_config(void)
 {
 	PRINT_TEST("Special test: try to create an RLE transmitter module with an invalid conf. "
 	           "Warning: An error message may be printed.");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x31
@@ -493,10 +493,10 @@ enum boolean test_encap_inv_config(void)
 	return output;
 }
 
-enum boolean test_encap_all(void)
+bool test_encap_all(void)
 {
 	PRINT_TEST("Test the general cases of encapsulation.");
-	enum boolean output = BOOL_TRUE; /* True by default, False when a single test return False.*/
+	bool output = true; /* True by default, False when a single test return False.*/
 	size_t iterator = 0;
 	const size_t length = 100; /* Arbitrarly */
 
@@ -599,12 +599,12 @@ enum boolean test_encap_all(void)
 
 			/* We launch the test on each configuration. All the cases then are test. */
 			for (conf = confs; *conf; ++conf) {
-				const enum boolean ret =
+				const bool ret =
 				        test_encap(protocol_types[iterator], **conf, length,
 				                   frag_id);
-				if (ret == BOOL_FALSE) {
+				if (ret == false) {
 					/* Only one fail means the encap test fail. */
-					output = BOOL_FALSE;
+					output = false;
 				}
 			}
 		}

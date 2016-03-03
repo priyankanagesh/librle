@@ -7,16 +7,17 @@
  *   Copyright (C) 2016, Thales Alenia Space France - All Rights Reserved
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <string.h>
-
 #include "test_rle_frag_ctxtless.h"
 
 #include "rle_transmitter.h"
 #include "rle_ctx.h"
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <string.h>
 
 #define DEFAULT_SDU_LEN 100
 
@@ -28,17 +29,17 @@
  * @param[in]      sdu_len      The length of the SDU to encapsulate. DEFAULT_SDU_LEN by default
  *                              if NULL.
  *
- * @return  BOOL_TRUE if encapsulation is OK, else BOOL_FALSE.
+ * @return  true if encapsulation is OK, else false.
  */
 static int quick_encapsulation(struct rle_transmitter *const t,
-                               struct rle_fragmentation_buffer *const f_buff,
+                               struct rle_frag_buf *const f_buff,
                                const size_t *const sdu_len);
 
 static int quick_encapsulation(struct rle_transmitter *const t,
-                               struct rle_fragmentation_buffer *const f_buff,
+                               struct rle_frag_buf *const f_buff,
                                const size_t *const sdu_len)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_encap_status ret;
 
 	const struct rle_sdu sdu = {
@@ -52,12 +53,12 @@ static int quick_encapsulation(struct rle_transmitter *const t,
 		goto out;
 	}
 
-	if (rle_f_buff_init(f_buff) != 0) {
+	if (rle_frag_buf_init(f_buff) != 0) {
 		PRINT_ERROR("Unable to initialize fragmentation buffer.");
 		goto out;
 	}
 
-	if (rle_f_buff_cpy_sdu(f_buff, &sdu) != 0) {
+	if (rle_frag_buf_cpy_sdu(f_buff, &sdu) != 0) {
 		PRINT_ERROR("Unable to copy SDU in fragmentation buffer.");
 		goto out;
 	}
@@ -65,7 +66,7 @@ static int quick_encapsulation(struct rle_transmitter *const t,
 	ret = rle_encap_contextless(t, f_buff);
 
 	if (ret == RLE_ENCAP_OK) {
-		output = BOOL_TRUE;
+		output = true;
 	}
 
 out:
@@ -73,12 +74,12 @@ out:
 	return output;
 }
 
-enum boolean test_frag_ctxtless_null_transmitter(void)
+bool test_frag_ctxtless_null_transmitter(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_frag_status ret = RLE_FRAG_ERR;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
@@ -103,7 +104,7 @@ enum boolean test_frag_ctxtless_null_transmitter(void)
 		goto out;
 	}
 
-	if (quick_encapsulation(transmitter, f_buff, NULL) != BOOL_TRUE) {
+	if (quick_encapsulation(transmitter, f_buff, NULL) != true) {
 		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with null transmitter.");
 		goto out;
 	}
@@ -111,7 +112,7 @@ enum boolean test_frag_ctxtless_null_transmitter(void)
 	ret = rle_frag_contextless(NULL, f_buff, &ppdu, &ppdu_len);
 
 	if (ret == RLE_FRAG_ERR_NULL_TRMT) {
-		output = BOOL_TRUE;
+		output = true;
 	}
 
 out:
@@ -121,7 +122,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -129,12 +130,12 @@ out:
 	return output;
 }
 
-enum boolean test_frag_ctxtless_null_f_buff(void)
+bool test_frag_ctxtless_null_f_buff(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_frag_status ret = RLE_FRAG_ERR;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
@@ -160,7 +161,7 @@ enum boolean test_frag_ctxtless_null_f_buff(void)
 		goto out;
 	}
 
-	if (quick_encapsulation(transmitter, f_buff, NULL) != BOOL_TRUE) {
+	if (quick_encapsulation(transmitter, f_buff, NULL) != true) {
 		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with null fragmentation "
 		            "buffer.");
 		goto out;
@@ -169,7 +170,7 @@ enum boolean test_frag_ctxtless_null_f_buff(void)
 	ret = rle_frag_contextless(transmitter, NULL, &ppdu, &ppdu_len);
 
 	if (ret == RLE_FRAG_ERR_NULL_F_BUFF) {
-		output = BOOL_TRUE;
+		output = true;
 	}
 
 out:
@@ -179,7 +180,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -190,14 +191,14 @@ out:
 /**
  * @brief         Fragmentation test with a fragmentation buffer not initialized.
  *
- * @return        BOOL_TRUE if the RLE_FRAG_ERR_N_INIT_F_BUFF is raised, else BOOL_FALSE.
+ * @return        true if the RLE_FRAG_ERR_N_INIT_F_BUFF is raised, else false.
  */
-enum boolean test_frag_ctxtless_f_buff_not_init(void)
+bool test_frag_ctxtless_f_buff_not_init(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_frag_status ret = RLE_FRAG_ERR;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
@@ -226,7 +227,7 @@ enum boolean test_frag_ctxtless_f_buff_not_init(void)
 	ret = rle_frag_contextless(transmitter, NULL, &ppdu, &ppdu_len);
 
 	if (ret == RLE_FRAG_ERR_NULL_F_BUFF) {
-		output = BOOL_TRUE;
+		output = true;
 	}
 
 out:
@@ -236,7 +237,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -249,14 +250,14 @@ out:
  *
  *                Must not segfault.
  *
- * @return        BOOL_TRUE if exception is raised, else BOOL_FALSE.
+ * @return        true if exception is raised, else false.
  */
-enum boolean test_frag_ctxtless_no_len(void)
+bool test_frag_ctxtless_no_len(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_frag_status ret = RLE_FRAG_ERR;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
@@ -280,7 +281,7 @@ enum boolean test_frag_ctxtless_no_len(void)
 		goto out;
 	}
 
-	if (quick_encapsulation(transmitter, f_buff, NULL) != BOOL_TRUE) {
+	if (quick_encapsulation(transmitter, f_buff, NULL) != true) {
 		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with null PPDU length.");
 		goto out;
 	}
@@ -288,7 +289,7 @@ enum boolean test_frag_ctxtless_no_len(void)
 	ret = rle_frag_contextless(transmitter, f_buff, &ppdu, NULL);
 
 	if (ret == RLE_FRAG_ERR) {
-		output = BOOL_TRUE;
+		output = true;
 	}
 
 out:
@@ -298,7 +299,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -309,14 +310,14 @@ out:
 /**
  * @brief         Fragmentation test with a too small burst size.
  *
- * @return        BOOL_TRUE if the RLE_FRAG_ERR_BURST_TOO_SMALL is raised, else BOOL_FALSE.
+ * @return        true if the RLE_FRAG_ERR_BURST_TOO_SMALL is raised, else false.
  */
-enum boolean test_frag_ctxtless_too_small(void)
+bool test_frag_ctxtless_too_small(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_frag_status ret = RLE_FRAG_ERR;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
@@ -342,7 +343,7 @@ enum boolean test_frag_ctxtless_too_small(void)
 		goto out;
 	}
 
-	if (quick_encapsulation(transmitter, f_buff, NULL) != BOOL_TRUE) {
+	if (quick_encapsulation(transmitter, f_buff, NULL) != true) {
 		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with fragmentation too "
 		            "small.");
 		goto out;
@@ -351,7 +352,7 @@ enum boolean test_frag_ctxtless_too_small(void)
 	ret = rle_frag_contextless(transmitter, f_buff, &ppdu, &ppdu_len);
 
 	if (ret == RLE_FRAG_ERR_BURST_TOO_SMALL) {
-		output = BOOL_TRUE;
+		output = true;
 	}
 
 out:
@@ -361,7 +362,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -372,14 +373,14 @@ out:
 /**
  * @brief         Fragmentation test with a too big PPDU requested
  *
- * @return        BOOL_TRUE if error is raised, else BOOL_FALSE.
+ * @return        true if error is raised, else false.
  */
-enum boolean test_frag_ctxtless_too_big(void)
+bool test_frag_ctxtless_too_big(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	enum rle_frag_status ret = RLE_FRAG_ERR;
 
-	struct rle_fragmentation_buffer *f_buff = rle_f_buff_new();
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
@@ -407,7 +408,7 @@ enum boolean test_frag_ctxtless_too_big(void)
 		goto out;
 	}
 
-	if (quick_encapsulation(transmitter, f_buff, &sdu_len_good) != BOOL_TRUE) {
+	if (quick_encapsulation(transmitter, f_buff, &sdu_len_good) != true) {
 		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with fragmentation too big.");
 		goto out;
 	}
@@ -431,7 +432,7 @@ enum boolean test_frag_ctxtless_too_big(void)
 		goto out;
 	}
 
-	if (quick_encapsulation(transmitter, f_buff, &sdu_len_wrong) != BOOL_TRUE) {
+	if (quick_encapsulation(transmitter, f_buff, &sdu_len_wrong) != true) {
 		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with fragmentation too big.");
 		goto out;
 	}
@@ -439,7 +440,7 @@ enum boolean test_frag_ctxtless_too_big(void)
 	ret = rle_frag_contextless(transmitter, f_buff, &ppdu, &ppdu_len_wrong);
 
 	if (ret == RLE_FRAG_ERR) {
-		output = BOOL_TRUE;
+		output = true;
 	}
 
 out:
@@ -449,7 +450,7 @@ out:
 	}
 
 	if (f_buff) {
-		rle_f_buff_del(&f_buff);
+		rle_frag_buf_del(&f_buff);
 	}
 
 	PRINT_TEST_STATUS(output);

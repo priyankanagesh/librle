@@ -7,10 +7,20 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "encap.h"
+#include "rle_transmitter.h"
+#include "constants.h"
+#include "rle_ctx.h"
+#include "rle_conf.h"
+#include "rle_header_proto_type_field.h"
+#include "rle.h"
+#include "fragmentation_buffer.h"
+
 #ifndef __KERNEL__
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdbool.h>
 #include <net/ethernet.h>
 
 #else
@@ -18,15 +28,6 @@
 #include <linux/types.h>
 
 #endif
-
-#include "rle.h"
-#include "rle_transmitter.h"
-#include "encap.h"
-#include "constants.h"
-#include "rle_ctx.h"
-#include "rle_conf.h"
-#include "rle_header_proto_type_field.h"
-#include "fragmentation_buffer.h"
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -66,12 +67,13 @@ static void set_nonfree_frag_ctx(struct rle_transmitter *const _this, const size
 /*------------------------------------------------------------------------------------------------*/
 
 enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
-                                      const struct rle_sdu *const sdu, const uint8_t frag_id)
+                                      const struct rle_sdu *const sdu,
+                                      const uint8_t frag_id)
 {
 	enum rle_encap_status status = RLE_ENCAP_ERR;
 	enum rle_encap_status ret_encap;
 	struct rle_ctx_management *rle_ctx;
-	rle_f_buff_t *f_buff;
+	rle_frag_buf_t *frag_buf;
 
 #ifdef TIME_DEBUG
 	struct timeval tv_start = { .tv_sec = 0L, .tv_usec = 0L };
@@ -94,7 +96,7 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 	}
 
 	rle_ctx = &transmitter->rle_ctx_man[frag_id];
-	f_buff = (rle_f_buff_t *)rle_ctx->buff;
+	frag_buf = (rle_frag_buf_t *)rle_ctx->buff;
 
 	if (sdu->size > RLE_MAX_PDU_SIZE) {
 		status = RLE_ENCAP_ERR_SDU_TOO_BIG;
@@ -102,7 +104,7 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 		goto out;
 	}
 
-	if (is_frag_ctx_free(transmitter, frag_id) == C_FALSE) {
+	if (is_frag_ctx_free(transmitter, frag_id) == false) {
 		PRINT_RLE_ERROR("frag id %d is not free", frag_id);
 		goto out;
 	}
@@ -110,13 +112,13 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 	/* set to 'used' the previously free frag context */
 	set_nonfree_frag_ctx(transmitter, frag_id);
 
-	rle_f_buff_init(f_buff);
-	if (rle_f_buff_cpy_sdu(f_buff, sdu) != 0) {
+	rle_frag_buf_init(frag_buf);
+	if (rle_frag_buf_cpy_sdu(frag_buf, sdu) != 0) {
 		PRINT_RLE_ERROR("unable to copy SDU in fragmentation buffer.");
 		goto out;
 	}
 
-	ret_encap = rle_encap_contextless(transmitter, f_buff);
+	ret_encap = rle_encap_contextless(transmitter, frag_buf);
 
 	rle_ctx_incr_counter_in(rle_ctx);
 	rle_ctx_incr_counter_bytes_in(rle_ctx, sdu->size);
@@ -143,7 +145,7 @@ out:
 }
 
 enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transmitter,
-                                            struct rle_fragmentation_buffer *const f_buff)
+                                            struct rle_frag_buf *const frag_buf)
 {
 	enum rle_encap_status status = RLE_ENCAP_ERR;
 	struct rle_configuration *rle_conf;
@@ -159,21 +161,20 @@ enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transm
 
 	rle_conf = transmitter->rle_conf;
 
-	if (!f_buff) {
+	if (!frag_buf) {
 		status = RLE_ENCAP_ERR_NULL_F_BUFF;
 		goto out;
 	}
 
-	if (!f_buff_in_use(f_buff)) {
+	if (!frag_buf_in_use(frag_buf)) {
 		status = RLE_ENCAP_ERR_N_INIT_F_BUFF;
 		goto out;
 	}
 
-	if (push_alpdu_header(f_buff, rle_conf) == 0) {
+	if (push_alpdu_header(frag_buf, rle_conf) == 0) {
 		status = RLE_ENCAP_OK;
 	}
 
 out:
 	return status;
 }
-

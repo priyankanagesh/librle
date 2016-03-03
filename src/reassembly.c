@@ -7,17 +7,6 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#ifndef __KERNEL__
-
-#include <stdio.h>
-#include <string.h>
-
-#else
-
-#include <linux/string.h>
-
-#endif
-
 #include "reassembly.h"
 #include "rle_receiver.h"
 #include "constants.h"
@@ -25,6 +14,18 @@
 #include "trailer.h"
 #include "crc.h"
 #include "rle_header_proto_type_field.h"
+
+#ifndef __KERNEL__
+
+#include <stdio.h>
+#include <string.h>
+#include <stdbool.h>
+
+#else
+
+#include <linux/string.h>
+
+#endif
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -39,7 +40,8 @@
 /*------------------------------------------------------------------------------------------------*/
 
 int reassembly_comp_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
-                         const size_t ppdu_length, struct rle_sdu *const reassembled_sdu)
+                         const size_t ppdu_length,
+                         struct rle_sdu *const reassembled_sdu)
 {
 	int ret = C_ERROR;
 	struct rle_configuration *rle_conf;
@@ -72,16 +74,24 @@ int reassembly_comp_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 
 	if (rle_comp_ppdu_header_get_is_signal(header)) {
 		ret = signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
-		                                        &protocol_type, &sdu_fragment, &sdu_fragment_len);
+		                                        &protocol_type, &sdu_fragment,
+		                                        &sdu_fragment_len);
 	} else if (rle_comp_ppdu_header_get_is_suppressed(header)) {
-		ret = suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
-		                                            &sdu_fragment, &sdu_fragment_len, rle_conf);
+		ret =
+		        suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+		                                              &protocol_type,
+		                                              &sdu_fragment, &sdu_fragment_len,
+		                                              rle_conf);
 	} else if (rle_conf_get_ptype_compression(rle_conf)) {
-		ret = compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
-		                                            &sdu_fragment, &sdu_fragment_len, NULL);
+		ret =
+		        compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+		                                              &protocol_type,
+		                                              &sdu_fragment, &sdu_fragment_len,
+		                                              NULL);
 	} else {
 		ret = uncompressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
-		                                            &protocol_type, &sdu_fragment, &sdu_fragment_len);
+		                                              &protocol_type, &sdu_fragment,
+		                                              &sdu_fragment_len);
 	}
 
 	if (ret) {
@@ -107,7 +117,8 @@ out:
 }
 
 int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
-                          const size_t ppdu_length, int *const index_ctx)
+                          const size_t ppdu_length,
+                          int *const index_ctx)
 {
 	int ret = C_ERROR;
 	struct rle_configuration *rle_conf;
@@ -116,7 +127,7 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 	const unsigned char *sdu_fragment;
 	size_t sdu_fragment_len;
 	uint16_t protocol_type;
-	rle_r_buff_t *r_buff;
+	rle_rasm_buf_t *rasm_buf;
 	size_t alpdu_total_len;
 	const rle_ppdu_header_start_t *header;
 	struct rle_ctx_management *rle_ctx = NULL;
@@ -145,12 +156,12 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 
 	rle_ctx = &_this->rle_ctx_man[*index_ctx];
 	rle_ctx->current_counter = ppdu_length;
-	r_buff = (rle_r_buff_t *)_this->rle_ctx_man[*index_ctx].buff;
+	rasm_buf = (rle_rasm_buf_t *)_this->rle_ctx_man[*index_ctx].buff;
 
 	rle_ctx_incr_counter_in(rle_ctx);
 	rle_ctx_incr_counter_bytes_in(rle_ctx, ppdu_length);
 
-	if (is_context_free(_this, *index_ctx) == C_FALSE) {
+	if (is_context_free(_this, *index_ctx) == false) {
 		PRINT_RLE_ERROR("invalid Start on context not free, frag id [%d].", *index_ctx);
 		/* Context is not free, whereas it must be. an error must have occured. */
 		/* Freeing context, updating stats, and restarting receiving. */
@@ -167,18 +178,28 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 	sdu_total_len = alpdu_total_len;
 
 	if (rle_start_ppdu_header_get_is_signal(header)) {
-		ret = signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
-		                                        &sdu_fragment, &sdu_fragment_len);
+		ret =
+		        signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+		                                          &protocol_type,
+		                                          &sdu_fragment,
+		                                          &sdu_fragment_len);
 	} else if (rle_start_ppdu_header_get_is_suppressed(header)) {
-		ret = suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
-		                                            &sdu_fragment, &sdu_fragment_len, rle_conf);
+		ret =
+		        suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+		                                              &protocol_type,
+		                                              &sdu_fragment, &sdu_fragment_len,
+		                                              rle_conf);
 	} else if (rle_conf_get_ptype_compression(rle_conf)) {
-		ret = compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &protocol_type,
-		                                            &sdu_fragment, &sdu_fragment_len, &sdu_total_len);
+		ret =
+		        compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+		                                              &protocol_type,
+		                                              &sdu_fragment, &sdu_fragment_len,
+		                                              &sdu_total_len);
 	} else {
 		sdu_total_len -= sizeof(rle_alpdu_header_uncompressed_t);
 		ret = uncompressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
-		                                              &protocol_type, &sdu_fragment, &sdu_fragment_len);
+		                                              &protocol_type, &sdu_fragment,
+		                                              &sdu_fragment_len);
 	}
 
 	if (ret) {
@@ -194,24 +215,24 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 
 	rle_ctx_set_use_crc(rle_ctx, is_crc_used);
 
-	if (r_buff_init(r_buff) != 0) {
+	if (rasm_buf_init(rasm_buf) != 0) {
 		PRINT_RLE_ERROR("Unable to init reassembly buffer.");
 		goto out;
 	}
 
-	if (r_buff_sdu_put(r_buff, sdu_total_len) != 0) {
+	if (rasm_buf_sdu_put(rasm_buf, sdu_total_len) != 0) {
 		PRINT_RLE_ERROR("Unable to reserve %zu-octets for SDU.", sdu_total_len);
 		goto out;
 	}
 
-	if (r_buff_sdu_frag_put(r_buff, sdu_fragment_len) != 0) {
+	if (rasm_buf_sdu_frag_put(rasm_buf, sdu_fragment_len) != 0) {
 		PRINT_RLE_ERROR("Unable to reserve %zu-octets for SDU fragment.", sdu_fragment_len);
 		goto out;
 	}
 
-	r_buff->sdu_info.protocol_type = protocol_type;
-	r_buff->sdu_info.size = sdu_total_len;
-	r_buff_cpy_sdu_frag(r_buff, sdu_fragment);
+	rasm_buf->sdu_info.protocol_type = protocol_type;
+	rasm_buf->sdu_info.size = sdu_total_len;
+	rasm_buf_cpy_sdu_frag(rasm_buf, sdu_fragment);
 
 	ret = C_OK;
 
@@ -235,14 +256,15 @@ out:
 }
 
 int reassembly_cont_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
-                          const size_t ppdu_length, int *const index_ctx)
+                         const size_t ppdu_length,
+                         int *const index_ctx)
 {
 	int ret = C_ERROR;
 	const unsigned char *alpdu_fragment;
 	size_t alpdu_fragment_len;
 	const unsigned char *sdu_fragment;
 	size_t sdu_fragment_len;
-	rle_r_buff_t *r_buff;
+	rle_rasm_buf_t *rasm_buf;
 	struct rle_ctx_management *rle_ctx = NULL;
 
 #ifdef TIME_DEBUG
@@ -267,33 +289,34 @@ int reassembly_cont_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 
 	rle_ctx = &_this->rle_ctx_man[*index_ctx];
 	rle_ctx->current_counter += ppdu_length;
-	r_buff = (rle_r_buff_t *)_this->rle_ctx_man[*index_ctx].buff;
+	rasm_buf = (rle_rasm_buf_t *)_this->rle_ctx_man[*index_ctx].buff;
 
 	rle_ctx_incr_counter_bytes_in(rle_ctx, ppdu_length);
 
-	if (is_context_free(_this, *index_ctx) == C_TRUE) {
+	if (is_context_free(_this, *index_ctx) == true) {
 		PRINT_RLE_ERROR("invalid Cont on context free, frag id [%d].", *index_ctx);
 		/* Context is free, whereas it must not. an error must have occured. */
 		/* Freeing context and updating stats. At least one packet is partialy lost.*/
 		goto out;
 	}
 
-	cont_end_ppdu_extract_alpdu_fragment(ppdu, ppdu_length, &alpdu_fragment, &alpdu_fragment_len);
+	cont_end_ppdu_extract_alpdu_fragment(ppdu, ppdu_length, &alpdu_fragment,
+	                                     &alpdu_fragment_len);
 
 	sdu_fragment = alpdu_fragment;
 	sdu_fragment_len = alpdu_fragment_len;
 
-	if (r_buff_init_sdu_frag(r_buff) != 0) {
+	if (rasm_buf_init_sdu_frag(rasm_buf) != 0) {
 		PRINT_RLE_ERROR("Unable to init new SDU fragment.");
 		goto out;
 	}
 
-	if (r_buff_sdu_frag_put(r_buff, sdu_fragment_len) != 0) {
+	if (rasm_buf_sdu_frag_put(rasm_buf, sdu_fragment_len) != 0) {
 		PRINT_RLE_ERROR("Unable to reserve %zu-octets for SDU fragment.", sdu_fragment_len);
 		goto out;
 	}
 
-	r_buff_cpy_sdu_frag(r_buff, sdu_fragment);
+	rasm_buf_cpy_sdu_frag(rasm_buf, sdu_fragment);
 
 	ret = C_OK;
 
@@ -325,7 +348,7 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	size_t alpdu_fragment_len;
 	const unsigned char *sdu_fragment;
 	size_t sdu_fragment_len;
-	rle_r_buff_t *r_buff;
+	rle_rasm_buf_t *rasm_buf;
 	struct rle_ctx_management *rle_ctx = NULL;
 	const rle_alpdu_trailer_t *rle_trailer = NULL;
 	size_t lost_packets = 0;
@@ -352,11 +375,11 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 
 	rle_ctx = &_this->rle_ctx_man[*index_ctx];
 	rle_ctx->current_counter += ppdu_length;
-	r_buff = (rle_r_buff_t *)_this->rle_ctx_man[*index_ctx].buff;
+	rasm_buf = (rle_rasm_buf_t *)_this->rle_ctx_man[*index_ctx].buff;
 
 	rle_ctx_incr_counter_bytes_in(rle_ctx, ppdu_length);
 
-	if (is_context_free(_this, *index_ctx) == C_TRUE) {
+	if (is_context_free(_this, *index_ctx) == true) {
 		PRINT_RLE_ERROR("invalid End on context free, frag id [%d].", *index_ctx);
 		/* Context is free, whereas it must not. an error must have occured. */
 		/* Freeing context and updating stats. At least one packet is partialy lost.*/
@@ -372,21 +395,23 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	                                     &alpdu_fragment_len);
 
 	if (rle_ctx_get_use_crc(rle_ctx)) {
-		trailer_alpdu_crc_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len, &sdu_fragment,
-		                                       &sdu_fragment_len,
-		                                       (const rle_alpdu_crc_trailer_t **)&rle_trailer);
+		trailer_alpdu_crc_extract_sdu_fragment(
+		        alpdu_fragment, alpdu_fragment_len, &sdu_fragment,
+		        &sdu_fragment_len,
+		        (const rle_alpdu_crc_trailer_t **)&
+		        rle_trailer);
 	} else {
 		trailer_alpdu_seqno_extract_sdu_fragment(
 		        alpdu_fragment, alpdu_fragment_len, &sdu_fragment, &sdu_fragment_len,
-		        (const rle_alpdu_seqno_trailer_t ** const)&rle_trailer);
+		        (const rle_alpdu_seqno_trailer_t **const)&rle_trailer);
 	}
 
-	if (r_buff_init_sdu_frag(r_buff) != 0) {
+	if (rasm_buf_init_sdu_frag(rasm_buf) != 0) {
 		PRINT_RLE_ERROR("Unable to init new SDU fragment.");
 		goto out;
 	}
 
-	if (r_buff_sdu_frag_put(r_buff, sdu_fragment_len) != 0) {
+	if (rasm_buf_sdu_frag_put(rasm_buf, sdu_fragment_len) != 0) {
 		PRINT_RLE_ERROR("Unable to reserve %zu-octets for SDU fragment.", sdu_fragment_len);
 		rle_ctx_incr_counter_dropped(rle_ctx);
 		rle_ctx_incr_counter_lost(rle_ctx, 1);
@@ -395,27 +420,29 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 		goto out;
 	}
 
-	r_buff_cpy_sdu_frag(r_buff, sdu_fragment);
+	rasm_buf_cpy_sdu_frag(rasm_buf, sdu_fragment);
 
-	if (check_alpdu_trailer(rle_trailer, r_buff, rle_ctx, &lost_packets) != 0) {
+	if (check_alpdu_trailer(rle_trailer, rasm_buf, rle_ctx, &lost_packets) != 0) {
 		PRINT_RLE_ERROR("Wrong RLE trailer.");
 		goto out;
 	}
 
-	reassembled_sdu->size = r_buff->sdu_info.size;
-	memcpy((void *)reassembled_sdu->buffer, (const void *)r_buff->buffer,
-	       r_buff_get_sdu_length(r_buff));
+	reassembled_sdu->size = rasm_buf->sdu_info.size;
+	memcpy((void *)reassembled_sdu->buffer, (const void *)rasm_buf->buffer,
+	       rasm_buf_get_sdu_length(rasm_buf));
 
-	if (r_buff_get_sdu_length(r_buff) > r_buff_get_reassembled_sdu_length(r_buff)) {
+	if (rasm_buf_get_sdu_length(rasm_buf) > rasm_buf_get_reassembled_sdu_length(rasm_buf)) {
 		PRINT_RLE_ERROR("End packet received while %zu octets still missing.",
-		                r_buff_get_sdu_length(r_buff) - r_buff_get_reassembled_sdu_length(r_buff));
+		                rasm_buf_get_sdu_length(
+		                        rasm_buf) - rasm_buf_get_reassembled_sdu_length(rasm_buf));
 		PRINT_RLE_ERROR("%zu %zu.",
-		r_buff_get_sdu_length(r_buff), r_buff_get_reassembled_sdu_length(r_buff));
+		                rasm_buf_get_sdu_length(
+		                        rasm_buf), rasm_buf_get_reassembled_sdu_length(rasm_buf));
 	}
 
-	reassembled_sdu->protocol_type = r_buff->sdu_info.protocol_type;
-	reassembled_sdu->size = r_buff_get_sdu_length(r_buff);
-	memcpy(reassembled_sdu->buffer, r_buff->sdu_info.buffer, reassembled_sdu->size);
+	reassembled_sdu->protocol_type = rasm_buf->sdu_info.protocol_type;
+	reassembled_sdu->size = rasm_buf_get_sdu_length(rasm_buf);
+	memcpy(reassembled_sdu->buffer, rasm_buf->sdu_info.buffer, reassembled_sdu->size);
 
 	/* update link status */
 	rle_ctx_incr_counter_bytes_ok(rle_ctx, reassembled_sdu->size);
@@ -440,5 +467,5 @@ out:
 	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", MODULE_NAME, tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
-return ret;
+	return ret;
 }

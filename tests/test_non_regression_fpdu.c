@@ -7,23 +7,22 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-/* system includes */
+#include "rle.h"
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
 #include <string.h>
-#include <inttypes.h>
-#include <arpa/inet.h>         /* for ntohs() on Linux */
+#include <arpa/inet.h>
 #include <errno.h>
 #include <assert.h>
+#include <inttypes.h>
+#include <stdbool.h>
 #include <stdarg.h>
 #include <netinet/in.h>
-
 #include <pcap/pcap.h>
 #include <pcap.h>
-
-#include <rle.h>
 
 /** The program version */
 #define TEST_VERSION  "RLE FPDU non-regression test application, version 0.0.1\n"

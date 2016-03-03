@@ -7,13 +7,13 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "test_rle_common.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
-
-#include "test_rle_common.h"
 
 const unsigned char payload_initializer[5000] =
 { 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46,

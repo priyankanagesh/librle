@@ -39,7 +39,7 @@
 /** Test structure, used to launch tests. */
 struct test {
 	const char *const name;                /**< The name of the test.    */
-	enum boolean(*const function) (void);  /**< The function to execute. */
+	bool(*const function) (void);  /**< The function to execute. */
 };
 
 /** Test counters */
@@ -54,51 +54,51 @@ static size_t total_number_of_succ_tests; /**< Counter for the total number of s
  * @param[in]     test_name                The name of the test
  * @param[in]     current_tests            The current tests to execute @see struct test
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean tests(const char *const test_name, const struct test *const current_tests[]);
+static bool tests(const char *const test_name, const struct test *const current_tests[]);
 
 /**
  * @brief         Specific test function for encapsulation
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean encap_tests(void);
+static bool encap_tests(void);
 
 /**
  * @brief         Specific test function for encapsulation contextless.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean encap_ctxtless_tests(void);
+static bool encap_ctxtless_tests(void);
 
 /**
  * @brief         Specific test function for fragmentation
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean frag_tests(void);
+static bool frag_tests(void);
 
 
 /**
  * @brief         Specific test function for fragmentation contextless.
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean frag_ctxtless_tests(void);
+static bool frag_ctxtless_tests(void);
 
 /**
  * @brief         Specific test function for packing
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean pack_tests(void);
+static bool pack_tests(void);
 
 /**
  * @brief         Specific test function for decapsulation
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean decap_tests(void);
+static bool decap_tests(void);
 
 #endif /* __TEST_RLE_H__ */

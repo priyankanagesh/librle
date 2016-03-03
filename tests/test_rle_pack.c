@@ -7,13 +7,14 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "test_rle_pack.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
-
-#include "test_rle_pack.h"
 
 /**
  * @brief         Generic packing test.
@@ -25,9 +26,9 @@
  * @param[in]     ppdus_length             Sizes of the PPDUs
  * @param[in]     label_length             Size of the label
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean test_pack(const size_t fpdu_length, const size_t nb_ppdus,
+static bool test_pack(const size_t fpdu_length, const size_t nb_ppdus,
                               const size_t ppdus_length[],
                               const size_t label_length);
 
@@ -42,15 +43,15 @@ static enum boolean test_pack(const size_t fpdu_length, const size_t nb_ppdus,
  * @param[in]     label                    The label of the FPDU
  * @param[in]     label_length             The label length
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean test_pack_check_fpdu(const unsigned char fpdu[], const size_t fpdu_length,
+static bool test_pack_check_fpdu(const unsigned char fpdu[], const size_t fpdu_length,
                                          const unsigned char *const ppdus[],
                                          const size_t *const ppdus_length, const size_t nb_ppdus,
                                          const unsigned char label[],
                                          const size_t label_length);
 
-static enum boolean test_pack_check_fpdu(const unsigned char fpdu[], const size_t fpdu_length,
+static bool test_pack_check_fpdu(const unsigned char fpdu[], const size_t fpdu_length,
                                          const unsigned char *const ppdus[],
                                          const size_t *const ppdus_length, const size_t nb_ppdus,
                                          const unsigned char label[],
@@ -65,7 +66,7 @@ static enum boolean test_pack_check_fpdu(const unsigned char fpdu[], const size_
 		printf("- %zu\n", ppdus_length[iterator]);
 	}
 
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	unsigned char reass_fpdu[fpdu_length];
 	for (iterator = 0; iterator < fpdu_length; ++iterator) {
 		reass_fpdu[iterator] = '\0';
@@ -96,13 +97,13 @@ static enum boolean test_pack_check_fpdu(const unsigned char fpdu[], const size_
 		}
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 	for (iterator = 0; iterator < fpdu_length; ++iterator) {
 		if (fpdu[iterator] != reass_fpdu[iterator]) {
 			PRINT_ERROR(
 			        "FPDU and reassembled PPDUs are different, pos.%zu, expected 0x%02x, get 0x%02x.",
 			        iterator, fpdu[iterator], reass_fpdu[iterator]);
-			output = BOOL_FALSE;
+			output = false;
 		}
 	}
 
@@ -111,7 +112,7 @@ exit_label:
 	return output;
 }
 
-static enum boolean test_pack(const size_t fpdu_length, const size_t nb_ppdus,
+static bool test_pack(const size_t fpdu_length, const size_t nb_ppdus,
                               const size_t ppdus_length[],
                               const size_t label_length)
 {
@@ -124,7 +125,7 @@ static enum boolean test_pack(const size_t fpdu_length, const size_t nb_ppdus,
 		printf("- %zu\n", ppdus_length[iterator]);
 	}
 
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 
 	enum rle_pack_status pack_status = RLE_PACK_ERR;
 	unsigned char fpdu[fpdu_length];
@@ -189,10 +190,10 @@ exit_label:
 	return output;
 }
 
-enum boolean test_pack_fpdu_too_small(void)
+bool test_pack_fpdu_too_small(void)
 {
 	PRINT_TEST("Test pack FPDU too small.");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 
 	enum rle_pack_status pack_status = RLE_PACK_ERR;
 
@@ -272,7 +273,7 @@ enum boolean test_pack_fpdu_too_small(void)
 		}
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 	PRINT_TEST_STATUS(output);
@@ -280,10 +281,10 @@ exit_label:
 	return output;
 }
 
-enum boolean test_pack_invalid_ppdu(void)
+bool test_pack_invalid_ppdu(void)
 {
 	PRINT_TEST("Test PACK invalid PPDU.");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 
 	enum rle_pack_status pack_status = RLE_PACK_ERR;
 
@@ -328,7 +329,7 @@ enum boolean test_pack_invalid_ppdu(void)
 		}
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 	PRINT_TEST_STATUS(output);
@@ -336,11 +337,11 @@ exit_label:
 	return output;
 }
 
-enum boolean test_pack_invalid_label(void)
+bool test_pack_invalid_label(void)
 {
 	PRINT_TEST("Test PACK invalid label.");
 
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 
 	enum rle_pack_status pack_status = RLE_PACK_ERR;
 
@@ -403,7 +404,7 @@ enum boolean test_pack_invalid_label(void)
 			goto exit_label;
 		}
 	}
-	output = BOOL_TRUE;
+	output = true;
 
 exit_label:
 	PRINT_TEST_STATUS(output);
@@ -411,10 +412,10 @@ exit_label:
 	return output;
 }
 
-enum boolean test_pack_all(void)
+bool test_pack_all(void)
 {
 	PRINT_TEST("Test PACK with all general cases.");
-	enum boolean output = BOOL_TRUE;
+	bool output = true;
 
 	const size_t fpdu_length = 4000;
 

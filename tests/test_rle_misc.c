@@ -7,16 +7,17 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "test_rle_misc.h"
+
+#include "rle.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <string.h>
 #include <netinet/in.h>
-
-#include "test_rle_misc.h"
-
-#include "rle.h"
 
 /** Test configuration structure */
 struct test_request {
@@ -44,9 +45,9 @@ static char * get_fpdu_type(const enum rle_fpdu_types fpdu_type);
  * @param[in]     conf          The rle module configuration. Only needed for traffic-control
  *                              fpdus, otherwise could be set to "NULL".
  *
- * @return        BOOL_TRUE if OK, else BOOL_FALSE.
+ * @return        true if OK, else false.
  */
-static enum boolean test_request_rle_header_overhead(
+static bool test_request_rle_header_overhead(
       const enum rle_fpdu_types fpdu_type,
       const size_t expected_size,
       const struct rle_context_configuration *const conf);
@@ -68,14 +69,14 @@ static char * get_fpdu_type(const enum rle_fpdu_types fpdu_type)
 	}
 }
 
-static enum boolean test_request_rle_header_overhead(
+static bool test_request_rle_header_overhead(
       const enum rle_fpdu_types fpdu_type,
       const size_t expected_size,
       const struct rle_context_configuration *const conf)
 {
 	PRINT_TEST("subtest. FPDU type : %s, expected size : %zu\n", get_fpdu_type(fpdu_type),
 	           expected_size);
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 
 	size_t overhead_size = 0;
 	enum rle_header_size_status header_size_status = RLE_HEADER_SIZE_ERR;
@@ -86,7 +87,7 @@ static enum boolean test_request_rle_header_overhead(
 	{
 		if (overhead_size == expected_size)
 		{
-			output = BOOL_TRUE;
+			output = true;
 		}
 	}
 
@@ -94,10 +95,10 @@ static enum boolean test_request_rle_header_overhead(
 	return output;
 }
 
-enum boolean test_request_rle_header_overhead_traffic(void)
+bool test_request_rle_header_overhead_traffic(void)
 {
 	PRINT_TEST("Request RLE header overhead traffic error.\n");
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 
 	size_t overhead_size = 0;
 	enum rle_header_size_status header_size_status = RLE_HEADER_SIZE_ERR;
@@ -107,17 +108,17 @@ enum boolean test_request_rle_header_overhead_traffic(void)
 
 	if (header_size_status == RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC)
 	{
-			output = BOOL_TRUE;
+			output = true;
 	}
 
 	PRINT_TEST_STATUS(output);
 	return output;
 }
 
-enum boolean test_request_rle_header_overhead_all(void)
+bool test_request_rle_header_overhead_all(void)
 {
 	PRINT_TEST("Request RLE header overhead all.\n");
-	enum boolean output = BOOL_TRUE;
+	bool output = true;
 
 	/* Logon */
 	const struct test_request test_logon = {
@@ -207,9 +208,9 @@ enum boolean test_request_rle_header_overhead_all(void)
 	return output;
 }
 
-enum boolean test_rle_allocation_transmitter(void)
+bool test_rle_allocation_transmitter(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	const struct rle_context_configuration bad_conf = {
 		.implicit_protocol_type = 0x31,
 		.use_alpdu_crc = 0,
@@ -242,7 +243,7 @@ enum boolean test_rle_allocation_transmitter(void)
 		goto out;
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 out:
 
@@ -254,9 +255,9 @@ out:
 	return output;
 }
 
-enum boolean test_rle_destruction_transmitter(void)
+bool test_rle_destruction_transmitter(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc = 0,
@@ -288,7 +289,7 @@ enum boolean test_rle_destruction_transmitter(void)
 		goto out;
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 out:
 
@@ -298,9 +299,9 @@ out:
 	return output;
 }
 
-enum boolean test_rle_allocation_receiver(void)
+bool test_rle_allocation_receiver(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	const struct rle_context_configuration bad_conf = {
 		.implicit_protocol_type = 0x31,
 		.use_alpdu_crc = 0,
@@ -333,7 +334,7 @@ enum boolean test_rle_allocation_receiver(void)
 		goto out;
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 out:
 	rle_receiver_destroy(&r);
@@ -344,9 +345,9 @@ out:
 	return output;
 }
 
-enum boolean test_rle_destruction_receiver(void)
+bool test_rle_destruction_receiver(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 	const struct rle_context_configuration conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc = 0,
@@ -378,7 +379,7 @@ enum boolean test_rle_destruction_receiver(void)
 		goto out;
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 out:
 
@@ -388,25 +389,25 @@ out:
 	return output;
 }
 
-enum boolean test_rle_allocation_f_buff(void)
+bool test_rle_allocation_f_buff(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 
-	struct rle_fragmentation_buffer *f = NULL;
+	struct rle_frag_buf *f = NULL;
 
 	PRINT_TEST("RLE fragmentation buffer allocation.\n");
 
-	f = rle_f_buff_new();
+	f = rle_frag_buf_new();
 
 	if (!f) {
 		PRINT_ERROR("Fragmentation buffer should be allocated.");
 		goto out;
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 out:
-	rle_f_buff_del(&f);
+	rle_frag_buf_del(&f);
 
 	PRINT_TEST_STATUS(output);
 	printf("\n");
@@ -414,35 +415,35 @@ out:
 	return output;
 }
 
-enum boolean test_rle_destruction_f_buff(void)
+bool test_rle_destruction_f_buff(void)
 {
-	enum boolean output = BOOL_FALSE;
+	bool output = false;
 
-	struct rle_fragmentation_buffer *f = NULL;
+	struct rle_frag_buf *f = NULL;
 
 	PRINT_TEST("RLE fragmentation buffer destruction.\n");
 
 	/* Should print error, but no segfault. */
-	rle_f_buff_del(NULL);
+	rle_frag_buf_del(NULL);
 
 	/* Should print error, but no segfault. */
-	rle_f_buff_del(&f);
+	rle_frag_buf_del(&f);
 
-	f = rle_f_buff_new();
+	f = rle_frag_buf_new();
 
 	if (!f) {
 		PRINT_ERROR("Fragmentation buffer should be allocated. Can't test destruction.");
 		goto out;
 	}
 
-	rle_f_buff_del(&f);
+	rle_frag_buf_del(&f);
 
 	if (f) {
 		PRINT_ERROR("Fragmentation buffer should not be freed.");
 		goto out;
 	}
 
-	output = BOOL_TRUE;
+	output = true;
 
 out:
 

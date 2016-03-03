@@ -52,7 +52,7 @@ typedef union rle_alpdu_trailer rle_alpdu_trailer_t;
  *  @brief         create and put ALPDU trailer into a fragmentation buffer.
  *
  *
- *  @param[in,out] f_buff               the fragmentation buffer in use.
+ *  @param[in,out] frag_buf               the fragmentation buffer in use.
  *  @param[in]     rle_conf             the RLE configuration
  *  @param[in,out] rle_ctx              the RLE context for seqno.
  *
@@ -61,7 +61,7 @@ typedef union rle_alpdu_trailer rle_alpdu_trailer_t;
  *
  *  @ingroup RLE trailer.
  */
-int push_alpdu_trailer(struct rle_fragmentation_buffer *const f_buff,
+int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
                        const struct rle_configuration *const rle_conf,
                        struct rle_ctx_management *const rle_ctx);
 
@@ -107,13 +107,15 @@ void trailer_alpdu_seqno_extract_sdu_fragment(const unsigned char alpdu_fragment
  *
  *
  *  @param[in]     trailer              the trailer to check.
- *  @param[in]     r_buff               the reassembly buffer containing the SDU.
+ *  @param[in]     rasm_buf               the reassembly buffer containing the SDU.
  *  @param[in,out] rle_ctx              the RLE context.
  *  @param[out]    lost_packets         number of lost packets.
  *
  *  @ingroup RLE trailer.
  */
-int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer, const rle_r_buff_t *const r_buff,
-                        struct rle_ctx_management *const rle_ctx, size_t *const lost_packets);
+int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
+                        const rle_rasm_buf_t *const rasm_buf,
+                        struct rle_ctx_management *const rle_ctx,
+                        size_t *const lost_packets);
 
 #endif /* __TRAILER_H__ */

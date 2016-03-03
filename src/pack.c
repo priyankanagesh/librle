@@ -7,6 +7,9 @@
  *   Copyright (C) 2016, Thales Alenia Space France - All Rights Reserved
  */
 
+#include "constants.h"
+#include "rle.h"
+
 #ifndef __KERNEL__
 
 #include <stdlib.h>
@@ -19,9 +22,6 @@
 #include <linux/string.h>
 
 #endif
-
-#include "constants.h"
-#include "rle.h"
 
 
 /*------------------------------------------------------------------------------------------------*/
