@@ -36,7 +36,7 @@ ADD_DEPENDENCIES(check rle_tests)
 ADD_DEPENDENCIES(check test_rle)
 ADD_DEPENDENCIES(check test_non_regression)
 ADD_DEPENDENCIES(check test_non_regression_fpdu)
-	
+
 # Definitions of the system commands for the next targets.
 SET(SYS_CMD_GREP grep)
 SET(SYS_CMD_ECHO echo)
@@ -73,28 +73,27 @@ SET(NON_REG_DIR
 	${CMAKE_SOURCE_DIR}/tests/samples/non_reg)
 
 
-ADD_TEST(NAME check
-         COMMAND ${CMAKE_BINARY_DIR}/tests/test_rle)
+ADD_TEST(NAME unit_test COMMAND test_rle)
 
-ADD_TEST(NAME static_tests_fuzzing
-         COMMAND bash ${SCRIPT_DIR}/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
-                                                   ${SAMPLE_DIR}/fuzzing)
-
-ADD_TEST(NAME static_tests_non_reg
+ADD_TEST(NAME non_regression_sdu
          COMMAND ${SCRIPT_DIR}/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
                                               ${NON_REG_DIR})
 
-ADD_TEST(NAME static_tests_err_burst_size
+ADD_TEST(NAME non_regression_sdu_small_bursts
          COMMAND ${SCRIPT_DIR}/special_static_test.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
                                                       ${NON_REG_DIR}/error_burst_size_1.pcap f5)
 
-ADD_TEST(NAME static_tests_fpdu_fuzzing
-         COMMAND ${SCRIPT_DIR}/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression_fpdu
-                                              ${CMAKE_SOURCE_DIR}/tests/samples/fuzzing-fpdu)
+ADD_TEST(NAME non_regression_sdu_fuzzing
+         COMMAND bash ${SCRIPT_DIR}/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
+                                                   ${SAMPLE_DIR}/fuzzing)
 
-ADD_TEST(NAME static_tests_fpdu_non_reg
+ADD_TEST(NAME non_regression_fpdu
          COMMAND ${SCRIPT_DIR}/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression_fpdu
                                               ${CMAKE_SOURCE_DIR}/tests/samples/non_reg_fpdu)
+
+ADD_TEST(NAME non_regression_fpdu_fuzzing
+         COMMAND ${SCRIPT_DIR}/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression_fpdu
+                                              ${CMAKE_SOURCE_DIR}/tests/samples/fuzzing-fpdu)
 
 # If fuzzing is on, launch AFL fuzzing with:
 #   $ make fuzzing (or $ make fuzzing-fpdu)
