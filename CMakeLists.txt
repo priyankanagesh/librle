@@ -58,6 +58,13 @@ ELSE(FUZZING)
 ENDIF(FUZZING)
 
 IF (BUILD_TESTS)
+	ENABLE_TESTING()
+
+	# Target check to build and run tests
+	SET(CMAKE_CTEST_COMMAND
+		ctest -VV --no-compress-output -T Test || true)
+	ADD_CUSTOM_TARGET(check COMMAND ${CMAKE_CTEST_COMMAND})
+
 	ADD_SUBDIRECTORY(tests)
 ENDIF(BUILD_TESTS)
 
@@ -70,8 +77,8 @@ IF (TIME_DEBUG)
 ENDIF(TIME_DEBUG)
 
 IF (COVERAGE)
-    add_definitions("-fprofile-arcs -ftest-coverage -O0")
-    TARGET_LINK_LIBRARIES(rle
+	add_definitions("-fprofile-arcs -ftest-coverage -O0")
+	TARGET_LINK_LIBRARIES(rle
         gcov)
 ELSE(COVERAGE)
 	add_definitions("-O2")
