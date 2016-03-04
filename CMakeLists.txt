@@ -59,12 +59,8 @@ ENDIF(FUZZING)
 
 IF (BUILD_TESTS)
 	ENABLE_TESTING()
-
-	# Target check to build and run tests
-	SET(CMAKE_CTEST_COMMAND
-		ctest -VV --no-compress-output -T Test || true)
-	ADD_CUSTOM_TARGET(check COMMAND ${CMAKE_CTEST_COMMAND})
-
+	ADD_CUSTOM_TARGET(check COMMAND
+	                  ${CMAKE_CTEST_COMMAND} --no-compress-output -T Test)
 	ADD_SUBDIRECTORY(tests)
 ENDIF(BUILD_TESTS)
 
