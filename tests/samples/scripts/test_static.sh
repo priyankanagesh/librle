@@ -8,31 +8,30 @@
 
 if [[ $# -ne 2 ]]; then
     echo "Error, two arguments needed, the test binary and the pcaps folder." 
-    exit
+    exit 1
 fi
 
 echo "[`basename ${1}`] Checking folder \"`basename ${2}`\""
 
-echo "`find ${2} -name "*.pcap" | wc -l` PCAP traces..."
+list_pcaps="$( find ${2} -name "*.pcap" )"
+list_pcaps_nr="$( echo "${list_pcaps}" | wc -l )"
+
+echo "${list_pcaps_nr} PCAP traces..."
 
 # For each pcap file in pcaps folder, the pcap is used as an argument of our test.
 # Error outputs are collected and counted.
-#
-# Return '0' if Ok, else number of errors counted.
-count_error () {
-find ${2} -name "*.pcap" \
-    -exec sh -c "${1} --ignore-malformed '{}' > /dev/null ; echo  $?" \; \
-    | grep "1" \
-    | wc -l
-}
+errors_nr=0
+for pcap_file in ${list_pcaps} ; do
+	echo -n "${1} ${pcap_file}: "
+	${1} --ignore-malformed "${pcap_file}" > /dev/null
+	ret=$?
+	if [ ${ret} -eq 0 ] ; then
+		echo "PASS"
+	else
+		echo "FAIL"
+		errors_nr=$(( ${errors_nr} + 1 ))
+	fi
+done
 
-# Return 0 if no errors are counted, else 1
-eval_errors () {
-    if [[ ${1} -eq 0 ]]; then
-        echo "OK"
-    fi
-    [[ ${1} -eq 0 ]]
-}
+exit ${errors_nr}
 
-
-eval_errors `count_error ${1} ${2}`
