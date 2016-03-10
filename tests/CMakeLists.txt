@@ -81,7 +81,7 @@ ADD_TEST(NAME non_regression_sdu
 
 ADD_TEST(NAME non_regression_sdu_small_bursts
          COMMAND ${SCRIPT_DIR}/special_static_test.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
-                                                      ${NON_REG_DIR}/error_burst_size_1.pcap f5)
+                                                      ${NON_REG_DIR} f5)
 
 ADD_TEST(NAME non_regression_sdu_fuzzing
          COMMAND bash ${SCRIPT_DIR}/test_static.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
