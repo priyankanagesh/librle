@@ -405,6 +405,7 @@ int push_ppdu_header(struct rle_frag_buf *const frag_buf,
 		}
 
 		if (ppdu_length < sizeof(rle_ppdu_header_cont_end_t)) {
+			/* buffer is too small for the smallest PPDU END fragment */
 			status = 2;
 			goto out;
 		}
@@ -437,13 +438,18 @@ int push_ppdu_header(struct rle_frag_buf *const frag_buf,
 
 			const int use_alpdu_crc =
 			        rle_conf_get_crc_check((struct rle_configuration *)rle_conf);
+			const size_t ppdu_and_alpdu_hdrs_len =
+				sizeof(rle_ppdu_header_start_t) + frag_buf_get_alpdu_header_len(frag_buf);
 
 			if (!rle_ctx) {
 				PRINT_RLE_ERROR("RLE context needed.");
 				goto out;
 			}
 
-			if (ppdu_length < sizeof(rle_ppdu_header_start_t)) {
+			if (ppdu_length < ppdu_and_alpdu_hdrs_len) {
+				/* buffer is too small for the smallest PPDU START fragment: the buffer shall be large
+				 * enough for the PPDU START header and the full ALDPU header because the fragmentation
+				 * of the ALPDU header is not supported by the RLE reassembler yet */
 				status = 2;
 				goto out;
 			}

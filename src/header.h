@@ -221,7 +221,9 @@ int push_alpdu_header(struct rle_frag_buf *const frag_buf,
  *  @param[in]     rle_conf             the RLE configuration
  *  @param[in,out] rle_ctx              the RLE context if needed (NULL if not).
  *
- *  @return        0 if OK, 1 if KO.
+ *  @return        0 if OK
+ *                 1 if KO
+ *                 2 if buffer is too small for the smallest PPDU fragment
  *
  *  @ingroup RLE header
  */
