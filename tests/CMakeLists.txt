@@ -65,12 +65,9 @@ ENDIF(COVERAGE)
 # Test targets for build automation
 
 # Define directories path 
-SET(SCRIPT_DIR
-	${CMAKE_SOURCE_DIR}/tests/samples/scripts)
-SET(SAMPLE_DIR
-	${CMAKE_SOURCE_DIR}/tests/samples)
-SET(NON_REG_DIR
-	${CMAKE_SOURCE_DIR}/tests/samples/non_reg)
+SET(SCRIPT_DIR ${CMAKE_SOURCE_DIR}/tests/scripts)
+SET(SAMPLE_DIR ${CMAKE_SOURCE_DIR}/tests/samples)
+SET(NON_REG_DIR ${CMAKE_SOURCE_DIR}/tests/samples/non_reg)
 
 
 ADD_TEST(NAME unit_test COMMAND test_rle)
