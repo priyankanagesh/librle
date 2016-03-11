@@ -11,24 +11,24 @@ SET(SRC_LIBRLE_TESTS
 	test_rle_decap.c
 	test_rle_misc.c)
 
-ADD_LIBRARY(rle_tests EXCLUDE_FROM_ALL SHARED ${SRC_LIBRLE_TESTS})
+ADD_LIBRARY(rle_tests SHARED ${SRC_LIBRLE_TESTS})
 
-ADD_EXECUTABLE(test_rle EXCLUDE_FROM_ALL test_rle.c)
+ADD_EXECUTABLE(test_rle test_rle.c)
 TARGET_LINK_LIBRARIES(test_rle rle_tests rle)
 
-ADD_EXECUTABLE(test_non_regression EXCLUDE_FROM_ALL test_non_regression.c)
+ADD_EXECUTABLE(test_non_regression test_non_regression.c)
 TARGET_LINK_LIBRARIES(test_non_regression rle pcap)
 
-ADD_EXECUTABLE(test_non_regression_fpdu EXCLUDE_FROM_ALL test_non_regression_fpdu.c)
+ADD_EXECUTABLE(test_non_regression_fpdu test_non_regression_fpdu.c)
 TARGET_LINK_LIBRARIES(test_non_regression_fpdu rle pcap)
 
-ADD_EXECUTABLE(test_perfs EXCLUDE_FROM_ALL test_perfs.c)
+ADD_EXECUTABLE(test_perfs test_perfs.c)
 TARGET_LINK_LIBRARIES(test_perfs rle pcap)
 
-ADD_EXECUTABLE(test_perfs_fpdu EXCLUDE_FROM_ALL test_perfs_fpdu.c)
+ADD_EXECUTABLE(test_perfs_fpdu test_perfs_fpdu.c)
 TARGET_LINK_LIBRARIES(test_perfs_fpdu rle pcap)
 
-ADD_EXECUTABLE(test_dump_fpdus EXCLUDE_FROM_ALL test_dump_fpdus.c)
+ADD_EXECUTABLE(test_dump_fpdus test_dump_fpdus.c)
 TARGET_LINK_LIBRARIES(test_dump_fpdus rle pcap)
 
 # To build with make check
