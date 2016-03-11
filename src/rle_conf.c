@@ -159,7 +159,7 @@ int rle_conf_set_crc_check(struct rle_configuration *_this, int enable_crc_check
 	return C_OK;
 }
 
-int rle_conf_get_crc_check(struct rle_configuration *_this)
+int rle_conf_get_crc_check(const struct rle_configuration *const _this)
 {
 	return _this->enable_crc_check;
 }

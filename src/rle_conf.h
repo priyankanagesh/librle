@@ -190,7 +190,7 @@ int rle_conf_set_crc_check(struct rle_configuration *_this, int enable_crc_check
  *
  *  @ingroup
  */
-int rle_conf_get_crc_check(struct rle_configuration *_this);
+int rle_conf_get_crc_check(const struct rle_configuration *const _this);
 
 /**
  *  @brief	Check if a given protocol type is omissible depending of the conf
