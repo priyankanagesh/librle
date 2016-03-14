@@ -70,6 +70,7 @@
 /**< Initial value for CRC32 computation */
 #define GSE_CRC_INIT 0xFFFFFFFF
 #define RLE_CRC_INIT GSE_CRC_INIT
+#define RLE_CRC_SIZE (sizeof(uint32_t))
 
 
 /*------------------------------------------------------------------------------------------------*/

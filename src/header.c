@@ -14,6 +14,7 @@
 #include "rle_conf.h"
 #include "rle_header_proto_type_field.h"
 #include "header.h"
+#include "crc.h"
 
 #include "rle.h"
 
@@ -392,58 +393,95 @@ int push_ppdu_header(struct rle_frag_buf *const frag_buf,
                      struct rle_ctx_management *const rle_ctx)
 {
 	int status = 1;
-	size_t alpdu_fragment_len = ppdu_length;
+	size_t max_alpdu_fragment_len = ppdu_length;
+	const size_t remain_alpdu_len = frag_buf_get_remaining_alpdu_length(frag_buf);
+	const int use_alpdu_crc = rle_conf_get_crc_check(rle_conf);
 
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
 	if (frag_buf_is_fragmented(frag_buf)) {
+		/* ALPDU is fragmented, use CONT or END PPDU */
+
 		if (!rle_ctx) {
 			PRINT_RLE_ERROR("RLE context needed.");
 			goto out;
 		}
 
 		if (ppdu_length < sizeof(rle_ppdu_header_cont_end_t)) {
+			/* buffer is too small for the smallest PPDU CONT or END fragment */
 			status = 2;
 			goto out;
 		}
 
-		alpdu_fragment_len -= sizeof(rle_ppdu_header_cont_end_t);
+		max_alpdu_fragment_len -= sizeof(rle_ppdu_header_cont_end_t);
+
 		/* /!\ TODO Currently 0-octets wide ALPDU fragment accepted /!\ */
 
-		if (frag_buf_get_remaining_alpdu_length(frag_buf) > alpdu_fragment_len) {
-			/* Continuation PPDU */
-
-			frag_buf_ppdu_put(frag_buf, ppdu_length - sizeof(rle_ppdu_header_cont_end_t));
-
-			status = push_cont_ppdu_header(frag_buf, rle_ctx->frag_id);
-		} else {
-			/* End PPDU */
-
-			frag_buf_ppdu_put(frag_buf, ppdu_length - sizeof(rle_ppdu_header_cont_end_t));
-
+		/* Determine whether a END PPDU is possible or not: a END PPDU is possible only if all
+		 * remaining ALPDU bytes may fit into the available room after the END PPDU header
+		 *
+		 * If END PPDU is not possible, use a CONT PPDU. The RLE reassembler does not support
+		 * when the ALPDU trailer (CRC or seqnum) is fragmented. The seqnum fits into one
+		 * single byte, so it cannot be fragmented. The CRC fits into 32 bits. So, if the RLE
+		 * transmitter is configured for CRC, we should avoid to fragment the last 4 bytes of
+		 * the ALPDU.
+		 * Note: the `remain_alpdu_len` contain the ALPDU trailer length */
+		if (remain_alpdu_len <= max_alpdu_fragment_len) {
+			/* END PPDU is possible: put all remaining bytes into the PPDU payload, then build
+			 * the END PPDU header before the payload */
+			frag_buf_ppdu_put(frag_buf, remain_alpdu_len);
 			status = push_end_ppdu_header(frag_buf, rle_ctx->frag_id);
+
+		} else {
+			/* CONT PPDU is required: determine whether the trailer is fully contained in the
+			 * next PPDU fragment or not ; if not, the trailer would be fragmented, so make
+			 * the CONT PPDU fragment smaller to avoid the trailer fragmentation */
+
+			const size_t trailer_len = (use_alpdu_crc ? RLE_CRC_SIZE : 0);
+			const size_t alpdu_overflow_len = remain_alpdu_len - max_alpdu_fragment_len;
+
+			if (alpdu_overflow_len < trailer_len) {
+				/* the number of ALPDU bytes that will be put in the next fragments is smaller
+				 * than the ALPDU trailer, so the current CONT PPDU contains some bytes of the
+				 * trailer, so make the PPDU fragment shorter */
+
+				size_t trailer_len_in_cur_ppdu = trailer_len - alpdu_overflow_len;
+
+				frag_buf_ppdu_put(frag_buf, max_alpdu_fragment_len - trailer_len_in_cur_ppdu);
+				status = push_cont_ppdu_header(frag_buf, rle_ctx->frag_id);
+
+			} else {
+				/* the ALPDU trailer will be fully transmitted in one of the next fragments,
+				 * there is no risk of trailer fragmentation, so use the full room of the buffer */
+				frag_buf_ppdu_put(frag_buf, max_alpdu_fragment_len);
+				status = push_cont_ppdu_header(frag_buf, rle_ctx->frag_id);
+			}
 		}
+
 	} else {
 		const int protocol_type_suppressed = (frag_buf_get_alpdu_header_len(frag_buf) == 0);
 		const int alpdu_label_type = get_alpdu_label_type(frag_buf->sdu_info.protocol_type,
 		                                                  protocol_type_suppressed);
 
-		alpdu_fragment_len -= sizeof(rle_ppdu_header_comp_t);
+		max_alpdu_fragment_len -= sizeof(rle_ppdu_header_comp_t);
 
-		if (frag_buf_get_remaining_alpdu_length(frag_buf) > alpdu_fragment_len) {
+		if (remain_alpdu_len > max_alpdu_fragment_len) {
 			/* Start PPDU */
 
-			const int use_alpdu_crc =
-			        rle_conf_get_crc_check((struct rle_configuration *)rle_conf);
+			const size_t ppdu_and_alpdu_hdrs_len =
+				sizeof(rle_ppdu_header_start_t) + frag_buf_get_alpdu_header_len(frag_buf);
 
 			if (!rle_ctx) {
 				PRINT_RLE_ERROR("RLE context needed.");
 				goto out;
 			}
 
-			if (ppdu_length < sizeof(rle_ppdu_header_start_t)) {
+			if (ppdu_length < ppdu_and_alpdu_hdrs_len) {
+				/* buffer is too small for the smallest PPDU START fragment: the buffer shall be large
+				 * enough for the PPDU START header and the full ALDPU header because the fragmentation
+				 * of the ALPDU header is not supported by the RLE reassembler yet */
 				status = 2;
 				goto out;
 			}

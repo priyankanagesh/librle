@@ -279,9 +279,9 @@ void rle_receiver_destroy(struct rle_receiver **const receiver);
 /**
  * @brief         Create a new fragmentation buffer.
  *
- * @return        The fragmentation buffer if OK, else NULL.
+ * @return        The fragmentation buffer if OK, else NULL
  *
- * @ingroup       RLE Fragmentation buffer.
+ * @ingroup       RLE Fragmentation buffer
  */
 struct rle_frag_buf *rle_frag_buf_new(void);
 
@@ -290,7 +290,7 @@ struct rle_frag_buf *rle_frag_buf_new(void);
  *
  * @param[in,out] f_buff                   The fragmentation buffer to destroy.
  *
- * @ingroup       RLE Fragmentation buffer.
+ * @ingroup       RLE Fragmentation buffer
  */
 void rle_frag_buf_del(struct rle_frag_buf **const f_buff);
 
@@ -301,7 +301,7 @@ void rle_frag_buf_del(struct rle_frag_buf **const f_buff);
  *
  * @return        0 if OK, else 1.
  *
- * @ingroup       RLE Fragmentation buffer.
+ * @ingroup       RLE Fragmentation buffer
  */
 int rle_frag_buf_init(struct rle_frag_buf *const f_buff);
 
@@ -311,13 +311,13 @@ int rle_frag_buf_init(struct rle_frag_buf *const f_buff);
  *                SDU is copied in context when given for encapsulation, thus, the SDU given
  *                as argument to this function can be freed once encapsulation is done.
  *
- * @param[in,out] f_buff                   The fragmentation buffer. Must contains an SDU and be
- *                                         initialized.
- * @param[in]     size                     The SDU to copy.
+ * @param[in,out] f_buff   The fragmentation buffer. Must contains an SDU and be
+ *                         initialized.
+ * @param[in]     sdu      The SDU to copy.
  *
  * @return        0 if OK, else 1.
  *
- * @ingroup       RLE Fragmentation buffer.
+ * @ingroup       RLE Fragmentation buffer
  */
 int rle_frag_buf_cpy_sdu(struct rle_frag_buf *const f_buff,
                          const struct rle_sdu *const sdu);
@@ -450,7 +450,7 @@ void rle_pad(unsigned char *const fpdu, const size_t fpdu_current_pos,
  *                If some PPDU fragments are missing for some of them, the fragments
  *                that are already received are kept in the internal contexts of the
  *                library. Next calls to the function may complete them, they will
- *                then be added to \ref sdus.
+ *                then be added to the \e sdus output parameter.
  *                The payload label is extracted in a preallocated buffer depending on the size
  *                given by the caller. This size is known by the type of fpdu awaited and the
  *                predefined size given by ETSI EN 301 545-2 V1.2.1, tab. 7-10 p. 119.
@@ -731,7 +731,7 @@ int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
  * @param[in,out] receiver                 The receiver module. Must be initialize.
  * @param[in]     fragment_id              The fragment id of the queue.
  *
- * @ingroup       RLE transmitter statistics
+ * @ingroup       RLE receiver statistics
  */
 void rle_receiver_stats_reset_counters(struct rle_receiver *const receiver,
                                        const uint8_t fragment_id);
@@ -743,7 +743,7 @@ void rle_receiver_stats_reset_counters(struct rle_receiver *const receiver,
  *
  * @return      The uncompressed protocol type.
  *
- * @ingroup
+ * @ingroup     RLE header
  */
 uint16_t rle_header_ptype_decompression(uint8_t compressed_ptype);
 
@@ -754,7 +754,7 @@ uint16_t rle_header_ptype_decompression(uint8_t compressed_ptype);
  *
  * @return      0 if the protocol type is compressible else 1.
  *
- * @ingroup
+ * @ingroup     RLE header
  */
 int rle_header_ptype_is_compressible(uint16_t uncompressed_ptype);
 
@@ -765,7 +765,7 @@ int rle_header_ptype_is_compressible(uint16_t uncompressed_ptype);
  *
  * @return      The compressed protocol type.
  *
- * @ingroup
+ * @ingroup     RLE header
  */
 uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype);
 
