@@ -18,6 +18,24 @@
  *
  *  @warning
  *
+ *  @param rle_ctx              the rle fragment context
+ *  @param rle_conf             the rle configuration
+ *  @param data_buffer          data buffer's address to encapsulate
+ *  @param data_length          data length to encapsulate
+ *  @param protocol_type        the protocol type
+ *
+ *  @return C_ERROR if KO
+ *                C_OK if OK
+ *
+ *  @ingroup
+ */
+int create_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
+                  void *data_buffer, size_t data_length, uint16_t protocol_type);
+/**
+ *  @brief encapsulate data into an rle packet
+ *
+ *  @warning
+ *
  *  @param rle_ctx			the rle fragment context
  *  @param rle_conf			the rle configuration
  *  @param data_buffer		data buffer's address to encapsulate

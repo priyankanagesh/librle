@@ -7,8 +7,13 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#ifndef __KERNEL__
+
 #include <stdlib.h>
 #include <stdio.h>
+
+#endif
+
 #ifdef TIME_DEBUG
 #include <sys/time.h>
 #endif
@@ -22,41 +27,50 @@
 
 #define MODULE_NAME "RECEIVER"
 
+
+static int is_context_free(struct rle_receiver *_this, size_t index)
+{
+	int context_is_free = C_FALSE;
+
+	if (index >= RLE_MAX_FRAG_NUMBER) {
+		goto error;
+	}
+
+	if (((_this->free_ctx >> index) & 0x1) == 0) {
+		context_is_free = C_TRUE;
+	}
+
+error:
+	return context_is_free;
+}
+
+
 static int get_first_free_frag_ctx(struct rle_receiver *_this)
 {
 	int i;
 
-	pthread_mutex_lock(&_this->ctx_mutex);
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		if (((_this->free_ctx >> i) & 0x1) == 0) {
-			pthread_mutex_unlock(&_this->ctx_mutex);
 			return i;
 		}
 	}
-	pthread_mutex_unlock(&_this->ctx_mutex);
 
 	return C_ERROR;
 }
 
 static void set_nonfree_frag_ctx(struct rle_receiver *_this, int index)
 {
-	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx |= (1 << index);
-	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static void set_free_frag_ctx(struct rle_receiver *_this, int index)
 {
-	pthread_mutex_lock(&_this->ctx_mutex);
-	_this->free_ctx = (0 << index) & 0xff;
-	pthread_mutex_unlock(&_this->ctx_mutex);
+	_this->free_ctx &= ~(1 << index);
 }
 
 static void set_free_all_frag_ctx(struct rle_receiver *_this)
 {
-	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx = 0;
-	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static int get_recvd_fragment_type(void *data_buffer)
@@ -152,8 +166,6 @@ static void init(struct rle_receiver *_this)
 		rle_ctx_set_seq_nb(&_this->rle_ctx_man[i], 0);
 	}
 
-	pthread_mutex_init(&_this->ctx_mutex, NULL);
-
 	/* all frag_id are set to idle */
 	set_free_all_frag_ctx(_this);
 }
@@ -167,6 +179,7 @@ struct rle_receiver *rle_receiver_module_new(void)
 #endif
 
 	struct rle_receiver *_this = NULL;
+	int i = 0;
 
 	_this = MALLOC(sizeof(struct rle_receiver));
 
@@ -176,8 +189,6 @@ struct rle_receiver *rle_receiver_module_new(void)
 		      __FILE__, __func__, __LINE__);
 		return NULL;
 	}
-
-	int i;
 
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		_this->rle_conf[i] = rle_conf_new();
@@ -202,14 +213,15 @@ void rle_receiver_module_destroy(struct rle_receiver *_this)
 	      MODULE_NAME,
 	      __FILE__, __func__, __LINE__);
 #endif
+	if (_this) {
+		int i;
+		for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+			rle_ctx_destroy(&_this->rle_ctx_man[i]);
+			rle_conf_destroy(_this->rle_conf[i]);
+		}
 
-	int i;
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		rle_ctx_destroy(&_this->rle_ctx_man[i]);
-		rle_conf_destroy(_this->rle_conf[i]);
+		FREE(_this);
 	}
-
-	FREE(_this);
 	_this = NULL;
 }
 
@@ -229,6 +241,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 #endif
 
 	int ret = C_ERROR;
+	int frag_type = 0;
 
 	if (!data_buffer) {
 		PRINT("ERROR %s %s:%s:%d: data buffer is invalid\n",
@@ -257,7 +270,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 	 * right frag id context (SE bits)
 	 * or
 	 * search for the first free frag id context to put data into it */
-	int frag_type = get_recvd_fragment_type(data_buffer);
+	frag_type = get_recvd_fragment_type(data_buffer);
 	*index_ctx = -1;
 
 	switch (frag_type) {
@@ -266,26 +279,57 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 		if (*index_ctx < 0) {
 			PRINT("ERROR %s %s:%s:%d: no free reassembly context available "
 			      "for deencapsulation\n",
-			      MODULE_NAME,
-			      __FILE__, __func__, __LINE__);
+			      MODULE_NAME, __FILE__, __func__, __LINE__);
 			return C_ERROR;
 		}
 		break;
 	case RLE_PDU_START_FRAG:
+		*index_ctx = get_fragment_id(data_buffer);
+#ifdef DEBUG
+		PRINT("DEBUG %s %s:%s:%d: fragment_id 0x%0x frag type %d\n",
+		      MODULE_NAME, __FILE__, __func__, __LINE__, *index_ctx, frag_type);
+#endif
+		if ((*index_ctx < 0) || (*index_ctx > RLE_MAX_FRAG_ID)) {
+			PRINT("ERROR %s %s:%s:%d: invalid fragment id [%d]\n",
+			      MODULE_NAME, __FILE__, __func__, __LINE__, *index_ctx);
+			return C_ERROR;
+		}
+		if (is_context_free(_this, *index_ctx) == C_FALSE) {
+			struct rle_ctx_management *const rle_ctx = &_this->rle_ctx_man[*index_ctx];
+			PRINT("ERROR %s %s:%s:%d: invalid Start on context not free, frag id [%d]\n",
+			      MODULE_NAME, __FILE__, __func__, __LINE__, *index_ctx);
+			/* Context is not free, whereas it must be. an error must have occured. */
+			/* Freeing context, updating stats, andrestarting receiving. */
+			rle_ctx_incr_counter_dropped(rle_ctx);
+			rle_ctx_incr_counter_bytes_dropped(rle_ctx, rle_ctx_get_remaining_alpdu_length(rle_ctx));
+			rle_receiver_free_context(_this, *index_ctx);
+		}
+		break;
 	case RLE_PDU_CONT_FRAG:
 	case RLE_PDU_END_FRAG:
 		*index_ctx = get_fragment_id(data_buffer);
 #ifdef DEBUG
 		PRINT("DEBUG %s %s:%s:%d: fragment_id 0x%0x frag type %d\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__,
-		      *index_ctx, frag_type);
+		      MODULE_NAME, __FILE__, __func__, __LINE__, *index_ctx, frag_type);
 #endif
 		if ((*index_ctx < 0) || (*index_ctx > RLE_MAX_FRAG_ID)) {
 			PRINT("ERROR %s %s:%s:%d: invalid fragment id [%d]\n",
-			      MODULE_NAME,
-			      __FILE__, __func__, __LINE__,
-			      *index_ctx);
+			      MODULE_NAME, __FILE__, __func__, __LINE__, *index_ctx);
+			return C_ERROR;
+		}
+		if (is_context_free(_this, *index_ctx) == C_TRUE) {
+			struct rle_ctx_management *const rle_ctx = &_this->rle_ctx_man[*index_ctx];
+			PRINT("ERROR %s %s:%s:%d: invalid %s on context free, frag id [%d]\n",
+			      MODULE_NAME, __FILE__, __func__, __LINE__,
+			      frag_type == RLE_PDU_CONT_FRAG ? "Cont" : "End", *index_ctx);
+			/* Context is free, whereas it must not. an error must have occured. */
+			/* Freeing context and updating stats. At least one packet is partialy lost.*/
+
+			rle_ctx_incr_counter_dropped(rle_ctx);
+			rle_ctx_incr_counter_lost(rle_ctx, 1);
+			rle_ctx_incr_counter_bytes_dropped(rle_ctx, rle_ctx_get_remaining_alpdu_length(rle_ctx));
+			rle_receiver_free_context(_this, *index_ctx);
+
 			return C_ERROR;
 		}
 		break;
@@ -310,8 +354,8 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, void *data_buffer, siz
 		/* received RLE packet is invalid,
 		 * we have to flush related context
 		 * for this frag_id */
-		rle_ctx_flush_buffer(&_this->rle_ctx_man[*index_ctx]);
 		rle_ctx_invalid_ctx(&_this->rle_ctx_man[*index_ctx]);
+		rle_ctx_flush_buffer(&_this->rle_ctx_man[*index_ctx]);
 		set_free_frag_ctx(_this, *index_ctx);
 		PRINT("ERROR %s %s:%s:%d: cannot reassemble data, error type %d\n",
 		      MODULE_NAME,
@@ -426,7 +470,7 @@ uint64_t rle_receiver_get_counter_bytes(struct rle_receiver *_this)
 
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
-		ctr_bytes += rle_ctx_get_counter_bytes(rle_ctx);
+		ctr_bytes += rle_ctx_get_counter_bytes_in(rle_ctx);
 	}
 
 	return ctr_bytes;
@@ -456,12 +500,3 @@ size_t rle_receiver_get_alpdu_protection_length(const struct rle_receiver *const
 
 	return alpdu_protection_length;
 }
-
-#ifdef __KERNEL__
-EXPORT_SYMBOL(rle_receiver_module_new);
-EXPORT_SYMBOL(rle_receiver_module_init);
-EXPORT_SYMBOL(rle_receiver_module_destroy);
-EXPORT_SYMBOL(rle_receiver_deencap_data);
-EXPORT_SYMBOL(rle_receiver_get_packet);
-EXPORT_SYMBOL(rle_receiver_dump);
-#endif

@@ -51,8 +51,16 @@
 #ifndef CRC_H
 #define CRC_H
 
+#ifndef __KERNEL__
+
 #include <stdint.h>
 #include <string.h>
+
+#else
+
+#include <linux/types.h>
+
+#endif
 
 /**< Initial value for CRC32 computation */
 #define GSE_CRC_INIT 0xFFFFFFFF

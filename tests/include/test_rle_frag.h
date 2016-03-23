@@ -34,14 +34,16 @@ enum boolean test_frag_too_small(void);
 enum boolean test_frag_null_context(void);
 
 /**
- * @brief         Fragmentation test with an invalid burst size.
+ * @brief         Fragmentation test with real-world configurations.
  *
- *                A burst size is invalid when the ALPDU protection bytes cannot be sent without
- *                being cut.
+ *                Fragments with realistic values and configurations, IPv4 is the protocol type per
+ *                default and is omitted, SeqNo by default), with burst sizes in the set of the RCS
+ *                mandatory burst sizes (14, 24, 38, 51, 55, 59, 62, 69, 84, 85, 93, 96, 100, 115,
+ *                123, 130, 144, 170, 175, 188, 264, 298, 355, 400, 438, 444, 539, 599).
  *
  * @return        BOOL_TRUE if RLE_FRAG_ERR_INVALID_SIZE is raised, else BOOL_FALSE.
  */
-enum boolean test_frag_invalid_size(void);
+enum boolean test_frag_real_world(void);
 
 /**
  * @brief         Fragmentation tests in general cases.

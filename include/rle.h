@@ -10,8 +10,17 @@
 #ifndef __RLE_H__
 #define __RLE_H__
 
+#ifndef __KERNEL__
+
 #include <stddef.h>
 #include <stdint.h>
+
+#else
+
+#include <linux/stddef.h>
+#include <linux/types.h>
+
+#endif
 
 /** Status of the encapsulation. */
 enum rle_encap_status {
@@ -52,6 +61,21 @@ enum rle_decap_status {
 	RLE_DECAP_ERR_INV_PL     /**< Error. Given preallocated payload label array is invalid. */
 };
 
+/** Status of RLE header size. */
+enum rle_header_size_status {
+	RLE_HEADER_SIZE_OK,                    /**< OK. */
+	RLE_HEADER_SIZE_ERR,                   /**< Default error, returned size may be false. */
+	RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC, /**< Error. Size cannot be calculated.*/
+};
+
+/** Different kind of FPDUs */
+enum rle_fpdu_types {
+	RLE_LOGON_FPDU,        /**< Log on FPDU. */
+	RLE_CTRL_FPDU,         /**< Control FPDU. */
+	RLE_TRAFFIC_FPDU,      /**< Traffic only FPDU. */
+	RLE_TRAFFIC_CTRL_FPDU, /**< Traffic and control FPDU. */
+};
+
 /**
  * RLE transmitter.
  * For encapsulation, fragmentation and packing.
@@ -83,6 +107,31 @@ struct rle_context_configuration {
 	int use_alpdu_crc;              /**< If set to 1, RLE check on CRC, else if 0, Seq number. */
 	int use_ptype_omission;         /**< If set to 1, implicit_protocol_type is omitted.       */
 	int use_compressed_ptype;       /**< If set to 1, protocol types are compressed.           */
+};
+
+/**
+ * RLE transmitter statistics.
+ */
+struct rle_transmitter_stats {
+	uint64_t sdus_in;       /**< Number of SDUs received for sending.   */
+	uint64_t sdus_sent;     /**< Number of SDUs sent.                   */
+	uint64_t sdus_dropped;  /**< Number of SDUs dropped.                */
+	uint64_t bytes_in;      /**< Number of octets received for sending. */
+	uint64_t bytes_sent;    /**< Number of octets sent.                 */
+	uint64_t bytes_dropped; /**< Number of octets dropped.              */
+};
+
+/**
+ * RLE receiver statistics.
+ */
+struct rle_receiver_stats {
+	uint64_t sdus_received;     /**< Number of SDUs received.               */
+	uint64_t sdus_reassembled;  /**< Number of SDUs reassembled in SDUs.    */
+	uint64_t sdus_dropped;      /**< Number of SDUs dropped.                */
+	uint64_t sdus_lost;         /**< Number of SDUs lost.                   */
+	uint64_t bytes_received;    /**< Number of octets received for sending. */
+	uint64_t bytes_reassembled; /**< Number of octets sent.                 */
+	uint64_t bytes_dropped;     /**< Number of octets dropped.              */
 };
 
 /**
@@ -188,6 +237,18 @@ enum rle_pack_status rle_pack(const unsigned char *const ppdu, const size_t ppdu
                               size_t *const fpdu_remaining_size);
 
 /**
+ * @brief         RLE padding. Pad the given FPDU with 0x00 octets.
+ *
+ * @param[in,out] fpdu                    Frame PDU to pad.
+ * @param[in]     fpdu_current_pos        Current position in the FPDU.
+ * @param[in]     fpdu_remaining_size     Remaining size in the FPDU.
+ *
+ * @ingroup       RLE transmitter
+ */
+void rle_pad(unsigned char *const fpdu, const size_t fpdu_current_pos,
+             const size_t fpdu_remaining_size);
+
+/**
  * @brief         RLE decapsulation function. Decapsulate the given FPDU into zero or more SDUs.
  *
  *                The function returns all of the SDUs that are fully decapsulated.
@@ -220,7 +281,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
                                       const size_t payload_label_size);
 
 /**
- * @brief         Get occupied size of a queue (frag_id) in a RLE transmitter module.
+ * @brief         Get occupied size of a queue (frag_id) in an RLE transmitter module.
  *
  * @param[in]     transmitter             The transmitter module. Must be initialize.
  * @param[in]     fragment_id             Fragment id to use. Must be valid.
@@ -233,43 +294,115 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
                                             const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of successfully sent SDU in a RLE transmitter module.
+ * @brief         Get total number of ready to be sent SDU of an RLE transmitter queue.
  *
  * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of SDUs sent successfully.
  *
  * @ingroup       RLE transmitter statistics
  */
-uint64_t rle_transmitter_stats_get_counter_ok(const struct rle_transmitter *const transmitter);
+uint64_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter *const transmitter,
+                                                 const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of dropped SDU in a RLE transmitter module.
+ * @brief         Get total number of successfully sent SDU of an RLE transmitter queue.
+ *
+ * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @return        Number of SDUs sent successfully.
+ *
+ * @ingroup       RLE transmitter statistics
+ */
+uint64_t rle_transmitter_stats_get_counter_sdus_sent(const struct rle_transmitter *const transmitter,
+                                                   const uint8_t fragment_id);
+
+/**
+ * @brief         Get total number of dropped SDU of an RLE transmitter queue.
  *
  *                In transmission, a SDU may be dropped during encapsulation, fragmentation or
  *                packing in error cases.
  *
  * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of dropped SDUs.
  *
  * @ingroup       RLE transmitter statistics
  */
-uint64_t rle_transmitter_stats_get_counter_dropped(const struct rle_transmitter *const transmitter);
+uint64_t rle_transmitter_stats_get_counter_sdus_dropped(
+        const struct rle_transmitter *const transmitter, const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of sent octets in a RLE transmitter module.
+ * @brief         Get total number of ready to be sent octets of an RLE transmitter queue.
  *
  * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of octets sent.
  *
  * @ingroup       RLE transmitter statistics
  */
-uint64_t rle_transmitter_stats_get_counter_bytes(const struct rle_transmitter *const transmitter);
+uint64_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter *const transmitter,
+                                                  const uint8_t fragment_id);
 
 /**
- * @brief         Get occupied size of a queue (frag_id) in a RLE receiver module.
+ * @brief         Get total number of sent octets of an RLE transmitter queue.
+ *
+ * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @return        Number of octets sent.
+ *
+ * @ingroup       RLE transmitter statistics
+ */
+uint64_t rle_transmitter_stats_get_counter_bytes_sent(const struct rle_transmitter *const transmitter,
+                                                  const uint8_t fragment_id);
+
+/**
+ * @brief         Get total number of dropped octetsof an RLE transmitter queue.
+ *
+ * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @return        Number of octets sent.
+ *
+ * @ingroup       RLE transmitter statistics
+ */
+uint64_t rle_transmitter_stats_get_counter_bytes_dropped(
+        const struct rle_transmitter *const transmitter, const uint8_t fragment_id);
+
+/**
+ * @brief         Dump all the statistics of a given RLE transmitter queue in an RLE stats
+ *                structure.
+ *
+ * @param[in]     transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ * @param[out]    stats                    The RLE stats structure.
+ *
+ * @return        0 if OK, else 1.
+ *
+ * @ingroup       RLE transmitter statistics
+ */
+int rle_transmitter_stats_get_counters(const struct rle_transmitter *const transmitter,
+                                       const uint8_t fragment_id,
+                                       struct rle_transmitter_stats *const stats);
+
+/**
+ * @brief         Reset all the statistics of a given RLE transmitter queue in an RLE stats
+ *
+ * @param[in,out] transmitter              The transmitter module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @ingroup       RLE transmitter statistics
+ */
+void rle_transmitter_stats_reset_counters(struct rle_transmitter *const transmitter,
+                                          const uint8_t fragment_id);
+
+/**
+ * @brief         Get occupied size of a queue (frag_id) in a RLE receiver queue.
  *
  * @param[in]     receiver                 The receiver module. Must be initialize.
  * @param[in]     fragment_id              Fragment id to use. Must be valid.
@@ -282,31 +415,48 @@ size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiv
                                          const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of successfully received SDUs in a RLE receiver module.
+ * @brief         Get total number of partially received SDUs of an RLE receiver queue.
  *
  * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of SDUs received successfully.
  *
  * @ingroup       RLE receiver statistics
  */
-uint64_t rle_receiver_stats_get_counter_ok(const struct rle_receiver *const receiver);
+uint64_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver *const receiver,
+                                                    const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of dropped SDUs in a RLE receiver module.
+ * @brief         Get total number of successfully reassembled SDUs of an RLE receiver queue.
+ *
+ * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @return        Number of SDUs received successfully.
+ *
+ * @ingroup       RLE receiver statistics
+ */
+uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiver *const receiver,
+                                                       const uint8_t fragment_id);
+
+/**
+ * @brief         Get total number of dropped SDUs of an RLE receiver queue.
  *
  *                In reception, a SDU may be dropped in decapsulation in error cases.
  *
  * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of dropped SDUs.
  *
  * @ingroup       RLE receiver statistics
  */
-uint64_t rle_receiver_stats_get_counter_dropped(const struct rle_receiver *const receiver);
+uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *const receiver,
+                                                   const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of lost SDUs in a RLE receiver module.
+ * @brief         Get total number of lost SDUs of an RLE receiver queue.
  *
  *                In reception, a SDU may be lost in decapsulation if the Seq numbers or the CRC
  *                are not the expected ones. When the CRC is wrong, one packet is count as lost,
@@ -314,22 +464,100 @@ uint64_t rle_receiver_stats_get_counter_dropped(const struct rle_receiver *const
  *                compute and the counter is increase by the number of missing SeqNos.
  *
  * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of lost SDUs.
  *
  * @ingroup       RLE receiver statistics
  */
-uint64_t rle_receiver_stats_get_counter_lost(const struct rle_receiver *const receiver);
+uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *const receiver,
+                                                const uint8_t fragment_id);
 
 /**
- * @brief         Get total number of received octets in a RLE receiver module.
+ * @brief         Get total number of received octets of partially received SDUs of an RLE receiver
+ *                queue.
  *
  * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
  *
  * @return        Number of octets received.
  *
  * @ingroup       RLE receiver statistics
  */
-uint64_t rle_receiver_stats_get_counter_bytes(const struct rle_receiver *const receiver);
+uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver *const receiver,
+                                                     const uint8_t fragment_id);
+
+/**
+ * @brief         Get total number of received octets of successfully reassembled in SDUs of an RLE
+ *                receiver queue.
+ *
+ * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @return        Number of octets received.
+ *
+ * @ingroup       RLE receiver statistics
+ */
+uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_receiver *const receiver,
+                                                        const uint8_t fragment_id);
+
+/**
+ * @brief         Get total number of received octets of dropped SDUs of an RLE receiver queue.
+ *
+ * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @return        Number of octets received.
+ *
+ * @ingroup       RLE receiver statistics
+ */
+uint64_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver *const receiver,
+                                                    const uint8_t fragment_id);
+
+/**
+ * @brief         Dump all the statistics of a given RLE receiver queue in an RLE stats
+ *                structure.
+ *
+ * @param[in]     receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ * @param[out]    stats                    The RLE stats structure.
+ *
+ * @return        0 if OK, else 1.
+ *
+ * @ingroup       RLE receiver statistics
+ */
+int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
+                                    const uint8_t fragment_id,
+                                    struct rle_receiver_stats *const stats);
+
+/**
+ * @brief         Reset all the statistics of a given RLE receiver queue in an RLE stats
+ *
+ * @param[in,out] receiver                 The receiver module. Must be initialize.
+ * @param[in]     fragment_id              The fragment id of the queue.
+ *
+ * @ingroup       RLE transmitter statistics
+ */
+void rle_receiver_stats_reset_counters(struct rle_transmitter *const transmitter,
+                                       const uint8_t fragment_id);
+
+/**
+ * @brief         Get the size of an RLE headers overhead (ALPDU + PPDU + FPDU headers).
+ *                Those header sizes are known only for signal fpdus, and traffic-control fpdus.
+ *
+ * @param[in]     conf                    The rle module configuration. could be set to "NULL".
+ *                                        May be used for evolution or adaption of RLE.
+ * @param[in]     fpdu_type               The type of the FPDU.
+ * @param[out]    rle_header_size         The size of the RLE header in octets.
+ *
+ * @return        RLE_HEADER_SIZE_OK if size is calculated,
+ *                RLE_HEADER_SIZE_ERR on generic errors,
+ *                RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC when size cannot be calculated due
+ *                to RLE prediction limitations (for instance, on traffic only burst).
+ *
+ */
+enum rle_header_size_status rle_get_header_size(const struct rle_context_configuration *const conf,
+                                                const enum rle_fpdu_types fpdu_type,
+                                                size_t *const rle_header_size);
 
 #endif /* __RLE_H__ */

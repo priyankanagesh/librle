@@ -7,8 +7,13 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#ifndef __KERNEL__
+
 #include <stdlib.h>
 #include <stdio.h>
+
+#endif
+
 #ifdef TIME_DEBUG
 #include <sys/time.h>
 #endif
@@ -25,32 +30,24 @@ static int is_frag_ctx_free(struct rle_transmitter *const _this, const uint8_t f
 {
 	int is_free = C_FALSE;
 
-	pthread_mutex_lock(&_this->ctx_mutex);
 	is_free = ((_this->free_ctx >> frag_id) & 0x1) ? C_TRUE : C_FALSE;
-	pthread_mutex_unlock(&_this->ctx_mutex);
 
 	return is_free;
 }
 
 static void set_nonfree_frag_ctx(struct rle_transmitter *_this, int index)
 {
-	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx |= (1 << index);
-	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static void set_free_frag_ctx(struct rle_transmitter *_this, int index)
 {
-	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx = (0 << index) & 0xff;
-	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static void set_free_all_frag_ctx(struct rle_transmitter *_this)
 {
-	pthread_mutex_lock(&_this->ctx_mutex);
 	_this->free_ctx = 0;
-	pthread_mutex_unlock(&_this->ctx_mutex);
 }
 
 static void init(struct rle_transmitter *_this)
@@ -69,8 +66,6 @@ static void init(struct rle_transmitter *_this)
 		rle_ctx_set_frag_id(&_this->rle_ctx_man[i], i);
 		rle_ctx_set_seq_nb(&_this->rle_ctx_man[i], 0);
 	}
-
-	pthread_mutex_init(&_this->ctx_mutex, NULL);
 
 	/* all frag_id are set to idle */
 	set_free_all_frag_ctx(_this);
@@ -122,19 +117,21 @@ void rle_transmitter_module_destroy(struct rle_transmitter *_this)
 	      __FILE__, __func__, __LINE__);
 #endif
 
-	int i;
-	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
-		rle_ctx_destroy(&_this->rle_ctx_man[i]);
+	if (_this) {
+		int i;
+		for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+			rle_ctx_destroy(&_this->rle_ctx_man[i]);
+		}
+
+		set_free_all_frag_ctx(_this);
+
+		if (rle_conf_destroy(_this->rle_conf) != C_OK) {
+			PRINT("ERROR %s:%s:%d: destroying RLE configuration failed\n",
+			      __FILE__, __func__, __LINE__);
+		}
+
+		FREE(_this);
 	}
-
-	set_free_all_frag_ctx(_this);
-
-	if (rle_conf_destroy(_this->rle_conf) != C_OK) {
-		PRINT("ERROR %s:%s:%d: destroying RLE configuration failed\n",
-		      __FILE__, __func__, __LINE__);
-	}
-
-	FREE(_this);
 	_this = NULL;
 }
 
@@ -181,11 +178,10 @@ int rle_transmitter_encap_data(struct rle_transmitter *_this, void *data_buffer,
 	if (encap_encapsulate_pdu(&_this->rle_ctx_man[frag_id],
 	                          _this->rle_conf,
 	                          data_buffer, data_length,
-	                          protocol_type)
-	    == C_ERROR) {
-		/* rle_ctx_incr_counter_dropped(&_this->rle_ctx_man[index_ctx]); */
-		rle_ctx_incr_counter_dropped(&_this->rle_ctx_man[frag_id]);
-		/* set_free_frag_ctx(_this, index_ctx); */
+	                          protocol_type) == C_ERROR) {
+		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[frag_id];
+		rle_ctx_incr_counter_dropped(rle_ctx);
+		rle_ctx_incr_counter_bytes_dropped(rle_ctx, data_length);
 		set_free_frag_ctx(_this, frag_id);
 		PRINT("ERROR %s:%s:%d: cannot encapsulate data\n",
 		      __FILE__, __func__, __LINE__);
@@ -252,8 +248,10 @@ int rle_transmitter_get_packet(struct rle_transmitter *_this, void *burst_buffer
 #endif
 
 return_val:
-	if (ret != C_OK) {
-		rle_ctx_incr_counter_dropped(&_this->rle_ctx_man[fragment_id]);
+	if ((ret != C_OK) && (ret != C_ERROR_FRAG_SIZE)) {
+		struct rle_ctx_management *const rle_ctx = &_this->rle_ctx_man[fragment_id];
+		rle_ctx_incr_counter_dropped(rle_ctx);
+		rle_ctx_incr_counter_bytes_dropped(rle_ctx, rle_ctx_get_remaining_alpdu_length(rle_ctx));
 		set_free_frag_ctx(_this, fragment_id);
 	}
 
@@ -330,7 +328,7 @@ uint64_t rle_transmitter_get_counter_bytes(struct rle_transmitter *_this)
 
 	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
 		struct rle_ctx_management *rle_ctx = &_this->rle_ctx_man[i];
-		ctr_bytes += rle_ctx_get_counter_bytes(rle_ctx);
+		ctr_bytes += rle_ctx_get_counter_bytes_in(rle_ctx);
 	}
 
 	return ctr_bytes;
@@ -362,14 +360,3 @@ enum check_frag_status rle_transmitter_check_frag_integrity(
 {
 	return rle_ctx_check_frag_integrity(&_this->rle_ctx_man[frag_id]);
 }
-
-#ifdef __KERNEL__
-EXPORT_SYMBOL(rle_transmitter_module_new);
-EXPORT_SYMBOL(rle_transmitter_module_init);
-EXPORT_SYMBOL(rle_transmitter_module_destroy);
-EXPORT_SYMBOL(rle_transmitter_encap_data);
-EXPORT_SYMBOL(rle_transmitter_get_packet);
-EXPORT_SYMBOL(rle_transmitter_get_queue_state);
-EXPORT_SYMBOL(rle_transmitter_get_queue_size);
-EXPORT_SYMBOL(rle_transmitter_dump);
-#endif

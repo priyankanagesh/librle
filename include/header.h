@@ -10,8 +10,29 @@
 #ifndef __HEADER_H__
 #define __HEADER_H__
 
-#include <endian.h>
+#ifndef __KERNEL__
+
 #include <stdint.h>
+#include <endian.h>
+
+#else
+
+#include <linux/types.h>
+#include <linux/kernel.h>
+#include <linux/byteorder/little_endian.h>
+
+#if defined(__LITTLE_ENDIAN)
+#define __BYTE_ORDER __LITTLE_ENDIAN
+#define __BIG_ENDIAN 0
+#elif defined(__BIG_ENDIAN)
+#define __BYTE_ORDER __BIG_ENDIAN
+#define __LITTLE_ENDIAN 0
+#else
+#error "platform is not little nor big endian"
+#endif
+
+#endif
+
 #include "rle_header_proto_type_field.h"
 
 /** Size of mandatory fields in a start packet in Bytes */

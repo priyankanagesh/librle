@@ -80,7 +80,7 @@ static enum boolean frag_tests(void)
 	const struct test null_transmitter = { "Null transmitter", test_frag_null_transmitter };
 	const struct test too_small = { "Too small", test_frag_too_small };
 	const struct test null_context = { "Null context", test_frag_null_context };
-	const struct test invalid_size = { "Invalid size", test_frag_invalid_size };
+	const struct test real_world = { "Real-world", test_frag_real_world };
 
 	const struct test *const fragmentation_tests[] =
 	{
@@ -88,7 +88,7 @@ static enum boolean frag_tests(void)
 		&null_transmitter,
 		&too_small,
 		&null_context,
-		&invalid_size,
+		&real_world,
 		NULL
 	};
 
@@ -127,6 +127,7 @@ static enum boolean decap_tests(void)
 	const struct test inv_pl = { "Invalid payload label buffer", test_decap_inv_pl };
 	const struct test inv_config = { "Invalid receiver configuration", test_decap_inv_config };
 	const struct test inv_padding = { "Invalid padding", test_decap_not_null_padding };
+	const struct test ctxt_flush = { "Context Flushing", test_decap_flush_ctxt };
 
 	const struct test *const decapsulation_tests[] =
 	{
@@ -137,10 +138,30 @@ static enum boolean decap_tests(void)
 		&inv_pl,
 		&inv_config,
 		&inv_padding,
+		&ctxt_flush,
 		NULL
 	};
 
 	return tests(decapsulation, decapsulation_tests);
+}
+
+static enum boolean misc_tests(void)
+{
+	const char *const miscellaneous = "Miscellaneous";
+
+	const struct test request_overhead_all = { "Request overhead All",
+	                                           test_request_rle_header_overhead_all };
+	const struct test request_overhead_traffic = { "Request overhead Traffic",
+	                                               test_request_rle_header_overhead_traffic };
+
+	const struct test *const miscellaneous_tests[] =
+	{
+		&request_overhead_all,
+		&request_overhead_traffic,
+		NULL
+	};
+
+	return tests(miscellaneous, miscellaneous_tests);
 }
 
 int main(void)
@@ -176,6 +197,12 @@ int main(void)
 	/*---------------------*/
 
 	tests_success &= decap_tests();
+
+	/*---------------------*/
+	/*--  Miscellaneous  --*/
+	/*---------------------*/
+
+	tests_success &= misc_tests();
 
 	printf("Tests %s. %zu/%zu\n\n", tests_success == BOOL_TRUE ? "OK" : "KO",
 	       total_number_of_succ_tests,

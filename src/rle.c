@@ -7,8 +7,17 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#ifndef __KERNEL__
+
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
+
+#else
+
+#include <linux/string.h>
+
+#endif
 
 #include "constants.h"
 #include "rle_ctx.h"
@@ -21,6 +30,89 @@
 #include "trailer.h"
 
 #include "rle.h"
+
+/**
+ * @brief          Check if a transmitter queue context is valid and extract it.
+ *
+ * @param[in]      transmitter              The transmitter with the context to extract.
+ * @param[in]      fragment_id              The fragment ID linked to the context to extract.
+ * @param[out]     ctx_man                  The extracted context.
+ *
+ * @return         0 if OK, else 1.
+ */
+static int valid_transmitter_context(const struct rle_transmitter *const transmitter,
+                                     const uint8_t fragment_id,
+                                     struct rle_ctx_management *const ctx_man);
+/**
+ * @brief          Check if a receiver queue context is valid and extract it.
+ *
+ * @param[in]      receiver                 The receiver with the context to extract.
+ * @param[in]      fragment_id              The fragment ID linked to the context to extract.
+ * @param[out]     ctx_man                  The extracted context.
+ *
+ * @return         0 if OK, else 1.
+ */
+static int valid_receiver_context(const struct rle_receiver *const receiver,
+                                  const uint8_t fragment_id,
+                                  struct rle_ctx_management *const ctx_man);
+
+static int valid_transmitter_context(const struct rle_transmitter *const transmitter,
+                                     const uint8_t fragment_id,
+                                     struct rle_ctx_management *const ctx_man)
+{
+	int status = 1;
+
+	if (!transmitter) {
+		/* Transmitter null. */
+		goto error;
+	}
+
+	if (fragment_id >= RLE_MAX_FRAG_ID) {
+		/* Out of bound */
+		goto error;
+	}
+
+	if (!ctx_man) {
+		/* Context manager null. */
+		goto error;
+	}
+
+	*ctx_man = transmitter->rle_ctx_man[fragment_id];
+
+	status = 1;
+
+error:
+	return status;
+}
+
+static int valid_receiver_context(const struct rle_receiver *const receiver,
+                                  const uint8_t fragment_id,
+                                  struct rle_ctx_management *const ctx_man)
+{
+	int status = 1;
+
+	if (!receiver) {
+		/* receiver null. */
+		goto error;
+	}
+
+	if (fragment_id >= RLE_MAX_FRAG_ID) {
+		/* Out of bound */
+		goto error;
+	}
+
+	if (!ctx_man) {
+		/* Context manager null. */
+		goto error;
+	}
+
+	*ctx_man = receiver->rle_ctx_man[fragment_id];
+
+	status = 1;
+
+error:
+	return status;
+}
 
 struct rle_transmitter *rle_transmitter_new(const struct rle_context_configuration configuration)
 {
@@ -110,13 +202,12 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
                                       const uint8_t frag_id)
 {
 	enum rle_encap_status status = RLE_ENCAP_ERR;
+	int ret = 0;
 
 	if (transmitter == NULL) {
 		status = RLE_ENCAP_ERR_NULL_TRMT;
 		goto exit_label;
 	}
-
-	int ret = 0;
 
 	if (sdu.size > RLE_MAX_PDU_SIZE) {
 		status = RLE_ENCAP_ERR_SDU_TOO_BIG;
@@ -141,19 +232,25 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 {
 	enum rle_frag_status status = RLE_FRAG_ERR; /* Error by default. */
 
+	size_t min_burst_size = 0;
+	int ret = 0;
+	size_t remaining_pdu = 0;
+	size_t remaining_alpdu = 0;
+	size_t burst_size = 0;
+
+	*ppdu_length = 0;
+
 	if (transmitter == NULL) {
 		status = RLE_FRAG_ERR_NULL_TRMT;
 		goto exit_label;
 	}
 
-	size_t min_burst_size = RLE_CONT_HEADER_SIZE;
+	min_burst_size = RLE_CONT_HEADER_SIZE;
 
-	int ret = 0;
-	size_t remaining_pdu = rle_ctx_get_remaining_pdu_length(&transmitter->rle_ctx_man[frag_id]);
-	size_t remaining_alpdu =
-	        rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id]);
-	size_t burst_size = remaining_burst_size <
-	                    RLE_MAX_PPDU_PL_SIZE ? remaining_burst_size : RLE_MAX_PPDU_PL_SIZE;
+	remaining_pdu = rle_ctx_get_remaining_pdu_length(&transmitter->rle_ctx_man[frag_id]);
+	remaining_alpdu = rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id]);
+	burst_size = remaining_burst_size <
+	             RLE_MAX_PPDU_PL_SIZE ? remaining_burst_size : RLE_MAX_PPDU_PL_SIZE;
 
 	if (remaining_alpdu == 0) {
 		status = RLE_FRAG_ERR_CONTEXT_IS_NULL;
@@ -168,7 +265,6 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 
 	if (burst_size < min_burst_size) {
 		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
-		rle_transmitter_free_context(transmitter, frag_id);
 		goto exit_label;
 	}
 
@@ -183,9 +279,7 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 	 */
 	if ((burst_size > RLE_CONT_HEADER_SIZE + remaining_pdu) &&
 	    (burst_size < RLE_CONT_HEADER_SIZE + remaining_alpdu)) {
-		status = RLE_FRAG_ERR_INVALID_SIZE;
-		rle_transmitter_free_context(transmitter, frag_id);
-		goto exit_label;
+		burst_size = RLE_CONT_HEADER_SIZE + remaining_pdu;
 	}
 
 	if ((remaining_alpdu + RLE_CONT_HEADER_SIZE) < burst_size) {
@@ -194,11 +288,14 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 		*ppdu_length = burst_size;
 	}
 
-	ret =
-	        rle_transmitter_get_packet(
-	                transmitter, ppdu, *ppdu_length, frag_id, rle_ctx_get_proto_type(
-	                        &transmitter->rle_ctx_man[frag_id]));
+	ret = rle_transmitter_get_packet(transmitter, ppdu, *ppdu_length, frag_id,
+	                                 rle_ctx_get_proto_type(&transmitter->rle_ctx_man[frag_id]));
 
+	if (ret == C_ERROR_FRAG_SIZE) {
+		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
+		*ppdu_length = 0;
+		goto exit_label;
+	}
 
 	remaining_alpdu = rle_ctx_get_remaining_alpdu_length(&transmitter->rle_ctx_man[frag_id]);
 
@@ -289,6 +386,12 @@ exit_label:
 	return status;
 }
 
+void rle_pad(unsigned char *const fpdu, const size_t fpdu_current_pos,
+             const size_t fpdu_remaining_size)
+{
+	memset((void *)(fpdu + fpdu_current_pos), 0, fpdu_remaining_size);
+}
+
 enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
                                       const unsigned char *const fpdu, const size_t fpdu_length,
                                       struct rle_sdu sdus[],
@@ -297,9 +400,13 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
                                       const size_t payload_label_size)
 {
 	enum rle_decap_status status = RLE_DECAP_ERR;
+	int padding_detected = C_FALSE;
+	size_t offset = 0;
 
+	/* no SDUs decapsulated yet */
 	*sdus_nr = 0;
 
+	/* checks inputs */
 	if (receiver == NULL) {
 		status = RLE_DECAP_ERR_NULL_RCVR;
 		goto exit_label;
@@ -330,108 +437,84 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 		goto exit_label;
 	}
 
-	{
-		void *mem_ret = NULL;
-
-		if (payload_label_size != 0) {
-			mem_ret = memcpy((void *)payload_label, (const void *)fpdu,
-			                 payload_label_size);
-			if (mem_ret == NULL) {
-				mem_ret = memset((void *)payload_label, 0, payload_label_size);
-				if (mem_ret == NULL) {
-					status = RLE_DECAP_ERR_INV_FPDU;
-					goto exit_label;
-				}
-				status = RLE_DECAP_ERR_INV_PL;
-				goto exit_label;
-			}
-		}
-
-		{
-			size_t offset = payload_label_size;
-			uint8_t fragment_id = 0;
-			int end_ppdus = C_FALSE;
-
-			do {
-				enum frag_states fragment_type = FRAG_STATE_COMP;
-				int ret = C_ERROR;
-				size_t fragment_length = 0;
-
-				do {
-					fragment_type = get_fragment_type(&fpdu[offset]);
-
-					fragment_length = get_fragment_length(&fpdu[offset]);
-
-					if (fragment_type == FRAG_STATE_END) {
-						size_t alpdu_protection_length = 0;
-
-						alpdu_protection_length =
-						        rle_receiver_get_alpdu_protection_length(
-						                receiver, &fpdu[offset]);
-						fragment_id = get_fragment_frag_id(&fpdu[offset]);
-
-						fragment_length += alpdu_protection_length;
-					}
-					ret = rle_receiver_deencap_data(
-					        receiver, (unsigned char *)&fpdu[offset],
-					        fragment_length, (int *)((void *)&fragment_id));
-
-					if ((ret != C_OK) && (ret != C_REASSEMBLY_OK)) {
-						/* TODO cleaning, pkt dropping, etc... */
-						PRINT("Error during reassembly.\n");
-						status = RLE_FRAG_ERR;
-						goto exit_label;
-					}
-
-					offset += fragment_length;
-				} while (!((fragment_type == FRAG_STATE_COMP) ||
-				           (fragment_type == FRAG_STATE_END)));
-				int out_ptype = 0;
-				uint32_t out_packet_length = 0;
-				unsigned char current_sdu[RLE_MAX_PDU_SIZE];
-
-				ret =
-				        rle_receiver_get_packet(receiver, fragment_id, current_sdu,
-				                                &out_ptype,
-				                                &out_packet_length);
-				if (ret != C_OK) {
-					/* TODO cleaning, pkt dropping, etc... */
-					PRINT("Error getting packet from context.\n");
-					status = RLE_FRAG_ERR;
-					goto exit_label;
-				}
-				memcpy((void *)sdus[*sdus_nr].buffer, (const void *)current_sdu,
-				       (size_t)out_packet_length);
-				sdus[*sdus_nr].size = (size_t)out_packet_length;
-				sdus[*sdus_nr].protocol_type = (uint16_t)out_ptype;
-				(*sdus_nr)++;
-				if (ret == C_OK) {
-					rle_receiver_free_context(receiver, fragment_id);
-				}
-				end_ppdus = (offset >= (fpdu_length - 1));
-				if (!end_ppdus) {
-					end_ppdus = (fpdu[offset] == '\0');
-					end_ppdus &= (fpdu[offset + 1] == '\0');
-				}
-			} while (!end_ppdus);
-
-			{
-				const unsigned char *p_fpdu;
-				int correct_padding = C_OK;
-				for (p_fpdu = &fpdu[offset];
-				     (p_fpdu < fpdu + fpdu_length) && (correct_padding == C_OK);
-				     ++p_fpdu) {
-					if (*p_fpdu != '\0') {
-						PRINT(
-						        "WARNING: Current padding contains octets non equal to 0x00.\n");
-						correct_padding = C_FALSE;
-					}
-				}
-			}
-		}
+	/* copy payload label to user if present */
+	if (payload_label_size != 0) {
+		memcpy(payload_label, fpdu, payload_label_size);
+		offset += payload_label_size;
 	}
 
 	status = RLE_DECAP_OK;
+
+	/* parse all PPDUs that the FPDU contains until there is less than 2 bytes
+	 * in the FPDU payload and padding is not detected */
+	while ((offset + 1) < fpdu_length && !padding_detected) {
+
+		enum frag_states fragment_type;
+		size_t fragment_length;
+		int fragment_id;
+		int ret;
+
+		/* is there padding? */
+		if (fpdu[offset] == 0x00 && fpdu[offset + 1] == 0x00) {
+			padding_detected = C_TRUE;
+			continue;
+		}
+
+		/* retrieve the fragment type and length in the first 2 bytes of the PPDU fragment */
+		fragment_type = get_fragment_type(&fpdu[offset]);
+		fragment_length = get_fragment_length(&fpdu[offset]);
+
+		/* stop parsing the FPDU if the PPDU length is wrong */
+		if (fragment_length > (fpdu_length - offset)) {
+			PRINT("Invalid fragment size, fragment length too big for FPDU\n");
+			PRINT("Fragment length: %zu, Remaining FPDU size: %zu\n",
+			      fragment_length, fpdu_length - offset);
+			status = RLE_DECAP_ERR;
+			goto exit_label;
+		}
+
+		/* parse the PPDU fragment */
+		ret = rle_receiver_deencap_data(receiver, (void *) &fpdu[offset], fragment_length,
+		                                &fragment_id);
+
+		/* PPDU fragment successfully parsed, skip it */
+		offset += fragment_length;
+
+		if ((ret != C_OK) && (ret != C_REASSEMBLY_OK)) {
+			/* TODO cleaning, pkt dropping, etc... */
+			PRINT("Error during reassembly.\n");
+			rle_receiver_free_context(receiver, fragment_id);
+			status = RLE_DECAP_ERR;
+		} else if (fragment_type == FRAG_STATE_COMP || fragment_type == FRAG_STATE_END) {
+			/* in case of complete or END fragment, decapsulate the reassembled PPDU */
+			int sdu_proto = 0;
+			uint32_t sdu_len = 0;
+
+			assert(fragment_id >= 0);
+
+			ret = rle_receiver_get_packet(receiver, fragment_id, sdus[*sdus_nr].buffer,
+			                              &sdu_proto, &sdu_len);
+			/* reassembly and decapsulation are over, so free context resources */
+			rle_receiver_free_context(receiver, fragment_id);
+			if (ret != C_OK) {
+				/* TODO cleaning, pkt dropping, etc... */
+				PRINT("Error getting packet from context.\n");
+				status = RLE_DECAP_ERR;
+				goto exit_label;
+			}
+			sdus[*sdus_nr].size = (size_t) sdu_len;
+			sdus[*sdus_nr].protocol_type = (uint16_t) sdu_proto;
+			(*sdus_nr)++;
+		}
+	}
+
+	/* remaining FPDU bytes are padding: they should be all zero, warn if it is not the case */
+	for ( ; offset < fpdu_length; offset++) {
+		if (fpdu[offset] != 0x00) {
+			PRINT("WARNING: Current padding contains octets non equal to 0x00.\n");
+			break; /* stop padding verification after first error */
+		}
+	}
 
 exit_label:
 	return status;
@@ -440,114 +523,431 @@ exit_label:
 size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const transmitter,
                                             const uint8_t fragment_id)
 {
-	struct rle_ctx_management ctx_man = transmitter->rle_ctx_man[fragment_id];
-
-	return (size_t)rle_ctx_get_remaining_alpdu_length(&ctx_man);
-}
-
-uint64_t rle_transmitter_stats_get_counter_ok(const struct rle_transmitter *const transmitter)
-{
-	uint64_t counter_ok = 0;
-	size_t iterator = 0;
+	size_t stat = 0;
 	struct rle_ctx_management ctx_man;
 
-	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-		ctx_man = transmitter->rle_ctx_man[iterator];
-		counter_ok += rle_ctx_get_counter_ok(&ctx_man);
+	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+		goto error;
 	}
 
-	return counter_ok;
+	stat = (size_t)rle_ctx_get_remaining_alpdu_length(&ctx_man);
+
+error:
+	return stat;
 }
 
-uint64_t rle_transmitter_stats_get_counter_dropped(const struct rle_transmitter *const transmitter)
+uint64_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter *const transmitter,
+                                                 const uint8_t fragment_id)
 {
-	uint64_t counter_dropped = 0;
-	size_t iterator = 0;
+	size_t stat = 0;
 	struct rle_ctx_management ctx_man;
 
-	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-		ctx_man = transmitter->rle_ctx_man[iterator];
-		counter_dropped += rle_ctx_get_counter_dropped(&ctx_man);
+	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+		goto error;
 	}
 
-	return counter_dropped;
+	stat = (size_t)rle_ctx_get_counter_in(&ctx_man);
+
+error:
+	return stat;
 }
 
-uint64_t rle_transmitter_stats_get_counter_bytes(const struct rle_transmitter *const transmitter)
+uint64_t rle_transmitter_stats_get_counter_sdus_sent(const struct rle_transmitter *const transmitter,
+                                                   const uint8_t fragment_id)
 {
-	uint64_t counter_bytes = 0;
-	size_t iterator = 0;
+	size_t stat = 0;
 	struct rle_ctx_management ctx_man;
 
-	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-		ctx_man = transmitter->rle_ctx_man[iterator];
-		counter_bytes += rle_ctx_get_counter_bytes(&ctx_man);
+	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+		goto error;
 	}
 
-	return counter_bytes;
+	stat = (size_t)rle_ctx_get_counter_ok(&ctx_man);
+
+error:
+	return stat;
+}
+
+uint64_t rle_transmitter_stats_get_counter_sdus_dropped(
+        const struct rle_transmitter *const transmitter, const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	struct rle_ctx_management ctx_man;
+
+	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	stat = (size_t)rle_ctx_get_counter_dropped(&ctx_man);
+
+error:
+	return stat;
+}
+
+uint64_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter *const transmitter,
+                                                  const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	struct rle_ctx_management ctx_man;
+
+	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	stat = (size_t)rle_ctx_get_counter_bytes_in(&ctx_man);
+
+error:
+	return stat;
+}
+
+uint64_t rle_transmitter_stats_get_counter_bytes_sent(const struct rle_transmitter *const transmitter,
+                                                  const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	struct rle_ctx_management ctx_man;
+
+	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	stat = (size_t)rle_ctx_get_counter_bytes_ok(&ctx_man);
+
+error:
+	return stat;
+}
+
+uint64_t rle_transmitter_stats_get_counter_bytes_dropped(
+        const struct rle_transmitter *const transmitter, const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	struct rle_ctx_management ctx_man;
+
+	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	stat = (size_t)rle_ctx_get_counter_bytes_dropped(&ctx_man);
+
+error:
+	return stat;
+}
+
+int rle_transmitter_stats_get_counters(const struct rle_transmitter *const transmitter,
+                                       const uint8_t fragment_id,
+                                       struct rle_transmitter_stats *const stats)
+{
+	int status = 1;
+
+	if (!transmitter) {
+		goto error;
+	}
+
+	if (fragment_id >= RLE_MAX_FRAG_ID) {
+		goto error;
+	}
+
+	if (!stats) {
+		goto error;
+	}
+
+	stats->sdus_in       = rle_transmitter_stats_get_counter_sdus_in(transmitter, fragment_id);
+	stats->sdus_sent     = rle_transmitter_stats_get_counter_sdus_sent(transmitter, fragment_id);
+	stats->sdus_dropped  = rle_transmitter_stats_get_counter_sdus_dropped(transmitter, fragment_id);
+	stats->bytes_in      = rle_transmitter_stats_get_counter_bytes_in(transmitter, fragment_id);
+	stats->bytes_sent    = rle_transmitter_stats_get_counter_bytes_sent(transmitter, fragment_id);
+	stats->bytes_dropped = rle_transmitter_stats_get_counter_bytes_dropped(transmitter, fragment_id);
+
+	status = 0;
+
+error:
+	return status;
+}
+
+void rle_transmitter_stats_reset_counters(struct rle_transmitter *const transmitter,
+                                          const uint8_t fragment_id)
+{
+	struct rle_ctx_management ctx_man;
+
+	if (!transmitter) {
+		goto error;
+	}
+
+	if (fragment_id >= RLE_MAX_FRAG_ID) {
+		goto error;
+	}
+
+	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	rle_ctx_set_counter_in(&ctx_man, 0);
+	rle_ctx_set_counter_ok(&ctx_man, 0);
+	rle_ctx_set_counter_dropped(&ctx_man, 0);
+	rle_ctx_set_counter_bytes_in(&ctx_man, 0);
+	rle_ctx_set_counter_bytes_ok(&ctx_man, 0);
+	rle_ctx_set_counter_bytes_dropped(&ctx_man, 0);
+
+error:
+	return;
 }
 
 size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiver,
                                          const uint8_t fragment_id)
 {
-	struct rle_ctx_management ctx_man = receiver->rle_ctx_man[fragment_id];
+	size_t stat = 0;
+	struct rle_ctx_management ctx_man;
 
-	return (size_t)rle_ctx_get_remaining_pdu_length(&ctx_man);
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	stat = (size_t)rle_ctx_get_remaining_pdu_length(&ctx_man);
+
+error:
+	return stat;
+}
+
+uint64_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver *const receiver,
+                                                    const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	struct rle_ctx_management ctx_man;
+
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	stat = (size_t)rle_ctx_get_counter_in(&ctx_man);
+
+error:
+	return stat;
 }
 
 
-uint64_t rle_receiver_stats_get_counter_ok(const struct rle_receiver *const receiver)
+uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiver *const receiver,
+                                                       const uint8_t fragment_id)
 {
-	uint64_t counter_ok = 0;
-	size_t iterator = 0;
+	size_t stat = 0;
 	struct rle_ctx_management ctx_man;
 
-	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-		ctx_man = receiver->rle_ctx_man[iterator];
-		counter_ok += rle_ctx_get_counter_ok(&ctx_man);
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
 	}
 
-	return counter_ok;
+	stat = (size_t)rle_ctx_get_counter_ok(&ctx_man);
+
+	error:
+		return stat;
 }
 
-uint64_t rle_receiver_stats_get_counter_dropped(const struct rle_receiver *const receiver)
+uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *const receiver,
+                                                   const uint8_t fragment_id)
 {
-	uint64_t counter_dropped = 0;
-	size_t iterator = 0;
+	size_t stat = 0;
 	struct rle_ctx_management ctx_man;
 
-	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-		ctx_man = receiver->rle_ctx_man[iterator];
-		counter_dropped += rle_ctx_get_counter_dropped(&ctx_man);
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
 	}
 
-	return counter_dropped;
+	stat = (size_t)rle_ctx_get_counter_dropped(&ctx_man);
+
+error:
+	return stat;
 }
 
-uint64_t rle_receiver_stats_get_counter_lost(const struct rle_receiver *const receiver)
+uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *const receiver,
+                                                const uint8_t fragment_id)
 {
-	uint64_t counter_lost = 0;
-	size_t iterator = 0;
+	size_t stat = 0;
 	struct rle_ctx_management ctx_man;
 
-	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-		ctx_man = receiver->rle_ctx_man[iterator];
-		counter_lost += rle_ctx_get_counter_lost(&ctx_man);
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
 	}
 
-	return counter_lost;
+	stat = (size_t)rle_ctx_get_counter_lost(&ctx_man);
+
+error:
+	return stat;
 }
 
-uint64_t rle_receiver_stats_get_counter_bytes(const struct rle_receiver *const receiver)
+uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver *const receiver,
+                                                     const uint8_t fragment_id)
 {
-	uint64_t counter_bytes = 0;
-	size_t iterator = 0;
+	size_t stat = 0;
 	struct rle_ctx_management ctx_man;
 
-	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-		ctx_man = receiver->rle_ctx_man[iterator];
-		counter_bytes += rle_ctx_get_counter_bytes(&ctx_man);
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
 	}
 
-	return counter_bytes;
+	stat = (size_t)rle_ctx_get_counter_bytes_in(&ctx_man);
+
+	error:
+		return stat;
+}
+
+uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_receiver *const receiver,
+                                                        const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	struct rle_ctx_management ctx_man;
+
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	stat = (size_t)rle_ctx_get_counter_bytes_ok(&ctx_man);
+
+error:
+	return stat;
+}
+
+uint64_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver *const receiver,
+                                                    const uint8_t fragment_id)
+{
+	size_t stat = 0;
+	struct rle_ctx_management ctx_man;
+
+	if (!valid_receiver_context(receiver, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	stat = (size_t)rle_ctx_get_counter_bytes_dropped(&ctx_man);
+
+error:
+	return stat;
+}
+
+int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
+                                    const uint8_t fragment_id,
+                                    struct rle_receiver_stats *const stats)
+{
+	int status = 1;
+
+	if (!receiver) {
+		goto error;
+	}
+
+	if (fragment_id >= RLE_MAX_FRAG_ID) {
+		goto error;
+	}
+
+	if (!stats) {
+		goto error;
+	}
+
+	stats->sdus_received     = rle_receiver_stats_get_counter_sdus_received(receiver, fragment_id);
+	stats->sdus_reassembled  = rle_receiver_stats_get_counter_sdus_reassembled(receiver,
+	                                                                           fragment_id);
+	stats->sdus_dropped      = rle_receiver_stats_get_counter_sdus_dropped(receiver, fragment_id);
+	stats->bytes_received    = rle_receiver_stats_get_counter_bytes_received(receiver, fragment_id);
+	stats->bytes_reassembled = rle_receiver_stats_get_counter_bytes_reassembled(receiver,
+	                                                                            fragment_id);
+	stats->bytes_dropped     = rle_receiver_stats_get_counter_bytes_dropped(receiver, fragment_id);
+
+	status = 0;
+
+error:
+	return status;
+}
+
+void rle_receiver_stats_reset_counters(struct rle_transmitter *const transmitter,
+                                       const uint8_t fragment_id)
+{
+	struct rle_ctx_management ctx_man;
+
+	if (!transmitter) {
+		goto error;
+	}
+
+	if (fragment_id >= RLE_MAX_FRAG_ID) {
+		goto error;
+	}
+
+	if (!valid_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+		goto error;
+	}
+
+	rle_ctx_set_counter_in(&ctx_man, 0);
+	rle_ctx_set_counter_ok(&ctx_man, 0);
+	rle_ctx_set_counter_dropped(&ctx_man, 0);
+	rle_ctx_set_counter_lost(&ctx_man, 0);
+	rle_ctx_set_counter_bytes_in(&ctx_man, 0);
+	rle_ctx_set_counter_bytes_ok(&ctx_man, 0);
+	rle_ctx_set_counter_bytes_dropped(&ctx_man, 0);
+
+error:
+	return;
+}
+
+enum rle_header_size_status rle_get_header_size(const struct rle_context_configuration *const conf,
+                                                const enum rle_fpdu_types fpdu_type,
+                                                size_t *const rle_header_size)
+{
+	enum rle_header_size_status status = RLE_HEADER_SIZE_ERR;
+	size_t header_size = 0;
+
+	switch(fpdu_type)
+	{
+		case RLE_LOGON_FPDU:
+
+			/* FPDU header. */
+			/* payload label = 6 */
+			header_size = 6;
+
+			status = RLE_HEADER_SIZE_OK;
+			break;
+
+		case RLE_CTRL_FPDU:
+
+			/* FPDU header. */
+			/* payload label = 3 */
+			header_size = 3;
+
+			status = RLE_HEADER_SIZE_OK;
+			break;
+
+		case RLE_TRAFFIC_FPDU:
+
+			/* Unable to guess the headers overhead size */
+
+			status = RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC;
+			break;
+
+		case RLE_TRAFFIC_CTRL_FPDU:
+
+			/* FPDU header. */
+			/* payload label = 3 */
+			header_size = 3;
+
+			/* PPDU header. Only complete PPDU. */
+			/* se_length_ltt = 2 */
+			/* pdu_label     = 0 */
+			header_size += 2 + 0;
+
+			if (conf != NULL) {
+				/* ALPDU header. */
+				/* protocol_type    = 0. May depends on conf with a different implementation. */
+				/* alpdu_label      = 0 */
+				/* protection_bytes = 0 */
+				header_size += 0 + 0 + 0;
+			} else {
+				/* ALPDU header. */
+				/* protocol_type    = 0 */
+				/* alpdu_label      = 0 */
+				/* protection_bytes = 0 */
+				header_size += 0 + 0 + 0;
+			}
+
+			status = RLE_HEADER_SIZE_OK;
+			break;
+		default:
+			break;
+	}
+
+	*rle_header_size = header_size;
+
+	return status;
 }

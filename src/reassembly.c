@@ -7,8 +7,17 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
+#ifndef __KERNEL__
+
 #include <stdio.h>
 #include <string.h>
+
+#else
+
+#include <linux/string.h>
+
+#endif
+
 #include "reassembly.h"
 #include "constants.h"
 #include "rle_ctx.h"
@@ -60,6 +69,8 @@ static int check_fragmented_length(struct rle_ctx_management *rle_ctx, size_t da
 	 * must not be taken into account while computing
 	 * PDU total length */
 	size_t trailer_size = 0;
+	size_t recv_pkt_length = 0;
+	uint32_t remaining_size = 0;
 
 	if (rle_ctx_get_use_crc(rle_ctx) == C_TRUE) {
 		trailer_size += RLE_CRC32_FIELD_SIZE;
@@ -67,13 +78,12 @@ static int check_fragmented_length(struct rle_ctx_management *rle_ctx, size_t da
 		trailer_size += RLE_SEQ_NO_FIELD_SIZE;
 	}
 
-	size_t recv_pkt_length = (data_length -
-	                          ((sizeof(struct rle_header_cont_end) + trailer_size)));
+	recv_pkt_length = data_length - sizeof(struct rle_header_cont_end);
 
 	/* for each fragment received, remaining data size is updated,
 	 * so if everything is okay remaining size must be equal
 	 * to the last rle_packet_length value */
-	uint32_t remaining_size = rle_ctx_get_remaining_pdu_length(rle_ctx);
+	remaining_size = rle_ctx_get_remaining_pdu_length(rle_ctx);
 
 #ifdef DEBUG
 	PRINT("DEBUG %s %s:%s:%d: RLE trailer_size %zu recv_pkt_length %zu remaining_size %d\n",
@@ -105,6 +115,8 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx, void *d
 	      __FILE__, __func__, __LINE__);
 #endif
 
+	int ret = C_OK;
+
 	/* awaited sequence nb must be equal
 	 * to the received one.
 	 * Trailer addr is buffer addr + offset
@@ -114,27 +126,38 @@ static int check_fragmented_sequence(struct rle_ctx_management *rle_ctx, void *d
 	                                                 (data_length - RLE_SEQ_NO_FIELD_SIZE));
 
 	if (trl->b.seq_no != rle_ctx->next_seq_nb) {
-		PRINT("ERROR %s %s:%s:%d: sequence number inconsistency,"
-		      " received [%d] expected [%d]\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__,
-		      trl->b.seq_no, rle_ctx->next_seq_nb);
 		const size_t nb_lost_pkts = (rle_ctx->next_seq_nb - trl->b.seq_no) % RLE_MAX_SEQ_NO;
+		if (trl->b.seq_no != 0) {
+			PRINT("ERROR %s %s:%s:%d: sequence number inconsistency,"
+			      " received [%d] expected [%d]\n",
+			      MODULE_NAME,
+			      __FILE__, __func__, __LINE__,
+			      trl->b.seq_no, rle_ctx->next_seq_nb);
+		}
+#ifdef DEBUG
+		if (trl->b.seq_no == 0) {
+			PRINT("WARNING %s %s:%s:%d: sequence number null, supposing relog,"
+			      " received [%d] expected [%d]\n",
+			      MODULE_NAME,
+			      __FILE__, __func__, __LINE__,
+			      trl->b.seq_no, rle_ctx->next_seq_nb);
+		}
+#endif
 		/* update sequence with received one
 		 * and increment it to resynchronize
 		 * with sender sequence */
 		rle_ctx_set_seq_nb(rle_ctx, trl->b.seq_no);
-		rle_ctx_incr_seq_nb(rle_ctx);
-		/* we must update lost & dropped packet
-		 * counter and */
-		rle_ctx_incr_counter_lost(rle_ctx, nb_lost_pkts);
+		/* we must update lost packet counter if not relog */
+		if (trl->b.seq_no != 0) {
+			rle_ctx_incr_counter_lost(rle_ctx, nb_lost_pkts);
+			ret = C_ERROR_DROP;
+		}
 
-		return C_ERROR_DROP;
 	}
 
 	rle_ctx_incr_seq_nb(rle_ctx);
 
-	return C_OK;
+	return ret;
 }
 
 static uint32_t compute_crc32(struct rle_ctx_management *rle_ctx)
@@ -225,12 +248,16 @@ static size_t get_header_size(struct rle_ctx_management *rle_ctx __attribute__ (
                               void *data_buffer, int frag_type)
 {
 	size_t header_size = 0;
+	int is_compressed = 0;
+	int is_suppressed = 0;
 
 	switch (frag_type) {
 	case RLE_PDU_COMPLETE:
+		rle_ctx_incr_counter_in(rle_ctx);
 		header_size = RLE_COMPLETE_HEADER_SIZE;
 		break;
 	case RLE_PDU_START_FRAG:
+		rle_ctx_incr_counter_in(rle_ctx);
 		header_size = RLE_START_MANDATORY_HEADER_SIZE;
 		break;
 	case RLE_PDU_CONT_FRAG:
@@ -246,8 +273,8 @@ static size_t get_header_size(struct rle_ctx_management *rle_ctx __attribute__ (
 
 	/* get ptype compression status from NCC and
 	 * protocol type suppressed field value */
-	int is_compressed = rle_conf_get_ptype_compression(rle_conf);
-	int is_suppressed = 0xff;
+	is_compressed = rle_conf_get_ptype_compression(rle_conf);
+	is_suppressed = 0xff;
 
 	if (frag_type == RLE_PDU_COMPLETE) {
 		struct rle_header_complete *hdr =
@@ -263,8 +290,8 @@ static size_t get_header_size(struct rle_ctx_management *rle_ctx __attribute__ (
 
 	if (is_suppressed != RLE_T_PROTO_TYPE_SUPP) {
 		if (is_compressed) {
-			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 			uint16_t protocol_type = 0;
+			header_size += RLE_PROTO_TYPE_FIELD_SIZE_COMP;
 			if (frag_type == RLE_PDU_COMPLETE) {
 				struct rle_header_complete_w_ptype *hdr =
 				        (struct rle_header_complete_w_ptype *)data_buffer;
@@ -397,6 +424,7 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 	uint16_t protocol_type = 0;
 	size_t header_size = 0;
 	size_t trailer_size = 0;
+	size_t pdu_length;
 
 	/* get ptype compression status from NCC
 	 * and CRC usage from user */
@@ -447,14 +475,13 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 		trailer_size += RLE_SEQ_NO_FIELD_SIZE;
 	}
 
-	size_t pdu_length = rle_header_start_get_packet_length(hdr->head_start) - header_size;
+	pdu_length = rle_header_start_get_packet_length(hdr->head_start) - header_size - trailer_size;
 
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d: RLE head_start.b.total_length %d PDU length %zu"
+	PRINT("DEBUG %s %s:%s:%d: RLE %d PDU length %zu"
 	      " label_type 0x%x proto_type_supp 0x%x\n",
 	      MODULE_NAME,
 	      __FILE__, __func__, __LINE__,
-	      hdr->head_start.b.total_length,
 	      pdu_length,
 	      hdr->head_start.b.label_type,
 	      hdr->head_start.b.proto_type_supp);
@@ -475,19 +502,19 @@ static void update_ctx_start(struct rle_ctx_management *rle_ctx, struct rle_conf
 	 * remaining length to receive */
 
 #ifdef DEBUG
-	PRINT("DEBUG %s %s:%s:%d: RLE START remaining_pdu %d total length %d rle length %d\n",
+	PRINT("DEBUG %s %s:%s:%d: RLE START remaining_pdu %d\n",
 	      MODULE_NAME,
 	      __FILE__, __func__, __LINE__,
-	      rle_ctx_get_remaining_pdu_length(rle_ctx),
-	      hdr->head_start.b.total_length, hdr->head.b.rle_packet_length);
+	      rle_ctx_get_remaining_pdu_length(rle_ctx));
 	PRINT("------ RECV START PACKET ------------\n");
 	PRINT("| SE |  RLEPL |  ID |  TL   |  LT  |  T  |  PTYPE  |\n");
 	PRINT("| %d%d |   %d   | 0x%0x |  %d  |  0x%0x | 0x%0x | 0x%04x  |\n",
 	      hdr->head.b.start_ind,
 	      hdr->head.b.end_ind,
-	      hdr->head.b.rle_packet_length,
+	      rle_header_all_get_packet_length(hdr->head),
 	      hdr->head.b.LT_T_FID,
-	      hdr->head_start.b.total_length,
+		  /* hdr->head_start.b.total_length, */
+	      ~0L, /* TODO method for total length ? */
 	      hdr->head_start.b.label_type,
 	      hdr->head_start.b.proto_type_supp,
 	      protocol_type);
@@ -610,6 +637,10 @@ int reassembly_get_pdu(struct rle_ctx_management *rle_ctx, void *pdu_buffer, int
 	*pdu_proto_type = rle_ctx_get_proto_type(rle_ctx);
 	*pdu_length = rle_ctx_get_pdu_length(rle_ctx);
 
+	/* update link status */
+	rle_ctx_incr_counter_ok(rle_ctx);
+	rle_ctx_incr_counter_bytes_ok(rle_ctx, *pdu_length);
+
 	/* update rle pointer to data end address */
 	rle_ctx_set_end_address(rle_ctx, (char *)(rle_ctx->buf));
 	rle_ctx_set_remaining_pdu_length(rle_ctx, 0);
@@ -652,9 +683,7 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 		break;
 	default:
 		PRINT("ERROR %s %s:%s:%d: invalid fragment type [%d] to reassemble\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__,
-		      frag_type);
+		      MODULE_NAME, __FILE__, __func__, __LINE__, frag_type);
 		goto ret_val;
 		break;
 	}
@@ -664,18 +693,28 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 	 * otherwise drop fragment and all data of this frag_id */
 	if (rle_ctx_get_nb_frag_pdu(rle_ctx) > RLE_MAX_SEQ_NO) {
 		PRINT("ERROR %s %s:%s:%d: waited too much fragments to reassemble packet\n",
-		      MODULE_NAME,
-		      __FILE__, __func__, __LINE__);
+		      MODULE_NAME, __FILE__, __func__, __LINE__);
 		ret = C_ERROR_TOO_MUCH_FRAG;
 		goto error_frag;
+	}
+
+	/*
+	 * Check the size of the fragment and the header offset to avoid overflow.
+	 */
+	if (data_length < hdr_offset) {
+		PRINT("ERROR %s %s:%s:%d: received fragment too small compared to header offset.\n",
+		      MODULE_NAME, __FILE__, __func__, __LINE__);
+		ret = C_ERROR_DROP;
+		goto err_size;
 	}
 
 	/* the copy begins from the buffer end address
 	 * and the copied data are from a received RLE packet
 	 * plus RLE header length to get the payload only */
-	memcpy((void *)(rle_ctx->end_address),
-	       (const void *)((char *)data_buffer + hdr_offset),
-	       (data_length - hdr_offset));
+	if (data_length > hdr_offset) {
+		memcpy((void *)(rle_ctx->end_address), (const void *)((char *)data_buffer + hdr_offset),
+		       (data_length - hdr_offset));
+	}
 
 	if (frag_type != RLE_PDU_COMPLETE) {
 		/* fragmentation case */
@@ -697,7 +736,6 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 
 			/* Tell user that
 			 * reassembly is complete */
-			rle_ctx_incr_counter_ok(rle_ctx);
 			ret = C_REASSEMBLY_OK;
 		} else {
 			ret = C_OK;
@@ -713,11 +751,8 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 				goto error_frag;
 			}
 
-			rle_ctx_incr_counter_ok(rle_ctx);
-
 			/* update link status */
-			rle_ctx_incr_counter_bytes(rle_ctx,
-			                           data_length);
+			rle_ctx_incr_counter_bytes_in(rle_ctx, data_length);
 
 			goto ret_val;
 		} else {
@@ -730,18 +765,21 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
 	                                          (data_length - hdr_offset)));
 
 	/* update link status */
-	rle_ctx_incr_counter_bytes(rle_ctx,
-	                           data_length);
+	rle_ctx_incr_counter_bytes_in(rle_ctx, data_length);
 
 	goto ret_val;
 
 error_frag:
+	/* discard all data */
+	if (data_length > hdr_offset) {
+		memset((void *)(rle_ctx->end_address),
+		       0, (data_length - hdr_offset));
+	}
+
+err_size:
 	/* Incr. counter dropped. */
 	rle_ctx_incr_counter_dropped(rle_ctx);
-
-	/* discard all data */
-	memset((void *)(rle_ctx->end_address),
-	       0, (data_length - hdr_offset));
+	rle_ctx_incr_counter_bytes_dropped(rle_ctx, rle_ctx_get_remaining_alpdu_length(rle_ctx));
 
 	/* TODO call a callback which must be
 	 * specific to each protocol type supported

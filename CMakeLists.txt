@@ -13,6 +13,15 @@ OPTION(FUZZING "Instrumentation for fuzzing with AFL and ASAN. (requires AFL and
 
 INCLUDE_DIRECTORIES(include)
 
+SET(PACKAGE_NAME librle)
+SET(DESCRIPTION_SUMMARY "Return Link Encapsulation library")
+SET(TARGET_NAME librle)
+
+SET(ABI_VERSION_MAJOR "2")
+SET(ABI_VERSION_MINOR "0")
+SET(ABI_VERSION_PATCH "0")
+SET(ABI_VERSION "${ABI_VERSION_MAJOR}.${ABI_VERSION_MINOR}.${ABI_VERSION_PATCH}")
+
 SET(SRC_LIBRLE
 	src/crc.c
 	src/deencap.c
@@ -31,12 +40,12 @@ add_definitions("-g -W -Wall -Wextra -Wuninitialized
 -Wstrict-prototypes -Wcast-align -Wmissing-prototypes -Wchar-subscripts
 -Wpointer-arith -Winline  -Wno-conversion -Wshadow -fno-strict-aliasing")
 
-ADD_LIBRARY(rle SHARED ${SRC_LIBRLE})
+ADD_LIBRARY(librle SHARED ${SRC_LIBRLE})
 
-TARGET_LINK_LIBRARIES(rle
+TARGET_LINK_LIBRARIES(librle
 	pthread
 )
-
+SET_TARGET_PROPERTIES(librle PROPERTIES SOVERSION ${ABI_VERSION_MAJOR} VERSION ${ABI_VERSION})
 
 IF (FUZZING)
     set(ENV{AFL_USE_ASAN} 1)
@@ -61,13 +70,17 @@ ENDIF(TIME_DEBUG)
 
 IF (COVERAGE)
     add_definitions("-fprofile-arcs -ftest-coverage -O0")
-    TARGET_LINK_LIBRARIES(rle
+    TARGET_LINK_LIBRARIES(librle
         gcov)
 ELSE(COVERAGE)
     add_definitions("-O2")
 ENDIF(COVERAGE)
 
-INSTALL(TARGETS rle
+INSTALL(TARGETS librle
 	DESTINATION lib/)
 
-gen_pkg_config("rle" "${DESCRIPTION_SUMMARY}" "" "")
+INSTALL(FILES
+	include/rle.h
+	DESTINATION include/)
+
+gen_pkg_config("librle" "${DESCRIPTION_SUMMARY}" "" "")

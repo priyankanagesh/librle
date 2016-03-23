@@ -10,7 +10,16 @@
 #ifndef __FRAGMENTATION_H__
 #define __FRAGMENTATION_H__
 
+#ifndef __KERNEL__
+
 #include <stddef.h>
+
+#else
+
+#include <linux/stddef.h>
+
+#endif
+
 #include "rle_ctx.h"
 #include "rle_conf.h"
 

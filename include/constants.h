@@ -21,6 +21,8 @@
 
 #else
 
+#include <linux/slab.h>
+#include <linux/printk.h>
 #include <linux/vmalloc.h>
 #include <linux/ip.h>
 #include <linux/ipv6.h>
@@ -40,6 +42,7 @@
 #define C_ERROR_DROP    -2
 #define C_ERROR_BUF     -3
 #define C_ERROR_TOO_MUCH_FRAG -4
+#define C_ERROR_FRAG_SIZE -5
 
 #define IP_VERSION_4    4
 #define IP_VERSION_6    6
@@ -52,7 +55,7 @@ enum {
 	RLE_PDU_START_FRAG,  /** START packet/fragment of PDU */
 	RLE_PDU_CONT_FRAG,   /** CONTINUATION packet/fragment of PDU */
 	RLE_PDU_END_FRAG,   /** END packet/fragment of PDU */
-} rle_payload_type;
+};
 
 #ifndef __KERNEL__
 
@@ -69,8 +72,15 @@ enum {
  * kmalloc allocates size with power of two so for 20520B it would alloc 32K */
 #define MALLOC(size_bytes)      kmalloc(size_bytes, GFP_KERNEL) /* vmalloc(size_bytes); */
 #define FREE(buf_addr)          kfree(buf_addr) /* vfree(buf_addr); */
-#define PRINT(x ...)            printk(x)
+#define PRINT(x ...)     do { \
+		printk(KERN_ERR x); \
+} while (0)
+
+#define assert BUG_ON
 
 #endif
+
+#define __FILENAME__ \
+	(strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
 #endif /* __CONSTANTS_H__ */
