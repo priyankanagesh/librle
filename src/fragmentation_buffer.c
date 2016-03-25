@@ -77,7 +77,11 @@ out:
 
 int rle_frag_buf_init(struct rle_frag_buf *const frag_buf)
 {
-	int status = 1;
+	int status;
+
+	if (frag_buf == NULL) {
+		return 1;
+	}
 
 	memset(frag_buf->buffer, '\0', RLE_F_BUFF_LEN);
 

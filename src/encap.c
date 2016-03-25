@@ -111,7 +111,10 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 	/* set to 'used' the previously free frag context */
 	set_nonfree_frag_ctx(transmitter, frag_id);
 
-	rle_frag_buf_init(frag_buf);
+	if (rle_frag_buf_init(frag_buf) != 0) {
+		PRINT_RLE_ERROR("unable to init fragmentation buffer");
+		goto out;
+	}
 	if (rle_frag_buf_cpy_sdu(frag_buf, sdu) != 0) {
 		PRINT_RLE_ERROR("unable to copy SDU in fragmentation buffer.");
 		goto out;

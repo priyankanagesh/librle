@@ -451,7 +451,11 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 			u_int8_t frag_id;
 			struct rle_receiver_stats stats;
 			for (frag_id = 0; frag_id < 8; ++frag_id) {
-				rle_receiver_stats_get_counters(receiver, frag_id, &stats);
+				if (rle_receiver_stats_get_counters(receiver, frag_id, &stats) != 0) {
+					printf("failed to get receiver counters for frag_id %u\n", frag_id);
+					status = 1;
+					goto free_alloc;
+				}
 				printf("===\tFrag ID %u\n", frag_id);
 				printf("===\treceiver received:          %" PRIu64 "\n", stats.sdus_received);
 				printf("===\treceiver reassembled:       %" PRIu64 "\n", stats.sdus_reassembled);

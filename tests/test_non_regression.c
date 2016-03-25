@@ -680,7 +680,11 @@ static int test_encap_and_decap(const char *const src_filename)
 			u_int8_t frag_id;
 			struct rle_transmitter_stats stats;
 			for (frag_id = 0; frag_id < 8; ++frag_id) {
-				rle_transmitter_stats_get_counters(transmitter, frag_id, &stats);
+				if (rle_transmitter_stats_get_counters(transmitter, frag_id, &stats) != 0) {
+					printf("failed to get transmitter counters\n");
+					status = 1;
+					goto free_alloc;
+				}
 				printf("===\tFrag ID %u\n", frag_id);
 				printf("===\ttransmitter in:             %" PRIu64 "\n", stats.sdus_in);
 				printf("===\ttransmitter sent:           %" PRIu64 "\n", stats.sdus_sent);

@@ -16,6 +16,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #endif
 
@@ -75,8 +76,12 @@ static void flush(struct rle_ctx_management *_this)
 
 static void flush_ctxt_frag_buf(struct rle_ctx_management *_this)
 {
+	int ret;
+
 	flush(_this);
-	rle_frag_buf_init((rle_frag_buf_t *)_this->buff);
+
+	ret = rle_frag_buf_init((rle_frag_buf_t *)_this->buff);
+	assert(ret == 0);
 
 	return;
 }

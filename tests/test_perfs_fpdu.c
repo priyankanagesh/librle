@@ -432,7 +432,11 @@ static int test_decap(const char *const device_name)
 		struct rle_receiver_stats stats;
 		u_int8_t frag_id;
 		for (frag_id = 0; frag_id < 8; ++frag_id) {
-			rle_receiver_stats_get_counters(receiver, frag_id, &stats);
+			if (rle_receiver_stats_get_counters(receiver, frag_id, &stats) != 0) {
+				printf("failed to get receiver counters\n");
+				status = EXIT_FAILURE;
+				goto close_input;
+			}
 			printf("===\tFrag ID %u\n", frag_id);
 			printf("===\treceiver received:          %" PRIu64 "\n", stats.sdus_received);
 			printf("===\treceiver reassembled:       %" PRIu64 "\n", stats.sdus_reassembled);
