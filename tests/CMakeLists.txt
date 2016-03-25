@@ -102,14 +102,14 @@ IF(FUZZING)
            ${SYS_CMD_RM} -rf ${CMAKE_BINARY_DIR}/findings/
         && ${SYS_CMD_AFL_FUZZ} -i ${SAMPLE_DIR}/fuzzing/
                                -o ${CMAKE_BINARY_DIR}/findings/
-                               -m none ${CMAKE_BINARY_DIR}/tests/test_non_regression
+                               -m none -t 500 ${CMAKE_BINARY_DIR}/tests/test_non_regression
                                --ignore-malformed @@)
     ADD_CUSTOM_TARGET(fuzzing DEPENDS test_non_regression COMMAND ${CMAKE_CFUZZING_COMMAND})
     SET(CMAKE_CFUZZING_FPDU_COMMAND
            ${SYS_CMD_RM} -rf ${CMAKE_BINARY_DIR}/findings/
         && ${SYS_CMD_AFL_FUZZ} -i ${SAMPLE_DIR}/fuzzing-fpdu/
                                -o ${CMAKE_BINARY_DIR}/findings/
-                               -m none ${CMAKE_BINARY_DIR}/tests/test_non_regression_fpdu
+                               -m none -t 500 ${CMAKE_BINARY_DIR}/tests/test_non_regression_fpdu
                                --ignore-malformed @@)
     ADD_CUSTOM_TARGET(fuzzing-fpdu DEPENDS test_non_regression_fpdu
                       COMMAND ${CMAKE_CFUZZING_FPDU_COMMAND})
