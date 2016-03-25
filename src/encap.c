@@ -98,7 +98,7 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 	rle_ctx = &transmitter->rle_ctx_man[frag_id];
 	frag_buf = (rle_frag_buf_t *)rle_ctx->buff;
 
-	if (sdu->size > RLE_MAX_PDU_SIZE) {
+	if (sdu->size <= 0 || sdu->size > RLE_MAX_PDU_SIZE) {
 		status = RLE_ENCAP_ERR_SDU_TOO_BIG;
 		rle_transmitter_free_context(transmitter, frag_id);
 		goto out;
