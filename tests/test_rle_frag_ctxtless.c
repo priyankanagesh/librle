@@ -187,7 +187,8 @@ out:
 bool test_frag_ctxtless_f_buff_not_init(void)
 {
 	bool output = false;
-	enum rle_frag_status ret = RLE_FRAG_ERR;
+	enum rle_frag_status frag_ret;
+	int ret;
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
@@ -211,9 +212,11 @@ bool test_frag_ctxtless_f_buff_not_init(void)
 		goto out;
 	}
 
-	ret = rle_frag_contextless(transmitter, NULL, &ppdu, &ppdu_len);
+	ret = rle_frag_buf_init(f_buff);
+	assert(ret == 0); /* cannot fail since f_buff is not NULL */
 
-	if (ret == RLE_FRAG_ERR_NULL_F_BUFF) {
+	frag_ret = rle_frag_contextless(transmitter, f_buff, &ppdu, &ppdu_len);
+	if (frag_ret == RLE_FRAG_ERR_N_INIT_F_BUFF) {
 		output = true;
 	}
 
@@ -231,6 +234,62 @@ out:
 	printf("\n");
 	return output;
 }
+
+/**
+ * @brief         Fragmentation test with NULL PPDU buffer
+ *
+ * @return        true if error is reported, else false.
+ */
+bool test_frag_ctxtless_null_ppdu(void)
+{
+	bool output = false;
+	enum rle_frag_status ret = RLE_FRAG_ERR;
+
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
+
+	const struct rle_config conf = {
+		.implicit_protocol_type = 0x00,
+		.use_alpdu_crc          = 0,
+		.use_ptype_omission     = 0,
+		.use_compressed_ptype   = 0,
+	};
+	struct rle_transmitter *transmitter;
+
+	size_t ppdu_len = 50;
+
+	PRINT_TEST("Special case : Fragmentation with a null PPDU length.");
+
+	transmitter = rle_transmitter_new(&conf);
+	if (!transmitter) {
+		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with null PPDU length.");
+		goto out;
+	}
+
+	if (quick_encapsulation(transmitter, f_buff, NULL) != true) {
+		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with null PPDU length.");
+		goto out;
+	}
+
+	ret = rle_frag_contextless(transmitter, f_buff, NULL, &ppdu_len);
+	if (ret == RLE_FRAG_ERR) {
+		output = true;
+	}
+
+out:
+
+	if (transmitter) {
+		rle_transmitter_destroy(&transmitter);
+	}
+
+	if (f_buff) {
+		rle_frag_buf_del(&f_buff);
+	}
+
+	PRINT_TEST_STATUS(output);
+	printf("\n");
+	return output;
+}
+
 
 /**
  * @brief         Fragmentation test without length given as input.

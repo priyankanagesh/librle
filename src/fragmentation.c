@@ -130,11 +130,13 @@ enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmit
 		goto out;
 	}
 
+	if (!ppdu) {
+		goto out;
+	}
 	if (!ppdu_length) {
 		PRINT_RLE_ERROR("No PPDU length provided.");
 		goto out;
 	}
-
 	if (*ppdu_length < sizeof(rle_ppdu_header_comp_t)) {
 		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
 		goto out;

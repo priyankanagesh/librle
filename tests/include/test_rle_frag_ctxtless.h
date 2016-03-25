@@ -35,6 +35,13 @@ bool test_frag_ctxtless_null_f_buff(void);
 bool test_frag_ctxtless_f_buff_not_init(void);
 
 /**
+ * @brief         Fragmentation test with NULL PPDU buffer
+ *
+ * @return        true if error is reported, else false.
+ */
+bool test_frag_ctxtless_null_ppdu(void);
+
+/**
  * @brief         Fragmentation test without length given as input.
  *
  *                Must not segfault.

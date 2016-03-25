@@ -114,6 +114,7 @@ static bool frag_ctxtless_tests(void)
 	const struct test null_f_buff = { "NULL fragmentation buffer", test_frag_ctxtless_null_f_buff };
 	const struct test f_buff_not_init = { "Fragmentation buffer not initialized",
 	                                      test_frag_ctxtless_f_buff_not_init };
+	const struct test null_ppdu = { "NULL PPDU", test_frag_ctxtless_null_ppdu };
 	const struct test no_len = { "Fragmentation without length", test_frag_ctxtless_no_len };
 	const struct test too_small = { "Fragmentation with length too small",
 	                                test_frag_ctxtless_too_small };
@@ -124,6 +125,7 @@ static bool frag_ctxtless_tests(void)
 		&null_transmitter,
 		&null_f_buff,
 		&f_buff_not_init,
+		&null_ppdu,
 		&no_len,
 		&too_small,
 		&too_big,
