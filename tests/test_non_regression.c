@@ -238,54 +238,25 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 	size_t sdus_nr = 0;
 	unsigned char label_out[label_size];
 
-	int status = 1;
+	int status = 3;
 
 
+	printf_verbose("\n=== prepare %zu packet(s)\n", number_of_packets);
 	for (packet_iterator = 0; packet_iterator < number_of_packets; ++packet_iterator) {
 		sdus_in[packet_iterator].protocol_type =
 		        ntohs(*(uint16_t *)((void *)(packets[packet_iterator] + (ETHER_HDR_LEN - 2))));
 
-		{
-			const uint16_t sdu_in_ptype = sdus_in[packet_iterator].protocol_type;
-			const uint8_t sdu_in_ip_version =
-			        (sdus_in[packet_iterator].buffer[0] >> 4) & 0x0f;
-			switch (sdu_in_ptype) {
-			case 0x0800:
-				if (sdu_in_ip_version != 0x04) {
-					printf_verbose(
-					        "Invalid: IP version in IPv4 packet is %d, expected: %d.",
-					        sdu_in_ip_version, 0x04);
-					goto exit;
-				}
-				break;
-			case 0x86dd:
-				if (sdu_in_ip_version != 0x06) {
-					printf_verbose(
-					        "Invalid: IP version in IPv6 packet is %d, expected: %d.",
-					        sdu_in_ip_version, 0x04);
-					goto exit;
-				}
-				break;
-			default:
-				break;
-			}
+		printf_verbose("=== %zu-byte SDU\n", sdus_in[packet_iterator].size);
+		unsigned char *p_buffer;
+		for (p_buffer = sdus_in[packet_iterator].buffer;
+		     p_buffer < sdus_in[packet_iterator].buffer +
+		     sdus_in[packet_iterator].size;
+		     ++p_buffer) {
+			printf_verbose("%02x%s", *p_buffer,
+			               (p_buffer - sdus_in[packet_iterator].buffer) % 16 ==
+			               15 ? "\n" : " ");
 		}
-
-
-		{
-			printf_verbose("=== %zu-byte SDU\n", sdus_in[packet_iterator].size);
-			unsigned char *p_buffer;
-			for (p_buffer = sdus_in[packet_iterator].buffer;
-			     p_buffer < sdus_in[packet_iterator].buffer +
-			     sdus_in[packet_iterator].size;
-			     ++p_buffer) {
-				printf_verbose(
-				        "%02x%s", *p_buffer,
-				        (p_buffer - sdus_in[packet_iterator].buffer) % 16 ==
-				        15 ? "\n" : " ");
-			}
-			printf_verbose("\n");
-		}
+		printf_verbose("\n");
 	}
 
 	size_t current_packet_no = 0;
@@ -477,6 +448,9 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 		}
 	}
 
+	/* everything went fine */
+	status = 1;
+
 exit:
 	printf_verbose("\n");
 	return status;
@@ -614,7 +588,7 @@ static int test_encap_and_decap(const char *const src_filename)
 	handle = pcap_open_offline(src_filename, errbuf);
 	if (handle == NULL) {
 		printf("failed to open the source pcap file: %s\n", errbuf);
-		status = 0;
+		status = 1;
 		goto error;
 	}
 
@@ -623,11 +597,10 @@ static int test_encap_and_decap(const char *const src_filename)
 	if (link_layer_type_src != DLT_EN10MB) {
 		printf("link layer type %d not supported in source dump (supported = "
 		       "%d)\n", link_layer_type_src, DLT_EN10MB);
-		status = 0;
+		status = 77;
 		goto close_input;
-	} else {
-		link_len_src = ETHER_HDR_LEN;
 	}
+	link_len_src = ETHER_HDR_LEN;
 
 	printf("\n");
 
@@ -637,10 +610,10 @@ static int test_encap_and_decap(const char *const src_filename)
 	counter = 0;
 	while ((packet = (unsigned char *)pcap_next(handle, &header)) != NULL) {
 		/* check Ethernet frame length */
-		if (header.len <= link_len_src || header.len != header.caplen) {
+		if (header.len < link_len_src || header.len != header.caplen) {
 			printf("bad PCAP packet (len = %d, caplen = %d)\n", header.len,
 			       header.caplen);
-			status = 0;
+			status = 1;
 			goto free_alloc;
 		}
 		counter++;
@@ -648,22 +621,23 @@ static int test_encap_and_decap(const char *const src_filename)
 		realloc_ret = realloc((void *)packets, counter * sizeof(unsigned char *));
 		if (realloc_ret == NULL) {
 			printf("failed to copy the packets.\n");
+			status = 1;
 			goto free_alloc;
-		} else {
-			packets = realloc_ret;
 		}
+		packets = realloc_ret;
 		realloc_ret = realloc((void *)packets_length, counter * sizeof(size_t));
 		if (realloc_ret == NULL) {
 			printf("failed to copy the packets length.\n");
+			status = 1;
 			goto free_alloc;
-		} else {
-			packets_length = realloc_ret;
 		}
+		packets_length = realloc_ret;
 		packets_length[counter - 1] = header.len;
 
 		packets[counter - 1] = calloc(packets_length[counter - 1], sizeof(unsigned char));
 		if (packets[counter - 1] == NULL) {
 			printf("failed to copy a packet.\n");
+			status = 1;
 			goto free_alloc;
 		}
 
@@ -683,6 +657,7 @@ static int test_encap_and_decap(const char *const src_filename)
 		transmitter = rle_transmitter_new(*conf);
 		if (transmitter == NULL) {
 			printf("failed to create the transmitter.\n");
+			status = 1;
 			goto destroy_modules;
 		}
 
@@ -690,6 +665,7 @@ static int test_encap_and_decap(const char *const src_filename)
 		receiver = rle_receiver_new(*conf);
 		if (receiver == NULL) {
 			printf("failed to create the receiver.\n");
+			status = 1;
 			goto destroy_modules;
 		}
 
