@@ -131,6 +131,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'b': /* Burst Size */
+			assert(optarg != NULL);
 			printf("burst size with value `%s'\n", optarg);
 			burst_size = atoi(optarg);
 

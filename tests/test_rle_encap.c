@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 
 /**
  * @brief         Compare two packets.
@@ -56,9 +57,9 @@ static void print_modules_stats(void)
  * @return        true if OK, else false.
  */
 static bool check_encap(const unsigned char sdu[], const size_t sdu_length,
-                                const unsigned char alpdu[], const size_t alpdu_length,
-                                const unsigned char alpdu_header[],
-                                const size_t alpdu_header_length);
+                        const unsigned char alpdu[], const size_t alpdu_length,
+                        const unsigned char alpdu_header[],
+                        const size_t alpdu_header_length);
 
 /**
  * @brief         Generic encapsulation test.
@@ -110,16 +111,19 @@ exit_label:
 }
 
 static bool check_encap(const unsigned char sdu[], const size_t sdu_length,
-                                const unsigned char alpdu[], const size_t alpdu_length,
-                                const unsigned char alpdu_header[],
-                                const size_t alpdu_header_length)
+                        const unsigned char alpdu[], const size_t alpdu_length,
+                        const unsigned char alpdu_header[],
+                        const size_t alpdu_header_length)
 {
-	PRINT_TEST("subtest. sizes : SDU %zu, header %zu, ALPDU %zu", sdu_length,
-	           alpdu_header_length,
-	           alpdu_length);
 	bool output = false;
 	size_t theorical_alpdu_length = sdu_length + alpdu_header_length;
 	unsigned char theorical_alpdu[theorical_alpdu_length];
+
+	assert(sdu != NULL);
+	assert(alpdu != NULL);
+
+	PRINT_TEST("subtest. sizes : SDU %zu, header %zu, ALPDU %zu", sdu_length,
+	           alpdu_header_length, alpdu_length);
 
 	/* Checking the sizes. */
 	if (theorical_alpdu_length != alpdu_length) {
@@ -127,8 +131,10 @@ static bool check_encap(const unsigned char sdu[], const size_t sdu_length,
 		goto exit_label;
 	}
 	/* Merging SDU and theorical ALPDU header in a theorical ALPDU. */
-	memcpy((void *)theorical_alpdu, (const void *)alpdu_header, alpdu_header_length);
-	memcpy((void *)(theorical_alpdu + alpdu_header_length), (const void *)sdu, sdu_length);
+	if (alpdu_header != NULL) {
+		memcpy(theorical_alpdu, alpdu_header, alpdu_header_length);
+	}
+	memcpy(theorical_alpdu + alpdu_header_length, sdu, sdu_length);
 
 	/* Checking theorical ALPDU and given ALPDU. */
 	output = compare_packets(alpdu, alpdu_length, theorical_alpdu, theorical_alpdu_length);

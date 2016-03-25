@@ -177,7 +177,7 @@ bool test_rle_api_robustness_transmitter(void)
 	printf("\ttest rle_fragment()\n");
 	size_t ppdu_valid_max_len = 599;
 	unsigned char ppdu_valid[ppdu_valid_max_len];
-	size_t ppdu_valid_len;
+	size_t ppdu_valid_len = 0;
 	{
 		enum rle_frag_status frag_status;
 		size_t frag_id = 0;

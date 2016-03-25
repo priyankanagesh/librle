@@ -115,6 +115,7 @@ int main(int argc, char *argv[])
 			printf("\n");
 			break;
 		case 'f': /* Fragment Size */
+			assert(optarg != NULL);
 			printf("fragment size with value `%s'\n", optarg);
 			fragment_size = atoi(optarg);
 			break;
@@ -294,7 +295,6 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 		}
 
 		while (!all_contexts_emptied) {
-			frag_id = 0;
 			all_contexts_emptied = 1;
 			for (frag_id = 0; frag_id < max_frag_id; ++frag_id) {
 				if (rle_transmitter_stats_get_queue_size(transmitter,
@@ -649,6 +649,7 @@ static int test_encap_and_decap(const char *const src_filename)
 		if (transmitter == NULL) {
 			printf("failed to create the transmitter.\n");
 			status = 1;
+			receiver = NULL;
 			goto destroy_modules;
 		}
 

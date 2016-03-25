@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <pcap/pcap.h>
 #include <pcap.h>
+#include <linux/limits.h>
 
 /** The program version */
 #define TEST_VERSION  "RLE dump FPDUs test application, version 0.0.1\n"
@@ -162,6 +163,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'p': /* PPDU Size */
+			assert(optarg != NULL);
 			printf("PPDU size with value `%s'\n", optarg);
 			ppdu_size = atoi(optarg);
 
@@ -177,6 +179,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'f': /* FPDU Size */
+			assert(optarg != NULL);
 			printf("FPDU size with value `%s'\n", optarg);
 			fpdu_size = atoi(optarg);
 
@@ -192,13 +195,21 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'o': /* Output */
+			assert(optarg != NULL);
+			if (strlen(optarg) >= PATH_MAX) {
+				printf("ERROR: output path too long");
+				goto error;
+			}
 			printf("Output set to `%s'\n", optarg);
-			output = calloc(strlen(optarg), sizeof(char));
+			if (output != NULL) {
+				free(output); /* in case option is given twice */
+			}
+			output = calloc(strlen(optarg) + 1, sizeof(char));
 			if (output == NULL) {
 				printf("ERROR: Unable to allocate output filename.\n");
 				goto error;
 			}
-			strncpy(output, optarg, strlen(optarg));
+			strncpy(output, optarg, strlen(optarg) + 1);
 			break;
 
 		case 'v': /* Version */
@@ -235,8 +246,12 @@ int main(int argc, char *argv[])
 
 	/* If output is not set, setting it to default value. */
 	if (output == NULL) {
-		output = calloc(strlen(DEFAULT_OUTPUT), sizeof(char));
-		strncpy(output, DEFAULT_OUTPUT, strlen(DEFAULT_OUTPUT));
+		output = calloc(strlen(DEFAULT_OUTPUT) + 1, sizeof(char));
+		if (output == NULL) {
+			printf("ERROR: Unable to allocate output filename.\n");
+			goto error;
+		}
+		strncpy(output, DEFAULT_OUTPUT, strlen(DEFAULT_OUTPUT) + 1);
 	}
 
 	signal(SIGINT, test_interrupt);

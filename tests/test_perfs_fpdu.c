@@ -141,6 +141,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'p': /* Payload Label length */
+			assert(optarg != NULL);
 			printf("payload label length value `%s'\n", optarg);
 			payload_label_len = atoi(optarg);
 			if (payload_label_len > MAX_PAYLOAD_LABEL_LEN) {
@@ -219,6 +220,7 @@ static void usage(void)
 	        "options:\n"
 	        "\t-v                      Print version information and exit\n"
 	        "\t-h                      Print this usage and exit\n"
+	        "\t-p                      Payload label length\n"
 	        "\t--ignore-malformed      Ignore malformed packets for test\n"
 	        "\t--verbose               Run the test in verbose mode\n"
 	        "\n");

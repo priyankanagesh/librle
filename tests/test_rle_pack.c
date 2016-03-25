@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 
 /**
  * @brief         Generic packing test.
@@ -28,9 +29,10 @@
  *
  * @return        true if OK, else false.
  */
-static bool test_pack(const size_t fpdu_length, const size_t nb_ppdus,
-                              const size_t ppdus_length[],
-                              const size_t label_length);
+static bool test_pack(const size_t fpdu_length,
+                      const size_t nb_ppdus,
+                      const size_t ppdus_length[],
+                      const size_t label_length);
 
 /**
  * @brief         Check an FPDU.
@@ -112,13 +114,15 @@ exit_label:
 	return output;
 }
 
-static bool test_pack(const size_t fpdu_length, const size_t nb_ppdus,
-                              const size_t ppdus_length[],
-                              const size_t label_length)
+static bool test_pack(const size_t fpdu_length,
+                      const size_t nb_ppdus,
+                      const size_t ppdus_length[],
+                      const size_t label_length)
 {
 	PRINT_TEST("Test PACK. Sizes: FPDU %zu, Nb PPDU  %zu, Label %zu\nPPDUs sizes :",
-	           fpdu_length, nb_ppdus,
-	           label_length);
+	           fpdu_length, nb_ppdus, label_length);
+
+	assert(nb_ppdus > 0);
 
 	size_t iterator = 0;
 	for (iterator = 0; iterator < nb_ppdus; ++iterator) {

@@ -77,7 +77,7 @@ static bool test_request_rle_header_overhead(const enum rle_fpdu_types fpdu_type
 	bool output = false;
 
 	size_t overhead_size = 0;
-	enum rle_header_size_status header_size_status = RLE_HEADER_SIZE_ERR;
+	enum rle_header_size_status header_size_status;
 
 	header_size_status = rle_get_header_size(conf, fpdu_type, &overhead_size);
 
@@ -99,7 +99,7 @@ bool test_request_rle_header_overhead_traffic(void)
 	bool output = false;
 
 	size_t overhead_size = 0;
-	enum rle_header_size_status header_size_status = RLE_HEADER_SIZE_ERR;
+	enum rle_header_size_status header_size_status;
 	const struct rle_config conf = {
 		.implicit_protocol_type = 0,
 		.use_alpdu_crc = 0,
