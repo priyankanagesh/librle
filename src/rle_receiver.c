@@ -63,7 +63,7 @@ static int get_receiver_context(const struct rle_receiver *const receiver,
 {
 	int status = 1;
 
-	if (fragment_id >= RLE_MAX_FRAG_ID) {
+	if (receiver == NULL || fragment_id >= RLE_MAX_FRAG_ID || ctx_man != NULL) {
 		/* Out of bound */
 		goto error;
 	}
@@ -86,6 +86,12 @@ struct rle_receiver *rle_receiver_new(const struct rle_context_configuration *co
 	struct rle_receiver *receiver = NULL;
 	size_t iterator;
 	struct rle_configuration **rx_conf;
+
+	if (configuration == NULL) {
+		PRINT_RLE_ERROR("failed to created RLE receiver: invalid configuration, "
+		                "NULL is not accepted");
+		goto out;
+	}
 
 	if (configuration->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
 		PRINT_RLE_ERROR(

@@ -104,6 +104,12 @@ struct rle_transmitter *rle_transmitter_new(
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
+	if (configuration == NULL) {
+		PRINT_RLE_ERROR("failed to created RLE transmitter: invalid configuration, "
+		                "NULL is not accepted");
+		goto exit_label;
+	}
+
 	if (configuration->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
 		PRINT_RLE_ERROR(
 		        "could not initialize transmitter with 0x31 as implicit protocol type : "

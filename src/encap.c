@@ -91,7 +91,7 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 		goto out;
 	}
 
-	if (frag_id >= RLE_MAX_FRAG_NUMBER) {
+	if (sdu == NULL || frag_id >= RLE_MAX_FRAG_NUMBER) {
 		goto out;
 	}
 

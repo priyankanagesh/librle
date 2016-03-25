@@ -229,9 +229,7 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 	}
 
 	const size_t label_size = 3;
-	size_t current_label_length = label_size; /* Arbitrarly */
 	const unsigned char label[3] = { 0x00, 0x01, 0x02 };
-	const unsigned char *labelp = label;
 	size_t fpdu_current_pos = 0;
 	size_t fpdu_remaining_size = fpdu_length;
 
@@ -347,12 +345,8 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 					assert(ppdu_length <= fragment_size);
 
 					printf_verbose("=== RLE packing: start\n");
-					ret_pack =
-					        rle_pack(ppdu, ppdu_length, labelp,
-					                 current_label_length,
-					                 fpdu,
-					                 &fpdu_current_pos,
-					                 &fpdu_remaining_size);
+					ret_pack = rle_pack(ppdu, ppdu_length, label, label_size,
+					                    fpdu, &fpdu_current_pos, &fpdu_remaining_size);
 
 					switch (ret_pack) {
 					case RLE_PACK_OK:
@@ -376,9 +370,6 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 						status = -1;
 						goto exit;
 					}
-
-					labelp = NULL;
-					current_label_length = 0;
 
 					{
 						printf_verbose("\n");

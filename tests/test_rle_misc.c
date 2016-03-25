@@ -102,9 +102,9 @@ bool test_request_rle_header_overhead_traffic(void)
 
 	size_t overhead_size = 0;
 	enum rle_header_size_status header_size_status = RLE_HEADER_SIZE_ERR;
-	const struct rle_context_configuration *const conf = NULL;
+	const struct rle_context_configuration conf = { 0 };
 
-	header_size_status = rle_get_header_size(conf, RLE_TRAFFIC_FPDU, &overhead_size);
+	header_size_status = rle_get_header_size(&conf, RLE_TRAFFIC_FPDU, &overhead_size);
 
 	if (header_size_status == RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC)
 	{
@@ -121,25 +121,19 @@ bool test_request_rle_header_overhead_all(void)
 	bool output = true;
 
 	/* Logon */
+	const struct rle_context_configuration conf_logon = { 0 };
 	const struct test_request test_logon = {
 		.fpdu_type = RLE_LOGON_FPDU,
 		.expected_size = 6,
-		.conf = NULL,
+		.conf = &conf_logon,
 	};
 
 	/* Control */
+	const struct rle_context_configuration conf_control = { 0 };
 	const struct test_request test_control = {
 		.fpdu_type = RLE_CTRL_FPDU,
 		.expected_size = 3,
-		.conf = NULL,
-	};
-
-	/* Traffic-control */
-	/* No conf => expected_size = Max of the traffic control expected size below. */
-	const struct test_request test_tc_no_conf = {
-		.fpdu_type = RLE_TRAFFIC_CTRL_FPDU,
-		.expected_size = 5,
-		.conf = NULL,
+		.conf = &conf_control,
 	};
 
 	/* Traffic-Control */
@@ -188,7 +182,6 @@ bool test_request_rle_header_overhead_all(void)
 	const struct test_request *const test_requests[] = {
 		&test_logon,
 		&test_control,
-		&test_tc_no_conf,
 		&test_tc_omitted,
 		&test_tc_non_omitted_comp,
 		&test_tc_non_omitted_non_comp,

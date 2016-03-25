@@ -238,8 +238,6 @@ ssize_t rle_proc_write(struct file *file, const char __user *buffer, size_t coun
 	const size_t burst_size = (size_t)param_burst_size;
 	const size_t payload_label_size = 3;
 	unsigned char payload_label[3] = { 0x01, 0x02, 0x03 };
-	size_t current_payload_label_size = fpdu_current_pos == 0 ? payload_label_size : 0;
-	unsigned char *current_payload_label = fpdu_current_pos == 0 ? payload_label : NULL;
 
 
 
@@ -269,7 +267,7 @@ ssize_t rle_proc_write(struct file *file, const char __user *buffer, size_t coun
 	while (rle_transmitter_stats_get_queue_size(couple->transmitter, frag_id) != 0) {
 		size_t ppdu_length = 0;
 		unsigned char *ppdu;
-		size_t fpdu_prev_pos = fpdu_current_pos + current_payload_label_size;
+		size_t fpdu_prev_pos = fpdu_current_pos + payload_label_size;
 
 		/* Start fragmentation */
 		frag_status =
@@ -282,25 +280,16 @@ ssize_t rle_proc_write(struct file *file, const char __user *buffer, size_t coun
 		pr_info("[%s] ALPDU successfully fragmented\n", THIS_MODULE->name);
 
 		/* Start packing */
-		pack_status =
-		        rle_pack(ppdu, ppdu_length, current_payload_label,
-		                 current_payload_label_size, fpdu, &fpdu_current_pos,
-		                 &fpdu_remaining_size);
+		pack_status = rle_pack(ppdu, ppdu_length, payload_label, payload_label_size,
+		                       fpdu, &fpdu_current_pos, &fpdu_remaining_size);
 		if (pack_status != RLE_PACK_OK) {
 			pr_err("[%s] failed to pack an FPDU (%d)\n", THIS_MODULE->name,
 			       (int)pack_status);
 			goto error;
 		}
-		if (current_payload_label_size != 0) {
-			pr_info("[%s] %zu-octets payload label successfully packed.\n",
-			        THIS_MODULE->name, payload_label_size);
-		}
 		pr_info("[%s] %zu-octets PPDU successfully packed. Current FPDU size: %zu\n",
 		        THIS_MODULE->name, fpdu_current_pos - fpdu_prev_pos,
 		        fpdu_current_pos);
-
-		current_payload_label_size = 0;
-		current_payload_label = NULL;
 	}
 	frag_id = (frag_id + 1) % MAX_FRAG_ID;
 

@@ -43,39 +43,40 @@ enum rle_pack_status rle_pack(const unsigned char *const ppdu, const size_t ppdu
 {
 	enum rle_pack_status status = RLE_PACK_ERR;
 
-	if ((fpdu == NULL) || (*fpdu_remaining_size == 0)) {
-		status = RLE_PACK_ERR_FPDU_TOO_SMALL;
-		goto exit_label;
-	}
-
-	if ((label_size + ppdu_length) > *fpdu_remaining_size) {
-		status = RLE_PACK_ERR_FPDU_TOO_SMALL;
-		goto exit_label;
-	}
-
-	if ((ppdu == NULL) || (ppdu_length == 0)) {
+	if (ppdu == NULL || ppdu_length == 0) {
 		status = RLE_PACK_ERR_INVALID_PPDU;
 		goto exit_label;
 	}
-
-	if ((label == NULL) ^ (label_size == 0)) {
+	if ((label_size != 0 && label_size != 3 && label_size != 6) ||
+	    (label_size > 0 && label == NULL)) {
 		status = RLE_PACK_ERR_INVALID_LAB;
 		goto exit_label;
 	}
-
-	if ((label_size != 0) && (label_size != 3) && (label_size != 6)) {
-		status = RLE_PACK_ERR_INVALID_LAB;
+	if (fpdu == NULL || fpdu_current_pos == NULL || fpdu_remaining_size == NULL) {
+		status = RLE_PACK_ERR;
 		goto exit_label;
 	}
 
-	if (label_size != 0) {
-		memcpy((void *)(fpdu + *fpdu_current_pos), (const void *)label, label_size);
+	/* when FPDU is empty, we must have enough room for both the FPDU label and
+	 * the first PPDU ; when the FPDU already contains at least one PPDU, we must
+	 * have enough room for the new PPDU only */
+	if (((*fpdu_current_pos) == 0 && (*fpdu_remaining_size) < (label_size + ppdu_length)) ||
+	    ((*fpdu_current_pos) != 0 && (*fpdu_remaining_size) < ppdu_length)) {
+		status = RLE_PACK_ERR_FPDU_TOO_SMALL;
+		goto exit_label;
 	}
 
-	memcpy((void *)(fpdu + *fpdu_current_pos + label_size), (const void *)ppdu, ppdu_length);
+	/* when FPDU is empty, copy the FPDU label before the first PPDU */
+	if ((*fpdu_current_pos) == 0 && label_size > 0) {
+		memcpy(fpdu, label, label_size);
+		(*fpdu_current_pos) += label_size;
+		(*fpdu_remaining_size) -= label_size;
+	}
 
-	*fpdu_current_pos += label_size + ppdu_length;
-	*fpdu_remaining_size -= label_size + ppdu_length;
+	/* copy the PPDU */
+	memcpy(fpdu + (*fpdu_current_pos), ppdu, ppdu_length);
+	(*fpdu_current_pos) += ppdu_length;
+	(*fpdu_remaining_size) -= ppdu_length;
 
 	status = RLE_PACK_OK;
 
@@ -86,5 +87,7 @@ exit_label:
 void rle_pad(unsigned char *const fpdu, const size_t fpdu_current_pos,
              const size_t fpdu_remaining_size)
 {
-	memset((void *)(fpdu + fpdu_current_pos), 0, fpdu_remaining_size);
+	if (fpdu != NULL && fpdu_remaining_size != 0) {
+		memset(fpdu + fpdu_current_pos, 0, fpdu_remaining_size);
+	}
 }

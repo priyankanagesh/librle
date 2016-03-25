@@ -139,22 +139,9 @@ static bool test_decap(const uint16_t protocol_type,
 		}
 
 		{
-			const unsigned char alloc_label[label_length];
-			const unsigned char *label = NULL;
-			size_t current_label_length = label_length;
-			if (number_of_sdus_iterator == 1) {
-				if (label_length != 0) {
-					label = alloc_label;
-					memcpy((void *)alloc_label,
-					       (const void *)payload_initializer,
-					       label_length);
-				} else {
-					memcpy((void *)label, (const void *)payload_initializer,
-					       label_length);
-				}
-			} else {
-				label = NULL;
-				current_label_length = 0;
+			unsigned char label[label_length];
+			if (label_length != 0) {
+				memcpy(label, payload_initializer, label_length);
 			}
 			while (rle_transmitter_stats_get_queue_size(transmitter, frag_id)) {
 				unsigned char *ppdu;
@@ -166,16 +153,13 @@ static bool test_decap(const uint16_t protocol_type,
 					goto exit_label;
 				}
 
-				ret_pack = rle_pack(ppdu, ppdu_length, label, current_label_length, fpdu,
+				ret_pack = rle_pack(ppdu, ppdu_length, label, label_length, fpdu,
 				                    &fpdu_current_pos, &fpdu_remaining_size);
 
 				if (ret_pack != RLE_PACK_OK) {
 					PRINT_ERROR("Pack does not return OK.");
 					goto exit_label;
 				}
-
-				label = NULL;
-				current_label_length = 0;
 			}
 		}
 	}

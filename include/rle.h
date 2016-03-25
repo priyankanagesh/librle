@@ -773,10 +773,11 @@ uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype);
  * @brief         Get the size of an RLE headers overhead (ALPDU + PPDU + FPDU headers).
  *                Those header sizes are known only for signal fpdus, and traffic-control fpdus.
  *
- * @param[in]     conf                    The rle module configuration. could be set to "NULL".
- *                                        May be used for evolution or adaption of RLE.
- * @param[in]     fpdu_type               The type of the FPDU.
- * @param[out]    rle_header_size         The size of the RLE header in octets.
+ * @param[in]     conf               The rle module configuration (unused for the
+ *                                   moment, may be used for evolution or adaption
+ *                                   of RLE)
+ * @param[in]     fpdu_type          The type of the FPDU.
+ * @param[out]    rle_header_size    The size of the RLE header in octets.
  *
  * @return        RLE_HEADER_SIZE_OK if size is calculated,
  *                RLE_HEADER_SIZE_ERR on generic errors,

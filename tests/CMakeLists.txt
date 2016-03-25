@@ -9,7 +9,8 @@ SET(SRC_LIBRLE_TESTS
 	test_rle_frag.c
 	test_rle_pack.c
 	test_rle_decap.c
-	test_rle_misc.c)
+	test_rle_misc.c
+	test_rle_api_robustness.c)
 
 ADD_LIBRARY(rle_tests SHARED ${SRC_LIBRLE_TESTS})
 

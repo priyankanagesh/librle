@@ -203,6 +203,10 @@ enum rle_header_size_status rle_get_header_size(const struct rle_context_configu
 	enum rle_header_size_status status = RLE_HEADER_SIZE_ERR;
 	size_t header_size = 0;
 
+	if (conf == NULL || rle_header_size == NULL) {
+		goto error;
+	}
+
 	switch (fpdu_type) {
 	case RLE_LOGON_FPDU:
 
@@ -240,19 +244,11 @@ enum rle_header_size_status rle_get_header_size(const struct rle_context_configu
 		/* pdu_label     = 0 */
 		header_size += 2 + 0;
 
-		if (conf != NULL) {
-			/* ALPDU header. */
-			/* protocol_type    = 0. May depends on conf with a different implementation. */
-			/* alpdu_label      = 0 */
-			/* protection_bytes = 0 */
-			header_size += 0 + 0 + 0;
-		} else {
-			/* ALPDU header. */
-			/* protocol_type    = 0 */
-			/* alpdu_label      = 0 */
-			/* protection_bytes = 0 */
-			header_size += 0 + 0 + 0;
-		}
+		/* ALPDU header. */
+		/* protocol_type    = 0. May depends on conf with a different implementation. */
+		/* alpdu_label      = 0 */
+		/* protection_bytes = 0 */
+		header_size += 0 + 0 + 0;
 
 		status = RLE_HEADER_SIZE_OK;
 		break;
@@ -262,5 +258,6 @@ enum rle_header_size_status rle_get_header_size(const struct rle_context_configu
 
 	*rle_header_size = header_size;
 
+error:
 	return status;
 }

@@ -137,14 +137,9 @@ static bool test_pack(const size_t fpdu_length, const size_t nb_ppdus,
 	unsigned char *ppdus[nb_ppdus];
 
 	unsigned char label[label_length];
-	unsigned char *current_label = NULL;
 	if (label_length != 0) {
-		current_label = label;
-	} else {
-		memcpy((void *)label, (const void *)payload_initializer, label_length);
+		memcpy(label, payload_initializer, label_length);
 	}
-
-	size_t current_label_length = label_length;
 
 	for (iterator = 0; iterator < nb_ppdus; ++iterator) {
 		ppdus[iterator] = calloc((size_t)1, ppdus_length[iterator]);
@@ -157,17 +152,14 @@ static bool test_pack(const size_t fpdu_length, const size_t nb_ppdus,
 		size_t fpdu_remaining_size = fpdu_length;
 		for (iterator = 0; iterator < nb_ppdus; ++iterator) {
 			pack_status =
-			        rle_pack(ppdus[iterator], ppdus_length[iterator], current_label,
-			                 current_label_length, fpdu, &fpdu_current_pos,
+			        rle_pack(ppdus[iterator], ppdus_length[iterator], label,
+			                 label_length, fpdu, &fpdu_current_pos,
 			                 &fpdu_remaining_size);
 
 			if (pack_status != RLE_PACK_OK) {
 				PRINT_ERROR("Unable to pack");
 				goto exit_label;
 			}
-
-			current_label = NULL;
-			current_label_length = 0;
 		}
 	}
 
@@ -347,25 +339,6 @@ bool test_pack_invalid_label(void)
 
 	const size_t fpdu_length = 1000;
 	unsigned char fpdu[fpdu_length];
-
-	{
-		size_t fpdu_pos = 0;
-		size_t fpdu_remaining_length = fpdu_length;
-
-		const size_t ppdu_length = 30;
-		const unsigned char ppdu[ppdu_length];
-
-		const size_t label_length = 0;
-		const unsigned char label[3];
-
-		pack_status = rle_pack(ppdu, ppdu_length, label, label_length, fpdu, &fpdu_pos,
-		                       &fpdu_remaining_length);
-
-		if (pack_status != RLE_PACK_ERR_INVALID_LAB) {
-			PRINT_ERROR("Invalid label not raised");
-			goto exit_label;
-		}
-	}
 
 	{
 		size_t fpdu_pos = 0;

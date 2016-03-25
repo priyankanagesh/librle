@@ -20,36 +20,21 @@
 
 static bool tests(const char *const test_name, const struct test *const current_tests[])
 {
+	const struct test *const *current_test;
+	bool success;
+
 	printf("\tTest %s\n\n", test_name);
 
-	/* Success is True by default. False if a single test fail. */
-	bool test_success = true;
-
-	/* Iterator */
-	const struct test *const *current_test;
-
-	size_t number_of_tests = 0;
-	size_t number_of_succ_tests = 0;
-
 	for (current_test = current_tests; *current_test; ++current_test) {
-		bool success = false;
 		printf("Test %s\n", (**current_test).name);
 		success = (**current_test).function();
-		number_of_tests++;
-		if (success) {
-			number_of_succ_tests++;
+		if (!success) {
+			printf("\nTEST FAILED\n");
+			return false;
 		}
-		test_success &= success;
 	}
 
-	total_number_of_tests += number_of_tests;
-	total_number_of_succ_tests += number_of_succ_tests;
-
-	printf("%s tests %s. %zu/%zu.\n\n", test_name, test_success == true ? "OK" : "KO",
-	       number_of_succ_tests,
-	       number_of_tests);
-
-	return test_success;
+	return true;
 }
 
 static bool encap_tests(void)
@@ -222,6 +207,10 @@ static bool misc_tests(void)
 	                                        test_rle_allocation_f_buff };
 	const struct test destruction_f_buff = { "Fragmentation buffer destruction",
 	                                         test_rle_destruction_f_buff };
+	const struct test api_robustness_trans = { "API robustness for transmitter",
+	                                           test_rle_api_robustness_transmitter };
+	const struct test api_robustness_recv = { "API robustness for receiver",
+	                                           test_rle_api_robustness_receiver };
 
 	const struct test *const miscellaneous_tests[] =
 	{
@@ -233,6 +222,8 @@ static bool misc_tests(void)
 		&destruction_receiver,
 		&allocation_f_buff,
 		&destruction_f_buff,
+		&api_robustness_trans,
+		&api_robustness_recv,
 		NULL
 	};
 
@@ -243,56 +234,73 @@ int main(void)
 {
 	PRINT_TEST("Lib RLE tests.\n");
 
-	/* Success is True by default. False if a single test fail. */
-	bool tests_success = true;
-
-	total_number_of_tests = 0;
-	total_number_of_succ_tests = 0;
+	bool test_success;
 
 	/*---------------------*/
 	/*--  Encapsulation  --*/
 	/*---------------------*/
 
-	tests_success &= encap_tests();
+	test_success = encap_tests();
+	if (!test_success) {
+		goto error;
+	}
 
 	/*----------------------------------*/
 	/*--  Encapsulation  contextless  --*/
 	/*----------------------------------*/
 
-	tests_success &= encap_ctxtless_tests();
+	test_success = encap_ctxtless_tests();
+	if (!test_success) {
+		goto error;
+	}
 
 	/*---------------------*/
 	/*--  Fragmentation  --*/
 	/*---------------------*/
 
-	tests_success &= frag_tests();
+	test_success = frag_tests();
+	if (!test_success) {
+		goto error;
+	}
 
 	/*----------------------------------*/
 	/*--  Fragmentation  contextless  --*/
 	/*----------------------------------*/
 
-	tests_success &= frag_ctxtless_tests();
+	test_success = frag_ctxtless_tests();
+	if (!test_success) {
+		goto error;
+	}
 
 	/*---------------*/
 	/*--  Packing  --*/
 	/*---------------*/
 
-	tests_success &= pack_tests();
+	test_success = pack_tests();
+	if (!test_success) {
+		goto error;
+	}
 
 	/*---------------------*/
 	/*--  Decapsulation  --*/
 	/*---------------------*/
 
-	tests_success &= decap_tests();
+	test_success = decap_tests();
+	if (!test_success) {
+		goto error;
+	}
 
 	/*---------------------*/
 	/*--  Miscellaneous  --*/
 	/*---------------------*/
 
-	tests_success &= misc_tests();
+	test_success = misc_tests();
+	if (!test_success) {
+		goto error;
+	}
 
-	printf("Tests %s. %zu/%zu\n\n", tests_success == true ? "OK" : "KO",
-	       total_number_of_succ_tests,
-	       total_number_of_tests);
-	return tests_success == true ? EXIT_SUCCESS : EXIT_FAILURE;
+	return EXIT_SUCCESS;
+
+error:
+	return EXIT_FAILURE;
 }

@@ -57,16 +57,16 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	*ppdu_length = 0;
-
 	if (transmitter == NULL) {
 		status = RLE_FRAG_ERR_NULL_TRMT;
 		goto out;
 	}
 
-	if (frag_id >= RLE_MAX_FRAG_NUMBER) {
+	if (frag_id >= RLE_MAX_FRAG_NUMBER || ppdu == NULL || ppdu_length == NULL) {
 		goto out;
 	}
+
+	*ppdu_length = 0;
 
 	rle_conf = transmitter->rle_conf;
 	rle_ctx = &transmitter->rle_ctx_man[frag_id];
