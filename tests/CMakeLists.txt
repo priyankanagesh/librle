@@ -47,19 +47,15 @@ SET(SYS_CMD_AFL_FUZZ afl-fuzz)
 
 # If coverage is on.
 # generate coverage files with:
-#   $ make coverage
+#   $ make check
 # generate coverage report with: (automatically generate coverage files)
 #   $ make cov_report
 IF (COVERAGE)
-    SET(CMAKE_CCOVERAGE_COMMAND
-           ${CMAKE_BINARY_DIR}/tests/test_rle > /dev/null
-        && ${SYS_CMD_ECHO} "Coverage files gen in ${CMAKE_BINARY_DIR}/CMakeFiles/librle.dir/src")
-    ADD_CUSTOM_TARGET(coverage DEPENDS test_rle COMMAND ${CMAKE_CCOVERAGE_COMMAND})
     SET(CMAKE_CCOV_REPORT_COMMAND
-           ${SYS_CMD_LCOV} -c -d ${CMAKE_BINARY_DIR}/CMakeFiles/librle.dir/src -o coverage.run
+           ${SYS_CMD_LCOV} -c -d ${CMAKE_BINARY_DIR}/CMakeFiles/rle.dir/src -o coverage.run
         && ${SYS_CMD_GENHTML} -o ${CMAKE_BINARY_DIR}/html/ coverage.run
         && ${SYS_CMD_ECHO} "Coverage report: ${CMAKE_BINARY_DIR}/html/index.html" )
-    ADD_CUSTOM_TARGET(cov_report DEPENDS coverage COMMAND ${CMAKE_CCOV_REPORT_COMMAND})
+    ADD_CUSTOM_TARGET(cov_report COMMAND ${CMAKE_CCOV_REPORT_COMMAND})
 ENDIF(COVERAGE)
 
 # Test targets for build automation
