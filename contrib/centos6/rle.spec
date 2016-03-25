@@ -6,7 +6,7 @@ License:        Commercial
 Group:          System Environment/Libraries
 Source:         %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
-BuildRequires:  cmake doxygen libpcap-devel
+BuildRequires:  cmake doxygen libpcap-devel libcmocka-devel
 Provides:       %{name}.%{version}.so
 
 %define prefix /usr

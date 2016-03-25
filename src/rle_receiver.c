@@ -92,37 +92,52 @@ struct rle_receiver *rle_receiver_new(const struct rle_config *const conf)
 	if (conf == NULL) {
 		PRINT_RLE_ERROR("failed to created RLE receiver: invalid configuration, "
 		                "NULL is not accepted");
-		goto out;
+		goto error;
 	}
 
 	if (conf->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
 		PRINT_RLE_ERROR(
 		        "could not initialize receiver with 0x31 as implicit protocol type : "
 		        "Not supported yet.");
-		goto out;
+		goto error;
 	}
 
 	receiver = (struct rle_receiver *)MALLOC(sizeof(struct rle_receiver));
 
 	if (!receiver) {
 		PRINT_RLE_ERROR("allocating receiver module failed");
-		goto out;
+		goto error;
 	}
 
 	memcpy(&receiver->conf, conf, sizeof(struct rle_config));
 
+	memset(receiver->rle_ctx_man, 0,
+	       RLE_MAX_FRAG_NUMBER * sizeof(struct rle_ctx_management));
 	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
 		struct rle_ctx_management *const ctx_man = &receiver->rle_ctx_man[iterator];
-		rle_ctx_init_rasm_buf(ctx_man);
+		if (rle_ctx_init_rasm_buf(ctx_man) != C_OK) {
+			PRINT_RLE_ERROR("failed to allocate memory for reassembly context with "
+			                "ID %zu\n", iterator);
+			goto free_ctxts;
+		}
 		ctx_man->frag_id = iterator;
 		rle_ctx_set_seq_nb(ctx_man, 0);
 	}
 
 	receiver->free_ctx = 0;
 
-out:
-
 	return receiver;
+
+free_ctxts:
+	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
+		struct rle_ctx_management *const ctx_man = &receiver->rle_ctx_man[iterator];
+		if (ctx_man->buff != NULL) {
+			rle_ctx_destroy_rasm_buf(ctx_man);
+		}
+	}
+	FREE(receiver);
+error:
+	return NULL;
 }
 
 void rle_receiver_destroy(struct rle_receiver **const receiver)

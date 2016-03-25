@@ -108,7 +108,7 @@ struct rle_transmitter *rle_transmitter_new(const struct rle_config *const conf)
 	if (conf == NULL) {
 		PRINT_RLE_ERROR("failed to created RLE transmitter: invalid configuration, "
 		                "NULL is not accepted");
-		goto exit_label;
+		goto error;
 	}
 
 	if (conf->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
@@ -116,7 +116,7 @@ struct rle_transmitter *rle_transmitter_new(const struct rle_config *const conf)
 		        "could not initialize transmitter with 0x31 as implicit protocol type : "
 		        "Not supported yet.\n");
 
-		goto exit_label;
+		goto error;
 	}
 
 	transmitter = (struct rle_transmitter *)MALLOC(sizeof(struct rle_transmitter));
@@ -124,14 +124,19 @@ struct rle_transmitter *rle_transmitter_new(const struct rle_config *const conf)
 	if (!transmitter) {
 		PRINT_RLE_ERROR("allocating transmitter module failed\n");
 
-		goto exit_label;
+		goto error;
 	}
 
-	/* initialize both RLE transmitter & the configuration structure */
+	/* initialize fragmentation contexts */
+	memset(transmitter->rle_ctx_man, 0,
+	       RLE_MAX_FRAG_NUMBER * sizeof(struct rle_ctx_management));
 	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
 		struct rle_ctx_management *const ctx_man = &transmitter->rle_ctx_man[iterator];
-
-		rle_ctx_init_frag_buf(ctx_man);
+		if (rle_ctx_init_frag_buf(ctx_man) != C_OK) {
+			PRINT_RLE_ERROR("failed to allocate memory for fragmentation context with "
+			                "ID %zu\n", iterator);
+			goto free_ctxts;
+		}
 		ctx_man->frag_id = iterator;
 		rle_ctx_set_seq_nb(ctx_man, 0);
 	}
@@ -140,9 +145,18 @@ struct rle_transmitter *rle_transmitter_new(const struct rle_config *const conf)
 
 	memcpy(&transmitter->conf, conf, sizeof(struct rle_config));
 
-exit_label:
-
 	return transmitter;
+
+free_ctxts:
+	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
+		struct rle_ctx_management *const ctx_man = &transmitter->rle_ctx_man[iterator];
+		if (ctx_man->buff != NULL) {
+			rle_ctx_destroy_frag_buf(ctx_man);
+		}
+	}
+	FREE(transmitter);
+error:
+	return NULL;
 }
 
 void rle_transmitter_destroy(struct rle_transmitter **const transmitter)

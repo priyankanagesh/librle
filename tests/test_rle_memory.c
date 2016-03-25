@@ -1,0 +1,110 @@
+/**
+ * @file   test_rle_memory.c
+ * @brief  Test robustness to memory problems
+ * @author Didier Barvaux
+ * @date   03/2016
+ * @copyright
+ *   Copyright (C) 2016, Thales Alenia Space France - All Rights Reserved
+ */
+
+#include "rle.h"
+
+#include <stdarg.h> /* required by cmocka header file */
+#include <setjmp.h> /* required by cmocka header file */
+#include <cmocka.h>
+#include <stdio.h>
+
+void * __real_malloc(size_t size);
+void *__wrap_malloc(size_t size);
+
+void test_rle_memory_frag_buf_new(void **state);
+void test_rle_memory_transmitter_new(void **state);
+void test_rle_memory_receiver_new(void **state);
+
+
+int main(void)
+{
+	const struct CMUnitTest tests[] = {
+		cmocka_unit_test(test_rle_memory_frag_buf_new),
+		cmocka_unit_test(test_rle_memory_transmitter_new),
+		cmocka_unit_test(test_rle_memory_receiver_new),
+	};
+
+	return cmocka_run_group_tests(tests, NULL, NULL);
+}
+
+
+void test_rle_memory_frag_buf_new(void **state __attribute__((unused)))
+{
+	struct rle_frag_buf *buf;
+
+	will_return(__wrap_malloc, 0);
+	buf = rle_frag_buf_new();
+	assert_true(buf == NULL);
+}
+
+void test_rle_memory_transmitter_new(void **state __attribute__((unused)))
+{
+	struct rle_config conf;
+	struct rle_transmitter *transmitter;
+	size_t i;
+
+	/* transmitter failure */
+	will_return(__wrap_malloc, 0);
+	transmitter = rle_transmitter_new(&conf);
+	assert_true(transmitter == NULL);
+
+	/* context failure */
+	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+		size_t j;
+		will_return(__wrap_malloc, 1);
+		for (j = 0; j < i; j++) {
+			will_return(__wrap_malloc, 1);
+		}
+		will_return(__wrap_malloc, 0);
+		transmitter = rle_transmitter_new(&conf);
+		assert_true(transmitter == NULL);
+	}
+}
+
+
+void test_rle_memory_receiver_new(void **state __attribute__((unused)))
+{
+	struct rle_config conf;
+	struct rle_receiver *receiver;
+	size_t i;
+
+	/* receiver failure */
+	will_return(__wrap_malloc, 0);
+	receiver = rle_receiver_new(&conf);
+	assert_true(receiver == NULL);
+
+	/* context failure */
+	for (i = 0; i < RLE_MAX_FRAG_NUMBER * 2; i++) {
+		size_t j;
+		will_return(__wrap_malloc, 1);
+		for (j = 0; j < i; j++) {
+			will_return(__wrap_malloc, 1);
+		}
+		will_return(__wrap_malloc, 0);
+		receiver = rle_receiver_new(&conf);
+		assert_true(receiver == NULL);
+	}
+}
+
+
+/*---------------------------------------------------------------------------*/
+/*--------------------------   WRAPPED FUNCTIONS  ---------------------------*/
+/*---------------------------------------------------------------------------*/
+
+void * __wrap_malloc(size_t size)
+{
+	void *ptr = mock_ptr_type(void*);
+
+	if (ptr != NULL) {
+		return __real_malloc(size);
+	} else {
+		return ptr;
+	}
+}
+

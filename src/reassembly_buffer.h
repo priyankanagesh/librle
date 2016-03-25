@@ -334,16 +334,24 @@ static inline rle_rasm_buf_t *rasm_buf_new(void)
 
 	if (!rasm_buf) {
 		PRINT_RLE_ERROR("reassembly buffer not allocated.");
-		goto out;
+		goto error;
 	}
 
-	rasm_buf->buffer = rasm_buf->sdu_info.buffer = (unsigned char *)MALLOC(RLE_R_BUFF_LEN);
+	rasm_buf->buffer = (unsigned char *)MALLOC(RLE_R_BUFF_LEN);
+	if (!rasm_buf->buffer) {
+		PRINT_RLE_ERROR("reassembly buffer not allocated (2)");
+		goto free_rasm_buf;
+	}
+	rasm_buf->sdu_info.buffer = rasm_buf->buffer;
 	rasm_buf->sdu.rasm_buf = rasm_buf;
 	rasm_buf->sdu_frag.rasm_buf = rasm_buf;
 
-out:
-
 	return rasm_buf;
+
+free_rasm_buf:
+	FREE(rasm_buf);
+error:
+	return NULL;
 }
 
 static inline void rasm_buf_del(rle_rasm_buf_t **const rasm_buf)
