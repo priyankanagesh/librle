@@ -138,7 +138,9 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 
 		if ((ret != C_OK) && (ret != C_REASSEMBLY_OK)) {
 			PRINT("Error during reassembly.\n");
-			rle_receiver_free_context(receiver, fragment_id);
+			if (fragment_id != -1) {
+				rle_receiver_free_context(receiver, fragment_id);
+			}
 			status = RLE_DECAP_ERR;
 		} else if (ret == C_REASSEMBLY_OK) {
 			/* Potential SDU received. */

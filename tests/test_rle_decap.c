@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 
 /**
  * @brief         Generic decapsulation test.
@@ -93,6 +94,8 @@ static bool test_decap(const uint16_t protocol_type,
 	size_t fpdu_remaining_size = fpdu_length;
 	size_t number_of_sdus_iterator = 0;
 
+	assert(label_length <= MAX_LABEL_LEN);
+
 	receiver = rle_receiver_new(&conf);
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver");
@@ -137,7 +140,7 @@ static bool test_decap(const uint16_t protocol_type,
 		}
 
 		{
-			unsigned char label[label_length];
+			unsigned char label[MAX_LABEL_LEN];
 			if (label_length != 0) {
 				memcpy(label, payload_initializer, label_length);
 			}
@@ -167,11 +170,13 @@ static bool test_decap(const uint16_t protocol_type,
 		size_t sdus_nr = 0;
 		struct rle_sdu sdus[sdus_max_nr];
 		size_t sdu_iterator = 0;
-		unsigned char alloc_label[label_length];
-		unsigned char *label = NULL;
+		unsigned char label[MAX_LABEL_LEN];
+		unsigned char *labelp;
 		if (label_length != 0) {
-			label = alloc_label;
-			memcpy((void *)alloc_label, (const void *)payload_initializer, label_length);
+			memcpy(label, payload_initializer, label_length);
+			labelp = label;
+		} else {
+			labelp = NULL;
 		}
 
 		for (sdu_iterator = 0; sdu_iterator < sdus_max_nr; ++sdu_iterator) {
@@ -184,7 +189,7 @@ static bool test_decap(const uint16_t protocol_type,
 		}
 
 		ret_decap = rle_decapsulate(receiver, (const unsigned char *)fpdu, fpdu_length, sdus,
-		                            sdus_max_nr, &sdus_nr, label, label_length);
+		                            sdus_max_nr, &sdus_nr, labelp, label_length);
 
 		if (ret_decap != RLE_DECAP_OK) {
 			PRINT_ERROR("Decap does not return OK.");
@@ -330,7 +335,7 @@ bool test_decap_inv_fpdu(void)
 
 	{
 		const size_t fpdu_length = 0;
-		unsigned char fpdu[fpdu_length];
+		unsigned char fpdu[1];
 
 		ret_decap =
 		        rle_decapsulate(receiver, fpdu, fpdu_length, sdus, sdus_max_nr, &sdus_nr,
@@ -427,7 +432,7 @@ bool test_decap_inv_sdus(void)
 
 	{
 		const size_t sdus_max_nr = 0;
-		struct rle_sdu sdus[sdus_max_nr];
+		struct rle_sdu sdus[1];
 
 		ret_decap =
 		        rle_decapsulate(receiver, fpdu, fpdu_length, sdus, sdus_max_nr, &sdus_nr,

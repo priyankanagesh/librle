@@ -170,6 +170,10 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, const unsigned char pp
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
+	assert(index_ctx != NULL);
+
+	*index_ctx = -1;
+
 	/* check PPDU validity */
 	if (ppdu_length > RLE_MAX_PDU_SIZE) {
 		PRINT_RLE_ERROR("Packet too long [%zu].", ppdu_length);

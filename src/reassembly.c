@@ -145,7 +145,7 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("fragment_id 0x%0x frag type %d.", MODULE_NAME, *index_ctx, frag_type);
 #endif
-	if ((*index_ctx < 0) || (*index_ctx > RLE_MAX_FRAG_ID)) {
+	if ((*index_ctx) < 0 || (*index_ctx) > RLE_MAX_FRAG_ID) {
 		PRINT_RLE_ERROR("invalid fragment id [%d].", *index_ctx);
 		goto out;
 	}

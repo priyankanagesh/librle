@@ -14,6 +14,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #else
 
@@ -771,9 +772,8 @@ static inline int rle_ctx_is_free(uint8_t contexts, const size_t frag_id)
  */
 static inline void rle_ctx_set_nonfree(uint8_t *const contexts, const size_t frag_id)
 {
+	assert(frag_id <= RLE_MAX_FRAG_ID);
 	*contexts |= (1 << frag_id);
-
-	return;
 }
 
 /**
@@ -784,9 +784,8 @@ static inline void rle_ctx_set_nonfree(uint8_t *const contexts, const size_t fra
  */
 static inline void rle_ctx_set_free(uint8_t *const contexts, const size_t frag_id)
 {
-	*contexts &= ~(1 << frag_id);
-
-	return;
+	assert(frag_id <= RLE_MAX_FRAG_ID);
+	*contexts &= ~(1U << frag_id);
 }
 
 #endif /* __RLE_CTX_H__ */

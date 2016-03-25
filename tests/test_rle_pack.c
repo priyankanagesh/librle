@@ -17,6 +17,7 @@
 #include <string.h>
 #include <assert.h>
 
+
 /**
  * @brief         Generic packing test.
  *
@@ -123,6 +124,7 @@ static bool test_pack(const size_t fpdu_length,
 	           fpdu_length, nb_ppdus, label_length);
 
 	assert(nb_ppdus > 0);
+	assert(label_length <= MAX_LABEL_LEN);
 
 	size_t iterator = 0;
 	for (iterator = 0; iterator < nb_ppdus; ++iterator) {
@@ -140,7 +142,7 @@ static bool test_pack(const size_t fpdu_length,
 
 	unsigned char *ppdus[nb_ppdus];
 
-	unsigned char label[label_length];
+	unsigned char label[MAX_LABEL_LEN];
 	if (label_length != 0) {
 		memcpy(label, payload_initializer, label_length);
 	}
@@ -292,7 +294,7 @@ bool test_pack_invalid_ppdu(void)
 		size_t fpdu_remaining_length = fpdu_length;
 
 		const size_t ppdu_length = 0;
-		const unsigned char ppdu[ppdu_length];
+		const unsigned char ppdu[1];
 
 		const size_t label_length = 3;
 		const unsigned char label[label_length];
