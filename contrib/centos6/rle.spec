@@ -49,7 +49,7 @@ rm -rf build_tree
 
 %files
 %defattr(-,root,root,-)
-%{_libdir}%{name}.so*
+%{_libdir}/lib%{name}.so*
 
 %files devel
 %defattr(-,root,root,-)
