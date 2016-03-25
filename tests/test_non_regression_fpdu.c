@@ -355,9 +355,8 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 		       "%d)\n", link_layer_type_src, DLT_EN10MB);
 		status = ignore_malformed ? 0 : 77;
 		goto close_input;
-	} else {
-		link_len_src = ETHER_HDR_LEN;
 	}
+	link_len_src = ETHER_HDR_LEN;
 
 	printf("\n");
 
@@ -384,30 +383,30 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 		if (header.len <= link_len_src || header.len != header.caplen) {
 			printf("bad PCAP fpdu (len = %d, caplen = %d)\n", header.len,
 			       header.caplen);
-			status = ignore_malformed ? 0 : 77;
-			goto free_alloc;
+			continue;
 		}
 		counter++;
 		void *realloc_ret;
 		realloc_ret = realloc((void *)fpdus, counter * sizeof(unsigned char *));
 		if (realloc_ret == NULL) {
 			printf("failed to copy the fpdus.\n");
+			status = 1;
 			goto free_alloc;
-		} else {
-			fpdus = realloc_ret;
 		}
+		fpdus = realloc_ret;
 		realloc_ret = realloc((void *)fpdus_lengths, counter * sizeof(size_t));
 		if (realloc_ret == NULL) {
 			printf("failed to copy the fpdus length.\n");
+			status = 1;
 			goto free_alloc;
-		} else {
-			fpdus_lengths = realloc_ret;
 		}
+		fpdus_lengths = realloc_ret;
 		fpdus_lengths[counter - 1] = header.len - link_len_src;
 
 		fpdus[counter - 1] = calloc(fpdus_lengths[counter - 1], sizeof(unsigned char));
 		if (fpdus[counter - 1] == NULL) {
 			printf("failed to copy a fpdu.\n");
+			status = 1;
 			goto free_alloc;
 		}
 
@@ -427,7 +426,8 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 		receiver = rle_receiver_new(*conf);
 		if (receiver == NULL) {
 			printf("failed to create the receiver.\n");
-			continue;
+			status = 1;
+			goto free_alloc;
 		}
 
 		/* Encapsulate & decapsulate from transmitter to receiver. */
