@@ -40,7 +40,8 @@ static int quick_encapsulation(struct rle_transmitter *const t,
                                const size_t *const sdu_len)
 {
 	bool output = false;
-	enum rle_encap_status ret;
+	enum rle_encap_status ret_encap;
+	int ret;
 
 	const struct rle_sdu sdu = {
 		.buffer        = (unsigned char *)payload_initializer,
@@ -53,19 +54,17 @@ static int quick_encapsulation(struct rle_transmitter *const t,
 		goto out;
 	}
 
-	if (rle_frag_buf_init(f_buff) != 0) {
-		PRINT_ERROR("Unable to initialize fragmentation buffer.");
-		goto out;
-	}
+	ret = rle_frag_buf_init(f_buff);
+	assert(ret == 0); /* cannot fail since f_buff is not NULL */
 
 	if (rle_frag_buf_cpy_sdu(f_buff, &sdu) != 0) {
 		PRINT_ERROR("Unable to copy SDU in fragmentation buffer.");
 		goto out;
 	}
 
-	ret = rle_encap_contextless(t, f_buff);
+	ret_encap = rle_encap_contextless(t, f_buff);
 
-	if (ret == RLE_ENCAP_OK) {
+	if (ret_encap == RLE_ENCAP_OK) {
 		output = true;
 	}
 
@@ -81,7 +80,7 @@ bool test_frag_ctxtless_null_transmitter(void)
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,
@@ -90,15 +89,11 @@ bool test_frag_ctxtless_null_transmitter(void)
 
 	unsigned char *ppdu;
 	size_t ppdu_len = 50;
+	struct rle_transmitter *transmitter;
 
 	PRINT_TEST("Special case : Fragmentation with a null transmitter.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with null transmitter.");
 		goto out;
@@ -137,24 +132,20 @@ bool test_frag_ctxtless_null_f_buff(void)
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,
 		.use_compressed_ptype   = 0,
 	};
+	struct rle_transmitter *transmitter;
 
 	unsigned char *ppdu;
 	size_t ppdu_len = 50;
 
 	PRINT_TEST("Special case : Fragmentation with a null fragmentation buffer.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with null fragmentation "
 		            "buffer.");
@@ -196,37 +187,36 @@ out:
 bool test_frag_ctxtless_f_buff_not_init(void)
 {
 	bool output = false;
-	enum rle_frag_status ret = RLE_FRAG_ERR;
+	enum rle_frag_status frag_ret;
+	int ret;
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,
 		.use_compressed_ptype   = 0,
 	};
+	struct rle_transmitter *transmitter;
 
 	unsigned char *ppdu;
 	size_t ppdu_len = 50;
 
 	PRINT_TEST("Special case : Fragmentation with a fragmentation buffer not initialized.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with fragmentation "
 		            "buffer not initialized.");
 		goto out;
 	}
 
-	ret = rle_frag_contextless(transmitter, NULL, &ppdu, &ppdu_len);
+	ret = rle_frag_buf_init(f_buff);
+	assert(ret == 0); /* cannot fail since f_buff is not NULL */
 
-	if (ret == RLE_FRAG_ERR_NULL_F_BUFF) {
+	frag_ret = rle_frag_contextless(transmitter, f_buff, &ppdu, &ppdu_len);
+	if (frag_ret == RLE_FRAG_ERR_N_INIT_F_BUFF) {
 		output = true;
 	}
 
@@ -246,6 +236,62 @@ out:
 }
 
 /**
+ * @brief         Fragmentation test with NULL PPDU buffer
+ *
+ * @return        true if error is reported, else false.
+ */
+bool test_frag_ctxtless_null_ppdu(void)
+{
+	bool output = false;
+	enum rle_frag_status ret = RLE_FRAG_ERR;
+
+	struct rle_frag_buf *f_buff = rle_frag_buf_new();
+
+	const struct rle_config conf = {
+		.implicit_protocol_type = 0x00,
+		.use_alpdu_crc          = 0,
+		.use_ptype_omission     = 0,
+		.use_compressed_ptype   = 0,
+	};
+	struct rle_transmitter *transmitter;
+
+	size_t ppdu_len = 50;
+
+	PRINT_TEST("Special case : Fragmentation with a null PPDU length.");
+
+	transmitter = rle_transmitter_new(&conf);
+	if (!transmitter) {
+		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with null PPDU length.");
+		goto out;
+	}
+
+	if (quick_encapsulation(transmitter, f_buff, NULL) != true) {
+		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with null PPDU length.");
+		goto out;
+	}
+
+	ret = rle_frag_contextless(transmitter, f_buff, NULL, &ppdu_len);
+	if (ret == RLE_FRAG_ERR) {
+		output = true;
+	}
+
+out:
+
+	if (transmitter) {
+		rle_transmitter_destroy(&transmitter);
+	}
+
+	if (f_buff) {
+		rle_frag_buf_del(&f_buff);
+	}
+
+	PRINT_TEST_STATUS(output);
+	printf("\n");
+	return output;
+}
+
+
+/**
  * @brief         Fragmentation test without length given as input.
  *
  *                Must not segfault.
@@ -259,23 +305,19 @@ bool test_frag_ctxtless_no_len(void)
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,
 		.use_compressed_ptype   = 0,
 	};
+	struct rle_transmitter *transmitter;
 
 	unsigned char *ppdu;
 
 	PRINT_TEST("Special case : Fragmentation with a null PPDU length.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with null PPDU length.");
 		goto out;
@@ -319,24 +361,20 @@ bool test_frag_ctxtless_too_small(void)
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,
 		.use_compressed_ptype   = 0,
 	};
+	struct rle_transmitter *transmitter;
 
 	unsigned char *ppdu;
 	size_t ppdu_len = 1;
 
 	PRINT_TEST("Special case : Fragmentation with a too small PPDU length.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with fragmentation too "
 		            "small.");
@@ -382,12 +420,13 @@ bool test_frag_ctxtless_too_big(void)
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,
 		.use_compressed_ptype   = 0,
 	};
+	struct rle_transmitter *transmitter;
 
 	unsigned char *ppdu;
 	size_t ppdu_len_good = 1000;
@@ -397,12 +436,7 @@ bool test_frag_ctxtless_too_big(void)
 
 	PRINT_TEST("Special case : Fragmentation with too big PPDU length.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with fragmentation too big.");
 		goto out;
@@ -421,12 +455,9 @@ bool test_frag_ctxtless_too_big(void)
 		goto out;
 	}
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
+	rle_transmitter_destroy(&transmitter);
 
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with fragmentation too big.");
 		goto out;

@@ -22,7 +22,8 @@
 bool test_encap_ctxtless_null_transmitter(void)
 {
 	bool output = false;
-	enum rle_encap_status ret;
+	enum rle_encap_status ret_encap;
+	int ret;
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
@@ -31,12 +32,9 @@ bool test_encap_ctxtless_null_transmitter(void)
 		.size          = 100,
 		.protocol_type = 0x1234,
 	};
+	struct rle_transmitter *transmitter = NULL;
 
 	PRINT_TEST("Special case : Encapsulation with a null transmitter.");
-
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
 
 	if (transmitter) {
 		PRINT_ERROR("Transmitter is not NULL. Cannot test encap with NULL transmitter.");
@@ -48,19 +46,17 @@ bool test_encap_ctxtless_null_transmitter(void)
 		goto out;
 	}
 
-	if (rle_frag_buf_init(f_buff) != 0) {
-		PRINT_ERROR("Unable to initialize fragmentation buffer.");
-		goto out;
-	}
+	ret = rle_frag_buf_init(f_buff);
+	assert(ret == 0); /* cannot fail since f_buff is not NULL */
 
 	if (rle_frag_buf_cpy_sdu(f_buff, &sdu) != 0) {
 		PRINT_ERROR("Unable to copy SDU in fragmentation buffer.");
 		goto out;
 	}
 
-	ret = rle_encap_contextless(transmitter, f_buff);
+	ret_encap = rle_encap_contextless(transmitter, f_buff);
 
-	switch (ret) {
+	switch (ret_encap) {
 		case RLE_ENCAP_ERR_NULL_TRMT:
 			PRINT_TEST("NULL transmitter detected, test sucessfull.");
 			output = true;
@@ -93,7 +89,7 @@ bool test_encap_ctxtless_null_f_buff(void)
 	bool output = false;
 	enum rle_encap_status ret;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type                 = 0x00,
 		.use_alpdu_crc                          = 0,
 		.use_ptype_omission                     = 0,
@@ -101,15 +97,11 @@ bool test_encap_ctxtless_null_f_buff(void)
 	};
 
 	struct rle_frag_buf *f_buff = NULL;
+	struct rle_transmitter *transmitter;
 
 	PRINT_TEST("Special case : Encapsulation with a null fragmentation buffer.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test encap with NULL fragmentation buffer.");
 		goto out;
@@ -156,7 +148,7 @@ bool test_encap_ctxtless_f_buff_not_init(void)
 	bool output = false;
 	enum rle_encap_status ret;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -164,15 +156,11 @@ bool test_encap_ctxtless_f_buff_not_init(void)
 	};
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
+	struct rle_transmitter *transmitter;
 
 	PRINT_TEST("Special case : Encapsulation with a fragmentation buffer not initialized.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is not NULL. Cannot test encap with NULL transmitter.");
 		goto out;
@@ -217,7 +205,8 @@ out:
 bool test_encap_ctxtless_too_big(void)
 {
 	bool output = false;
-	enum rle_encap_status ret;
+	enum rle_encap_status ret_encap;
+	int ret;
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
@@ -233,21 +222,17 @@ bool test_encap_ctxtless_too_big(void)
 		.protocol_type = 0x1234,
 	};
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,
 		.use_compressed_ptype   = 0,
 	};
+	struct rle_transmitter *transmitter;
 
 	PRINT_TEST("Special case : Encapsulation with a SDU too big.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test encap with too big SDU.");
 		goto out;
@@ -258,35 +243,32 @@ bool test_encap_ctxtless_too_big(void)
 		goto out;
 	}
 
-	if (rle_frag_buf_init(f_buff) != 0) {
-		PRINT_ERROR("Unable to initialize fragmentation buffer.");
-		goto out;
-	}
+	ret = rle_frag_buf_init(f_buff);
+	assert(ret == 0); /* cannot fail since f_buff is not NULL */
 
 	if (rle_frag_buf_cpy_sdu(f_buff, &sdu_ok) != 0) {
 		PRINT_ERROR("Unable to copy SDU in fragmentation buffer.");
 		goto out;
 	}
 
-	ret = rle_encap_contextless(transmitter, f_buff);
+	ret_encap = rle_encap_contextless(transmitter, f_buff);
 
-	if (ret == RLE_ENCAP_OK) {
+	if (ret_encap == RLE_ENCAP_OK) {
 		PRINT_TEST("Encapsulation is OK.");
 	} else {
 		PRINT_TEST("Encapsulation failed, but not due to SDU size. Test failed.");
 		goto out;
 	}
 
-	if (rle_frag_buf_init(f_buff) != 0) {
-		PRINT_ERROR("Unable to initialize fragmentation buffer.");
-		goto out;
-	}
+	ret = rle_frag_buf_init(f_buff);
+	assert(ret == 0); /* cannot fail since f_buff is not NULL */
 
 	if (rle_frag_buf_cpy_sdu(f_buff, &sdu_ko) == 0) {
 		PRINT_ERROR("Too big SDU accepted in fragmentation buffer.");
-	} else {
-		output = true;
+		goto out;
 	}
+
+	output = true;
 
 out:
 

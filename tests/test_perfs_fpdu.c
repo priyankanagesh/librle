@@ -141,6 +141,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'p': /* Payload Label length */
+			assert(optarg != NULL);
 			printf("payload label length value `%s'\n", optarg);
 			payload_label_len = atoi(optarg);
 			if (payload_label_len > MAX_PAYLOAD_LABEL_LEN) {
@@ -219,6 +220,7 @@ static void usage(void)
 	        "options:\n"
 	        "\t-v                      Print version information and exit\n"
 	        "\t-h                      Print this usage and exit\n"
+	        "\t-p                      Payload label length\n"
 	        "\t--ignore-malformed      Ignore malformed packets for test\n"
 	        "\t--verbose               Run the test in verbose mode\n"
 	        "\n");
@@ -339,7 +341,7 @@ static int test_decap(const char *const device_name)
 	size_t it;
 	size_t sdus_processed = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x30,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 1,
@@ -432,7 +434,11 @@ static int test_decap(const char *const device_name)
 		struct rle_receiver_stats stats;
 		u_int8_t frag_id;
 		for (frag_id = 0; frag_id < 8; ++frag_id) {
-			rle_receiver_stats_get_counters(receiver, frag_id, &stats);
+			if (rle_receiver_stats_get_counters(receiver, frag_id, &stats) != 0) {
+				printf("failed to get receiver counters\n");
+				status = EXIT_FAILURE;
+				goto close_input;
+			}
 			printf("===\tFrag ID %u\n", frag_id);
 			printf("===\treceiver received:          %" PRIu64 "\n", stats.sdus_received);
 			printf("===\treceiver reassembled:       %" PRIu64 "\n", stats.sdus_reassembled);

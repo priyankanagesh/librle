@@ -131,6 +131,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'b': /* Burst Size */
+			assert(optarg != NULL);
 			printf("burst size with value `%s'\n", optarg);
 			burst_size = atoi(optarg);
 
@@ -498,7 +499,7 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 
 	size_t fpdus_processed = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x30,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 1,

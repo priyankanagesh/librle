@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 
 #define GET_CONF_VALUE(x) ((x) == 1 ? "True" : "False")
 
@@ -35,9 +36,10 @@
  * @return        true if OK, else false.
  */
 static bool test_frag(const uint16_t protocol_type,
-                              const struct rle_context_configuration conf, const size_t length,
-                              const size_t burst_size,
-                              const uint8_t frag_id);
+                      const struct rle_config conf,
+                      const size_t length,
+                      const size_t burst_size,
+                      const uint8_t frag_id);
 
 /**
  *  @brief         Check if a fragmentation transition is OK.
@@ -136,9 +138,10 @@ enum frag_states test_get_fragment_type(const unsigned char ppdu_first_octet)
 }
 
 static bool test_frag(const uint16_t protocol_type,
-                              const struct rle_context_configuration conf, const size_t length,
-                              const size_t burst_size,
-                              const uint8_t frag_id)
+                      const struct rle_config conf,
+                      const size_t length,
+                      const size_t burst_size,
+                      const uint8_t frag_id)
 {
 	PRINT_TEST("protocole type 0x%04x, conf (omitted protocol type %02x, compression %s, "
 	           "omission %s) with %s protection. SDU length %zu, burst sizes %zu, frag id %d",
@@ -148,6 +151,7 @@ static bool test_frag(const uint16_t protocol_type,
 	           length, burst_size, frag_id);
 	bool output = false;
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
+	struct rle_transmitter *transmitter;
 
 	struct rle_sdu sdu = {
 		.buffer = NULL,
@@ -155,14 +159,8 @@ static bool test_frag(const uint16_t protocol_type,
 		.protocol_type = protocol_type
 	};
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
-	if (sdu.buffer != NULL) {
-		free(sdu.buffer);
-		sdu.buffer = NULL;
-	}
+	assert(transmitter != NULL);
 
 	sdu.buffer = calloc(sdu.size, sizeof(unsigned char));
 	if (sdu.buffer == NULL) {
@@ -246,15 +244,8 @@ bool test_frag_null_transmitter(void)
 		.size = 0,
 		.protocol_type = protocol_type
 	};
+	struct rle_transmitter *transmitter = NULL;
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
-	if (sdu.buffer != NULL) {
-		free(sdu.buffer);
-		sdu.buffer = NULL;
-	}
 	sdu.buffer = calloc(sdu_length, sizeof(unsigned char));
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, sdu_length);
 	sdu.size = sdu_length;
@@ -291,12 +282,13 @@ bool test_frag_too_small(void)
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 
 	const uint16_t protocol_type = 0x0800;
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0000,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
 		.use_ptype_omission = 0
 	};
+	struct rle_transmitter *transmitter = NULL;
 
 	const size_t sdu_length = 100;
 	const size_t burst_size = 2;
@@ -310,17 +302,10 @@ bool test_frag_too_small(void)
 		.protocol_type = protocol_type
 	};
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
-	if (sdu.buffer != NULL) {
-		free(sdu.buffer);
-		sdu.buffer = NULL;
-	}
+	assert(transmitter != NULL);
 
 	sdu.buffer = calloc(sdu.size, sizeof(unsigned char));
-
 	if (sdu.buffer == NULL) {
 		PRINT_ERROR("SDU interface not created.");
 		goto exit_label;
@@ -369,7 +354,7 @@ bool test_frag_null_context(void)
 	/* enum rle_encap_status ret_encap = RLE_ENCAP_ERR;*/
 
 	const uint16_t protocol_type = 0x0800;
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0000,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
@@ -389,18 +374,12 @@ bool test_frag_null_context(void)
 		.size = sdu_length,
 		.protocol_type = protocol_type
 	};
+	struct rle_transmitter *transmitter = NULL;
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
-	if (sdu.buffer != NULL) {
-		free(sdu.buffer);
-		sdu.buffer = NULL;
-	}
+	assert(transmitter != NULL);
 
 	sdu.buffer = calloc(sdu.size, sizeof(unsigned char));
-
 	if (sdu.buffer == NULL) {
 		PRINT_ERROR("SDU interface not created.");
 		goto exit_label;
@@ -438,7 +417,7 @@ bool test_frag_real_world(void)
 	const uint16_t protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP; /* IPv4 Arbitrarily. */
 	const uint8_t frag_id = 1;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = RLE_PROTO_TYPE_IPV4_COMP,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
@@ -487,7 +466,7 @@ bool test_frag_all(void)
 	size_t burst_iterator = 0;
 
 	for (burst_iterator = 0; burst_iterator < 4; ++burst_iterator) {
-		struct rle_context_configuration conf_uncomp = {
+		struct rle_config conf_uncomp = {
 			.implicit_protocol_type = 0x0000,
 			.use_alpdu_crc = 0,
 			.use_compressed_ptype = 0,
@@ -495,7 +474,7 @@ bool test_frag_all(void)
 		};
 
 		/* Configuration for compressed protocol type */
-		struct rle_context_configuration conf_comp = {
+		struct rle_config conf_comp = {
 			.implicit_protocol_type = 0x0000,
 			.use_alpdu_crc = 0,
 			.use_compressed_ptype = 1,
@@ -503,7 +482,7 @@ bool test_frag_all(void)
 		};
 
 		/* Configuration for omitted protocol type */
-		struct rle_context_configuration conf_omitted = {
+		struct rle_config conf_omitted = {
 			.implicit_protocol_type = protocol_type,
 			.use_alpdu_crc = 0,
 			.use_compressed_ptype = 0,
@@ -511,7 +490,7 @@ bool test_frag_all(void)
 		};
 
 		/* Configurations */
-		struct rle_context_configuration *confs[] = {
+		struct rle_config *confs[] = {
 			&conf_uncomp,
 			&conf_comp,
 			&conf_omitted,
@@ -519,7 +498,7 @@ bool test_frag_all(void)
 		};
 
 		/* Configuration iterator */
-		struct rle_context_configuration **conf;
+		struct rle_config **conf;
 
 		/* We launch the test on each configuration. All the cases then are test. */
 		for (conf = confs; *conf; ++conf) {

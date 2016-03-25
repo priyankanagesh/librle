@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #endif
 
@@ -64,7 +65,9 @@ static int get_transmitter_context(const struct rle_transmitter *const transmitt
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (fragment_id >= RLE_MAX_FRAG_NUMBER) {
+	assert(ctx_man != NULL);
+
+	if (transmitter == NULL || fragment_id >= RLE_MAX_FRAG_NUMBER) {
 		/* Out of bound */
 		goto error;
 	}
@@ -93,23 +96,27 @@ static void set_free_frag_ctx(struct rle_transmitter *const _this, const size_t 
 /*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-struct rle_transmitter *rle_transmitter_new(
-        const struct rle_context_configuration *const configuration)
+struct rle_transmitter *rle_transmitter_new(const struct rle_config *const conf)
 {
 	struct rle_transmitter *transmitter = NULL;
 	size_t iterator;
-	struct rle_configuration **tx_conf;
 
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (configuration->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
+	if (conf == NULL) {
+		PRINT_RLE_ERROR("failed to created RLE transmitter: invalid configuration, "
+		                "NULL is not accepted");
+		goto error;
+	}
+
+	if (conf->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
 		PRINT_RLE_ERROR(
 		        "could not initialize transmitter with 0x31 as implicit protocol type : "
 		        "Not supported yet.\n");
 
-		goto exit_label;
+		goto error;
 	}
 
 	transmitter = (struct rle_transmitter *)MALLOC(sizeof(struct rle_transmitter));
@@ -117,41 +124,39 @@ struct rle_transmitter *rle_transmitter_new(
 	if (!transmitter) {
 		PRINT_RLE_ERROR("allocating transmitter module failed\n");
 
-		goto exit_label;
+		goto error;
 	}
 
-	tx_conf = &transmitter->rle_conf;
-
-	/* allocate a new RLE configuration structure */
-	*tx_conf = rle_conf_new();
-
-	if (!*tx_conf) {
-		PRINT_RLE_ERROR("allocating RLE configuration failed\n");
-		/* free rle transmitter */
-		rle_transmitter_destroy(&transmitter);
-
-		goto exit_label;
-	}
-
-	/* initialize both RLE transmitter & the configuration structure */
+	/* initialize fragmentation contexts */
+	memset(transmitter->rle_ctx_man, 0,
+	       RLE_MAX_FRAG_NUMBER * sizeof(struct rle_ctx_management));
 	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
 		struct rle_ctx_management *const ctx_man = &transmitter->rle_ctx_man[iterator];
-
-		rle_ctx_init_frag_buf(ctx_man);
-		rle_ctx_set_frag_id(ctx_man, iterator);
+		if (rle_ctx_init_frag_buf(ctx_man) != C_OK) {
+			PRINT_RLE_ERROR("failed to allocate memory for fragmentation context with "
+			                "ID %zu\n", iterator);
+			goto free_ctxts;
+		}
+		ctx_man->frag_id = iterator;
 		rle_ctx_set_seq_nb(ctx_man, 0);
 	}
 
 	transmitter->free_ctx = 0;
 
-	rle_conf_set_default_ptype(*tx_conf, configuration->implicit_protocol_type);
-	rle_conf_set_crc_check(*tx_conf, configuration->use_alpdu_crc);
-	rle_conf_set_ptype_compression(*tx_conf, configuration->use_compressed_ptype);
-	rle_conf_set_ptype_suppression(*tx_conf, configuration->use_ptype_omission);
-
-exit_label:
+	memcpy(&transmitter->conf, conf, sizeof(struct rle_config));
 
 	return transmitter;
+
+free_ctxts:
+	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
+		struct rle_ctx_management *const ctx_man = &transmitter->rle_ctx_man[iterator];
+		if (ctx_man->buff != NULL) {
+			rle_ctx_destroy_frag_buf(ctx_man);
+		}
+	}
+	FREE(transmitter);
+error:
+	return NULL;
 }
 
 void rle_transmitter_destroy(struct rle_transmitter **const transmitter)
@@ -175,11 +180,6 @@ void rle_transmitter_destroy(struct rle_transmitter **const transmitter)
 		struct rle_ctx_management *const ctx_man = &(*transmitter)->rle_ctx_man[iterator];
 
 		rle_ctx_destroy_frag_buf(ctx_man);
-	}
-
-	if (rle_conf_destroy((*transmitter)->rle_conf) != C_OK) {
-		PRINT("ERROR %s:%s:%d: destroying RLE configuration failed\n", __FILE__, __func__,
-		      __LINE__);
 	}
 
 	FREE(*transmitter);
@@ -215,16 +215,14 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
+	if (rle_ctx_is_free(transmitter->free_ctx, fragment_id)) {
+		stat = 0;
+	} else {
+		frag_buf = (rle_frag_buf_t *)ctx_man->buff;
+		stat = frag_buf_get_remaining_alpdu_length(frag_buf);
 	}
 
-	frag_buf = (rle_frag_buf_t *)ctx_man->buff;
-
-	stat = frag_buf_get_remaining_alpdu_length(frag_buf);
-
 error:
-
 	return stat;
 }
 
@@ -239,10 +237,6 @@ uint64_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter 
 #endif
 
 	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 
@@ -267,10 +261,6 @@ uint64_t rle_transmitter_stats_get_counter_sdus_sent(
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_ok(ctx_man);
 
 error:
@@ -289,10 +279,6 @@ uint64_t rle_transmitter_stats_get_counter_sdus_dropped(
 #endif
 
 	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 
@@ -317,10 +303,6 @@ uint64_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_bytes_in(ctx_man);
 
 error:
@@ -339,10 +321,6 @@ uint64_t rle_transmitter_stats_get_counter_bytes_sent(
 #endif
 
 	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 
@@ -367,10 +345,6 @@ uint64_t rle_transmitter_stats_get_counter_bytes_dropped(
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_bytes_dropped(ctx_man);
 
 error:
@@ -389,19 +363,11 @@ int rle_transmitter_stats_get_counters(const struct rle_transmitter *const trans
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!transmitter) {
-		goto error;
-	}
-
 	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
 	if (!stats) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 
@@ -428,16 +394,8 @@ void rle_transmitter_stats_reset_counters(struct rle_transmitter *const transmit
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!transmitter) {
-		goto error;
-	}
-
 	if (get_transmitter_context(transmitter, fragment_id,
 	                            (const struct rle_ctx_management **)&ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 

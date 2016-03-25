@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 
 /**
  * @brief         Compare two packets.
@@ -56,9 +57,9 @@ static void print_modules_stats(void)
  * @return        true if OK, else false.
  */
 static bool check_encap(const unsigned char sdu[], const size_t sdu_length,
-                                const unsigned char alpdu[], const size_t alpdu_length,
-                                const unsigned char alpdu_header[],
-                                const size_t alpdu_header_length);
+                        const unsigned char alpdu[], const size_t alpdu_length,
+                        const unsigned char alpdu_header[],
+                        const size_t alpdu_header_length);
 
 /**
  * @brief         Generic encapsulation test.
@@ -74,8 +75,9 @@ static bool check_encap(const unsigned char sdu[], const size_t sdu_length,
  * @return        true if OK, else false.
  */
 static bool test_encap(const uint16_t protocol_type,
-                               const struct rle_context_configuration conf, const size_t length,
-                               const uint8_t frag_id);
+                       const struct rle_config conf,
+                       const size_t length,
+                       const uint8_t frag_id);
 
 static bool compare_packets(const unsigned char pkt_1[], const size_t pkt_1_length,
                                     const unsigned char pkt_2[],
@@ -109,16 +111,19 @@ exit_label:
 }
 
 static bool check_encap(const unsigned char sdu[], const size_t sdu_length,
-                                const unsigned char alpdu[], const size_t alpdu_length,
-                                const unsigned char alpdu_header[],
-                                const size_t alpdu_header_length)
+                        const unsigned char alpdu[], const size_t alpdu_length,
+                        const unsigned char alpdu_header[],
+                        const size_t alpdu_header_length)
 {
-	PRINT_TEST("subtest. sizes : SDU %zu, header %zu, ALPDU %zu", sdu_length,
-	           alpdu_header_length,
-	           alpdu_length);
 	bool output = false;
 	size_t theorical_alpdu_length = sdu_length + alpdu_header_length;
 	unsigned char theorical_alpdu[theorical_alpdu_length];
+
+	assert(sdu != NULL);
+	assert(alpdu != NULL);
+
+	PRINT_TEST("subtest. sizes : SDU %zu, header %zu, ALPDU %zu", sdu_length,
+	           alpdu_header_length, alpdu_length);
 
 	/* Checking the sizes. */
 	if (theorical_alpdu_length != alpdu_length) {
@@ -126,8 +131,10 @@ static bool check_encap(const unsigned char sdu[], const size_t sdu_length,
 		goto exit_label;
 	}
 	/* Merging SDU and theorical ALPDU header in a theorical ALPDU. */
-	memcpy((void *)theorical_alpdu, (const void *)alpdu_header, alpdu_header_length);
-	memcpy((void *)(theorical_alpdu + alpdu_header_length), (const void *)sdu, sdu_length);
+	if (alpdu_header != NULL) {
+		memcpy(theorical_alpdu, alpdu_header, alpdu_header_length);
+	}
+	memcpy(theorical_alpdu + alpdu_header_length, sdu, sdu_length);
 
 	/* Checking theorical ALPDU and given ALPDU. */
 	output = compare_packets(alpdu, alpdu_length, theorical_alpdu, theorical_alpdu_length);
@@ -173,8 +180,9 @@ static bool is_suppressible(uint16_t protocol_type, uint8_t default_ptype)
 }
 
 static bool test_encap(const uint16_t protocol_type,
-                               const struct rle_context_configuration conf, const size_t length,
-                               const uint8_t frag_id)
+                       const struct rle_config conf,
+                       const size_t length,
+                       const uint8_t frag_id)
 {
 	PRINT_TEST(
 	        "protocol type 0x%04x, length %zu, frag_id %d, conf %s", protocol_type, length,
@@ -190,6 +198,7 @@ static bool test_encap(const uint16_t protocol_type,
 	unsigned char *alpdu = NULL;
 	size_t alpdu_length;
 	rle_frag_buf_t *f_buff;
+	struct rle_transmitter *transmitter;
 
 	struct rle_sdu sdu = {
 		.buffer = NULL,
@@ -197,10 +206,9 @@ static bool test_encap(const uint16_t protocol_type,
 		.protocol_type = protocol_type
 	};
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
+	assert(transmitter != NULL);
+
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
 		sdu.buffer = NULL;
@@ -352,10 +360,7 @@ bool test_encap_null_transmitter(void)
 		.size = 0,
 		.protocol_type = protocol_type
 	};
-
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
+	struct rle_transmitter *transmitter = NULL;
 
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
@@ -400,19 +405,19 @@ bool test_encap_too_big(void)
 		.protocol_type = protocol_type
 	};
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_transmitter *transmitter;
 
 	/* Good packet */
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
+	assert(transmitter != NULL);
+
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
 		sdu.buffer = NULL;
@@ -427,13 +432,13 @@ bool test_encap_too_big(void)
 		PRINT_ERROR("packet of good size not encapsulated.");
 		goto exit_label;
 	}
+	rle_transmitter_destroy(&transmitter);
 
 	/* Too big packet */
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
+	assert(transmitter != NULL);
+
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
 		sdu.buffer = NULL;
@@ -472,13 +477,10 @@ bool test_encap_inv_config(void)
 	           "Warning: An error message may be printed.");
 	bool output = false;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x31
 	};
-
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
+	struct rle_transmitter *transmitter;
 
 	transmitter = rle_transmitter_new(&conf);
 
@@ -545,7 +547,7 @@ bool test_encap_all(void)
 		/* The test will be launch on each fragment id. */
 		for (frag_id = 0; frag_id < max_frag_id; ++frag_id) {
 			/* Configuration for uncompressed protocol type */
-			struct rle_context_configuration conf_uncomp = {
+			struct rle_config conf_uncomp = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -553,7 +555,7 @@ bool test_encap_all(void)
 			};
 
 			/* Configuration for compressed protocol type */
-			struct rle_context_configuration conf_comp = {
+			struct rle_config conf_comp = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 1,
@@ -561,7 +563,7 @@ bool test_encap_all(void)
 			};
 
 			/* Configuration for omitted protocol type */
-			struct rle_context_configuration conf_omitted = {
+			struct rle_config conf_omitted = {
 				.implicit_protocol_type = default_ptype,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -569,7 +571,7 @@ bool test_encap_all(void)
 			};
 
 			/* Special test for IPv4 and v6*/
-			struct rle_context_configuration conf_omitted_ip = {
+			struct rle_config conf_omitted_ip = {
 				.implicit_protocol_type = 0x30,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -577,7 +579,7 @@ bool test_encap_all(void)
 			};
 
 			/* Configuration for non omitted protocol type in omission conf */
-			struct rle_context_configuration conf_not_omitted = {
+			struct rle_config conf_not_omitted = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -585,7 +587,7 @@ bool test_encap_all(void)
 			};
 
 			/* Configurations */
-			struct rle_context_configuration *confs[] = {
+			struct rle_config *confs[] = {
 				&conf_uncomp,
 				&conf_comp,
 				&conf_omitted,
@@ -595,7 +597,7 @@ bool test_encap_all(void)
 			};
 
 			/* Configuration iterator */
-			struct rle_context_configuration **conf;
+			struct rle_config **conf;
 
 			/* We launch the test on each configuration. All the cases then are test. */
 			for (conf = confs; *conf; ++conf) {

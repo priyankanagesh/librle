@@ -26,6 +26,7 @@
 #include <signal.h>
 #include <pcap/pcap.h>
 #include <pcap.h>
+#include <linux/limits.h>
 
 /** The program version */
 #define TEST_VERSION  "RLE dump FPDUs test application, version 0.0.1\n"
@@ -162,6 +163,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'p': /* PPDU Size */
+			assert(optarg != NULL);
 			printf("PPDU size with value `%s'\n", optarg);
 			ppdu_size = atoi(optarg);
 
@@ -177,6 +179,7 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'f': /* FPDU Size */
+			assert(optarg != NULL);
 			printf("FPDU size with value `%s'\n", optarg);
 			fpdu_size = atoi(optarg);
 
@@ -192,13 +195,21 @@ int main(int argc, char *argv[])
 			break;
 
 		case 'o': /* Output */
+			assert(optarg != NULL);
+			if (strlen(optarg) >= PATH_MAX) {
+				printf("ERROR: output path too long");
+				goto error;
+			}
 			printf("Output set to `%s'\n", optarg);
-			output = calloc(strlen(optarg), sizeof(char));
+			if (output != NULL) {
+				free(output); /* in case option is given twice */
+			}
+			output = calloc(strlen(optarg) + 1, sizeof(char));
 			if (output == NULL) {
 				printf("ERROR: Unable to allocate output filename.\n");
 				goto error;
 			}
-			strncpy(output, optarg, strlen(optarg));
+			strncpy(output, optarg, strlen(optarg) + 1);
 			break;
 
 		case 'v': /* Version */
@@ -235,8 +246,12 @@ int main(int argc, char *argv[])
 
 	/* If output is not set, setting it to default value. */
 	if (output == NULL) {
-		output = calloc(strlen(DEFAULT_OUTPUT), sizeof(char));
-		strncpy(output, DEFAULT_OUTPUT, strlen(DEFAULT_OUTPUT));
+		output = calloc(strlen(DEFAULT_OUTPUT) + 1, sizeof(char));
+		if (output == NULL) {
+			printf("ERROR: Unable to allocate output filename.\n");
+			goto error;
+		}
+		strncpy(output, DEFAULT_OUTPUT, strlen(DEFAULT_OUTPUT) + 1);
 	}
 
 	signal(SIGINT, test_interrupt);
@@ -509,23 +524,23 @@ static void dump_fpdu(unsigned char *const fpdu, const size_t fpdu_size,
 			.caplen = (bpf_u_int32)(ETHER_HDR_LEN + IP_HDR_LEN + fpdu_size),
 			.len    = (bpf_u_int32)(ETHER_HDR_LEN + IP_HDR_LEN + fpdu_size),
 		};
-		struct iphdr *const ip_hdr = (struct iphdr *)(frame + ETHER_HDR_LEN);
+		struct iphdr ip_hdr;
 
-		ip_hdr->version  = 0x4;
-		ip_hdr->ihl      = 0x5;
-		ip_hdr->tos      = 0;
-		ip_hdr->tot_len  = 0;
-		ip_hdr->id       = ntohs(ip_id);
-		ip_hdr->frag_off = 0;
-		ip_hdr->ttl      = 10;
-		ip_hdr->protocol = 0;
-		ip_hdr->check    = 0;
-		ip_hdr->saddr    = 0;
-		ip_hdr->daddr    = 0;
+		ip_hdr.version  = 0x4;
+		ip_hdr.ihl      = 0x5;
+		ip_hdr.tos      = 0;
+		ip_hdr.tot_len  = 0;
+		ip_hdr.id       = ntohs(ip_id);
+		ip_hdr.frag_off = 0;
+		ip_hdr.ttl      = 10;
+		ip_hdr.protocol = 0;
+		ip_hdr.check    = 0;
+		ip_hdr.saddr    = 0;
+		ip_hdr.daddr    = 0;
+		ip_hdr.check    = ip_checksum(&ip_hdr, IP_HDR_LEN);
+		memcpy(frame + ETHER_HDR_LEN, &ip_hdr, IP_HDR_LEN);
 
-		ip_hdr->check    = ip_checksum((void *)ip_hdr, IP_HDR_LEN);
-
-		memcpy((void *)(frame + ETHER_HDR_LEN + IP_HDR_LEN), (const void *)fpdu, fpdu_size);
+		memcpy(frame + ETHER_HDR_LEN + IP_HDR_LEN, fpdu, fpdu_size);
 		gettimeofday(&header.ts, NULL);
 		packet_handler(dumpfile, &header, frame);
 
@@ -745,7 +760,7 @@ static int test_encap(const char device_name[], const char output[], const size_
 
 	size_t fpdus_processed = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x30,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 1,

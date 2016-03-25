@@ -14,16 +14,18 @@
 
 #include "constants.h"
 
+#ifndef __KERNEL__
+#	include <assert.h>
+#endif
+
+
 
 /*------------------------------------------------------------------------------------------------*/
 /*---------------------------------- PUBLIC CONSTANTS AND MACROS ---------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
 /** Maximum size for a reassembly buffer. */
-#define RLE_R_BUFF_LEN (RLE_MAX_PDU_SIZE)
-
-/** Maximum number of fragments to reassembly. */
-#define RLE_R_BUFF_MAX_FRAGS 255
+#define RLE_R_BUFF_LEN ((2 << 12) - 1)
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -95,7 +97,6 @@ struct reassembly_buffer_ptrs {
 struct rle_reassembly_buffer {
 	unsigned char *buffer;                /** Buffer. Given by the library caller.               */
 	struct rle_sdu sdu_info;              /** RLE SDU struct used without buffer to store infos. */
-	size_t nb_fragments;                  /** Current number of fragments.                       */
 	rasm_buf_ptrs_t sdu;                    /** SDU after copying it.                              */
 	rasm_buf_ptrs_t sdu_frag;               /** Current SDU fragment.                              */
 };
@@ -121,11 +122,9 @@ struct rle_reassembly_buffer {
  * @param[in,out] ptrs                     The reassembly buffer pointers.
  * @param[in]     address                  The arbitraly choosen address.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Reassembly buffer pointers.
  */
-static inline int rasm_buf_ptrs_set(rasm_buf_ptrs_t *const ptrs, unsigned char *const address);
+static void rasm_buf_ptrs_set(rasm_buf_ptrs_t *const ptrs, unsigned char *const address);
 
 /**
  * @brief         Increment the end pointer in the reassembly buffer.
@@ -140,11 +139,9 @@ static inline int rasm_buf_ptrs_set(rasm_buf_ptrs_t *const ptrs, unsigned char *
  * @param[in,out] ptrs                     The reassembly buffer pointers.
  * @param[in]     size                     The size to put.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Reassembly buffer pointers.
  */
-static inline int rasm_buf_ptrs_put(rasm_buf_ptrs_t *const ptrs, const size_t size);
+static void rasm_buf_ptrs_put(rasm_buf_ptrs_t *const ptrs, const size_t size);
 
 /**
  * @brief         Put the SDU pointers.
@@ -152,11 +149,9 @@ static inline int rasm_buf_ptrs_put(rasm_buf_ptrs_t *const ptrs, const size_t si
  * @param[in,out] rasm_buf                   The reassembly buffer.
  * @param[in]     size                     The size to put.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Reassembly buffer.
  */
-static inline int rasm_buf_sdu_put(rle_rasm_buf_t *const rasm_buf, const size_t size);
+static inline void rasm_buf_sdu_put(rle_rasm_buf_t *const rasm_buf, const size_t size);
 
 /**
  * @brief         Put the SDU fragment pointers. Automatically used by the copying function.
@@ -164,11 +159,9 @@ static inline int rasm_buf_sdu_put(rle_rasm_buf_t *const rasm_buf, const size_t 
  * @param[in,out] rasm_buf                   The reassembly buffer.
  * @param[in]     size                     The size to put.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Reassembly buffer.
  */
-static inline int rasm_buf_sdu_frag_put(rle_rasm_buf_t *const rasm_buf, const size_t size);
+void rasm_buf_sdu_frag_put(rle_rasm_buf_t *const rasm_buf, const size_t size);
 
 /**
  * @brief         Create a new reassembly buffer.
@@ -195,11 +188,9 @@ static inline void rasm_buf_del(rle_rasm_buf_t **const rasm_buf);
  * @param[in,out] sdu                      the SDU structure, containing the buffer that will be
  *                                         used to store the reassembled SDU.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Reassembly buffer.
  */
-static inline int rasm_buf_init(rle_rasm_buf_t *const rasm_buf);
+static inline void rasm_buf_init(rle_rasm_buf_t *const rasm_buf);
 
 /**
  * @brief         Check if the reassembly buffer is in use.
@@ -215,15 +206,13 @@ static inline int rasm_buf_in_use(const rle_rasm_buf_t *const rasm_buf);
 /**
  * @brief         Copy a fragment of SDU in a reassembly buffer.
  *
- * @param[in,out] rasm_buf                   The reassembly buffer.
- * @param[in]     size                     The SDU to copy.
- *
- * @return        0 if OK, else 1.
+ * @param[in,out] rasm_buf  The reassembly buffer
+ * @param[in]     sdu_frag  The SDU to copy
  *
  * @ingroup       RLE Reassembly buffer.
  */
-static inline int rasm_buf_cpy_sdu_frag(rle_rasm_buf_t *const rasm_buf,
-                                        const unsigned char sdu_frag[]);
+void rasm_buf_cpy_sdu_frag(rle_rasm_buf_t *const rasm_buf,
+                           const unsigned char sdu_frag[]);
 
 /**
  * @brief         Get the length of the SDU in the reassembly buffer (reassembled or not).
@@ -234,7 +223,7 @@ static inline int rasm_buf_cpy_sdu_frag(rle_rasm_buf_t *const rasm_buf,
  *
  * @ingroup       RLE Reassembly buffer.
  */
-static inline ssize_t rasm_buf_get_sdu_length(const rle_rasm_buf_t *const rasm_buf);
+size_t rasm_buf_get_sdu_length(const rle_rasm_buf_t *const rasm_buf);
 
 /**
  * @brief         Get the length of SDU currently reassembled.
@@ -245,7 +234,7 @@ static inline ssize_t rasm_buf_get_sdu_length(const rle_rasm_buf_t *const rasm_b
  *
  * @ingroup       RLE Reassembly buffer.
  */
-static inline ssize_t rasm_buf_get_reassembled_sdu_length(const rle_rasm_buf_t *const rasm_buf);
+size_t rasm_buf_get_reassembled_sdu_length(const rle_rasm_buf_t *const rasm_buf);
 
 /**
  * @brief         Dump memory from the reassembly buffer.
@@ -311,80 +300,32 @@ static inline int rasm_buf_is_reassembled(const rle_rasm_buf_t *const rasm_buf);
 /*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-static inline int rasm_buf_ptrs_set(rasm_buf_ptrs_t *const ptrs, unsigned char *const address)
+static void rasm_buf_ptrs_set(rasm_buf_ptrs_t *const ptrs, unsigned char *const address)
 {
-	int status = 1;
-
-	if ((address < ptrs->rasm_buf->buffer) ||
-	    (address >= ptrs->rasm_buf->buffer + RLE_R_BUFF_LEN)) {
-		PRINT_RLE_ERROR("address out of buffer (%p/[%p - %p]).", address,
-		                ptrs->rasm_buf->buffer,
-		                ptrs->rasm_buf->buffer + RLE_R_BUFF_LEN);
-		goto out;
-	}
+	assert(address >= ptrs->rasm_buf->buffer &&
+	       address < (ptrs->rasm_buf->buffer + RLE_R_BUFF_LEN));
 
 	ptrs->start = ptrs->end = address;
 
-	status = 0;
-
-out:
-
-	return status;
 }
 
-static inline int rasm_buf_ptrs_put(rasm_buf_ptrs_t *const ptrs, const size_t size)
+static void rasm_buf_ptrs_put(rasm_buf_ptrs_t *const ptrs, const size_t size)
 {
-	int status = 1;
-
 	const ptrdiff_t offset = (ptrs->rasm_buf->buffer + RLE_R_BUFF_LEN) - ptrs->end;
 
-	if (size > (size_t)offset) {
-		PRINT_RLE_ERROR("Not enough space to put (%zu/%zu).", size, offset);
-		goto out;
-	}
+	assert(size <= (size_t)offset);
 
 	ptrs->end += size;
-
-	status = 0;
-
-out:
-
-	return status;
 }
 
-static inline int rasm_buf_sdu_put(rle_rasm_buf_t *const rasm_buf, const size_t size)
+static inline void rasm_buf_sdu_put(rle_rasm_buf_t *const rasm_buf, const size_t size)
 {
-	return rasm_buf_ptrs_put(&rasm_buf->sdu, size);
+	rasm_buf_ptrs_put(&rasm_buf->sdu, size);
 }
 
-static inline int rasm_buf_sdu_frag_put(rle_rasm_buf_t *const rasm_buf, const size_t size)
+static inline void rasm_buf_init_sdu_frag(rle_rasm_buf_t *const rasm_buf)
 {
-	int status = 1;
-	const ptrdiff_t remaining_sdu_length = rasm_buf->sdu.end - rasm_buf->sdu_frag.end;
-
-	if (size > (remaining_sdu_length > 0 ? (size_t)remaining_sdu_length : 0)) {
-		PRINT_RLE_ERROR("SDU reassembly overflow. Expecting %zu, getting %zu.", size,
-		                (size_t)remaining_sdu_length);
-	}
-
-	status = rasm_buf_ptrs_put(&rasm_buf->sdu_frag, size);
-
-	return status;
-}
-
-static inline int rasm_buf_init_sdu_frag(rle_rasm_buf_t *const rasm_buf)
-{
-	int status = 1;
-
-	if (++(rasm_buf->nb_fragments) == RLE_R_BUFF_MAX_FRAGS) {
-		PRINT_RLE_ERROR("Too much fragments in reassembly buffer.");
-		goto out;
-	}
-
-	status = rasm_buf_ptrs_set(&rasm_buf->sdu_frag, rasm_buf->sdu_frag.end);
-
-out:
-	return status;
+	rasm_buf_ptrs_set(&rasm_buf->sdu_frag, rasm_buf->sdu_frag.end);
 }
 
 static inline rle_rasm_buf_t *rasm_buf_new(void)
@@ -393,30 +334,30 @@ static inline rle_rasm_buf_t *rasm_buf_new(void)
 
 	if (!rasm_buf) {
 		PRINT_RLE_ERROR("reassembly buffer not allocated.");
-		goto out;
+		goto error;
 	}
 
-	rasm_buf->buffer = rasm_buf->sdu_info.buffer = (unsigned char *)MALLOC(RLE_R_BUFF_LEN);
+	rasm_buf->buffer = (unsigned char *)MALLOC(RLE_R_BUFF_LEN);
+	if (!rasm_buf->buffer) {
+		PRINT_RLE_ERROR("reassembly buffer not allocated (2)");
+		goto free_rasm_buf;
+	}
+	rasm_buf->sdu_info.buffer = rasm_buf->buffer;
 	rasm_buf->sdu.rasm_buf = rasm_buf;
 	rasm_buf->sdu_frag.rasm_buf = rasm_buf;
-	rasm_buf->nb_fragments = 0;
-
-out:
 
 	return rasm_buf;
+
+free_rasm_buf:
+	FREE(rasm_buf);
+error:
+	return NULL;
 }
 
 static inline void rasm_buf_del(rle_rasm_buf_t **const rasm_buf)
 {
-	if (!rasm_buf) {
-		PRINT_RLE_WARNING("reassembly buffer pointer NULL, nothing can be done.");
-		goto out;
-	}
-
-	if (!*rasm_buf) {
-		PRINT_RLE_WARNING("reassembly buffer NULL, nothing to do.");
-		goto out;
-	}
+	assert(rasm_buf != NULL);
+	assert((*rasm_buf) != NULL);
 
 	if ((*rasm_buf)->sdu_info.buffer) {
 		FREE((*rasm_buf)->sdu_info.buffer);
@@ -425,61 +366,21 @@ static inline void rasm_buf_del(rle_rasm_buf_t **const rasm_buf)
 
 	FREE(*rasm_buf);
 	*rasm_buf = NULL;
-
-out:
-
-	return;
 }
 
-static inline int rasm_buf_init(rle_rasm_buf_t *const rasm_buf)
+static inline void rasm_buf_init(rle_rasm_buf_t *const rasm_buf)
 {
-	int status;
-
 	rasm_buf->buffer = rasm_buf->sdu_info.buffer;
 
 	memset(rasm_buf->buffer, '\0', RLE_R_BUFF_LEN);
 
-	rasm_buf->nb_fragments = 0;
-
-	status = rasm_buf_ptrs_set(&rasm_buf->sdu, rasm_buf->buffer);
-	status |= rasm_buf_ptrs_set(&rasm_buf->sdu_frag, rasm_buf->buffer);
-
-	return status;
+	rasm_buf_ptrs_set(&rasm_buf->sdu, rasm_buf->buffer);
+	rasm_buf_ptrs_set(&rasm_buf->sdu_frag, rasm_buf->buffer);
 }
 
 static inline int rasm_buf_in_use(const rle_rasm_buf_t *const rasm_buf)
 {
 	return rasm_buf->sdu.start != rasm_buf->sdu.end;
-}
-
-static inline int rasm_buf_cpy_sdu_frag(rle_rasm_buf_t *const rasm_buf,
-                                        const unsigned char sdu_frag[])
-{
-	int status = 1;
-
-	if (!rasm_buf_in_use(rasm_buf)) {
-		PRINT_RLE_ERROR("reassembly buffer not initialized.");
-		goto out;
-	}
-
-	memcpy(rasm_buf->sdu_frag.start, sdu_frag,
-	       rasm_buf->sdu_frag.end - rasm_buf->sdu_frag.start);
-
-	status = 0;
-
-out:
-
-	return status;
-}
-
-static inline ssize_t rasm_buf_get_sdu_length(const rle_rasm_buf_t *const rasm_buf)
-{
-	return (ssize_t)(rasm_buf->sdu.end - rasm_buf->sdu.start);
-}
-
-static inline ssize_t rasm_buf_get_reassembled_sdu_length(const rle_rasm_buf_t *const rasm_buf)
-{
-	return (ssize_t)(rasm_buf->sdu_frag.end - rasm_buf->sdu.start);
 }
 
 static inline int rasm_buf_dump_mem(const rle_rasm_buf_t *const rasm_buf,

@@ -14,6 +14,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #else
 
@@ -21,7 +22,6 @@
 
 #endif
 
-#include "rle_conf.h"
 #include "constants.h"
 #include "fragmentation_buffer.h"
 
@@ -120,34 +120,18 @@ int rle_ctx_init_rasm_buf(struct rle_ctx_management *_this);
  *
  * @param[out]   _this  Pointer to the RLE context structure
  *
- * @return  C_ERROR  If destruction went wrong
- *          C_OK     Otherwise
- *
  * @ingroup RLE context
  */
-int rle_ctx_destroy_frag_buf(struct rle_ctx_management *_this);
+void rle_ctx_destroy_frag_buf(struct rle_ctx_management *_this);
 
 /**
  * @brief  Destroy RLE context with reassembly buffers structure and free memory
  *
  * @param[out]   _this  Pointer to the RLE context structure
  *
- * @return  C_ERROR  If destruction went wrong
- *          C_OK     Otherwise
- *
  * @ingroup RLE context
  */
-int rle_ctx_destroy_rasm_buf(struct rle_ctx_management *_this);
-
-/**
- * @brief  Set fragment id
- *
- * @param[in,out] _this   Pointer to the RLE context structure
- * @param[in]     val     New fragment id value
- *
- * @ingroup RLE context
- */
-void rle_ctx_set_frag_id(struct rle_ctx_management *const _this, const uint8_t val);
+void rle_ctx_destroy_rasm_buf(struct rle_ctx_management *_this);
 
 /**
  * @brief  Set sequence number
@@ -772,9 +756,8 @@ static inline int rle_ctx_is_free(uint8_t contexts, const size_t frag_id)
  */
 static inline void rle_ctx_set_nonfree(uint8_t *const contexts, const size_t frag_id)
 {
+	assert(frag_id <= RLE_MAX_FRAG_ID);
 	*contexts |= (1 << frag_id);
-
-	return;
 }
 
 /**
@@ -785,9 +768,8 @@ static inline void rle_ctx_set_nonfree(uint8_t *const contexts, const size_t fra
  */
 static inline void rle_ctx_set_free(uint8_t *const contexts, const size_t frag_id)
 {
-	*contexts &= ~(1 << frag_id);
-
-	return;
+	assert(frag_id <= RLE_MAX_FRAG_ID);
+	*contexts &= ~(1U << frag_id);
 }
 
 #endif /* __RLE_CTX_H__ */

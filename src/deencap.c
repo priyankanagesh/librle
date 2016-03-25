@@ -50,9 +50,6 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 	int padding_detected = false;
 	size_t offset = 0;
 
-	/* no SDUs decapsulated yet */
-	*sdus_nr = 0;
-
 	/* checks inputs */
 	if (receiver == NULL) {
 		status = RLE_DECAP_ERR_NULL_RCVR;
@@ -69,7 +66,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 		goto out;
 	}
 
-	if ((sdus == NULL) || (sdus_max_nr == 0)) {
+	if (sdus == NULL || sdus_max_nr == 0 || sdus_nr == NULL) {
 		status = RLE_DECAP_ERR_INV_SDUS;
 		goto out;
 	}
@@ -84,6 +81,9 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 		goto out;
 	}
 
+	/* no SDUs decapsulated yet */
+	*sdus_nr = 0;
+
 	/* copy payload label to user if present */
 	if (payload_label_size != 0) {
 		memcpy(payload_label, fpdu, payload_label_size);
@@ -95,7 +95,6 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 	/* parse all PPDUs that the FPDU contains until there is less than 2 bytes
 	 * in the FPDU payload and padding is not detected */
 	while ((offset + 1) < fpdu_length && !padding_detected) {
-		struct rle_sdu *const potential_sdu = &sdus[*sdus_nr];
 		const unsigned char *const ppdu = &fpdu[offset];
 		size_t ppdu_length;
 		int fragment_id;
@@ -119,16 +118,29 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 			goto out;
 		}
 
+		/* stop deencapulation if there is no more SDU buffers */
+		if ((*sdus_nr) == sdus_max_nr) {
+			PRINT("failed to decapsulate all SDUs from the FPDU: all %zu SDU buffers "
+			      "are full, but FPDU is not fully parsed (current %zu-byte PPDU "
+			      "fragment will be lost, as well as the %zu bytes of FPDU that "
+			      "remain to be parsed)\n", sdus_max_nr, ppdu_length,
+			      fpdu_length - offset);
+			status = RLE_DECAP_ERR_SOME_DROP;
+			goto out;
+		}
+
 		/* parse the PPDU fragment */
 		ret = rle_receiver_deencap_data(receiver, ppdu, ppdu_length, &fragment_id,
-		                                potential_sdu);
+		                                &sdus[*sdus_nr]);
 
 		/* PPDU fragment successfully parsed, skip it */
 		offset += ppdu_length;
 
 		if ((ret != C_OK) && (ret != C_REASSEMBLY_OK)) {
 			PRINT("Error during reassembly.\n");
-			rle_receiver_free_context(receiver, fragment_id);
+			if (fragment_id != -1) {
+				rle_receiver_free_context(receiver, fragment_id);
+			}
 			status = RLE_DECAP_ERR;
 		} else if (ret == C_REASSEMBLY_OK) {
 			/* Potential SDU received. */

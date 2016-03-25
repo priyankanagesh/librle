@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #endif
 
@@ -63,7 +64,9 @@ static int get_receiver_context(const struct rle_receiver *const receiver,
 {
 	int status = 1;
 
-	if (fragment_id >= RLE_MAX_FRAG_ID) {
+	assert(ctx_man != NULL);
+
+	if (receiver == NULL || fragment_id >= RLE_MAX_FRAG_NUMBER) {
 		/* Out of bound */
 		goto error;
 	}
@@ -81,67 +84,60 @@ error:
 /*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-struct rle_receiver *rle_receiver_new(const struct rle_context_configuration *const configuration)
+struct rle_receiver *rle_receiver_new(const struct rle_config *const conf)
 {
 	struct rle_receiver *receiver = NULL;
 	size_t iterator;
-	struct rle_configuration **rx_conf;
 
-	if (configuration->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
+	if (conf == NULL) {
+		PRINT_RLE_ERROR("failed to created RLE receiver: invalid configuration, "
+		                "NULL is not accepted");
+		goto error;
+	}
+
+	if (conf->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
 		PRINT_RLE_ERROR(
 		        "could not initialize receiver with 0x31 as implicit protocol type : "
 		        "Not supported yet.");
-		goto out;
+		goto error;
 	}
 
 	receiver = (struct rle_receiver *)MALLOC(sizeof(struct rle_receiver));
 
 	if (!receiver) {
 		PRINT_RLE_ERROR("allocating receiver module failed");
-		goto out;
+		goto error;
 	}
 
-	rx_conf = &receiver->rle_conf_ctxtless;
-	*rx_conf = rle_conf_new();
-	if (!*rx_conf) {
-		PRINT_RLE_ERROR("allocating receiver module configuration failed");
-		rle_receiver_destroy(&receiver);
-		receiver = NULL;
+	memcpy(&receiver->conf, conf, sizeof(struct rle_config));
 
-		goto out;
-	}
-	rle_conf_init(*rx_conf);
-	rle_conf_set_default_ptype(*rx_conf, configuration->implicit_protocol_type);
-	rle_conf_set_crc_check(*rx_conf, configuration->use_alpdu_crc);
-	rle_conf_set_ptype_compression(*rx_conf, configuration->use_compressed_ptype);
-	rle_conf_set_ptype_suppression(*rx_conf, configuration->use_ptype_omission);
-
+	memset(receiver->rle_ctx_man, 0,
+	       RLE_MAX_FRAG_NUMBER * sizeof(struct rle_ctx_management));
 	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
 		struct rle_ctx_management *const ctx_man = &receiver->rle_ctx_man[iterator];
-		rx_conf = &receiver->rle_conf[iterator];
-		*rx_conf = rle_conf_new();
-		if (!*rx_conf) {
-			PRINT_RLE_ERROR("allocating receiver module configuration failed.");
-			rle_receiver_destroy(&receiver);
-			receiver = NULL;
-
-			goto out;
+		if (rle_ctx_init_rasm_buf(ctx_man) != C_OK) {
+			PRINT_RLE_ERROR("failed to allocate memory for reassembly context with "
+			                "ID %zu\n", iterator);
+			goto free_ctxts;
 		}
-		rle_ctx_init_rasm_buf(ctx_man);
-		rle_ctx_set_frag_id(ctx_man, iterator);
+		ctx_man->frag_id = iterator;
 		rle_ctx_set_seq_nb(ctx_man, 0);
-		rle_conf_init(*rx_conf);
-		rle_conf_set_default_ptype(*rx_conf, configuration->implicit_protocol_type);
-		rle_conf_set_crc_check(*rx_conf, configuration->use_alpdu_crc);
-		rle_conf_set_ptype_compression(*rx_conf, configuration->use_compressed_ptype);
-		rle_conf_set_ptype_suppression(*rx_conf, configuration->use_ptype_omission);
 	}
 
 	receiver->free_ctx = 0;
 
-out:
-
 	return receiver;
+
+free_ctxts:
+	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
+		struct rle_ctx_management *const ctx_man = &receiver->rle_ctx_man[iterator];
+		if (ctx_man->buff != NULL) {
+			rle_ctx_destroy_rasm_buf(ctx_man);
+		}
+	}
+	FREE(receiver);
+error:
+	return NULL;
 }
 
 void rle_receiver_destroy(struct rle_receiver **const receiver)
@@ -158,18 +154,8 @@ void rle_receiver_destroy(struct rle_receiver **const receiver)
 		goto out;
 	}
 
-	if ((*receiver)->rle_conf_ctxtless) {
-		rle_conf_destroy((*receiver)->rle_conf_ctxtless);
-	}
-
 	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-		struct rle_configuration **const conf = &(*receiver)->rle_conf[iterator];
 		struct rle_ctx_management *const ctx_man = &(*receiver)->rle_ctx_man[iterator];
-
-		if (*conf) {
-			rle_conf_destroy(*conf);
-		}
-
 		rle_ctx_destroy_rasm_buf(ctx_man);
 	}
 
@@ -185,6 +171,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, const unsigned char pp
                               const size_t ppdu_length, int *const index_ctx,
                               struct rle_sdu *const potential_sdu)
 {
+	const size_t ppdu_base_hdr_len = 2;
 	int ret = C_ERROR;
 	int frag_type = 0;
 
@@ -199,11 +186,12 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, const unsigned char pp
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
+	assert(index_ctx != NULL);
+
+	*index_ctx = -1;
+
 	/* check PPDU validity */
-	if (ppdu_length > RLE_MAX_PDU_SIZE) {
-		PRINT_RLE_ERROR("Packet too long [%zu].", ppdu_length);
-		goto out;
-	}
+	assert(ppdu_length <= (RLE_MAX_PPDU_PL_SIZE + ppdu_base_hdr_len));
 
 	/* retrieve frag id if its a fragmented packet to append data to the * right frag id context
 	 * (SE bits)
@@ -229,6 +217,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, const unsigned char pp
 
 	default:
 		PRINT_RLE_ERROR("Unhandled fragment type '%i'.", frag_type);
+		assert(0);
 		break;
 	}
 
@@ -239,7 +228,6 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, const unsigned char pp
 	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", MODULE_NAME, tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
-out:
 	return ret;
 }
 
@@ -257,10 +245,6 @@ size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiv
 
 	if (get_receiver_context(receiver, fragment_id,
 	                         (const struct rle_ctx_management **const)&ctx_man)) {
-		goto out;
-	}
-
-	if (!ctx_man) {
 		goto out;
 	}
 
@@ -299,10 +283,6 @@ uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiv
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_ok(ctx_man);
 
 error:
@@ -317,10 +297,6 @@ uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *
 	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 
@@ -341,10 +317,6 @@ uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *con
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_lost(ctx_man);
 
 error:
@@ -359,10 +331,6 @@ uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver
 	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 
@@ -383,10 +351,6 @@ uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_recei
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_bytes_ok(ctx_man);
 
 error:
@@ -404,10 +368,6 @@ uint64_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver 
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_bytes_dropped(ctx_man);
 
 error:
@@ -420,10 +380,6 @@ int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
 {
 	int status = 1;
 	const struct rle_ctx_management *ctx_man = NULL;
-
-	if (!receiver) {
-		goto error;
-	}
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
@@ -452,16 +408,8 @@ void rle_receiver_stats_reset_counters(struct rle_receiver *const receiver,
 {
 	struct rle_ctx_management *ctx_man = NULL;
 
-	if (!receiver) {
-		goto error;
-	}
-
 	if (get_receiver_context(receiver, fragment_id,
 	                         (const struct rle_ctx_management **)&ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 

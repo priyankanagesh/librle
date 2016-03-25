@@ -21,7 +21,6 @@
 #endif
 
 #include "rle_ctx.h"
-#include "rle_conf.h"
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -45,7 +44,8 @@
  *  @ingroup
  */
 int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
-                               struct rle_configuration *rle_conf, void *burst_payload_buffer,
+                               struct rle_config *rle_conf,
+                               void *burst_payload_buffer,
                                size_t burst_payload_length,
                                uint16_t protocol_type);
 
@@ -55,7 +55,7 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
  *  @warning
  *
  *  @param rle_ctx					the rle fragment context
- *  @param rle_configuration		the rle configuration
+ *  @param rle_conf              the rle configuration
  *  @param burst_payload_buffer	data buffer's address to encapsulate
  *  @param burst_payload_length	payload length available
  *  @param protocol_type			the protocol type
@@ -66,7 +66,8 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
  *  @ingroup
  */
 int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
-                                     struct rle_configuration *rle_conf, void *burst_payload_buffer,
+                                     struct rle_config *rle_conf,
+                                     void *burst_payload_buffer,
                                      size_t burst_payload_length);
 
 /**
@@ -86,8 +87,10 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
  *
  *  @ingroup
  */
-int fragmentation_add_header(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
-                             void *burst_payload_buffer, size_t burst_payload_length,
+int fragmentation_add_header(struct rle_ctx_management *rle_ctx,
+                             struct rle_config *rle_conf,
+                             void *burst_payload_buffer,
+                             size_t burst_payload_length,
                              int type_rle_header,
                              uint16_t protocol_type);
 
@@ -143,7 +146,8 @@ int fragmentation_add_trailer(struct rle_ctx_management *rle_ctx, void *burst_pa
  *  @ingroup
  */
 int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
-                              struct rle_configuration *rle_conf, void *burst_payload_buffer,
+                              struct rle_config *rle_conf,
+                              void *burst_payload_buffer,
                               size_t burst_payload_length,
                               int frag_type,
                               uint16_t protocol_type);

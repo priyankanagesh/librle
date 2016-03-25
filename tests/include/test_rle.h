@@ -24,6 +24,7 @@
 #include "test_rle_pack.h"
 #include "test_rle_decap.h"
 #include "test_rle_misc.h"
+#include "test_rle_api_robustness.h"
 
 /*
  * How to add a Test:
@@ -41,10 +42,6 @@ struct test {
 	const char *const name;                /**< The name of the test.    */
 	bool(*const function) (void);  /**< The function to execute. */
 };
-
-/** Test counters */
-static size_t total_number_of_tests;      /**< Counter for the total number of tests.            */
-static size_t total_number_of_succ_tests; /**< Counter for the total number of successful tests. */
 
 /**
  * @brief         Generic test function

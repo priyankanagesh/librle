@@ -24,6 +24,10 @@
 #define PRINT_ERROR(S, ...) printf("ERROR %s:l.%d: "S "\n", __func__, __LINE__, ## __VA_ARGS__)
 
 
+/**< The max length of the label, in bytes */
+#define MAX_LABEL_LEN  6
+
+
 /**
  * Payload initializer,
  * This initializer is big enough to test too big SDU/ALPDU cases.
@@ -34,11 +38,6 @@
  * of the first octets.
  */
 const unsigned char payload_initializer[5000];
-
-/*--  Modules  --*/
-
-struct rle_transmitter *transmitter; /**< Transmitter module used by our tests */
-struct rle_receiver *receiver;       /**< Receiver module used by our tests */
 
 /*--  Common  --*/
 

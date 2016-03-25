@@ -16,6 +16,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <assert.h>
 
 #endif
 
@@ -75,8 +76,12 @@ static void flush(struct rle_ctx_management *_this)
 
 static void flush_ctxt_frag_buf(struct rle_ctx_management *_this)
 {
+	int ret;
+
 	flush(_this);
-	rle_frag_buf_init((rle_frag_buf_t *)_this->buff);
+
+	ret = rle_frag_buf_init((rle_frag_buf_t *)_this->buff);
+	assert(ret == 0); /* cannot fail since frag_buf is not NULL */
 
 	return;
 }
@@ -102,10 +107,7 @@ int rle_ctx_init_frag_buf(struct rle_ctx_management *_this)
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!_this) {
-		PRINT_RLE_ERROR("RLE ctxt fragmentation failed.");
-		goto out;
-	}
+	assert(_this != NULL);
 
 	_this->buff = (void *)rle_frag_buf_new();
 
@@ -132,10 +134,7 @@ int rle_ctx_init_rasm_buf(struct rle_ctx_management *_this)
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!_this) {
-		PRINT_RLE_ERROR("RLE ctxt fragmentation failed.");
-		goto out;
-	}
+	assert(_this != NULL);
 
 	/* allocate enough memory space for the reassembly */
 	_this->buff = (void *)rasm_buf_new();
@@ -153,61 +152,30 @@ out:
 	return status;
 }
 
-int rle_ctx_destroy_frag_buf(struct rle_ctx_management *_this)
+void rle_ctx_destroy_frag_buf(struct rle_ctx_management *_this)
 {
-	int status = C_ERROR;
-
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!_this) {
-		PRINT_RLE_ERROR("RLE context is NULL.");
-		goto out;
-	}
+	assert(_this != NULL);
+	assert(_this->buff != NULL);
 
 	flush(_this);
 
-	if (_this->buff) {
-		rle_frag_buf_del((rle_frag_buf_t **)&_this->buff);
-	}
-
-	status = C_OK;
-
-out:
-	return status;
+	rle_frag_buf_del((rle_frag_buf_t **)&_this->buff);
 }
 
-int rle_ctx_destroy_rasm_buf(struct rle_ctx_management *_this)
+void rle_ctx_destroy_rasm_buf(struct rle_ctx_management *_this)
 {
-	int status = C_ERROR;
-
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!_this) {
-		PRINT_RLE_ERROR("RLE context is NULL.");
-		goto out;
-	}
+	assert(_this != NULL);
+	assert(_this->buff != NULL);
 
-	rasm_buf_del((rle_rasm_buf_t **)&_this->buff);
-
-	status = C_OK;
-
-out:
-	return status;
-}
-
-void rle_ctx_set_frag_id(struct rle_ctx_management *_this, uint8_t val)
-{
-	if (val > RLE_MAX_FRAG_ID) {
-		PRINT_RLE_ERROR("Invalid fragment id.");
-	} else {
-		_this->frag_id = val;
-	}
-
-	return;
+	rasm_buf_del((rle_rasm_buf_t**)&_this->buff);
 }
 
 void rle_ctx_set_seq_nb(struct rle_ctx_management *_this, uint8_t val)
@@ -255,6 +223,7 @@ size_t get_fragment_length(const unsigned char *const buffer)
 		break;
 	default:
 		PRINT_RLE_ERROR("Unhandled fragment type '%i'.", fragment_type);
+		assert(0);
 		break;
 	}
 

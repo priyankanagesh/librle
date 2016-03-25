@@ -36,9 +36,8 @@
  */
 struct rle_receiver {
 	struct rle_ctx_management rle_ctx_man[RLE_MAX_FRAG_NUMBER]; /**< Reassembly contexts.       */
-	struct rle_configuration *rle_conf[RLE_MAX_FRAG_NUMBER];    /**< Configuration per context. */
-	struct rle_configuration *rle_conf_ctxtless; /**< Conf for fragment without context.        */
-	uint8_t free_ctx;                                           /**< List of free contexts.     */
+	struct rle_config conf;  /**< RLE configuration */
+	uint8_t free_ctx;        /**< List of free contexts */
 };
 
 

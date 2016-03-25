@@ -19,6 +19,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 
 /**
  * @brief         Generic decapsulation test.
@@ -36,10 +37,12 @@
  * @return        true if OK, else false.
  */
 static bool test_decap(const uint16_t protocol_type,
-                               const struct rle_context_configuration conf,
-                               const size_t number_of_sdus, const size_t sdu_length,
-                               const uint8_t frag_id, const size_t burst_size,
-                               const size_t label_length);
+                       const struct rle_config conf,
+                       const size_t number_of_sdus,
+                       const size_t sdu_length,
+                       const uint8_t frag_id,
+                       const size_t burst_size,
+                       const size_t label_length);
 
 static void print_modules_stats(void)
 {
@@ -49,10 +52,12 @@ static void print_modules_stats(void)
 }
 
 static bool test_decap(const uint16_t protocol_type,
-                               const struct rle_context_configuration conf,
-                               const size_t number_of_sdus, const size_t sdu_length,
-                               const uint8_t frag_id, const size_t burst_size,
-                               const size_t label_length)
+                       const struct rle_config conf,
+                       const size_t number_of_sdus,
+                       const size_t sdu_length,
+                       const uint8_t frag_id,
+                       const size_t burst_size,
+                       const size_t label_length)
 {
 	PRINT_TEST(
 	        "protocol type 0x%04x, number of SDUs %zu, SDU length %zu, frag_id %d, conf %s, "
@@ -76,6 +81,8 @@ static bool test_decap(const uint16_t protocol_type,
 		.size = 0,
 		.protocol_type = protocol_type
 	};
+	struct rle_receiver *receiver;
+	struct rle_transmitter *transmitter;
 
 	const size_t fpdu_length = 1000; /* Arbitrarly */
 	unsigned char fpdu[fpdu_length];
@@ -87,20 +94,14 @@ static bool test_decap(const uint16_t protocol_type,
 	size_t fpdu_remaining_size = fpdu_length;
 	size_t number_of_sdus_iterator = 0;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
+	assert(label_length <= MAX_LABEL_LEN);
 
 	receiver = rle_receiver_new(&conf);
-
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver");
 		goto exit_label;
 	}
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
 	if (transmitter == NULL) {
 		PRINT_ERROR("Error allocating transmitter");
@@ -139,22 +140,9 @@ static bool test_decap(const uint16_t protocol_type,
 		}
 
 		{
-			const unsigned char alloc_label[label_length];
-			const unsigned char *label = NULL;
-			size_t current_label_length = label_length;
-			if (number_of_sdus_iterator == 1) {
-				if (label_length != 0) {
-					label = alloc_label;
-					memcpy((void *)alloc_label,
-					       (const void *)payload_initializer,
-					       label_length);
-				} else {
-					memcpy((void *)label, (const void *)payload_initializer,
-					       label_length);
-				}
-			} else {
-				label = NULL;
-				current_label_length = 0;
+			unsigned char label[MAX_LABEL_LEN];
+			if (label_length != 0) {
+				memcpy(label, payload_initializer, label_length);
 			}
 			while (rle_transmitter_stats_get_queue_size(transmitter, frag_id)) {
 				unsigned char *ppdu;
@@ -166,16 +154,13 @@ static bool test_decap(const uint16_t protocol_type,
 					goto exit_label;
 				}
 
-				ret_pack = rle_pack(ppdu, ppdu_length, label, current_label_length, fpdu,
+				ret_pack = rle_pack(ppdu, ppdu_length, label, label_length, fpdu,
 				                    &fpdu_current_pos, &fpdu_remaining_size);
 
 				if (ret_pack != RLE_PACK_OK) {
 					PRINT_ERROR("Pack does not return OK.");
 					goto exit_label;
 				}
-
-				label = NULL;
-				current_label_length = 0;
 			}
 		}
 	}
@@ -185,11 +170,13 @@ static bool test_decap(const uint16_t protocol_type,
 		size_t sdus_nr = 0;
 		struct rle_sdu sdus[sdus_max_nr];
 		size_t sdu_iterator = 0;
-		unsigned char alloc_label[label_length];
-		unsigned char *label = NULL;
+		unsigned char label[MAX_LABEL_LEN];
+		unsigned char *labelp;
 		if (label_length != 0) {
-			label = alloc_label;
-			memcpy((void *)alloc_label, (const void *)payload_initializer, label_length);
+			memcpy(label, payload_initializer, label_length);
+			labelp = label;
+		} else {
+			labelp = NULL;
 		}
 
 		for (sdu_iterator = 0; sdu_iterator < sdus_max_nr; ++sdu_iterator) {
@@ -202,7 +189,7 @@ static bool test_decap(const uint16_t protocol_type,
 		}
 
 		ret_decap = rle_decapsulate(receiver, (const unsigned char *)fpdu, fpdu_length, sdus,
-		                            sdus_max_nr, &sdus_nr, label, label_length);
+		                            sdus_max_nr, &sdus_nr, labelp, label_length);
 
 		if (ret_decap != RLE_DECAP_OK) {
 			PRINT_ERROR("Decap does not return OK.");
@@ -297,9 +284,7 @@ bool test_decap_null_receiver(void)
 	const size_t payload_label_size = 3;
 	unsigned char payload_label[payload_label_size];
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
+	struct rle_receiver *receiver = NULL;
 
 	ret_decap =
 	        rle_decapsulate(receiver, fpdu, fpdu_length, sdus, sdus_max_nr, &sdus_nr,
@@ -334,21 +319,23 @@ bool test_decap_inv_fpdu(void)
 	const size_t payload_label_size = 3;
 	unsigned char payload_label[payload_label_size];
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_receiver *receiver;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
 	receiver = rle_receiver_new(&conf);
+	if (receiver == NULL) {
+		PRINT_ERROR("Error allocating receiver");
+		goto exit_label;
+	}
 
 	{
 		const size_t fpdu_length = 0;
-		unsigned char fpdu[fpdu_length];
+		unsigned char fpdu[1];
 
 		ret_decap =
 		        rle_decapsulate(receiver, fpdu, fpdu_length, sdus, sdus_max_nr, &sdus_nr,
@@ -429,21 +416,23 @@ bool test_decap_inv_sdus(void)
 	const size_t payload_label_size = 3;
 	unsigned char payload_label[payload_label_size];
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_receiver *receiver;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
 	receiver = rle_receiver_new(&conf);
+	if (receiver == NULL) {
+		PRINT_ERROR("Error allocating receiver");
+		goto exit_label;
+	}
 
 	{
 		const size_t sdus_max_nr = 0;
-		struct rle_sdu sdus[sdus_max_nr];
+		struct rle_sdu sdus[1];
 
 		ret_decap =
 		        rle_decapsulate(receiver, fpdu, fpdu_length, sdus, sdus_max_nr, &sdus_nr,
@@ -504,17 +493,19 @@ bool test_decap_inv_pl(void)
 
 	size_t sdus_nr = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_receiver *receiver;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
 	receiver = rle_receiver_new(&conf);
+	if (receiver == NULL) {
+		PRINT_ERROR("Error allocating receiver");
+		goto exit_label;
+	}
 
 	{
 		const size_t payload_label_size = 0;
@@ -583,13 +574,10 @@ bool test_decap_inv_config(void)
 	           "Warning: An error message may be printed.");
 	bool output = false;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x31
 	};
-
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
+	struct rle_receiver *receiver;
 
 	receiver = rle_receiver_new(&conf);
 
@@ -641,25 +629,21 @@ bool test_decap_not_null_padding(void)
 
 	size_t sdus_nr = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_receiver *receiver;
+	struct rle_transmitter *transmitter;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
 	receiver = rle_receiver_new(&conf);
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver.");
 		goto exit_label;
 	}
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
 	if (transmitter == NULL) {
 		PRINT_ERROR("Error allocating transmitter.");
@@ -776,25 +760,21 @@ bool test_decap_flush_ctxt(void)
 
 	size_t sdus_nr = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_receiver *receiver;
+	struct rle_transmitter *transmitter;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
 	receiver = rle_receiver_new(&conf);
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver.");
 		goto exit_label;
 	}
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
 	if (transmitter == NULL) {
 		PRINT_ERROR("Error allocating transmitter.");
@@ -947,7 +927,7 @@ bool test_decap_all(void)
 			}
 
 			/* Configuration for uncompressed protocol type */
-			struct rle_context_configuration conf_uncomp = {
+			struct rle_config conf_uncomp = {
 				.implicit_protocol_type = 0x0d,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -955,7 +935,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for compressed protocol type */
-			struct rle_context_configuration conf_comp = {
+			struct rle_config conf_comp = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 1,
@@ -963,7 +943,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for omitted protocol type */
-			struct rle_context_configuration conf_omitted = {
+			struct rle_config conf_omitted = {
 				.implicit_protocol_type = default_ptype,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -971,7 +951,7 @@ bool test_decap_all(void)
 			};
 
 			/* Special test for IPv4 and v6 */
-			struct rle_context_configuration conf_omitted_ip = {
+			struct rle_config conf_omitted_ip = {
 				.implicit_protocol_type = 0x30,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -979,7 +959,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for non omitted protocol type in omission conf */
-			struct rle_context_configuration conf_not_omitted = {
+			struct rle_config conf_not_omitted = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -987,7 +967,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for uncompressed protocol type with CRC */
-			struct rle_context_configuration conf_uncomp_crc = {
+			struct rle_config conf_uncomp_crc = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 1,
 				.use_compressed_ptype = 0,
@@ -995,7 +975,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for compressed protocol type with CRC */
-			struct rle_context_configuration conf_comp_crc = {
+			struct rle_config conf_comp_crc = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 1,
 				.use_compressed_ptype = 1,
@@ -1003,7 +983,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for omitted protocol type with CRC */
-			struct rle_context_configuration conf_omitted_crc = {
+			struct rle_config conf_omitted_crc = {
 				.implicit_protocol_type = default_ptype,
 				.use_alpdu_crc = 1,
 				.use_compressed_ptype = 0,
@@ -1011,7 +991,7 @@ bool test_decap_all(void)
 			};
 
 			/* Special test for IPv4 and v6 */
-			struct rle_context_configuration conf_omitted_ip_crc = {
+			struct rle_config conf_omitted_ip_crc = {
 				.implicit_protocol_type = 0x30,
 				.use_alpdu_crc = 1,
 				.use_compressed_ptype = 0,
@@ -1019,7 +999,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for non omitted protocol type in omission conf with CRC */
-			struct rle_context_configuration conf_not_omitted_crc = {
+			struct rle_config conf_not_omitted_crc = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 1,
 				.use_compressed_ptype = 0,
@@ -1027,7 +1007,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configurations */
-			struct rle_context_configuration *confs[] = {
+			struct rle_config *confs[] = {
 				&conf_uncomp,
 				&conf_comp,
 				&conf_omitted,
@@ -1042,7 +1022,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration iterator */
-			struct rle_context_configuration **conf;
+			struct rle_config **conf;
 
 			/* We launch the test on each configuration. All the cases then are test. */
 			for (conf = confs; *conf; ++conf) {
@@ -1137,26 +1117,19 @@ bool test_decap_null_seqno(void)
 
 	size_t sdus_nr = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
-
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
+	struct rle_receiver *receiver;
+	struct rle_transmitter *transmitter;
 
 	receiver = rle_receiver_new(&conf);
-
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver.");
 		goto exit_label;
-	}
-
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
 	}
 
 	transmitter = rle_transmitter_new(&conf);
@@ -1296,25 +1269,21 @@ bool test_decap_context_free(void)
 	size_t sdus_nr = 0;
 	size_t last_pos = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_receiver *receiver;
+	struct rle_transmitter *transmitter;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
 	receiver = rle_receiver_new(&conf);
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver.");
 		goto exit_label;
 	}
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
 	if (transmitter == NULL) {
 		PRINT_ERROR("Error allocating transmitter.");

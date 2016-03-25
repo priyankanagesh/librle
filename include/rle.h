@@ -194,10 +194,11 @@ struct rle_sdu {
 };
 
 /**
- * RLE Context configuration.
+ * RLE configuration
+ *
  * Interface for the configuration initialisation in transmitter and receiver "new" functions.
  */
-struct rle_context_configuration {
+struct rle_config {
 	uint8_t implicit_protocol_type; /**< Protocol type that could be omitted.                  */
 	int use_alpdu_crc;              /**< If set to 1, RLE check on CRC, else if 0, Seq number. */
 	int use_ptype_omission;         /**< If set to 1, implicit_protocol_type is omitted.       */
@@ -237,14 +238,14 @@ struct rle_receiver_stats {
 /**
  * @brief         Create and initialize a RLE transmitter module.
  *
- * @param[in]     configuration            The configuration of the RLE transmitter.
+ * @param[in]     conf  The configuration of the RLE transmitter.
  *
  * @return        A pointer to the transmitter module.
  *
  * @ingroup       RLE transmitter
  */
-struct rle_transmitter *rle_transmitter_new(
-        const struct rle_context_configuration *const configuration);
+struct rle_transmitter *rle_transmitter_new(const struct rle_config *const conf)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Destroy a RLE transmitter module.
@@ -258,14 +259,14 @@ void rle_transmitter_destroy(struct rle_transmitter **const transmitter);
 /**
  * @brief         Create and initialize a RLE receiver module.
  *
- * @param[in]     configuration            The configuration of the RLE receiver.
+ * @param[in]     conf  The configuration of the RLE receiver.
  *
  * @return        A pointer to the receiver module.
  *
  * @ingroup       RLE receiver
  */
-struct rle_receiver *rle_receiver_new(
-        const struct rle_context_configuration *const configuration);
+struct rle_receiver *rle_receiver_new(const struct rle_config *const conf)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Destroy a RLE receiver module.
@@ -283,7 +284,8 @@ void rle_receiver_destroy(struct rle_receiver **const receiver);
  *
  * @ingroup       RLE Fragmentation buffer
  */
-struct rle_frag_buf *rle_frag_buf_new(void);
+struct rle_frag_buf *rle_frag_buf_new(void)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Destroy a fragmentation buffer.
@@ -303,7 +305,8 @@ void rle_frag_buf_del(struct rle_frag_buf **const f_buff);
  *
  * @ingroup       RLE Fragmentation buffer
  */
-int rle_frag_buf_init(struct rle_frag_buf *const f_buff);
+int rle_frag_buf_init(struct rle_frag_buf *const f_buff)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Copy an SDU in a fragmentation buffer.
@@ -320,7 +323,8 @@ int rle_frag_buf_init(struct rle_frag_buf *const f_buff);
  * @ingroup       RLE Fragmentation buffer
  */
 int rle_frag_buf_cpy_sdu(struct rle_frag_buf *const f_buff,
-                         const struct rle_sdu *const sdu);
+                         const struct rle_sdu *const sdu)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         RLE encapsulation. Encapsulate a SDU in a RLE ALPDU frame.
@@ -340,7 +344,9 @@ int rle_frag_buf_cpy_sdu(struct rle_frag_buf *const f_buff,
  * @ingroup       RLE transmitter
  */
 enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
-                                      const struct rle_sdu *const sdu, const uint8_t frag_id);
+                                      const struct rle_sdu *const sdu,
+                                      const uint8_t frag_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         RLE encapsulation. Encapsulate a SDU in a RLE ALPDU frame.
@@ -354,7 +360,8 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
  * @ingroup       RLE transmitter
  */
 enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transmitter,
-                                            struct rle_frag_buf *const f_buff);
+                                            struct rle_frag_buf *const f_buff)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         RLE fragmentation. Get the next PPDU fragment.
@@ -378,9 +385,12 @@ enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transm
  *
  * @ingroup       RLE transmitter
  */
-enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, const uint8_t frag_id,
-                                  const size_t remaining_burst_size, unsigned char *ppdu[],
-                                  size_t *const ppdu_length);
+enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter,
+                                  const uint8_t frag_id,
+                                  const size_t remaining_burst_size,
+                                  unsigned char *ppdu[],
+                                  size_t *const ppdu_length)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         RLE fragmentation. Get the next PPDU fragment.
@@ -408,7 +418,9 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
  */
 enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmitter,
                                           struct rle_frag_buf *const f_buff,
-                                          unsigned char **const ppdu, size_t *const ppdu_length);
+                                          unsigned char **const ppdu,
+                                          size_t *const ppdu_length)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         RLE frame packing. Pack the given PPDU in the given FPDU.
@@ -425,11 +437,14 @@ enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmit
  *
  * @ingroup       RLE transmitter
  */
-enum rle_pack_status rle_pack(const unsigned char *const ppdu, const size_t ppdu_length,
-                              const unsigned char *const label, const size_t label_size,
+enum rle_pack_status rle_pack(const unsigned char *const ppdu,
+                              const size_t ppdu_length,
+                              const unsigned char *const label,
+                              const size_t label_size,
                               unsigned char *const fpdu,
                               size_t *const fpdu_current_pos,
-                              size_t *const fpdu_remaining_size);
+                              size_t *const fpdu_remaining_size)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         RLE padding. Pad the given FPDU with 0x00 octets.
@@ -440,7 +455,8 @@ enum rle_pack_status rle_pack(const unsigned char *const ppdu, const size_t ppdu
  *
  * @ingroup       RLE transmitter
  */
-void rle_pad(unsigned char *const fpdu, const size_t fpdu_current_pos,
+void rle_pad(unsigned char *const fpdu,
+             const size_t fpdu_current_pos,
              const size_t fpdu_remaining_size);
 
 /**
@@ -469,11 +485,14 @@ void rle_pad(unsigned char *const fpdu, const size_t fpdu_current_pos,
  * @ingroup       RLE receiver
  */
 enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
-                                      const unsigned char *const fpdu, const size_t fpdu_length,
+                                      const unsigned char *const fpdu,
+                                      const size_t fpdu_length,
                                       struct rle_sdu sdus[],
-                                      const size_t sdus_max_nr, size_t *const sdus_nr,
+                                      const size_t sdus_max_nr,
+                                      size_t *const sdus_nr,
                                       unsigned char *const payload_label,
-                                      const size_t payload_label_size);
+                                      const size_t payload_label_size)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get occupied size of a queue (frag_id) in an RLE transmitter module.
@@ -486,7 +505,8 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
  * @ingroup       RLE transmitter statistics
  */
 size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const transmitter,
-                                            const uint8_t fragment_id);
+                                            const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get total number of ready to be sent SDU of an RLE transmitter queue.
@@ -499,7 +519,8 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
  * @ingroup       RLE transmitter statistics
  */
 uint64_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter *const transmitter,
-                                                 const uint8_t fragment_id);
+                                                   const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get total number of successfully sent SDU of an RLE transmitter queue.
@@ -511,8 +532,9 @@ uint64_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter 
  *
  * @ingroup       RLE transmitter statistics
  */
-uint64_t rle_transmitter_stats_get_counter_sdus_sent(
-        const struct rle_transmitter *const transmitter, const uint8_t fragment_id);
+uint64_t rle_transmitter_stats_get_counter_sdus_sent(const struct rle_transmitter *const transmitter,
+                                                     const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get total number of dropped SDU of an RLE transmitter queue.
@@ -527,8 +549,9 @@ uint64_t rle_transmitter_stats_get_counter_sdus_sent(
  *
  * @ingroup       RLE transmitter statistics
  */
-uint64_t rle_transmitter_stats_get_counter_sdus_dropped(
-        const struct rle_transmitter *const transmitter, const uint8_t fragment_id);
+uint64_t rle_transmitter_stats_get_counter_sdus_dropped(const struct rle_transmitter *const transmitter,
+                                                        const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get total number of ready to be sent octets of an RLE transmitter queue.
@@ -541,7 +564,8 @@ uint64_t rle_transmitter_stats_get_counter_sdus_dropped(
  * @ingroup       RLE transmitter statistics
  */
 uint64_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter *const transmitter,
-                                                  const uint8_t fragment_id);
+                                                    const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get total number of sent octets of an RLE transmitter queue.
@@ -553,8 +577,9 @@ uint64_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter
  *
  * @ingroup       RLE transmitter statistics
  */
-uint64_t rle_transmitter_stats_get_counter_bytes_sent(
-        const struct rle_transmitter *const transmitter, const uint8_t fragment_id);
+uint64_t rle_transmitter_stats_get_counter_bytes_sent(const struct rle_transmitter *const transmitter,
+                                                      const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get total number of dropped octetsof an RLE transmitter queue.
@@ -566,8 +591,9 @@ uint64_t rle_transmitter_stats_get_counter_bytes_sent(
  *
  * @ingroup       RLE transmitter statistics
  */
-uint64_t rle_transmitter_stats_get_counter_bytes_dropped(
-        const struct rle_transmitter *const transmitter, const uint8_t fragment_id);
+uint64_t rle_transmitter_stats_get_counter_bytes_dropped(const struct rle_transmitter *const transmitter,
+                                                         const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Dump all the statistics of a given RLE transmitter queue in an RLE stats
@@ -583,7 +609,8 @@ uint64_t rle_transmitter_stats_get_counter_bytes_dropped(
  */
 int rle_transmitter_stats_get_counters(const struct rle_transmitter *const transmitter,
                                        const uint8_t fragment_id,
-                                       struct rle_transmitter_stats *const stats);
+                                       struct rle_transmitter_stats *const stats)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Reset all the statistics of a given RLE transmitter queue in an RLE stats
@@ -607,7 +634,8 @@ void rle_transmitter_stats_reset_counters(struct rle_transmitter *const transmit
  * @ingroup       RLE receiver statistics
  */
 size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiver,
-                                         const uint8_t fragment_id);
+                                         const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get total number of partially received SDUs of an RLE receiver queue.
@@ -620,7 +648,8 @@ size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiv
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver *const receiver,
-                                                      const uint8_t fragment_id);
+                                                      const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get total number of successfully reassembled SDUs of an RLE receiver queue.
@@ -633,7 +662,8 @@ uint64_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver 
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiver *const receiver,
-                                                         const uint8_t fragment_id);
+                                                         const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get total number of dropped SDUs of an RLE receiver queue.
@@ -648,7 +678,8 @@ uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiv
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *const receiver,
-                                                     const uint8_t fragment_id);
+                                                     const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get total number of lost SDUs of an RLE receiver queue.
@@ -666,7 +697,8 @@ uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *const receiver,
-                                                  const uint8_t fragment_id);
+                                                  const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get total number of received octets of partially received SDUs of an RLE receiver
@@ -680,7 +712,8 @@ uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *con
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver *const receiver,
-                                                       const uint8_t fragment_id);
+                                                       const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get total number of received octets of successfully reassembled in SDUs of an RLE
@@ -694,7 +727,8 @@ uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_receiver *const receiver,
-                                                          const uint8_t fragment_id);
+                                                          const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get total number of received octets of dropped SDUs of an RLE receiver queue.
@@ -707,7 +741,8 @@ uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_recei
  * @ingroup       RLE receiver statistics
  */
 uint64_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver *const receiver,
-                                                      const uint8_t fragment_id);
+                                                      const uint8_t fragment_id)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Dump all the statistics of a given RLE receiver queue in an RLE stats
@@ -723,7 +758,8 @@ uint64_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver 
  */
 int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
                                     const uint8_t fragment_id,
-                                    struct rle_receiver_stats *const stats);
+                                    struct rle_receiver_stats *const stats)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Reset all the statistics of a given RLE receiver queue in an RLE stats
@@ -745,7 +781,8 @@ void rle_receiver_stats_reset_counters(struct rle_receiver *const receiver,
  *
  * @ingroup     RLE header
  */
-uint16_t rle_header_ptype_decompression(uint8_t compressed_ptype);
+uint16_t rle_header_ptype_decompression(uint8_t compressed_ptype)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief       RLE header check if protocol type is compressible function.
@@ -756,7 +793,8 @@ uint16_t rle_header_ptype_decompression(uint8_t compressed_ptype);
  *
  * @ingroup     RLE header
  */
-int rle_header_ptype_is_compressible(uint16_t uncompressed_ptype);
+int rle_header_ptype_is_compressible(uint16_t uncompressed_ptype)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief       RLE header compression of protocol type function.
@@ -767,16 +805,18 @@ int rle_header_ptype_is_compressible(uint16_t uncompressed_ptype);
  *
  * @ingroup     RLE header
  */
-uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype);
+uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype)
+	__attribute__((warn_unused_result));
 
 /**
  * @brief         Get the size of an RLE headers overhead (ALPDU + PPDU + FPDU headers).
  *                Those header sizes are known only for signal fpdus, and traffic-control fpdus.
  *
- * @param[in]     conf                    The rle module configuration. could be set to "NULL".
- *                                        May be used for evolution or adaption of RLE.
- * @param[in]     fpdu_type               The type of the FPDU.
- * @param[out]    rle_header_size         The size of the RLE header in octets.
+ * @param[in]     conf               The rle module configuration (unused for the
+ *                                   moment, may be used for evolution or adaption
+ *                                   of RLE)
+ * @param[in]     fpdu_type          The type of the FPDU.
+ * @param[out]    rle_header_size    The size of the RLE header in octets.
  *
  * @return        RLE_HEADER_SIZE_OK if size is calculated,
  *                RLE_HEADER_SIZE_ERR on generic errors,
@@ -784,9 +824,10 @@ uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype);
  *                to RLE prediction limitations (for instance, on traffic only burst).
  *
  */
-enum rle_header_size_status rle_get_header_size(const struct rle_context_configuration *const conf,
+enum rle_header_size_status rle_get_header_size(const struct rle_config *const conf,
                                                 const enum rle_fpdu_types fpdu_type,
-                                                size_t *const rle_header_size);
+                                                size_t *const rle_header_size)
+	__attribute__((warn_unused_result));
 
 
 #endif /* __RLE_H__ */

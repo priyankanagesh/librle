@@ -46,9 +46,6 @@
 /** Stubs for visibility */
 struct rle_ctx_management;
 
-/** Stubs for visibility */
-struct rle_configuration;
-
 
 /*------------------------------------------------------------------------------------------------*/
 /*--------------------------------- PUBLIC STRUCTS AND TYPEDEFS ----------------------------------*/
@@ -205,13 +202,10 @@ typedef union rle_alpdu_header rle_alpdu_header_t;
  *  @param[in,out] frag_buf               the fragmentation buffer in use.
  *  @param[in]     rle_conf             the RLE configuration
  *
- *  @return C_ERROR if KO
- *                C_OK if OK
- *
  *  @ingroup RLE header
  */
-int push_alpdu_header(struct rle_frag_buf *const frag_buf,
-                      const struct rle_configuration *const rle_conf);
+void push_alpdu_header(struct rle_frag_buf *const frag_buf,
+                       const struct rle_config *const rle_conf);
 
 /**
  *  @brief         create and push PPDU header into a fragmentation buffer.
@@ -228,7 +222,7 @@ int push_alpdu_header(struct rle_frag_buf *const frag_buf,
  *  @ingroup RLE header
  */
 int push_ppdu_header(struct rle_frag_buf *const frag_buf,
-                     const struct rle_configuration *const rle_conf, const size_t ppdu_length,
+                     const struct rle_config *const rle_conf, const size_t ppdu_length,
                      struct rle_ctx_management *const rle_ctx);
 
 /**
@@ -240,13 +234,11 @@ int push_ppdu_header(struct rle_frag_buf *const frag_buf,
  *  @param[out]    alpdu_fragment       the ALPDU fragment extracted.
  *  @param[out]    alpdu_fragment_len   the length of the ALPDU fragment extracted.
  *
- *  @return        0 if OK, 1 if KO.
- *
  *  @ingroup RLE header
  */
-int comp_ppdu_extract_alpdu_fragment(const unsigned char comp_ppdu[], const size_t ppdu_len,
-                                     const unsigned char *alpdu_fragment[],
-                                     size_t *alpdu_fragment_len);
+void comp_ppdu_extract_alpdu_fragment(const unsigned char comp_ppdu[], const size_t ppdu_len,
+                                      const unsigned char *alpdu_fragment[],
+                                      size_t *alpdu_fragment_len);
 
 /**
  *  @brief         Extract ALPDU fragment from start PPDU.
@@ -259,15 +251,13 @@ int comp_ppdu_extract_alpdu_fragment(const unsigned char comp_ppdu[], const size
  *  @param[out]    alpdu_total_len      the length of the full ALPDU.
  *  @param[out]    is_crc_used          wether CRC is used or not.
  *
- *  @return        0 if OK, 1 if KO.
- *
  *  @ingroup RLE header
  */
-int start_ppdu_extract_alpdu_fragment(const unsigned char start_ppdu[], const size_t ppdu_len,
-                                      const unsigned char *alpdu_fragment[],
-                                      size_t *const alpdu_fragment_len,
-                                      size_t *const alpdu_total_len,
-                                      int *const is_crc_used);
+void start_ppdu_extract_alpdu_fragment(const unsigned char start_ppdu[], const size_t ppdu_len,
+                                       const unsigned char *alpdu_fragment[],
+                                       size_t *const alpdu_fragment_len,
+                                       size_t *const alpdu_total_len,
+                                       int *const is_crc_used);
 
 /**
  *  @brief         Extract ALPDU fragment from cont or end PPDU.
@@ -278,13 +268,11 @@ int start_ppdu_extract_alpdu_fragment(const unsigned char start_ppdu[], const si
  *  @param[out]    alpdu_fragment       the ALPDU fragment extracted.
  *  @param[out]    alpdu_fragment_len   the length of the ALPDU fragment extracted.
  *
- *  @return        0 if OK, 1 if KO.
- *
  *  @ingroup RLE header
  */
-int cont_end_ppdu_extract_alpdu_fragment(const unsigned char cont_end_ppdu[], const size_t ppdu_len,
-                                         const unsigned char *alpdu_fragment[],
-                                         size_t *const alpdu_fragment_len);
+void cont_end_ppdu_extract_alpdu_fragment(const unsigned char cont_end_ppdu[], const size_t ppdu_len,
+                                          const unsigned char *alpdu_fragment[],
+                                          size_t *const alpdu_fragment_len);
 
 /**
  *  @brief         Extract signel SDU from ALPDU.
@@ -322,7 +310,7 @@ int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
                                           const size_t alpdu_fragment_len, uint16_t *protocol_type,
                                           const unsigned char *sdu_fragment[],
                                           size_t *const sdu_fragment_len,
-                                          const struct rle_configuration *const rle_conf);
+                                          const struct rle_config *const rle_conf);
 
 /**
  *  @brief         Extract SDU fragment from uncompressed ALPDU.
@@ -353,8 +341,7 @@ int uncompressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[]
  *  @param[out]    protocol_type        the protocol type extracted from the ALPDU header.
  *  @param[out]    sdu_fragment         the fragment of SDU extracted.
  *  @param[out]    sdu_fragment_len     the length of the SDU fragment.
- *  @param[out]    sdu_total_len        the total length of the SDU.
- *
+ *  @param[out]    alpdu_hdr_len        the length of the ALPDU header
  *
  *  @return        0 if OK, 1 if KO.
  *
@@ -364,7 +351,7 @@ int compressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
                                           const size_t alpdu_fragment_len, uint16_t *protocol_type,
                                           const unsigned char *sdu_fragment[],
                                           size_t *const sdu_fragment_len,
-                                          size_t *const sdu_total_len);
+                                          size_t *const alpdu_hdr_len);
 
 /**
  *  @brief         Set the PPDU length field of a PPDU header.

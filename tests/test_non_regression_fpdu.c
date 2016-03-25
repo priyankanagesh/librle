@@ -289,7 +289,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	int status = 1;
 
 	/* Configuration for uncompressed protocol type */
-	struct rle_context_configuration conf_uncomp = {
+	struct rle_config conf_uncomp = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
@@ -297,7 +297,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	};
 
 	/* Configuration for compressed protocol type */
-	struct rle_context_configuration conf_comp = {
+	struct rle_config conf_comp = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 1,
@@ -305,7 +305,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	};
 
 	/* Configuration for omitted protocol type */
-	struct rle_context_configuration conf_omitted = {
+	struct rle_config conf_omitted = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
@@ -313,7 +313,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	};
 
 	/* Ditto for IPv4 and v6 */
-	struct rle_context_configuration conf_omitted_ip = {
+	struct rle_config conf_omitted_ip = {
 		.implicit_protocol_type = 0x30,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
@@ -321,7 +321,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	};
 
 	/* Configuration for non omitted protocol type in omission conf */
-	struct rle_context_configuration conf_not_omitted = {
+	struct rle_config conf_not_omitted = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
@@ -329,7 +329,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	};
 
 	/* Configurations */
-	struct rle_context_configuration *confs[] = {
+	struct rle_config *confs[] = {
 		&conf_uncomp,
 		&conf_comp,
 		&conf_omitted,
@@ -355,9 +355,8 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 		       "%d)\n", link_layer_type_src, DLT_EN10MB);
 		status = ignore_malformed ? 0 : 77;
 		goto close_input;
-	} else {
-		link_len_src = ETHER_HDR_LEN;
 	}
+	link_len_src = ETHER_HDR_LEN;
 
 	printf("\n");
 
@@ -384,30 +383,30 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 		if (header.len <= link_len_src || header.len != header.caplen) {
 			printf("bad PCAP fpdu (len = %d, caplen = %d)\n", header.len,
 			       header.caplen);
-			status = ignore_malformed ? 0 : 77;
-			goto free_alloc;
+			continue;
 		}
 		counter++;
 		void *realloc_ret;
 		realloc_ret = realloc((void *)fpdus, counter * sizeof(unsigned char *));
 		if (realloc_ret == NULL) {
 			printf("failed to copy the fpdus.\n");
+			status = 1;
 			goto free_alloc;
-		} else {
-			fpdus = realloc_ret;
 		}
+		fpdus = realloc_ret;
 		realloc_ret = realloc((void *)fpdus_lengths, counter * sizeof(size_t));
 		if (realloc_ret == NULL) {
 			printf("failed to copy the fpdus length.\n");
+			status = 1;
 			goto free_alloc;
-		} else {
-			fpdus_lengths = realloc_ret;
 		}
+		fpdus_lengths = realloc_ret;
 		fpdus_lengths[counter - 1] = header.len - link_len_src;
 
 		fpdus[counter - 1] = calloc(fpdus_lengths[counter - 1], sizeof(unsigned char));
 		if (fpdus[counter - 1] == NULL) {
 			printf("failed to copy a fpdu.\n");
+			status = 1;
 			goto free_alloc;
 		}
 
@@ -416,7 +415,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	}
 
 	/* Configuration iterator */
-	struct rle_context_configuration **conf;
+	struct rle_config **conf;
 	size_t counter_confs = 0;
 
 	/* We launch the test on each configuration. All the cases then are test. */
@@ -427,7 +426,8 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 		receiver = rle_receiver_new(*conf);
 		if (receiver == NULL) {
 			printf("failed to create the receiver.\n");
-			continue;
+			status = 1;
+			goto free_alloc;
 		}
 
 		/* Encapsulate & decapsulate from transmitter to receiver. */
@@ -451,7 +451,11 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 			u_int8_t frag_id;
 			struct rle_receiver_stats stats;
 			for (frag_id = 0; frag_id < 8; ++frag_id) {
-				rle_receiver_stats_get_counters(receiver, frag_id, &stats);
+				if (rle_receiver_stats_get_counters(receiver, frag_id, &stats) != 0) {
+					printf("failed to get receiver counters for frag_id %u\n", frag_id);
+					status = 1;
+					goto free_alloc;
+				}
 				printf("===\tFrag ID %u\n", frag_id);
 				printf("===\treceiver received:          %" PRIu64 "\n", stats.sdus_received);
 				printf("===\treceiver reassembled:       %" PRIu64 "\n", stats.sdus_reassembled);

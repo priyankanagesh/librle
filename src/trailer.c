@@ -13,7 +13,6 @@
 #include "constants.h"
 #include "fragmentation_buffer.h"
 #include "rle_ctx.h"
-#include "rle_conf.h"
 #include "rle_header_proto_type_field.h"
 #include "header.h"
 #include "crc.h"
@@ -94,11 +93,11 @@ static uint32_t compute_crc32(const struct rle_sdu *const sdu)
 /*------------------------------------------------------------------------------------------------*/
 
 int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
-                       const struct rle_configuration *const rle_conf,
+                       const struct rle_config *const rle_conf,
                        struct rle_ctx_management *const rle_ctx)
 {
 	int status = 1;
-	const int use_alpdu_crc = rle_conf_get_crc_check((struct rle_configuration *)rle_conf);
+	const int use_alpdu_crc = rle_conf->use_alpdu_crc;
 	size_t alpdu_trailer_len;
 
 #ifdef DEBUG

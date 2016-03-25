@@ -11,7 +11,6 @@
 #define __ENCAP_H__
 
 #include "rle_ctx.h"
-#include "rle_conf.h"
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -34,7 +33,8 @@
  *
  *  @ingroup
  */
-int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx, struct rle_configuration *rle_conf,
+int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
+                          struct rle_config *rle_conf,
                           void *data_buffer, size_t data_length,
                           uint16_t protocol_type);
 
