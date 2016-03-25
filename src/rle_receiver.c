@@ -66,7 +66,7 @@ static int get_receiver_context(const struct rle_receiver *const receiver,
 
 	assert(ctx_man != NULL);
 
-	if (receiver == NULL || fragment_id >= RLE_MAX_FRAG_ID) {
+	if (receiver == NULL || fragment_id >= RLE_MAX_FRAG_NUMBER) {
 		/* Out of bound */
 		goto error;
 	}
