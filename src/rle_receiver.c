@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #endif
 
@@ -63,7 +64,9 @@ static int get_receiver_context(const struct rle_receiver *const receiver,
 {
 	int status = 1;
 
-	if (receiver == NULL || fragment_id >= RLE_MAX_FRAG_ID || ctx_man != NULL) {
+	assert(ctx_man != NULL);
+
+	if (receiver == NULL || fragment_id >= RLE_MAX_FRAG_ID) {
 		/* Out of bound */
 		goto error;
 	}
@@ -266,10 +269,6 @@ size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiv
 		goto out;
 	}
 
-	if (!ctx_man) {
-		goto out;
-	}
-
 	stat = rasm_buf_get_reassembled_sdu_length((rle_rasm_buf_t *)ctx_man->buff);
 
 out:
@@ -305,10 +304,6 @@ uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiv
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_ok(ctx_man);
 
 error:
@@ -323,10 +318,6 @@ uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *
 	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 
@@ -347,10 +338,6 @@ uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *con
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_lost(ctx_man);
 
 error:
@@ -365,10 +352,6 @@ uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver
 	const struct rle_ctx_management *ctx_man = NULL;
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 
@@ -389,10 +372,6 @@ uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_recei
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_bytes_ok(ctx_man);
 
 error:
@@ -410,10 +389,6 @@ uint64_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver 
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_bytes_dropped(ctx_man);
 
 error:
@@ -426,10 +401,6 @@ int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
 {
 	int status = 1;
 	const struct rle_ctx_management *ctx_man = NULL;
-
-	if (!receiver) {
-		goto error;
-	}
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
@@ -458,16 +429,8 @@ void rle_receiver_stats_reset_counters(struct rle_receiver *const receiver,
 {
 	struct rle_ctx_management *ctx_man = NULL;
 
-	if (!receiver) {
-		goto error;
-	}
-
 	if (get_receiver_context(receiver, fragment_id,
 	                         (const struct rle_ctx_management **)&ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 

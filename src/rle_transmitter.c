@@ -18,6 +18,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #endif
 
@@ -64,7 +65,9 @@ static int get_transmitter_context(const struct rle_transmitter *const transmitt
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (fragment_id >= RLE_MAX_FRAG_NUMBER) {
+	assert(ctx_man != NULL);
+
+	if (transmitter == NULL || fragment_id >= RLE_MAX_FRAG_NUMBER) {
 		/* Out of bound */
 		goto error;
 	}
@@ -221,10 +224,6 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	frag_buf = (rle_frag_buf_t *)ctx_man->buff;
 
 	stat = frag_buf_get_remaining_alpdu_length(frag_buf);
@@ -245,10 +244,6 @@ uint64_t rle_transmitter_stats_get_counter_sdus_in(const struct rle_transmitter 
 #endif
 
 	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 
@@ -273,10 +268,6 @@ uint64_t rle_transmitter_stats_get_counter_sdus_sent(
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_ok(ctx_man);
 
 error:
@@ -295,10 +286,6 @@ uint64_t rle_transmitter_stats_get_counter_sdus_dropped(
 #endif
 
 	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 
@@ -323,10 +310,6 @@ uint64_t rle_transmitter_stats_get_counter_bytes_in(const struct rle_transmitter
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_bytes_in(ctx_man);
 
 error:
@@ -345,10 +328,6 @@ uint64_t rle_transmitter_stats_get_counter_bytes_sent(
 #endif
 
 	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 
@@ -373,10 +352,6 @@ uint64_t rle_transmitter_stats_get_counter_bytes_dropped(
 		goto error;
 	}
 
-	if (!ctx_man) {
-		goto error;
-	}
-
 	stat = rle_ctx_get_counter_bytes_dropped(ctx_man);
 
 error:
@@ -395,19 +370,11 @@ int rle_transmitter_stats_get_counters(const struct rle_transmitter *const trans
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!transmitter) {
-		goto error;
-	}
-
 	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
 		goto error;
 	}
 
 	if (!stats) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 
@@ -434,16 +401,8 @@ void rle_transmitter_stats_reset_counters(struct rle_transmitter *const transmit
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (!transmitter) {
-		goto error;
-	}
-
 	if (get_transmitter_context(transmitter, fragment_id,
 	                            (const struct rle_ctx_management **)&ctx_man)) {
-		goto error;
-	}
-
-	if (!ctx_man) {
 		goto error;
 	}
 
