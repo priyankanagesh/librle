@@ -132,7 +132,7 @@ struct rle_transmitter *rle_transmitter_new(const struct rle_config *const conf)
 		struct rle_ctx_management *const ctx_man = &transmitter->rle_ctx_man[iterator];
 
 		rle_ctx_init_frag_buf(ctx_man);
-		rle_ctx_set_frag_id(ctx_man, iterator);
+		ctx_man->frag_id = iterator;
 		rle_ctx_set_seq_nb(ctx_man, 0);
 	}
 
@@ -201,12 +201,14 @@ size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const 
 		goto error;
 	}
 
-	frag_buf = (rle_frag_buf_t *)ctx_man->buff;
-
-	stat = frag_buf_get_remaining_alpdu_length(frag_buf);
+	if (rle_ctx_is_free(transmitter->free_ctx, fragment_id)) {
+		stat = 0;
+	} else {
+		frag_buf = (rle_frag_buf_t *)ctx_man->buff;
+		stat = frag_buf_get_remaining_alpdu_length(frag_buf);
+	}
 
 error:
-
 	return stat;
 }
 

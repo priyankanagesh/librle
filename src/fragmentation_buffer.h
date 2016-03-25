@@ -123,11 +123,9 @@ struct rle_frag_buf {
  * @param[in,out] ptrs                     The fragmentation buffer pointers.
  * @param[in]     address                  The arbitraly choosen address.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Fragmentation buffer pointers.
  */
-static inline int frag_buf_ptrs_set(frag_buf_ptrs_t *const ptrs, unsigned char *const address);
+static void frag_buf_ptrs_set(frag_buf_ptrs_t *const ptrs, unsigned char *const address);
 
 /**
  * @brief         Decrement the start pointer in the fragmentation buffer.
@@ -142,11 +140,9 @@ static inline int frag_buf_ptrs_set(frag_buf_ptrs_t *const ptrs, unsigned char *
  * @param[in,out] ptrs                     The fragmentation buffer pointers.
  * @param[in]     size                     The size to push.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Fragmentation buffer pointers.
  */
-static inline int frag_buf_ptrs_push(frag_buf_ptrs_t *const ptrs, const size_t size);
+static void frag_buf_ptrs_push(frag_buf_ptrs_t *const ptrs, const size_t size);
 
 /**
  * @brief         Increment the end pointer in the fragmentation buffer.
@@ -161,11 +157,9 @@ static inline int frag_buf_ptrs_push(frag_buf_ptrs_t *const ptrs, const size_t s
  * @param[in,out] ptrs                     The fragmentation buffer pointers.
  * @param[in]     size                     The size to put.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Fragmentation buffer pointers.
  */
-static inline int frag_buf_ptrs_put(frag_buf_ptrs_t *const ptrs, const size_t size);
+static void frag_buf_ptrs_put(frag_buf_ptrs_t *const ptrs, const size_t size);
 
 /**
  * @brief         Put the SDU, ALPDU and PPDU pointers.
@@ -173,11 +167,9 @@ static inline int frag_buf_ptrs_put(frag_buf_ptrs_t *const ptrs, const size_t si
  * @param[in,out] frag_buf                   The fragmentation buffer.
  * @param[in]     size                     The size to pull.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Fragmentation buffer.
  */
-static inline int frag_buf_sdu_put(rle_frag_buf_t *const frag_buf, const size_t size);
+static inline void frag_buf_sdu_put(rle_frag_buf_t *const frag_buf, const size_t size);
 
 /**
  * @brief         Push the ALPDU and PPDU pointers.
@@ -185,11 +177,9 @@ static inline int frag_buf_sdu_put(rle_frag_buf_t *const frag_buf, const size_t 
  * @param[in,out] frag_buf                   The fragmentation buffer.
  * @param[in]     size                     The size to push.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Fragmentation buffer.
  */
-static inline int frag_buf_alpdu_push(rle_frag_buf_t *const frag_buf, const size_t size);
+static inline void frag_buf_alpdu_push(rle_frag_buf_t *const frag_buf, const size_t size);
 
 /**
  * @brief         Put the ALPDU pointers.
@@ -197,11 +187,9 @@ static inline int frag_buf_alpdu_push(rle_frag_buf_t *const frag_buf, const size
  * @param[in,out] frag_buf                   The fragmentation buffer.
  * @param[in]     size                     The size to put.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Fragmentation buffer.
  */
-static inline int frag_buf_alpdu_put(rle_frag_buf_t *const frag_buf, const size_t size);
+static inline void frag_buf_alpdu_put(rle_frag_buf_t *const frag_buf, const size_t size);
 
 /**
  * @brief         Push the PPDU pointers.
@@ -209,11 +197,9 @@ static inline int frag_buf_alpdu_put(rle_frag_buf_t *const frag_buf, const size_
  * @param[in,out] frag_buf                   The fragmentation buffer.
  * @param[in]     size                     The size to push.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Fragmentation buffer.
  */
-static inline int frag_buf_ppdu_push(rle_frag_buf_t *const frag_buf, const size_t size);
+static inline void frag_buf_ppdu_push(rle_frag_buf_t *const frag_buf, const size_t size);
 
 /**
  * @brief         Set the PPDU pointers to the old ending position, with the current position.
@@ -227,11 +213,9 @@ static inline int frag_buf_ppdu_push(rle_frag_buf_t *const frag_buf, const size_
  *
  * @param[in,out] frag_buf                   The fragmentation buffer.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Fragmentation buffer.
  */
-static inline int frag_buf_ppdu_init(rle_frag_buf_t *const frag_buf);
+static inline void frag_buf_ppdu_init(rle_frag_buf_t *const frag_buf);
 
 /**
  * @brief         Put the PPDU pointers.
@@ -239,22 +223,18 @@ static inline int frag_buf_ppdu_init(rle_frag_buf_t *const frag_buf);
  * @param[in,out] frag_buf                   The fragmentation buffer.
  * @param[in]     size                     The size to put. Bounded to the ALPDU.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Fragmentation buffer.
  */
-static inline int frag_buf_ppdu_put(rle_frag_buf_t *const frag_buf, const size_t size);
+void frag_buf_ppdu_put(rle_frag_buf_t *const frag_buf, const size_t size);
 
 /**
  * @brief         Set the current position in the buffer depending on the last PPDU start.
  *
  * @param[in,out] frag_buf                   The fragmentation buffer.
  *
- * @return        0 if OK, else 1.
- *
  * @ingroup       RLE Fragmentation buffer.
  */
-static inline int frag_buf_set_cur_pos(rle_frag_buf_t *const frag_buf);
+static inline void frag_buf_set_cur_pos(rle_frag_buf_t *const frag_buf);
 
 /**
  * @brief         Check if the fragmentation buffer is in use.
@@ -390,7 +370,7 @@ static inline int frag_buf_is_fragmented(const rle_frag_buf_t *const frag_buf);
  *
  * @ingroup       RLE Fragmentation buffer.
  */
-static inline size_t frag_buf_get_remaining_alpdu_length(const rle_frag_buf_t *const frag_buf);
+size_t frag_buf_get_remaining_alpdu_length(const rle_frag_buf_t *const frag_buf);
 
 /**
  * @brief         Return the current PPDU size in the fragmentation buffer
@@ -401,150 +381,64 @@ static inline size_t frag_buf_get_remaining_alpdu_length(const rle_frag_buf_t *c
  *
  * @ingroup       RLE Fragmentation buffer.
  */
-static inline size_t frag_buf_get_current_ppdu_len(const rle_frag_buf_t *const frag_buf);
+size_t frag_buf_get_current_ppdu_len(const rle_frag_buf_t *const frag_buf);
 
-static inline int frag_buf_ptrs_set(frag_buf_ptrs_t *const ptrs, unsigned char *const address)
+static void frag_buf_ptrs_set(frag_buf_ptrs_t *const ptrs, unsigned char *const address)
 {
-	int status = 1;
-
-	if ((address < ptrs->frag_buf->buffer) ||
-	    (address >= ptrs->frag_buf->buffer + sizeof(ptrs->frag_buf->buffer))) {
-		PRINT_RLE_ERROR("address out of buffer (%p/[%p - %p]).", address,
-		                ptrs->frag_buf->buffer,
-		                ptrs->frag_buf->buffer + sizeof(ptrs->frag_buf->buffer));
-		goto out;
-	}
+	assert((address >= ptrs->frag_buf->buffer) &&
+	       (address < ptrs->frag_buf->buffer + sizeof(ptrs->frag_buf->buffer)));
 
 	ptrs->start = ptrs->end = address;
-
-	status = 0;
-
-out:
-
-	return status;
 }
 
-static inline int frag_buf_ptrs_push(frag_buf_ptrs_t *const ptrs, const size_t size)
+static void frag_buf_ptrs_push(frag_buf_ptrs_t *const ptrs, const size_t size)
 {
-	int status = 1;
-	const ptrdiff_t offset = ptrs->frag_buf->buffer - ptrs->start;
-
-	if (size > (size_t)offset) {
-		PRINT_RLE_ERROR("Not enough space to put (%zu/%zu).", size, offset);
-		goto out;
-	}
+	assert((ptrs->frag_buf->buffer + size) <= ptrs->start);
 
 	ptrs->start -= size;
-
-	status = 0;
-
-out:
-
-	return status;
 }
 
-static inline int frag_buf_ptrs_put(frag_buf_ptrs_t *const ptrs, const size_t size)
+static void frag_buf_ptrs_put(frag_buf_ptrs_t *const ptrs, const size_t size)
 {
-	int status = 1;
-
 	const ptrdiff_t offset =
 	        (ptrs->frag_buf->buffer + sizeof(ptrs->frag_buf->buffer)) - ptrs->end;
 
-	if (size > (size_t)offset) {
-		PRINT_RLE_ERROR("Not enough space to put (%zu/%zu).", size, offset);
-		goto out;
-	}
+	assert(size <= (size_t)offset);
 
 	ptrs->end += size;
-
-	status = 0;
-
-out:
-
-	return status;
 }
 
-static inline int frag_buf_sdu_put(rle_frag_buf_t *const frag_buf, const size_t size)
+static inline void frag_buf_sdu_put(rle_frag_buf_t *const frag_buf, const size_t size)
 {
-	int status = 1;
-
-	status = frag_buf_ptrs_put(&frag_buf->sdu, size);
-	status |= frag_buf_ptrs_put(&frag_buf->alpdu, size);
-
-	return status;
+	frag_buf_ptrs_put(&frag_buf->sdu, size);
+	frag_buf_ptrs_put(&frag_buf->alpdu, size);
 }
 
-static inline int frag_buf_alpdu_push(rle_frag_buf_t *const frag_buf, const size_t size)
+static inline void frag_buf_alpdu_push(rle_frag_buf_t *const frag_buf, const size_t size)
 {
-	int status = 1;
-
-	status = frag_buf_ptrs_push(&frag_buf->alpdu, size);
-	status |= frag_buf_ptrs_set(&frag_buf->ppdu, frag_buf->alpdu.start);
-	status |= frag_buf_set_cur_pos(frag_buf);
-
-	return status;
+	frag_buf_ptrs_push(&frag_buf->alpdu, size);
+	frag_buf_ptrs_set(&frag_buf->ppdu, frag_buf->alpdu.start);
+	frag_buf_set_cur_pos(frag_buf);
 }
 
-static inline int frag_buf_alpdu_put(rle_frag_buf_t *const frag_buf, const size_t size)
+static inline void frag_buf_alpdu_put(rle_frag_buf_t *const frag_buf, const size_t size)
 {
-	int status = 1;
-
-	status = frag_buf_ptrs_put(&frag_buf->alpdu, size);
-
-	return status;
+	frag_buf_ptrs_put(&frag_buf->alpdu, size);
 }
 
-static inline int frag_buf_ppdu_push(rle_frag_buf_t *const frag_buf, const size_t size)
+static inline void frag_buf_ppdu_push(rle_frag_buf_t *const frag_buf, const size_t size)
 {
-	int status = 1;
-
-	status = frag_buf_ptrs_push(&frag_buf->ppdu, size);
-
-	return status;
+	frag_buf_ptrs_push(&frag_buf->ppdu, size);
 }
 
-static inline int frag_buf_ppdu_init(rle_frag_buf_t *const frag_buf)
+static inline void frag_buf_ppdu_init(rle_frag_buf_t *const frag_buf)
 {
-	int status = 1;
-
-	status = frag_buf_ptrs_set(&frag_buf->ppdu, frag_buf->ppdu.end);
-
-	return status;
+	frag_buf_ptrs_set(&frag_buf->ppdu, frag_buf->ppdu.end);
 }
 
-static inline int frag_buf_ppdu_put(rle_frag_buf_t *const frag_buf, const size_t size)
+static inline void frag_buf_set_cur_pos(rle_frag_buf_t *const frag_buf)
 {
-	int status = 1;
-	size_t bounded_size;
-
-	if (size > RLE_MAX_PPDU_PL_SIZE) {
-		PRINT_RLE_ERROR("fragment is at most %d-octets. %zu octets requested.",
-		                RLE_MAX_PPDU_PL_SIZE, size);
-		goto out;
-	}
-
-	if (frag_buf_get_remaining_alpdu_length(frag_buf) < size) {
-		bounded_size = frag_buf_get_remaining_alpdu_length(frag_buf);
-	} else {
-		bounded_size = size;
-	}
-
-	status = frag_buf_ptrs_put(&frag_buf->ppdu, bounded_size);
-
-out:
-
-	return status;
-}
-
-static inline int frag_buf_set_cur_pos(rle_frag_buf_t *const frag_buf)
-{
-	int status = 1;
-
 	frag_buf->cur_pos = frag_buf->ppdu.end;
-
-	status = 0;
-
-	return status;
 }
 
 static inline int frag_buf_in_use(const rle_frag_buf_t *const frag_buf)
@@ -727,53 +621,13 @@ out:
 
 static inline int frag_buf_is_fragmented(const rle_frag_buf_t *const frag_buf)
 {
-	int is_fragmented = 0;
+	int is_fragmented;
 
-	if (!frag_buf_in_use(frag_buf)) {
-		PRINT_RLE_ERROR("fragmentation buffer not in use.");
-		goto out;
-	}
+	assert(frag_buf_in_use(frag_buf));
 
 	is_fragmented = frag_buf->alpdu.start < frag_buf->ppdu.start ? 1 : 0;
 
-out:
 	return is_fragmented;
 }
-
-static inline size_t frag_buf_get_remaining_alpdu_length(const rle_frag_buf_t *const frag_buf)
-{
-	size_t remaining_alpdu_length = 0;
-
-	if (!frag_buf_in_use(frag_buf)) {
-		PRINT_RLE_ERROR("fragmentation buffer not in use.");
-		goto out;
-	}
-
-	if (frag_buf->alpdu.end < frag_buf->cur_pos) {
-		PRINT_RLE_ERROR("fragmentation buffer current position after ALPDU end.");
-		goto out;
-	}
-
-	remaining_alpdu_length = frag_buf->alpdu.end - frag_buf->cur_pos;
-
-out:
-	return remaining_alpdu_length;
-}
-
-static inline size_t frag_buf_get_current_ppdu_len(const rle_frag_buf_t *const frag_buf)
-{
-	size_t current_ppdu_len = 0;
-
-	if (!frag_buf_in_use(frag_buf)) {
-		PRINT_RLE_ERROR("fragmentation buffer not in use.");
-		goto out;
-	}
-
-	current_ppdu_len = frag_buf->ppdu.end - frag_buf->ppdu.start;
-
-out:
-	return current_ppdu_len;
-}
-
 
 #endif /* __FRAGMENTATION_BUFFER_H__ */

@@ -40,7 +40,8 @@ static int quick_encapsulation(struct rle_transmitter *const t,
                                const size_t *const sdu_len)
 {
 	bool output = false;
-	enum rle_encap_status ret;
+	enum rle_encap_status ret_encap;
+	int ret;
 
 	const struct rle_sdu sdu = {
 		.buffer        = (unsigned char *)payload_initializer,
@@ -53,19 +54,17 @@ static int quick_encapsulation(struct rle_transmitter *const t,
 		goto out;
 	}
 
-	if (rle_frag_buf_init(f_buff) != 0) {
-		PRINT_ERROR("Unable to initialize fragmentation buffer.");
-		goto out;
-	}
+	ret = rle_frag_buf_init(f_buff);
+	assert(ret == 0); /* cannot fail since f_buff is not NULL */
 
 	if (rle_frag_buf_cpy_sdu(f_buff, &sdu) != 0) {
 		PRINT_ERROR("Unable to copy SDU in fragmentation buffer.");
 		goto out;
 	}
 
-	ret = rle_encap_contextless(t, f_buff);
+	ret_encap = rle_encap_contextless(t, f_buff);
 
-	if (ret == RLE_ENCAP_OK) {
+	if (ret_encap == RLE_ENCAP_OK) {
 		output = true;
 	}
 

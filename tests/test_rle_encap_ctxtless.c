@@ -22,7 +22,8 @@
 bool test_encap_ctxtless_null_transmitter(void)
 {
 	bool output = false;
-	enum rle_encap_status ret;
+	enum rle_encap_status ret_encap;
+	int ret;
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
@@ -45,19 +46,17 @@ bool test_encap_ctxtless_null_transmitter(void)
 		goto out;
 	}
 
-	if (rle_frag_buf_init(f_buff) != 0) {
-		PRINT_ERROR("Unable to initialize fragmentation buffer.");
-		goto out;
-	}
+	ret = rle_frag_buf_init(f_buff);
+	assert(ret == 0); /* cannot fail since f_buff is not NULL */
 
 	if (rle_frag_buf_cpy_sdu(f_buff, &sdu) != 0) {
 		PRINT_ERROR("Unable to copy SDU in fragmentation buffer.");
 		goto out;
 	}
 
-	ret = rle_encap_contextless(transmitter, f_buff);
+	ret_encap = rle_encap_contextless(transmitter, f_buff);
 
-	switch (ret) {
+	switch (ret_encap) {
 		case RLE_ENCAP_ERR_NULL_TRMT:
 			PRINT_TEST("NULL transmitter detected, test sucessfull.");
 			output = true;
@@ -206,7 +205,8 @@ out:
 bool test_encap_ctxtless_too_big(void)
 {
 	bool output = false;
-	enum rle_encap_status ret;
+	enum rle_encap_status ret_encap;
+	int ret;
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
@@ -243,35 +243,32 @@ bool test_encap_ctxtless_too_big(void)
 		goto out;
 	}
 
-	if (rle_frag_buf_init(f_buff) != 0) {
-		PRINT_ERROR("Unable to initialize fragmentation buffer.");
-		goto out;
-	}
+	ret = rle_frag_buf_init(f_buff);
+	assert(ret == 0); /* cannot fail since f_buff is not NULL */
 
 	if (rle_frag_buf_cpy_sdu(f_buff, &sdu_ok) != 0) {
 		PRINT_ERROR("Unable to copy SDU in fragmentation buffer.");
 		goto out;
 	}
 
-	ret = rle_encap_contextless(transmitter, f_buff);
+	ret_encap = rle_encap_contextless(transmitter, f_buff);
 
-	if (ret == RLE_ENCAP_OK) {
+	if (ret_encap == RLE_ENCAP_OK) {
 		PRINT_TEST("Encapsulation is OK.");
 	} else {
 		PRINT_TEST("Encapsulation failed, but not due to SDU size. Test failed.");
 		goto out;
 	}
 
-	if (rle_frag_buf_init(f_buff) != 0) {
-		PRINT_ERROR("Unable to initialize fragmentation buffer.");
-		goto out;
-	}
+	ret = rle_frag_buf_init(f_buff);
+	assert(ret == 0); /* cannot fail since f_buff is not NULL */
 
 	if (rle_frag_buf_cpy_sdu(f_buff, &sdu_ko) == 0) {
 		PRINT_ERROR("Too big SDU accepted in fragmentation buffer.");
-	} else {
-		output = true;
+		goto out;
 	}
+
+	output = true;
 
 out:
 

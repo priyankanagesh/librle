@@ -114,7 +114,7 @@ struct rle_receiver *rle_receiver_new(const struct rle_config *const conf)
 	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
 		struct rle_ctx_management *const ctx_man = &receiver->rle_ctx_man[iterator];
 		rle_ctx_init_rasm_buf(ctx_man);
-		rle_ctx_set_frag_id(ctx_man, iterator);
+		ctx_man->frag_id = iterator;
 		rle_ctx_set_seq_nb(ctx_man, 0);
 	}
 
@@ -156,6 +156,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, const unsigned char pp
                               const size_t ppdu_length, int *const index_ctx,
                               struct rle_sdu *const potential_sdu)
 {
+	const size_t ppdu_base_hdr_len = 2;
 	int ret = C_ERROR;
 	int frag_type = 0;
 
@@ -175,10 +176,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, const unsigned char pp
 	*index_ctx = -1;
 
 	/* check PPDU validity */
-	if (ppdu_length > RLE_MAX_PDU_SIZE) {
-		PRINT_RLE_ERROR("Packet too long [%zu].", ppdu_length);
-		goto out;
-	}
+	assert(ppdu_length <= (RLE_MAX_PPDU_PL_SIZE + ppdu_base_hdr_len));
 
 	/* retrieve frag id if its a fragmented packet to append data to the * right frag id context
 	 * (SE bits)
@@ -204,6 +202,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, const unsigned char pp
 
 	default:
 		PRINT_RLE_ERROR("Unhandled fragment type '%i'.", frag_type);
+		assert(0);
 		break;
 	}
 
@@ -214,7 +213,6 @@ int rle_receiver_deencap_data(struct rle_receiver *_this, const unsigned char pp
 	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", MODULE_NAME, tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
-out:
 	return ret;
 }
 

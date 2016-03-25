@@ -129,6 +129,8 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 	struct rle_ctx_management *rle_ctx = NULL;
 	size_t sdu_total_len;
 	int is_crc_used;
+	size_t alpdu_hdr_len;
+	size_t alpdu_trailer_len;
 
 #ifdef TIME_DEBUG
 	struct timeval tv_start = { .tv_sec = 0L, .tv_usec = 0L };
@@ -145,10 +147,7 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("fragment_id 0x%0x frag type %d.", MODULE_NAME, *index_ctx, frag_type);
 #endif
-	if ((*index_ctx) < 0 || (*index_ctx) > RLE_MAX_FRAG_ID) {
-		PRINT_RLE_ERROR("invalid fragment id [%d].", *index_ctx);
-		goto out;
-	}
+	assert((*index_ctx) >= 0 && (*index_ctx) <= RLE_MAX_FRAG_ID);
 
 	rle_ctx = &_this->rle_ctx_man[*index_ctx];
 	rle_ctx->current_counter = ppdu_length;
@@ -178,53 +177,66 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 		                                          &protocol_type,
 		                                          &sdu_fragment,
 		                                          &sdu_fragment_len);
+		alpdu_hdr_len = 0;
 	} else if (rle_start_ppdu_header_get_is_suppressed(header)) {
 		ret =
 		        suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                              &protocol_type,
 		                                              &sdu_fragment, &sdu_fragment_len,
 		                                              &_this->conf);
+		alpdu_hdr_len = 0;
 	} else if (_this->conf.use_compressed_ptype) {
 		ret =
 		        compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                              &protocol_type,
 		                                              &sdu_fragment, &sdu_fragment_len,
-		                                              &sdu_total_len);
+		                                              &alpdu_hdr_len);
 	} else {
-		sdu_total_len -= sizeof(rle_alpdu_header_uncompressed_t);
 		ret = uncompressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                              &protocol_type, &sdu_fragment,
 		                                              &sdu_fragment_len);
+		alpdu_hdr_len = sizeof(rle_alpdu_header_uncompressed_t);
 	}
-
 	if (ret) {
 		ret = C_ERROR;
 		goto out;
 	}
 
-	if (is_crc_used) {
-		sdu_total_len -= sizeof(rle_alpdu_crc_trailer_t);
-	} else {
-		sdu_total_len -= sizeof(rle_alpdu_seqno_trailer_t);
+	if (sdu_fragment_len > sdu_total_len) {
+		PRINT_RLE_ERROR("PPDU START with frag id %d contains more SDU bytes than "
+		                "expected in total (%zu bytes in fragment, %zu bytes "
+		                "expected in total)", *index_ctx, sdu_fragment_len,
+		                sdu_total_len);
+		goto out;
 	}
+	sdu_total_len -= alpdu_hdr_len;
+
+	if (is_crc_used) {
+		alpdu_trailer_len = sizeof(rle_alpdu_crc_trailer_t);
+	} else {
+		alpdu_trailer_len = sizeof(rle_alpdu_seqno_trailer_t);
+	}
+	if (alpdu_trailer_len > sdu_total_len) {
+		PRINT_RLE_ERROR("PPDU START with frag id %d contains too few bytes for the "
+		                "ALDPU trailer (at least %zu bytes needed, but only %zu "
+		                "bytes available", *index_ctx, alpdu_trailer_len,
+		                sdu_total_len);
+		goto out;
+	}
+	sdu_total_len -= alpdu_trailer_len;
 
 	rle_ctx_set_use_crc(rle_ctx, is_crc_used);
 
-	if (rasm_buf_init(rasm_buf) != 0) {
-		PRINT_RLE_ERROR("Unable to init reassembly buffer.");
+	if (sdu_fragment_len > sdu_total_len) {
+		PRINT_RLE_ERROR("PPDU START with frag id %d contains more SDU bytes than "
+		                "expected in total (%zu bytes in fragment, %zu bytes "
+		                "expected in total)", *index_ctx, sdu_fragment_len,
+		                sdu_total_len);
 		goto out;
 	}
-
-	if (rasm_buf_sdu_put(rasm_buf, sdu_total_len) != 0) {
-		PRINT_RLE_ERROR("Unable to reserve %zu-octets for SDU.", sdu_total_len);
-		goto out;
-	}
-
-	if (rasm_buf_sdu_frag_put(rasm_buf, sdu_fragment_len) != 0) {
-		PRINT_RLE_ERROR("Unable to reserve %zu-octets for SDU fragment.", sdu_fragment_len);
-		goto out;
-	}
-
+	rasm_buf_init(rasm_buf);
+	rasm_buf_sdu_put(rasm_buf, sdu_total_len);
+	rasm_buf_sdu_frag_put(rasm_buf, sdu_fragment_len);
 	rasm_buf->sdu_info.protocol_type = protocol_type;
 	rasm_buf->sdu_info.size = sdu_total_len;
 	rasm_buf_cpy_sdu_frag(rasm_buf, sdu_fragment);
@@ -277,10 +289,7 @@ int reassembly_cont_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("fragment_id 0x%0x cont PPDU.", MODULE_NAME, *index_ctx);
 #endif
-	if ((*index_ctx < 0) || (*index_ctx > RLE_MAX_FRAG_ID)) {
-		PRINT_RLE_ERROR("invalid fragment id [%d].", *index_ctx);
-		goto out;
-	}
+	assert((*index_ctx >= 0) && (*index_ctx <= RLE_MAX_FRAG_ID));
 
 	rle_ctx = &_this->rle_ctx_man[*index_ctx];
 	rle_ctx->current_counter += ppdu_length;
@@ -301,16 +310,15 @@ int reassembly_cont_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	sdu_fragment = alpdu_fragment;
 	sdu_fragment_len = alpdu_fragment_len;
 
-	if (rasm_buf_init_sdu_frag(rasm_buf) != 0) {
-		PRINT_RLE_ERROR("Unable to init new SDU fragment.");
+	if (sdu_fragment_len > rasm_buf_get_sdu_length(rasm_buf)) {
+		PRINT_RLE_ERROR("PPDU CONT with frag id %d contains more SDU bytes than "
+		                "expected in total (%zu bytes in fragment, %zu bytes "
+		                "expected in total)", *index_ctx, sdu_fragment_len,
+		                rasm_buf_get_sdu_length(rasm_buf));
 		goto out;
 	}
-
-	if (rasm_buf_sdu_frag_put(rasm_buf, sdu_fragment_len) != 0) {
-		PRINT_RLE_ERROR("Unable to reserve %zu-octets for SDU fragment.", sdu_fragment_len);
-		goto out;
-	}
-
+	rasm_buf_init_sdu_frag(rasm_buf);
+	rasm_buf_sdu_frag_put(rasm_buf, sdu_fragment_len);
 	rasm_buf_cpy_sdu_frag(rasm_buf, sdu_fragment);
 
 	ret = C_OK;
@@ -363,10 +371,7 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("fragment_id 0x%0x End PPDU.", MODULE_NAME, *index_ctx);
 #endif
-	if ((*index_ctx < 0) || (*index_ctx > RLE_MAX_FRAG_ID)) {
-		PRINT_RLE_ERROR("invalid fragment id [%d].", *index_ctx);
-		goto out;
-	}
+	assert((*index_ctx >= 0) && (*index_ctx <= RLE_MAX_FRAG_ID));
 
 	rle_ctx = &_this->rle_ctx_man[*index_ctx];
 	rle_ctx->current_counter += ppdu_length;
@@ -401,20 +406,15 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 		        (const rle_alpdu_seqno_trailer_t **const)&rle_trailer);
 	}
 
-	if (rasm_buf_init_sdu_frag(rasm_buf) != 0) {
-		PRINT_RLE_ERROR("Unable to init new SDU fragment.");
+	if (sdu_fragment_len > rasm_buf_get_sdu_length(rasm_buf)) {
+		PRINT_RLE_ERROR("PPDU END with frag id %d contains more SDU bytes than "
+		                "expected in total (%zu bytes in fragment, %zu bytes "
+		                "expected in total)", *index_ctx, sdu_fragment_len,
+		                rasm_buf_get_sdu_length(rasm_buf));
 		goto out;
 	}
-
-	if (rasm_buf_sdu_frag_put(rasm_buf, sdu_fragment_len) != 0) {
-		PRINT_RLE_ERROR("Unable to reserve %zu-octets for SDU fragment.", sdu_fragment_len);
-		rle_ctx_incr_counter_dropped(rle_ctx);
-		rle_ctx_incr_counter_lost(rle_ctx, 1);
-		rle_ctx_incr_counter_bytes_dropped(rle_ctx, rle_ctx->current_counter);
-		rle_receiver_free_context(_this, *index_ctx);
-		goto out;
-	}
-
+	rasm_buf_init_sdu_frag(rasm_buf);
+	rasm_buf_sdu_frag_put(rasm_buf, sdu_fragment_len);
 	rasm_buf_cpy_sdu_frag(rasm_buf, sdu_fragment);
 
 	if (check_alpdu_trailer(rle_trailer, rasm_buf, rle_ctx, &lost_packets) != 0) {

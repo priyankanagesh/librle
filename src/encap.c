@@ -73,6 +73,7 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 	enum rle_encap_status ret_encap;
 	struct rle_ctx_management *rle_ctx;
 	rle_frag_buf_t *frag_buf;
+	int ret;
 
 #ifdef TIME_DEBUG
 	struct timeval tv_start = { .tv_sec = 0L, .tv_usec = 0L };
@@ -111,27 +112,17 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 	/* set to 'used' the previously free frag context */
 	set_nonfree_frag_ctx(transmitter, frag_id);
 
-	if (rle_frag_buf_init(frag_buf) != 0) {
-		PRINT_RLE_ERROR("unable to init fragmentation buffer");
-		goto out;
-	}
-	if (rle_frag_buf_cpy_sdu(frag_buf, sdu) != 0) {
-		PRINT_RLE_ERROR("unable to copy SDU in fragmentation buffer.");
-		goto out;
-	}
+	ret = rle_frag_buf_init(frag_buf);
+	assert(ret == 0); /* cannot fail since frag_buf is not NULL */
+
+	ret = rle_frag_buf_cpy_sdu(frag_buf, sdu);
+	assert(ret == 0); /* cannot fail since SDU length was already checked */
 
 	ret_encap = rle_encap_contextless(transmitter, frag_buf);
+	assert(ret_encap == RLE_ENCAP_OK); /* no way to fail here */
 
 	rle_ctx_incr_counter_in(rle_ctx);
 	rle_ctx_incr_counter_bytes_in(rle_ctx, sdu->size);
-
-	if (ret_encap != RLE_ENCAP_OK) {
-		rle_ctx_incr_counter_dropped(rle_ctx);
-		rle_ctx_incr_counter_bytes_dropped(rle_ctx, sdu->size);
-		rle_ctx_set_free(&transmitter->free_ctx, frag_id);
-		PRINT_RLE_ERROR("cannot encapsulate data.");
-		goto out;
-	}
 
 #ifdef TIME_DEBUG
 	gettimeofday(&tv_end, NULL);
@@ -170,9 +161,8 @@ enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transm
 		goto out;
 	}
 
-	if (push_alpdu_header(frag_buf, &transmitter->conf) == 0) {
-		status = RLE_ENCAP_OK;
-	}
+	push_alpdu_header(frag_buf, &transmitter->conf);
+	status = RLE_ENCAP_OK;
 
 out:
 	return status;
