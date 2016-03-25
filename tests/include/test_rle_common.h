@@ -35,11 +35,6 @@
  */
 const unsigned char payload_initializer[5000];
 
-/*--  Modules  --*/
-
-struct rle_transmitter *transmitter; /**< Transmitter module used by our tests */
-struct rle_receiver *receiver;       /**< Receiver module used by our tests */
-
 /*--  Common  --*/
 
 /**

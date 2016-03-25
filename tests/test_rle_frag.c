@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
+#include <assert.h>
 
 #define GET_CONF_VALUE(x) ((x) == 1 ? "True" : "False")
 
@@ -150,6 +151,7 @@ static bool test_frag(const uint16_t protocol_type,
 	           length, burst_size, frag_id);
 	bool output = false;
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
+	struct rle_transmitter *transmitter;
 
 	struct rle_sdu sdu = {
 		.buffer = NULL,
@@ -157,14 +159,8 @@ static bool test_frag(const uint16_t protocol_type,
 		.protocol_type = protocol_type
 	};
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
-	if (sdu.buffer != NULL) {
-		free(sdu.buffer);
-		sdu.buffer = NULL;
-	}
+	assert(transmitter != NULL);
 
 	sdu.buffer = calloc(sdu.size, sizeof(unsigned char));
 	if (sdu.buffer == NULL) {
@@ -248,15 +244,8 @@ bool test_frag_null_transmitter(void)
 		.size = 0,
 		.protocol_type = protocol_type
 	};
+	struct rle_transmitter *transmitter = NULL;
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
-	if (sdu.buffer != NULL) {
-		free(sdu.buffer);
-		sdu.buffer = NULL;
-	}
 	sdu.buffer = calloc(sdu_length, sizeof(unsigned char));
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, sdu_length);
 	sdu.size = sdu_length;
@@ -299,6 +288,7 @@ bool test_frag_too_small(void)
 		.use_compressed_ptype = 0,
 		.use_ptype_omission = 0
 	};
+	struct rle_transmitter *transmitter = NULL;
 
 	const size_t sdu_length = 100;
 	const size_t burst_size = 2;
@@ -312,17 +302,10 @@ bool test_frag_too_small(void)
 		.protocol_type = protocol_type
 	};
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
-	if (sdu.buffer != NULL) {
-		free(sdu.buffer);
-		sdu.buffer = NULL;
-	}
+	assert(transmitter != NULL);
 
 	sdu.buffer = calloc(sdu.size, sizeof(unsigned char));
-
 	if (sdu.buffer == NULL) {
 		PRINT_ERROR("SDU interface not created.");
 		goto exit_label;
@@ -391,18 +374,12 @@ bool test_frag_null_context(void)
 		.size = sdu_length,
 		.protocol_type = protocol_type
 	};
+	struct rle_transmitter *transmitter = NULL;
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
-	if (sdu.buffer != NULL) {
-		free(sdu.buffer);
-		sdu.buffer = NULL;
-	}
+	assert(transmitter != NULL);
 
 	sdu.buffer = calloc(sdu.size, sizeof(unsigned char));
-
 	if (sdu.buffer == NULL) {
 		PRINT_ERROR("SDU interface not created.");
 		goto exit_label;

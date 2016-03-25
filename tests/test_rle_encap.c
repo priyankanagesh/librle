@@ -198,6 +198,7 @@ static bool test_encap(const uint16_t protocol_type,
 	unsigned char *alpdu = NULL;
 	size_t alpdu_length;
 	rle_frag_buf_t *f_buff;
+	struct rle_transmitter *transmitter;
 
 	struct rle_sdu sdu = {
 		.buffer = NULL,
@@ -205,10 +206,9 @@ static bool test_encap(const uint16_t protocol_type,
 		.protocol_type = protocol_type
 	};
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
+	assert(transmitter != NULL);
+
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
 		sdu.buffer = NULL;
@@ -360,10 +360,7 @@ bool test_encap_null_transmitter(void)
 		.size = 0,
 		.protocol_type = protocol_type
 	};
-
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
+	struct rle_transmitter *transmitter = NULL;
 
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
@@ -414,13 +411,13 @@ bool test_encap_too_big(void)
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_transmitter *transmitter;
 
 	/* Good packet */
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
+	assert(transmitter != NULL);
+
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
 		sdu.buffer = NULL;
@@ -435,13 +432,13 @@ bool test_encap_too_big(void)
 		PRINT_ERROR("packet of good size not encapsulated.");
 		goto exit_label;
 	}
+	rle_transmitter_destroy(&transmitter);
 
 	/* Too big packet */
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
+	assert(transmitter != NULL);
+
 	if (sdu.buffer != NULL) {
 		free(sdu.buffer);
 		sdu.buffer = NULL;
@@ -483,10 +480,7 @@ bool test_encap_inv_config(void)
 	const struct rle_config conf = {
 		.implicit_protocol_type = 0x31
 	};
-
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
+	struct rle_transmitter *transmitter;
 
 	transmitter = rle_transmitter_new(&conf);
 

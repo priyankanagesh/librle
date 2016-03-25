@@ -80,6 +80,8 @@ static bool test_decap(const uint16_t protocol_type,
 		.size = 0,
 		.protocol_type = protocol_type
 	};
+	struct rle_receiver *receiver;
+	struct rle_transmitter *transmitter;
 
 	const size_t fpdu_length = 1000; /* Arbitrarly */
 	unsigned char fpdu[fpdu_length];
@@ -91,20 +93,12 @@ static bool test_decap(const uint16_t protocol_type,
 	size_t fpdu_remaining_size = fpdu_length;
 	size_t number_of_sdus_iterator = 0;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
-
 	receiver = rle_receiver_new(&conf);
-
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver");
 		goto exit_label;
 	}
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
 	if (transmitter == NULL) {
 		PRINT_ERROR("Error allocating transmitter");
@@ -285,9 +279,7 @@ bool test_decap_null_receiver(void)
 	const size_t payload_label_size = 3;
 	unsigned char payload_label[payload_label_size];
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
+	struct rle_receiver *receiver = NULL;
 
 	ret_decap =
 	        rle_decapsulate(receiver, fpdu, fpdu_length, sdus, sdus_max_nr, &sdus_nr,
@@ -328,11 +320,13 @@ bool test_decap_inv_fpdu(void)
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_receiver *receiver;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
 	receiver = rle_receiver_new(&conf);
+	if (receiver == NULL) {
+		PRINT_ERROR("Error allocating receiver");
+		goto exit_label;
+	}
 
 	{
 		const size_t fpdu_length = 0;
@@ -423,11 +417,13 @@ bool test_decap_inv_sdus(void)
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_receiver *receiver;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
 	receiver = rle_receiver_new(&conf);
+	if (receiver == NULL) {
+		PRINT_ERROR("Error allocating receiver");
+		goto exit_label;
+	}
 
 	{
 		const size_t sdus_max_nr = 0;
@@ -498,11 +494,13 @@ bool test_decap_inv_pl(void)
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_receiver *receiver;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
 	receiver = rle_receiver_new(&conf);
+	if (receiver == NULL) {
+		PRINT_ERROR("Error allocating receiver");
+		goto exit_label;
+	}
 
 	{
 		const size_t payload_label_size = 0;
@@ -574,10 +572,7 @@ bool test_decap_inv_config(void)
 	const struct rle_config conf = {
 		.implicit_protocol_type = 0x31
 	};
-
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
+	struct rle_receiver *receiver;
 
 	receiver = rle_receiver_new(&conf);
 
@@ -635,19 +630,15 @@ bool test_decap_not_null_padding(void)
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_receiver *receiver;
+	struct rle_transmitter *transmitter;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
 	receiver = rle_receiver_new(&conf);
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver.");
 		goto exit_label;
 	}
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
 	if (transmitter == NULL) {
 		PRINT_ERROR("Error allocating transmitter.");
@@ -770,19 +761,15 @@ bool test_decap_flush_ctxt(void)
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_receiver *receiver;
+	struct rle_transmitter *transmitter;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
 	receiver = rle_receiver_new(&conf);
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver.");
 		goto exit_label;
 	}
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
 	if (transmitter == NULL) {
 		PRINT_ERROR("Error allocating transmitter.");
@@ -1131,20 +1118,13 @@ bool test_decap_null_seqno(void)
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
-
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
+	struct rle_receiver *receiver;
+	struct rle_transmitter *transmitter;
 
 	receiver = rle_receiver_new(&conf);
-
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver.");
 		goto exit_label;
-	}
-
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
 	}
 
 	transmitter = rle_transmitter_new(&conf);
@@ -1290,19 +1270,15 @@ bool test_decap_context_free(void)
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0
 	};
+	struct rle_receiver *receiver;
+	struct rle_transmitter *transmitter;
 
-	if (receiver != NULL) {
-		rle_receiver_destroy(&receiver);
-	}
 	receiver = rle_receiver_new(&conf);
 	if (receiver == NULL) {
 		PRINT_ERROR("Error allocating receiver.");
 		goto exit_label;
 	}
 
-	if (transmitter != NULL) {
-		rle_transmitter_destroy(&transmitter);
-	}
 	transmitter = rle_transmitter_new(&conf);
 	if (transmitter == NULL) {
 		PRINT_ERROR("Error allocating transmitter.");

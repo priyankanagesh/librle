@@ -90,15 +90,11 @@ bool test_frag_ctxtless_null_transmitter(void)
 
 	unsigned char *ppdu;
 	size_t ppdu_len = 50;
+	struct rle_transmitter *transmitter;
 
 	PRINT_TEST("Special case : Fragmentation with a null transmitter.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with null transmitter.");
 		goto out;
@@ -143,18 +139,14 @@ bool test_frag_ctxtless_null_f_buff(void)
 		.use_ptype_omission     = 0,
 		.use_compressed_ptype   = 0,
 	};
+	struct rle_transmitter *transmitter;
 
 	unsigned char *ppdu;
 	size_t ppdu_len = 50;
 
 	PRINT_TEST("Special case : Fragmentation with a null fragmentation buffer.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with null fragmentation "
 		            "buffer.");
@@ -206,18 +198,14 @@ bool test_frag_ctxtless_f_buff_not_init(void)
 		.use_ptype_omission     = 0,
 		.use_compressed_ptype   = 0,
 	};
+	struct rle_transmitter *transmitter;
 
 	unsigned char *ppdu;
 	size_t ppdu_len = 50;
 
 	PRINT_TEST("Special case : Fragmentation with a fragmentation buffer not initialized.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with fragmentation "
 		            "buffer not initialized.");
@@ -265,17 +253,13 @@ bool test_frag_ctxtless_no_len(void)
 		.use_ptype_omission     = 0,
 		.use_compressed_ptype   = 0,
 	};
+	struct rle_transmitter *transmitter;
 
 	unsigned char *ppdu;
 
 	PRINT_TEST("Special case : Fragmentation with a null PPDU length.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with null PPDU length.");
 		goto out;
@@ -325,18 +309,14 @@ bool test_frag_ctxtless_too_small(void)
 		.use_ptype_omission     = 0,
 		.use_compressed_ptype   = 0,
 	};
+	struct rle_transmitter *transmitter;
 
 	unsigned char *ppdu;
 	size_t ppdu_len = 1;
 
 	PRINT_TEST("Special case : Fragmentation with a too small PPDU length.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with fragmentation too "
 		            "small.");
@@ -388,6 +368,7 @@ bool test_frag_ctxtless_too_big(void)
 		.use_ptype_omission     = 0,
 		.use_compressed_ptype   = 0,
 	};
+	struct rle_transmitter *transmitter;
 
 	unsigned char *ppdu;
 	size_t ppdu_len_good = 1000;
@@ -397,12 +378,7 @@ bool test_frag_ctxtless_too_big(void)
 
 	PRINT_TEST("Special case : Fragmentation with too big PPDU length.");
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
-
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with fragmentation too big.");
 		goto out;
@@ -421,12 +397,9 @@ bool test_frag_ctxtless_too_big(void)
 		goto out;
 	}
 
-	if (transmitter) {
-		rle_transmitter_destroy(&transmitter);
-	}
+	rle_transmitter_destroy(&transmitter);
 
 	transmitter = rle_transmitter_new(&conf);
-
 	if (!transmitter) {
 		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with fragmentation too big.");
 		goto out;
