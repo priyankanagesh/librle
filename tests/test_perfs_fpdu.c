@@ -339,7 +339,7 @@ static int test_decap(const char *const device_name)
 	size_t it;
 	size_t sdus_processed = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x30,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 1,

@@ -194,10 +194,11 @@ struct rle_sdu {
 };
 
 /**
- * RLE Context configuration.
+ * RLE configuration
+ *
  * Interface for the configuration initialisation in transmitter and receiver "new" functions.
  */
-struct rle_context_configuration {
+struct rle_config {
 	uint8_t implicit_protocol_type; /**< Protocol type that could be omitted.                  */
 	int use_alpdu_crc;              /**< If set to 1, RLE check on CRC, else if 0, Seq number. */
 	int use_ptype_omission;         /**< If set to 1, implicit_protocol_type is omitted.       */
@@ -237,14 +238,13 @@ struct rle_receiver_stats {
 /**
  * @brief         Create and initialize a RLE transmitter module.
  *
- * @param[in]     configuration            The configuration of the RLE transmitter.
+ * @param[in]     conf  The configuration of the RLE transmitter.
  *
  * @return        A pointer to the transmitter module.
  *
  * @ingroup       RLE transmitter
  */
-struct rle_transmitter *rle_transmitter_new(
-        const struct rle_context_configuration *const configuration);
+struct rle_transmitter *rle_transmitter_new(const struct rle_config *const conf);
 
 /**
  * @brief         Destroy a RLE transmitter module.
@@ -258,14 +258,13 @@ void rle_transmitter_destroy(struct rle_transmitter **const transmitter);
 /**
  * @brief         Create and initialize a RLE receiver module.
  *
- * @param[in]     configuration            The configuration of the RLE receiver.
+ * @param[in]     conf  The configuration of the RLE receiver.
  *
  * @return        A pointer to the receiver module.
  *
  * @ingroup       RLE receiver
  */
-struct rle_receiver *rle_receiver_new(
-        const struct rle_context_configuration *const configuration);
+struct rle_receiver *rle_receiver_new(const struct rle_config *const conf);
 
 /**
  * @brief         Destroy a RLE receiver module.
@@ -785,7 +784,7 @@ uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype);
  *                to RLE prediction limitations (for instance, on traffic only burst).
  *
  */
-enum rle_header_size_status rle_get_header_size(const struct rle_context_configuration *const conf,
+enum rle_header_size_status rle_get_header_size(const struct rle_config *const conf,
                                                 const enum rle_fpdu_types fpdu_type,
                                                 size_t *const rle_header_size);
 

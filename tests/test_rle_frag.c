@@ -35,9 +35,10 @@
  * @return        true if OK, else false.
  */
 static bool test_frag(const uint16_t protocol_type,
-                              const struct rle_context_configuration conf, const size_t length,
-                              const size_t burst_size,
-                              const uint8_t frag_id);
+                      const struct rle_config conf,
+                      const size_t length,
+                      const size_t burst_size,
+                      const uint8_t frag_id);
 
 /**
  *  @brief         Check if a fragmentation transition is OK.
@@ -136,9 +137,10 @@ enum frag_states test_get_fragment_type(const unsigned char ppdu_first_octet)
 }
 
 static bool test_frag(const uint16_t protocol_type,
-                              const struct rle_context_configuration conf, const size_t length,
-                              const size_t burst_size,
-                              const uint8_t frag_id)
+                      const struct rle_config conf,
+                      const size_t length,
+                      const size_t burst_size,
+                      const uint8_t frag_id)
 {
 	PRINT_TEST("protocole type 0x%04x, conf (omitted protocol type %02x, compression %s, "
 	           "omission %s) with %s protection. SDU length %zu, burst sizes %zu, frag id %d",
@@ -291,7 +293,7 @@ bool test_frag_too_small(void)
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 
 	const uint16_t protocol_type = 0x0800;
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0000,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
@@ -369,7 +371,7 @@ bool test_frag_null_context(void)
 	/* enum rle_encap_status ret_encap = RLE_ENCAP_ERR;*/
 
 	const uint16_t protocol_type = 0x0800;
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0000,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
@@ -438,7 +440,7 @@ bool test_frag_real_world(void)
 	const uint16_t protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP; /* IPv4 Arbitrarily. */
 	const uint8_t frag_id = 1;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = RLE_PROTO_TYPE_IPV4_COMP,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
@@ -487,7 +489,7 @@ bool test_frag_all(void)
 	size_t burst_iterator = 0;
 
 	for (burst_iterator = 0; burst_iterator < 4; ++burst_iterator) {
-		struct rle_context_configuration conf_uncomp = {
+		struct rle_config conf_uncomp = {
 			.implicit_protocol_type = 0x0000,
 			.use_alpdu_crc = 0,
 			.use_compressed_ptype = 0,
@@ -495,7 +497,7 @@ bool test_frag_all(void)
 		};
 
 		/* Configuration for compressed protocol type */
-		struct rle_context_configuration conf_comp = {
+		struct rle_config conf_comp = {
 			.implicit_protocol_type = 0x0000,
 			.use_alpdu_crc = 0,
 			.use_compressed_ptype = 1,
@@ -503,7 +505,7 @@ bool test_frag_all(void)
 		};
 
 		/* Configuration for omitted protocol type */
-		struct rle_context_configuration conf_omitted = {
+		struct rle_config conf_omitted = {
 			.implicit_protocol_type = protocol_type,
 			.use_alpdu_crc = 0,
 			.use_compressed_ptype = 0,
@@ -511,7 +513,7 @@ bool test_frag_all(void)
 		};
 
 		/* Configurations */
-		struct rle_context_configuration *confs[] = {
+		struct rle_config *confs[] = {
 			&conf_uncomp,
 			&conf_comp,
 			&conf_omitted,
@@ -519,7 +521,7 @@ bool test_frag_all(void)
 		};
 
 		/* Configuration iterator */
-		struct rle_context_configuration **conf;
+		struct rle_config **conf;
 
 		/* We launch the test on each configuration. All the cases then are test. */
 		for (conf = confs; *conf; ++conf) {

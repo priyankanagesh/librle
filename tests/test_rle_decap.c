@@ -36,10 +36,12 @@
  * @return        true if OK, else false.
  */
 static bool test_decap(const uint16_t protocol_type,
-                               const struct rle_context_configuration conf,
-                               const size_t number_of_sdus, const size_t sdu_length,
-                               const uint8_t frag_id, const size_t burst_size,
-                               const size_t label_length);
+                       const struct rle_config conf,
+                       const size_t number_of_sdus,
+                       const size_t sdu_length,
+                       const uint8_t frag_id,
+                       const size_t burst_size,
+                       const size_t label_length);
 
 static void print_modules_stats(void)
 {
@@ -49,10 +51,12 @@ static void print_modules_stats(void)
 }
 
 static bool test_decap(const uint16_t protocol_type,
-                               const struct rle_context_configuration conf,
-                               const size_t number_of_sdus, const size_t sdu_length,
-                               const uint8_t frag_id, const size_t burst_size,
-                               const size_t label_length)
+                       const struct rle_config conf,
+                       const size_t number_of_sdus,
+                       const size_t sdu_length,
+                       const uint8_t frag_id,
+                       const size_t burst_size,
+                       const size_t label_length)
 {
 	PRINT_TEST(
 	        "protocol type 0x%04x, number of SDUs %zu, SDU length %zu, frag_id %d, conf %s, "
@@ -318,7 +322,7 @@ bool test_decap_inv_fpdu(void)
 	const size_t payload_label_size = 3;
 	unsigned char payload_label[payload_label_size];
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -413,7 +417,7 @@ bool test_decap_inv_sdus(void)
 	const size_t payload_label_size = 3;
 	unsigned char payload_label[payload_label_size];
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -488,7 +492,7 @@ bool test_decap_inv_pl(void)
 
 	size_t sdus_nr = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -567,7 +571,7 @@ bool test_decap_inv_config(void)
 	           "Warning: An error message may be printed.");
 	bool output = false;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x31
 	};
 
@@ -625,7 +629,7 @@ bool test_decap_not_null_padding(void)
 
 	size_t sdus_nr = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -760,7 +764,7 @@ bool test_decap_flush_ctxt(void)
 
 	size_t sdus_nr = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -931,7 +935,7 @@ bool test_decap_all(void)
 			}
 
 			/* Configuration for uncompressed protocol type */
-			struct rle_context_configuration conf_uncomp = {
+			struct rle_config conf_uncomp = {
 				.implicit_protocol_type = 0x0d,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -939,7 +943,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for compressed protocol type */
-			struct rle_context_configuration conf_comp = {
+			struct rle_config conf_comp = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 1,
@@ -947,7 +951,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for omitted protocol type */
-			struct rle_context_configuration conf_omitted = {
+			struct rle_config conf_omitted = {
 				.implicit_protocol_type = default_ptype,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -955,7 +959,7 @@ bool test_decap_all(void)
 			};
 
 			/* Special test for IPv4 and v6 */
-			struct rle_context_configuration conf_omitted_ip = {
+			struct rle_config conf_omitted_ip = {
 				.implicit_protocol_type = 0x30,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -963,7 +967,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for non omitted protocol type in omission conf */
-			struct rle_context_configuration conf_not_omitted = {
+			struct rle_config conf_not_omitted = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -971,7 +975,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for uncompressed protocol type with CRC */
-			struct rle_context_configuration conf_uncomp_crc = {
+			struct rle_config conf_uncomp_crc = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 1,
 				.use_compressed_ptype = 0,
@@ -979,7 +983,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for compressed protocol type with CRC */
-			struct rle_context_configuration conf_comp_crc = {
+			struct rle_config conf_comp_crc = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 1,
 				.use_compressed_ptype = 1,
@@ -987,7 +991,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for omitted protocol type with CRC */
-			struct rle_context_configuration conf_omitted_crc = {
+			struct rle_config conf_omitted_crc = {
 				.implicit_protocol_type = default_ptype,
 				.use_alpdu_crc = 1,
 				.use_compressed_ptype = 0,
@@ -995,7 +999,7 @@ bool test_decap_all(void)
 			};
 
 			/* Special test for IPv4 and v6 */
-			struct rle_context_configuration conf_omitted_ip_crc = {
+			struct rle_config conf_omitted_ip_crc = {
 				.implicit_protocol_type = 0x30,
 				.use_alpdu_crc = 1,
 				.use_compressed_ptype = 0,
@@ -1003,7 +1007,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration for non omitted protocol type in omission conf with CRC */
-			struct rle_context_configuration conf_not_omitted_crc = {
+			struct rle_config conf_not_omitted_crc = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 1,
 				.use_compressed_ptype = 0,
@@ -1011,7 +1015,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configurations */
-			struct rle_context_configuration *confs[] = {
+			struct rle_config *confs[] = {
 				&conf_uncomp,
 				&conf_comp,
 				&conf_omitted,
@@ -1026,7 +1030,7 @@ bool test_decap_all(void)
 			};
 
 			/* Configuration iterator */
-			struct rle_context_configuration **conf;
+			struct rle_config **conf;
 
 			/* We launch the test on each configuration. All the cases then are test. */
 			for (conf = confs; *conf; ++conf) {
@@ -1121,7 +1125,7 @@ bool test_decap_null_seqno(void)
 
 	size_t sdus_nr = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -1280,7 +1284,7 @@ bool test_decap_context_free(void)
 	size_t sdus_nr = 0;
 	size_t last_pos = 0;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,

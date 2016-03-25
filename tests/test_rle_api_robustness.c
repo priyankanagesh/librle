@@ -22,13 +22,13 @@
  */
 bool test_rle_api_robustness_transmitter(void)
 {
-	struct rle_context_configuration rle_config_ok = {
+	struct rle_config rle_config_ok = {
 		.implicit_protocol_type = 0x30,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 1,
 		.use_compressed_ptype = 1,
 	};
-	struct rle_context_configuration rle_config;
+	struct rle_config rle_config;
 	struct rle_transmitter *rle_transmitter;
 	size_t i;
 
@@ -425,7 +425,7 @@ bool test_rle_api_robustness_transmitter(void)
 		assert(counter == 1);
 		counter = rle_transmitter_stats_get_counters(rle_transmitter, RLE_MAX_FRAG_ID + 1, &stats);
 		assert(counter == 1);
-		counter = rle_transmitter_stats_get_counters(rle_transmitter, RLE_MAX_FRAG_ID + 1, NULL);
+		counter = rle_transmitter_stats_get_counters(rle_transmitter, 0, NULL);
 		assert(counter == 1);
 		counter = rle_transmitter_stats_get_counters(rle_transmitter, 1, &stats);
 		assert(counter == 0);
@@ -457,13 +457,13 @@ bool test_rle_api_robustness_transmitter(void)
  */
 bool test_rle_api_robustness_receiver(void)
 {
-	struct rle_context_configuration rle_config_ok = {
+	struct rle_config rle_config_ok = {
 		.implicit_protocol_type = 0x30,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 1,
 		.use_compressed_ptype = 1,
 	};
-	struct rle_context_configuration rle_config;
+	struct rle_config rle_config;
 	struct rle_receiver *rle_receiver;
 	int i;
 
@@ -739,7 +739,7 @@ bool test_rle_api_robustness_receiver(void)
 		assert(counter == 1);
 		counter = rle_receiver_stats_get_counters(rle_receiver, RLE_MAX_FRAG_ID + 1, &stats);
 		assert(counter == 1);
-		counter = rle_receiver_stats_get_counters(rle_receiver, RLE_MAX_FRAG_ID + 1, NULL);
+		counter = rle_receiver_stats_get_counters(rle_receiver, 0, NULL);
 		assert(counter == 1);
 		counter = rle_receiver_stats_get_counters(rle_receiver, 1, &stats);
 		assert(counter == 0);
@@ -759,7 +759,7 @@ bool test_rle_api_robustness_receiver(void)
 	/* test generic function */
 	printf("\ttest generic functions\n");
 	{
-		struct rle_context_configuration conf = { 0 };
+		struct rle_config conf = { 0 };
 		enum rle_fpdu_types fpdu_type = RLE_TRAFFIC_FPDU;
 		size_t rle_hdr_len;
 		enum rle_header_size_status ret;

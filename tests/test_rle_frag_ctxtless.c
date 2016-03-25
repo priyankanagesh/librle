@@ -81,7 +81,7 @@ bool test_frag_ctxtless_null_transmitter(void)
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,
@@ -137,7 +137,7 @@ bool test_frag_ctxtless_null_f_buff(void)
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,
@@ -200,7 +200,7 @@ bool test_frag_ctxtless_f_buff_not_init(void)
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,
@@ -259,7 +259,7 @@ bool test_frag_ctxtless_no_len(void)
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,
@@ -319,7 +319,7 @@ bool test_frag_ctxtless_too_small(void)
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,
@@ -382,7 +382,7 @@ bool test_frag_ctxtless_too_big(void)
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,

@@ -46,9 +46,6 @@
 /** Stubs for visibility */
 struct rle_ctx_management;
 
-/** Stubs for visibility */
-struct rle_configuration;
-
 
 /*------------------------------------------------------------------------------------------------*/
 /*--------------------------------- PUBLIC STRUCTS AND TYPEDEFS ----------------------------------*/
@@ -211,7 +208,7 @@ typedef union rle_alpdu_header rle_alpdu_header_t;
  *  @ingroup RLE header
  */
 int push_alpdu_header(struct rle_frag_buf *const frag_buf,
-                      const struct rle_configuration *const rle_conf);
+                      const struct rle_config *const rle_conf);
 
 /**
  *  @brief         create and push PPDU header into a fragmentation buffer.
@@ -228,7 +225,7 @@ int push_alpdu_header(struct rle_frag_buf *const frag_buf,
  *  @ingroup RLE header
  */
 int push_ppdu_header(struct rle_frag_buf *const frag_buf,
-                     const struct rle_configuration *const rle_conf, const size_t ppdu_length,
+                     const struct rle_config *const rle_conf, const size_t ppdu_length,
                      struct rle_ctx_management *const rle_ctx);
 
 /**
@@ -322,7 +319,7 @@ int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
                                           const size_t alpdu_fragment_len, uint16_t *protocol_type,
                                           const unsigned char *sdu_fragment[],
                                           size_t *const sdu_fragment_len,
-                                          const struct rle_configuration *const rle_conf);
+                                          const struct rle_config *const rle_conf);
 
 /**
  *  @brief         Extract SDU fragment from uncompressed ALPDU.

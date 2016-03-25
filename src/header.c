@@ -345,7 +345,7 @@ static int push_end_ppdu_header(struct rle_frag_buf *const frag_buf, const uint8
 /*------------------------------------------------------------------------------------------------*/
 
 int push_alpdu_header(struct rle_frag_buf *const frag_buf,
-                      const struct rle_configuration *const rle_conf)
+                      const struct rle_config *const rle_conf)
 {
 	int status = 1;
 	uint16_t protocol_type;
@@ -363,7 +363,7 @@ int push_alpdu_header(struct rle_frag_buf *const frag_buf,
 	if (!ptype_is_omissible(protocol_type, rle_conf)) {
 		const uint16_t net_protocol_type = ntohs(protocol_type);
 
-		if (!rle_conf_get_ptype_compression(rle_conf)) {
+		if (!rle_conf->use_compressed_ptype) {
 			/* No compression, no suppression, ALPDU len = 2 */
 			status = push_uncompressed_alpdu_header(frag_buf, net_protocol_type);
 		} else {
@@ -389,13 +389,14 @@ int push_alpdu_header(struct rle_frag_buf *const frag_buf,
 }
 
 int push_ppdu_header(struct rle_frag_buf *const frag_buf,
-                     const struct rle_configuration *const rle_conf, const size_t ppdu_length,
+                     const struct rle_config *const rle_conf,
+                     const size_t ppdu_length,
                      struct rle_ctx_management *const rle_ctx)
 {
 	int status = 1;
 	size_t max_alpdu_fragment_len = ppdu_length;
 	const size_t remain_alpdu_len = frag_buf_get_remaining_alpdu_length(frag_buf);
-	const int use_alpdu_crc = rle_conf_get_crc_check(rle_conf);
+	const int use_alpdu_crc = rle_conf->use_alpdu_crc;
 
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);
@@ -606,10 +607,10 @@ int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
                                           const size_t alpdu_fragment_len, uint16_t *protocol_type,
                                           const unsigned char *sdu_fragment[],
                                           size_t *const sdu_fragment_len,
-                                          const struct rle_configuration *const rle_conf)
+                                          const struct rle_config *const rle_conf)
 {
 	int status = 0;
-	const uint8_t default_ptype = rle_conf_get_default_ptype(rle_conf);
+	const uint8_t default_ptype = rle_conf->implicit_protocol_type;
 
 	*sdu_fragment = alpdu_fragment;
 	*sdu_fragment_len = alpdu_fragment_len;

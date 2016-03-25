@@ -289,7 +289,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	int status = 1;
 
 	/* Configuration for uncompressed protocol type */
-	struct rle_context_configuration conf_uncomp = {
+	struct rle_config conf_uncomp = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
@@ -297,7 +297,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	};
 
 	/* Configuration for compressed protocol type */
-	struct rle_context_configuration conf_comp = {
+	struct rle_config conf_comp = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 1,
@@ -305,7 +305,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	};
 
 	/* Configuration for omitted protocol type */
-	struct rle_context_configuration conf_omitted = {
+	struct rle_config conf_omitted = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
@@ -313,7 +313,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	};
 
 	/* Ditto for IPv4 and v6 */
-	struct rle_context_configuration conf_omitted_ip = {
+	struct rle_config conf_omitted_ip = {
 		.implicit_protocol_type = 0x30,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
@@ -321,7 +321,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	};
 
 	/* Configuration for non omitted protocol type in omission conf */
-	struct rle_context_configuration conf_not_omitted = {
+	struct rle_config conf_not_omitted = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc = 0,
 		.use_compressed_ptype = 0,
@@ -329,7 +329,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	};
 
 	/* Configurations */
-	struct rle_context_configuration *confs[] = {
+	struct rle_config *confs[] = {
 		&conf_uncomp,
 		&conf_comp,
 		&conf_omitted,
@@ -416,7 +416,7 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	}
 
 	/* Configuration iterator */
-	struct rle_context_configuration **conf;
+	struct rle_config **conf;
 	size_t counter_confs = 0;
 
 	/* We launch the test on each configuration. All the cases then are test. */

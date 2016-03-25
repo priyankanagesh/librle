@@ -11,7 +11,6 @@
 #define __REASSEMBLY_H__
 
 #include "rle_ctx.h"
-#include "rle_conf.h"
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -42,7 +41,7 @@ int reassembly_get_pdu(struct rle_ctx_management *rle_ctx, void *pdu_buffer, int
  *  @warning
  *
  *  @param rle_ctx			the rle reassembly context
- *  @param rle_conf                     the rle configuration
+ *  @param rle_conf        the rle configuration
  *  @param data_buffer		data buffer's address to reassemble
  *  @param data_length		the data_buffer's length
  *
@@ -52,7 +51,8 @@ int reassembly_get_pdu(struct rle_ctx_management *rle_ctx, void *pdu_buffer, int
  *  @ingroup
  */
 int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
-                              struct rle_configuration *rle_conf, void *data_buffer,
+                              struct rle_config *rle_conf,
+                              void *data_buffer,
                               size_t data_length,
                               int frag_type);
 

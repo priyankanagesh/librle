@@ -96,24 +96,22 @@ static void set_free_frag_ctx(struct rle_transmitter *const _this, const size_t 
 /*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-struct rle_transmitter *rle_transmitter_new(
-        const struct rle_context_configuration *const configuration)
+struct rle_transmitter *rle_transmitter_new(const struct rle_config *const conf)
 {
 	struct rle_transmitter *transmitter = NULL;
 	size_t iterator;
-	struct rle_configuration **tx_conf;
 
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (configuration == NULL) {
+	if (conf == NULL) {
 		PRINT_RLE_ERROR("failed to created RLE transmitter: invalid configuration, "
 		                "NULL is not accepted");
 		goto exit_label;
 	}
 
-	if (configuration->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
+	if (conf->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
 		PRINT_RLE_ERROR(
 		        "could not initialize transmitter with 0x31 as implicit protocol type : "
 		        "Not supported yet.\n");
@@ -129,19 +127,6 @@ struct rle_transmitter *rle_transmitter_new(
 		goto exit_label;
 	}
 
-	tx_conf = &transmitter->rle_conf;
-
-	/* allocate a new RLE configuration structure */
-	*tx_conf = rle_conf_new();
-
-	if (!*tx_conf) {
-		PRINT_RLE_ERROR("allocating RLE configuration failed\n");
-		/* free rle transmitter */
-		rle_transmitter_destroy(&transmitter);
-
-		goto exit_label;
-	}
-
 	/* initialize both RLE transmitter & the configuration structure */
 	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
 		struct rle_ctx_management *const ctx_man = &transmitter->rle_ctx_man[iterator];
@@ -153,10 +138,7 @@ struct rle_transmitter *rle_transmitter_new(
 
 	transmitter->free_ctx = 0;
 
-	rle_conf_set_default_ptype(*tx_conf, configuration->implicit_protocol_type);
-	rle_conf_set_crc_check(*tx_conf, configuration->use_alpdu_crc);
-	rle_conf_set_ptype_compression(*tx_conf, configuration->use_compressed_ptype);
-	rle_conf_set_ptype_suppression(*tx_conf, configuration->use_ptype_omission);
+	memcpy(&transmitter->conf, conf, sizeof(struct rle_config));
 
 exit_label:
 
@@ -184,11 +166,6 @@ void rle_transmitter_destroy(struct rle_transmitter **const transmitter)
 		struct rle_ctx_management *const ctx_man = &(*transmitter)->rle_ctx_man[iterator];
 
 		rle_ctx_destroy_frag_buf(ctx_man);
-	}
-
-	if (rle_conf_destroy((*transmitter)->rle_conf) != C_OK) {
-		PRINT("ERROR %s:%s:%d: destroying RLE configuration failed\n", __FILE__, __func__,
-		      __LINE__);
 	}
 
 	FREE(*transmitter);

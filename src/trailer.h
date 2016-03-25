@@ -62,7 +62,7 @@ typedef union rle_alpdu_trailer rle_alpdu_trailer_t;
  *  @ingroup RLE trailer.
  */
 int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
-                       const struct rle_configuration *const rle_conf,
+                       const struct rle_config *const rle_conf,
                        struct rle_ctx_management *const rle_ctx);
 
 

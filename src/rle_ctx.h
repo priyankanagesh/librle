@@ -21,7 +21,6 @@
 
 #endif
 
-#include "rle_conf.h"
 #include "constants.h"
 #include "fragmentation_buffer.h"
 

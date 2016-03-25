@@ -74,8 +74,9 @@ static bool check_encap(const unsigned char sdu[], const size_t sdu_length,
  * @return        true if OK, else false.
  */
 static bool test_encap(const uint16_t protocol_type,
-                               const struct rle_context_configuration conf, const size_t length,
-                               const uint8_t frag_id);
+                       const struct rle_config conf,
+                       const size_t length,
+                       const uint8_t frag_id);
 
 static bool compare_packets(const unsigned char pkt_1[], const size_t pkt_1_length,
                                     const unsigned char pkt_2[],
@@ -173,8 +174,9 @@ static bool is_suppressible(uint16_t protocol_type, uint8_t default_ptype)
 }
 
 static bool test_encap(const uint16_t protocol_type,
-                               const struct rle_context_configuration conf, const size_t length,
-                               const uint8_t frag_id)
+                       const struct rle_config conf,
+                       const size_t length,
+                       const uint8_t frag_id)
 {
 	PRINT_TEST(
 	        "protocol type 0x%04x, length %zu, frag_id %d, conf %s", protocol_type, length,
@@ -400,7 +402,7 @@ bool test_encap_too_big(void)
 		.protocol_type = protocol_type
 	};
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -472,7 +474,7 @@ bool test_encap_inv_config(void)
 	           "Warning: An error message may be printed.");
 	bool output = false;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x31
 	};
 
@@ -545,7 +547,7 @@ bool test_encap_all(void)
 		/* The test will be launch on each fragment id. */
 		for (frag_id = 0; frag_id < max_frag_id; ++frag_id) {
 			/* Configuration for uncompressed protocol type */
-			struct rle_context_configuration conf_uncomp = {
+			struct rle_config conf_uncomp = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -553,7 +555,7 @@ bool test_encap_all(void)
 			};
 
 			/* Configuration for compressed protocol type */
-			struct rle_context_configuration conf_comp = {
+			struct rle_config conf_comp = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 1,
@@ -561,7 +563,7 @@ bool test_encap_all(void)
 			};
 
 			/* Configuration for omitted protocol type */
-			struct rle_context_configuration conf_omitted = {
+			struct rle_config conf_omitted = {
 				.implicit_protocol_type = default_ptype,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -569,7 +571,7 @@ bool test_encap_all(void)
 			};
 
 			/* Special test for IPv4 and v6*/
-			struct rle_context_configuration conf_omitted_ip = {
+			struct rle_config conf_omitted_ip = {
 				.implicit_protocol_type = 0x30,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -577,7 +579,7 @@ bool test_encap_all(void)
 			};
 
 			/* Configuration for non omitted protocol type in omission conf */
-			struct rle_context_configuration conf_not_omitted = {
+			struct rle_config conf_not_omitted = {
 				.implicit_protocol_type = 0x00,
 				.use_alpdu_crc = 0,
 				.use_compressed_ptype = 0,
@@ -585,7 +587,7 @@ bool test_encap_all(void)
 			};
 
 			/* Configurations */
-			struct rle_context_configuration *confs[] = {
+			struct rle_config *confs[] = {
 				&conf_uncomp,
 				&conf_comp,
 				&conf_omitted,
@@ -595,7 +597,7 @@ bool test_encap_all(void)
 			};
 
 			/* Configuration iterator */
-			struct rle_context_configuration **conf;
+			struct rle_config **conf;
 
 			/* We launch the test on each configuration. All the cases then are test. */
 			for (conf = confs; *conf; ++conf) {

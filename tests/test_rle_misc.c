@@ -23,7 +23,7 @@
 struct test_request {
 	const enum rle_fpdu_types fpdu_type;
 	const size_t expected_size;
-	const struct rle_context_configuration *const conf;
+	const struct rle_config *const conf;
 };
 
 /**
@@ -47,10 +47,9 @@ static char * get_fpdu_type(const enum rle_fpdu_types fpdu_type);
  *
  * @return        true if OK, else false.
  */
-static bool test_request_rle_header_overhead(
-      const enum rle_fpdu_types fpdu_type,
-      const size_t expected_size,
-      const struct rle_context_configuration *const conf);
+static bool test_request_rle_header_overhead(const enum rle_fpdu_types fpdu_type,
+                                             const size_t expected_size,
+                                             const struct rle_config *const conf);
 
 static char * get_fpdu_type(const enum rle_fpdu_types fpdu_type)
 {
@@ -69,10 +68,9 @@ static char * get_fpdu_type(const enum rle_fpdu_types fpdu_type)
 	}
 }
 
-static bool test_request_rle_header_overhead(
-      const enum rle_fpdu_types fpdu_type,
-      const size_t expected_size,
-      const struct rle_context_configuration *const conf)
+static bool test_request_rle_header_overhead(const enum rle_fpdu_types fpdu_type,
+                                             const size_t expected_size,
+                                             const struct rle_config *const conf)
 {
 	PRINT_TEST("subtest. FPDU type : %s, expected size : %zu\n", get_fpdu_type(fpdu_type),
 	           expected_size);
@@ -102,7 +100,7 @@ bool test_request_rle_header_overhead_traffic(void)
 
 	size_t overhead_size = 0;
 	enum rle_header_size_status header_size_status = RLE_HEADER_SIZE_ERR;
-	const struct rle_context_configuration conf = { 0 };
+	const struct rle_config conf = { 0 };
 
 	header_size_status = rle_get_header_size(&conf, RLE_TRAFFIC_FPDU, &overhead_size);
 
@@ -121,7 +119,7 @@ bool test_request_rle_header_overhead_all(void)
 	bool output = true;
 
 	/* Logon */
-	const struct rle_context_configuration conf_logon = { 0 };
+	const struct rle_config conf_logon = { 0 };
 	const struct test_request test_logon = {
 		.fpdu_type = RLE_LOGON_FPDU,
 		.expected_size = 6,
@@ -129,7 +127,7 @@ bool test_request_rle_header_overhead_all(void)
 	};
 
 	/* Control */
-	const struct rle_context_configuration conf_control = { 0 };
+	const struct rle_config conf_control = { 0 };
 	const struct test_request test_control = {
 		.fpdu_type = RLE_CTRL_FPDU,
 		.expected_size = 3,
@@ -138,7 +136,7 @@ bool test_request_rle_header_overhead_all(void)
 
 	/* Traffic-Control */
 	/* Conf omitted */
-	const struct rle_context_configuration conf_omitted = {
+	const struct rle_config conf_omitted = {
 		.implicit_protocol_type = 0x34,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 1,
@@ -152,7 +150,7 @@ bool test_request_rle_header_overhead_all(void)
 
 	/* Traffic-Control */
 	/* Conf non-omitted, compressed. */
-	const struct rle_context_configuration conf_non_omitted_comp = {
+	const struct rle_config conf_non_omitted_comp = {
 		.implicit_protocol_type = 0x34,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -166,7 +164,7 @@ bool test_request_rle_header_overhead_all(void)
 
 	/* Traffic-Control */
 	/* Conf non-omitted, uncompressed. */
-	const struct rle_context_configuration conf_non_omitted_non_comp = {
+	const struct rle_config conf_non_omitted_non_comp = {
 		.implicit_protocol_type = 0x34,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -204,13 +202,13 @@ bool test_request_rle_header_overhead_all(void)
 bool test_rle_allocation_transmitter(void)
 {
 	bool output = false;
-	const struct rle_context_configuration bad_conf = {
+	const struct rle_config bad_conf = {
 		.implicit_protocol_type = 0x31,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0,
 	};
-	const struct rle_context_configuration good_conf = {
+	const struct rle_config good_conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -251,7 +249,7 @@ out:
 bool test_rle_destruction_transmitter(void)
 {
 	bool output = false;
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -295,13 +293,13 @@ out:
 bool test_rle_allocation_receiver(void)
 {
 	bool output = false;
-	const struct rle_context_configuration bad_conf = {
+	const struct rle_config bad_conf = {
 		.implicit_protocol_type = 0x31,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
 		.use_compressed_ptype = 0,
 	};
-	const struct rle_context_configuration good_conf = {
+	const struct rle_config good_conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -341,7 +339,7 @@ out:
 bool test_rle_destruction_receiver(void)
 {
 	bool output = false;
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,

@@ -44,7 +44,6 @@ int reassembly_comp_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
                          struct rle_sdu *const reassembled_sdu)
 {
 	int ret = C_ERROR;
-	struct rle_configuration *rle_conf;
 	const unsigned char *alpdu_fragment;
 	size_t alpdu_fragment_len;
 	const unsigned char *sdu_fragment;
@@ -63,8 +62,6 @@ int reassembly_comp_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	rle_conf = _this->rle_conf_ctxtless;
-
 	comp_ppdu_extract_alpdu_fragment(ppdu, ppdu_length, &alpdu_fragment, &alpdu_fragment_len);
 
 	if (alpdu_fragment_len == 0) {
@@ -81,8 +78,8 @@ int reassembly_comp_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 		        suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                              &protocol_type,
 		                                              &sdu_fragment, &sdu_fragment_len,
-		                                              rle_conf);
-	} else if (rle_conf_get_ptype_compression(rle_conf)) {
+		                                              &_this->conf);
+	} else if (_this->conf.use_compressed_ptype) {
 		ret =
 		        compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                              &protocol_type,
@@ -121,7 +118,6 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
                           int *const index_ctx)
 {
 	int ret = C_ERROR;
-	struct rle_configuration *rle_conf;
 	const unsigned char *alpdu_fragment;
 	size_t alpdu_fragment_len;
 	const unsigned char *sdu_fragment;
@@ -173,7 +169,6 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 	start_ppdu_extract_alpdu_fragment(ppdu, ppdu_length, &alpdu_fragment, &alpdu_fragment_len,
 	                                  &alpdu_total_len, &is_crc_used);
 	header = (const rle_ppdu_header_start_t *)ppdu;
-	rle_conf = _this->rle_conf[*index_ctx];
 
 	sdu_total_len = alpdu_total_len;
 
@@ -188,8 +183,8 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 		        suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                              &protocol_type,
 		                                              &sdu_fragment, &sdu_fragment_len,
-		                                              rle_conf);
-	} else if (rle_conf_get_ptype_compression(rle_conf)) {
+		                                              &_this->conf);
+	} else if (_this->conf.use_compressed_ptype) {
 		ret =
 		        compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                              &protocol_type,

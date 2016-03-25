@@ -93,7 +93,7 @@ bool test_encap_ctxtless_null_f_buff(void)
 	bool output = false;
 	enum rle_encap_status ret;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type                 = 0x00,
 		.use_alpdu_crc                          = 0,
 		.use_ptype_omission                     = 0,
@@ -156,7 +156,7 @@ bool test_encap_ctxtless_f_buff_not_init(void)
 	bool output = false;
 	enum rle_encap_status ret;
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc = 0,
 		.use_ptype_omission = 0,
@@ -233,7 +233,7 @@ bool test_encap_ctxtless_too_big(void)
 		.protocol_type = 0x1234,
 	};
 
-	const struct rle_context_configuration conf = {
+	const struct rle_config conf = {
 		.implicit_protocol_type = 0x00,
 		.use_alpdu_crc          = 0,
 		.use_ptype_omission     = 0,

@@ -84,19 +84,18 @@ error:
 /*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-struct rle_receiver *rle_receiver_new(const struct rle_context_configuration *const configuration)
+struct rle_receiver *rle_receiver_new(const struct rle_config *const conf)
 {
 	struct rle_receiver *receiver = NULL;
 	size_t iterator;
-	struct rle_configuration **rx_conf;
 
-	if (configuration == NULL) {
+	if (conf == NULL) {
 		PRINT_RLE_ERROR("failed to created RLE receiver: invalid configuration, "
 		                "NULL is not accepted");
 		goto out;
 	}
 
-	if (configuration->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
+	if (conf->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
 		PRINT_RLE_ERROR(
 		        "could not initialize receiver with 0x31 as implicit protocol type : "
 		        "Not supported yet.");
@@ -110,40 +109,13 @@ struct rle_receiver *rle_receiver_new(const struct rle_context_configuration *co
 		goto out;
 	}
 
-	rx_conf = &receiver->rle_conf_ctxtless;
-	*rx_conf = rle_conf_new();
-	if (!*rx_conf) {
-		PRINT_RLE_ERROR("allocating receiver module configuration failed");
-		rle_receiver_destroy(&receiver);
-		receiver = NULL;
-
-		goto out;
-	}
-	rle_conf_init(*rx_conf);
-	rle_conf_set_default_ptype(*rx_conf, configuration->implicit_protocol_type);
-	rle_conf_set_crc_check(*rx_conf, configuration->use_alpdu_crc);
-	rle_conf_set_ptype_compression(*rx_conf, configuration->use_compressed_ptype);
-	rle_conf_set_ptype_suppression(*rx_conf, configuration->use_ptype_omission);
+	memcpy(&receiver->conf, conf, sizeof(struct rle_config));
 
 	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
 		struct rle_ctx_management *const ctx_man = &receiver->rle_ctx_man[iterator];
-		rx_conf = &receiver->rle_conf[iterator];
-		*rx_conf = rle_conf_new();
-		if (!*rx_conf) {
-			PRINT_RLE_ERROR("allocating receiver module configuration failed.");
-			rle_receiver_destroy(&receiver);
-			receiver = NULL;
-
-			goto out;
-		}
 		rle_ctx_init_rasm_buf(ctx_man);
 		rle_ctx_set_frag_id(ctx_man, iterator);
 		rle_ctx_set_seq_nb(ctx_man, 0);
-		rle_conf_init(*rx_conf);
-		rle_conf_set_default_ptype(*rx_conf, configuration->implicit_protocol_type);
-		rle_conf_set_crc_check(*rx_conf, configuration->use_alpdu_crc);
-		rle_conf_set_ptype_compression(*rx_conf, configuration->use_compressed_ptype);
-		rle_conf_set_ptype_suppression(*rx_conf, configuration->use_ptype_omission);
 	}
 
 	receiver->free_ctx = 0;
@@ -167,18 +139,8 @@ void rle_receiver_destroy(struct rle_receiver **const receiver)
 		goto out;
 	}
 
-	if ((*receiver)->rle_conf_ctxtless) {
-		rle_conf_destroy((*receiver)->rle_conf_ctxtless);
-	}
-
 	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-		struct rle_configuration **const conf = &(*receiver)->rle_conf[iterator];
 		struct rle_ctx_management *const ctx_man = &(*receiver)->rle_ctx_man[iterator];
-
-		if (*conf) {
-			rle_conf_destroy(*conf);
-		}
-
 		rle_ctx_destroy_rasm_buf(ctx_man);
 	}
 

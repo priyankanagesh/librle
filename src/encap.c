@@ -11,7 +11,6 @@
 #include "rle_transmitter.h"
 #include "constants.h"
 #include "rle_ctx.h"
-#include "rle_conf.h"
 #include "rle_header_proto_type_field.h"
 #include "rle.h"
 #include "fragmentation_buffer.h"
@@ -148,7 +147,6 @@ enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transm
                                             struct rle_frag_buf *const frag_buf)
 {
 	enum rle_encap_status status = RLE_ENCAP_ERR;
-	struct rle_configuration *rle_conf;
 
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);
@@ -158,8 +156,6 @@ enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transm
 		status = RLE_ENCAP_ERR_NULL_TRMT;
 		goto out;
 	}
-
-	rle_conf = transmitter->rle_conf;
 
 	if (!frag_buf) {
 		status = RLE_ENCAP_ERR_NULL_F_BUFF;
@@ -171,7 +167,7 @@ enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transm
 		goto out;
 	}
 
-	if (push_alpdu_header(frag_buf, rle_conf) == 0) {
+	if (push_alpdu_header(frag_buf, &transmitter->conf) == 0) {
 		status = RLE_ENCAP_OK;
 	}
 

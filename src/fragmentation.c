@@ -51,7 +51,6 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 	int ret_push = 0;
 	rle_frag_buf_t *frag_buf;
 	struct rle_ctx_management *rle_ctx;
-	const struct rle_configuration *rle_conf;
 
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);
@@ -68,7 +67,6 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 
 	*ppdu_length = 0;
 
-	rle_conf = transmitter->rle_conf;
 	rle_ctx = &transmitter->rle_ctx_man[frag_id];
 
 	if (rle_ctx_is_free(transmitter->free_ctx, frag_id)) {
@@ -81,7 +79,7 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 
 	frag_buf_ppdu_init(frag_buf);
 
-	ret_push = push_ppdu_header(frag_buf, rle_conf, remaining_burst_size, rle_ctx);
+	ret_push = push_ppdu_header(frag_buf, &transmitter->conf, remaining_burst_size, rle_ctx);
 
 	if (ret_push != 0) {
 		if (ret_push == 2) {
@@ -112,7 +110,6 @@ enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmit
                                           size_t *const ppdu_length)
 {
 	enum rle_frag_status status = RLE_FRAG_ERR;
-	const struct rle_configuration *rle_conf;
 
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);
@@ -122,8 +119,6 @@ enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmit
 		status = RLE_FRAG_ERR_NULL_TRMT;
 		goto out;
 	}
-
-	rle_conf = transmitter->rle_conf;
 
 	if (!frag_buf) {
 		status = RLE_FRAG_ERR_NULL_F_BUFF;
@@ -147,7 +142,7 @@ enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmit
 
 	frag_buf_ppdu_init(frag_buf);
 
-	if (push_ppdu_header(frag_buf, rle_conf, *ppdu_length, NULL) != 0) {
+	if (push_ppdu_header(frag_buf, &transmitter->conf, *ppdu_length, NULL) != 0) {
 		goto out;
 	}
 

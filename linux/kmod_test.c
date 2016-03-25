@@ -54,7 +54,7 @@ struct rle_couple {
 	struct rle_receiver *receiver;
 
 	/** The RLE context configuration interface for the modules */
-	struct rle_context_configuration conf;
+	struct rle_config conf;
 
 	/** The sdu in */
 	struct rle_sdu sdu_in;
