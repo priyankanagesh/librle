@@ -37,6 +37,9 @@ ADD_DEPENDENCIES(check rle_tests)
 ADD_DEPENDENCIES(check test_rle)
 ADD_DEPENDENCIES(check test_non_regression)
 ADD_DEPENDENCIES(check test_non_regression_fpdu)
+ADD_DEPENDENCIES(check test_perfs)
+ADD_DEPENDENCIES(check test_perfs_fpdu)
+ADD_DEPENDENCIES(check test_dump_fpdus)
 
 # Definitions of the system commands for the next targets.
 SET(SYS_CMD_GREP grep)
