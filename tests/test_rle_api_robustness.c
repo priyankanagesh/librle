@@ -759,7 +759,12 @@ bool test_rle_api_robustness_receiver(void)
 	/* test generic function */
 	printf("\ttest generic functions\n");
 	{
-		struct rle_config conf = { 0 };
+		struct rle_config conf = {
+			.implicit_protocol_type = 0,
+			.use_alpdu_crc = 0,
+			.use_ptype_omission = 0,
+			.use_compressed_ptype = 0
+		};
 		enum rle_fpdu_types fpdu_type = RLE_TRAFFIC_FPDU;
 		size_t rle_hdr_len;
 		enum rle_header_size_status ret;

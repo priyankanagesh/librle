@@ -509,23 +509,23 @@ static void dump_fpdu(unsigned char *const fpdu, const size_t fpdu_size,
 			.caplen = (bpf_u_int32)(ETHER_HDR_LEN + IP_HDR_LEN + fpdu_size),
 			.len    = (bpf_u_int32)(ETHER_HDR_LEN + IP_HDR_LEN + fpdu_size),
 		};
-		struct iphdr *const ip_hdr = (struct iphdr *)(frame + ETHER_HDR_LEN);
+		struct iphdr ip_hdr;
 
-		ip_hdr->version  = 0x4;
-		ip_hdr->ihl      = 0x5;
-		ip_hdr->tos      = 0;
-		ip_hdr->tot_len  = 0;
-		ip_hdr->id       = ntohs(ip_id);
-		ip_hdr->frag_off = 0;
-		ip_hdr->ttl      = 10;
-		ip_hdr->protocol = 0;
-		ip_hdr->check    = 0;
-		ip_hdr->saddr    = 0;
-		ip_hdr->daddr    = 0;
+		ip_hdr.version  = 0x4;
+		ip_hdr.ihl      = 0x5;
+		ip_hdr.tos      = 0;
+		ip_hdr.tot_len  = 0;
+		ip_hdr.id       = ntohs(ip_id);
+		ip_hdr.frag_off = 0;
+		ip_hdr.ttl      = 10;
+		ip_hdr.protocol = 0;
+		ip_hdr.check    = 0;
+		ip_hdr.saddr    = 0;
+		ip_hdr.daddr    = 0;
+		ip_hdr.check    = ip_checksum(&ip_hdr, IP_HDR_LEN);
+		memcpy(frame + ETHER_HDR_LEN, &ip_hdr, IP_HDR_LEN);
 
-		ip_hdr->check    = ip_checksum((void *)ip_hdr, IP_HDR_LEN);
-
-		memcpy((void *)(frame + ETHER_HDR_LEN + IP_HDR_LEN), (const void *)fpdu, fpdu_size);
+		memcpy(frame + ETHER_HDR_LEN + IP_HDR_LEN, fpdu, fpdu_size);
 		gettimeofday(&header.ts, NULL);
 		packet_handler(dumpfile, &header, frame);
 

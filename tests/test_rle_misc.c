@@ -100,7 +100,12 @@ bool test_request_rle_header_overhead_traffic(void)
 
 	size_t overhead_size = 0;
 	enum rle_header_size_status header_size_status = RLE_HEADER_SIZE_ERR;
-	const struct rle_config conf = { 0 };
+	const struct rle_config conf = {
+		.implicit_protocol_type = 0,
+		.use_alpdu_crc = 0,
+		.use_ptype_omission = 0,
+		.use_compressed_ptype = 0
+	};
 
 	header_size_status = rle_get_header_size(&conf, RLE_TRAFFIC_FPDU, &overhead_size);
 
@@ -119,7 +124,12 @@ bool test_request_rle_header_overhead_all(void)
 	bool output = true;
 
 	/* Logon */
-	const struct rle_config conf_logon = { 0 };
+	const struct rle_config conf_logon = {
+		.implicit_protocol_type = 0,
+		.use_alpdu_crc = 0,
+		.use_ptype_omission = 0,
+		.use_compressed_ptype = 0
+	};
 	const struct test_request test_logon = {
 		.fpdu_type = RLE_LOGON_FPDU,
 		.expected_size = 6,
@@ -127,7 +137,12 @@ bool test_request_rle_header_overhead_all(void)
 	};
 
 	/* Control */
-	const struct rle_config conf_control = { 0 };
+	const struct rle_config conf_control = {
+		.implicit_protocol_type = 0,
+		.use_alpdu_crc = 0,
+		.use_ptype_omission = 0,
+		.use_compressed_ptype = 0
+	};
 	const struct test_request test_control = {
 		.fpdu_type = RLE_CTRL_FPDU,
 		.expected_size = 3,
