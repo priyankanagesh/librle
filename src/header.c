@@ -107,7 +107,7 @@ static void push_comp_ppdu_header(struct rle_frag_buf *const frag_buf,
 static void push_start_ppdu_header(struct rle_frag_buf *const frag_buf, const uint8_t frag_id,
                                    const uint8_t alpdu_label_type,
                                    const uint8_t protocol_type_suppressed,
-                                   const uint8_t use_alpdu_crc);
+                                   const bool use_alpdu_crc);
 
 /**
  *  @brief         create and push CONT PPDU header into a fragmentation buffer.
@@ -211,7 +211,7 @@ static void push_comp_ppdu_header(struct rle_frag_buf *const frag_buf,
 static void push_start_ppdu_header(struct rle_frag_buf *const frag_buf, const uint8_t frag_id,
                                    const uint8_t alpdu_label_type,
                                    const uint8_t protocol_type_suppressed,
-                                   const uint8_t use_alpdu_crc)
+                                   const bool use_alpdu_crc)
 {
 	uint16_t ppdu_length_field;
 	uint16_t total_length_field;
@@ -235,7 +235,7 @@ static void push_start_ppdu_header(struct rle_frag_buf *const frag_buf, const ui
 	rle_ppdu_header_set_ppdu_length((rle_ppdu_header_t *)*p_ppdu_header,
 	                                ppdu_length_field);
 	(*p_ppdu_header)->frag_id = frag_id;
-	(*p_ppdu_header)->use_crc = use_alpdu_crc;
+	(*p_ppdu_header)->use_crc = (use_alpdu_crc ? 1 : 0);
 	rle_ppdu_header_start_set_total_length(*p_ppdu_header, total_length_field);
 	(*p_ppdu_header)->label_type = alpdu_label_type;
 	(*p_ppdu_header)->proto_type_supp = protocol_type_suppressed;
@@ -338,7 +338,8 @@ int push_ppdu_header(struct rle_frag_buf *const frag_buf,
 	int status = 1;
 	size_t max_alpdu_fragment_len = ppdu_length;
 	const size_t remain_alpdu_len = frag_buf_get_remaining_alpdu_length(frag_buf);
-	const int use_alpdu_crc = rle_conf->use_alpdu_crc;
+	const bool use_alpdu_crc =
+		(rle_conf->allow_alpdu_sequence_number ? false : !!rle_conf->allow_alpdu_crc);
 
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);

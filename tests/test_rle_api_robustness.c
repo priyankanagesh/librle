@@ -23,10 +23,15 @@
 bool test_rle_api_robustness_transmitter(void)
 {
 	struct rle_config rle_config_ok = {
-		.implicit_protocol_type = 0x30,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 1,
+		.allow_ptype_omission = 1,
 		.use_compressed_ptype = 1,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x30,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	struct rle_config rle_config;
 	struct rle_transmitter *rle_transmitter;
@@ -56,48 +61,96 @@ bool test_rle_api_robustness_transmitter(void)
 		}
 	}
 
-	/* different valid and invalid values for use_alpdu_crc */
-	printf("\t\trle_transmitter_new() with different use_alpdu_crc\n");
+	/* different valid and invalid values for allow_alpdu_crc */
+	printf("\t\trle_transmitter_new() with different allow_alpdu_crc\n");
 	rle_config = rle_config_ok;
-	rle_config.use_alpdu_crc = 0;
+	rle_config.allow_alpdu_sequence_number = 1;
+	rle_config.allow_alpdu_crc = 0;
 	rle_transmitter = rle_transmitter_new(&rle_config);
 	assert(rle_transmitter != NULL);
 	rle_transmitter_destroy(&rle_transmitter);
 	assert(rle_transmitter == NULL);
-	rle_config.use_alpdu_crc = 1;
+	rle_config.allow_alpdu_crc = 1;
 	rle_transmitter = rle_transmitter_new(&rle_config);
 	assert(rle_transmitter != NULL);
 	rle_transmitter_destroy(&rle_transmitter);
 	assert(rle_transmitter == NULL);
-	rle_config.use_alpdu_crc = -1;
+	rle_config.allow_alpdu_crc = -1;
 	rle_transmitter = rle_transmitter_new(&rle_config);
-	assert(rle_transmitter != NULL);
-	rle_transmitter_destroy(&rle_transmitter);
-	rle_config.use_alpdu_crc = 2;
+	assert(rle_transmitter == NULL);
+	rle_config.allow_alpdu_crc = 2;
 	rle_transmitter = rle_transmitter_new(&rle_config);
-	assert(rle_transmitter != NULL);
-	rle_transmitter_destroy(&rle_transmitter);
+	assert(rle_transmitter == NULL);
 
-	/* different valid and invalid values for use_ptype_omission */
-	printf("\t\trle_transmitter_new() with different use_ptype_omission\n");
+	/* different valid and invalid values for allow_alpdu_sequence_number */
+	printf("\t\trle_transmitter_new() with different allow_alpdu_sequence_number\n");
 	rle_config = rle_config_ok;
-	rle_config.use_ptype_omission = 0;
+	rle_config.allow_alpdu_crc = 1;
+	rle_config.allow_alpdu_sequence_number = 0;
 	rle_transmitter = rle_transmitter_new(&rle_config);
 	assert(rle_transmitter != NULL);
 	rle_transmitter_destroy(&rle_transmitter);
 	assert(rle_transmitter == NULL);
-	rle_config.use_ptype_omission = 1;
+	rle_config.allow_alpdu_sequence_number = 1;
 	rle_transmitter = rle_transmitter_new(&rle_config);
 	assert(rle_transmitter != NULL);
 	rle_transmitter_destroy(&rle_transmitter);
 	assert(rle_transmitter == NULL);
-	rle_config.use_ptype_omission = -1;
+	rle_config.allow_alpdu_sequence_number = -1;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter == NULL);
+	rle_config.allow_alpdu_sequence_number = 2;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter == NULL);
+
+	/* different valid and invalid values for allow_alpdu_sequence_number and
+	 * allow_alpdu_crc */
+	printf("\t\trle_transmitter_new() with different allow_alpdu_sequence_number "
+	       "and allow_alpdu_crc\n");
+	rle_config = rle_config_ok;
+	rle_config.allow_alpdu_crc = 1;
+	rle_config.allow_alpdu_sequence_number = 1;
 	rle_transmitter = rle_transmitter_new(&rle_config);
 	assert(rle_transmitter != NULL);
 	rle_transmitter_destroy(&rle_transmitter);
-	rle_config.use_ptype_omission = 2;
+	assert(rle_transmitter == NULL);
+	rle_config.allow_alpdu_crc = 0;
+	rle_config.allow_alpdu_sequence_number = 0;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter == NULL);
+	rle_config.allow_alpdu_crc = 1;
+	rle_config.allow_alpdu_sequence_number = 0;
 	rle_transmitter = rle_transmitter_new(&rle_config);
 	assert(rle_transmitter != NULL);
+	rle_transmitter_destroy(&rle_transmitter);
+	assert(rle_transmitter == NULL);
+	rle_config.allow_alpdu_crc = 0;
+	rle_config.allow_alpdu_sequence_number = 1;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter != NULL);
+	rle_transmitter_destroy(&rle_transmitter);
+	assert(rle_transmitter == NULL);
+
+	/* different valid and invalid values for allow_ptype_omission */
+	printf("\t\trle_transmitter_new() with different allow_ptype_omission\n");
+	rle_config = rle_config_ok;
+	rle_config.allow_ptype_omission = 0;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter != NULL);
+	rle_transmitter_destroy(&rle_transmitter);
+	assert(rle_transmitter == NULL);
+	rle_config.allow_ptype_omission = 1;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter != NULL);
+	rle_transmitter_destroy(&rle_transmitter);
+	assert(rle_transmitter == NULL);
+	rle_config.allow_ptype_omission = -1;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter == NULL);
+	rle_transmitter_destroy(&rle_transmitter);
+	rle_config.allow_ptype_omission = 2;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter == NULL);
 	rle_transmitter_destroy(&rle_transmitter);
 
 	/* different valid and invalid values for use_compressed_ptype */
@@ -115,12 +168,81 @@ bool test_rle_api_robustness_transmitter(void)
 	assert(rle_transmitter == NULL);
 	rle_config.use_compressed_ptype = -1;
 	rle_transmitter = rle_transmitter_new(&rle_config);
-	assert(rle_transmitter != NULL);
+	assert(rle_transmitter == NULL);
 	rle_transmitter_destroy(&rle_transmitter);
 	rle_config.use_compressed_ptype = 2;
 	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter == NULL);
+	rle_transmitter_destroy(&rle_transmitter);
+
+	/* different valid and invalid values for use_explicit_payload_header_map */
+	printf("\t\trle_transmitter_new() with different use_explicit_payload_header_map\n");
+	rle_config = rle_config_ok;
+	rle_config.use_explicit_payload_header_map = 0;
+	rle_transmitter = rle_transmitter_new(&rle_config);
 	assert(rle_transmitter != NULL);
 	rle_transmitter_destroy(&rle_transmitter);
+	assert(rle_transmitter == NULL);
+	rle_config.use_explicit_payload_header_map = 1;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter == NULL);
+	rle_config.use_explicit_payload_header_map = -1;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter == NULL);
+	rle_config.use_explicit_payload_header_map = 2;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter == NULL);
+
+	/* different valid and invalid values for implicit_ppdu_label_size */
+	printf("\t\trle_transmitter_new() with different implicit_ppdu_label_size\n");
+	rle_config = rle_config_ok;
+	rle_config.implicit_ppdu_label_size = 0;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter != NULL);
+	rle_transmitter_destroy(&rle_transmitter);
+	assert(rle_transmitter == NULL);
+	rle_config.implicit_ppdu_label_size = 0x0f;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter != NULL);
+	rle_transmitter_destroy(&rle_transmitter);
+	assert(rle_transmitter == NULL);
+	rle_config.implicit_ppdu_label_size = 0xff;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter == NULL);
+
+	/* different valid and invalid values for implicit_payload_label_size */
+	printf("\t\trle_transmitter_new() with different implicit_payload_label_size\n");
+	rle_config = rle_config_ok;
+	rle_config.implicit_payload_label_size = 0;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter != NULL);
+	rle_transmitter_destroy(&rle_transmitter);
+	assert(rle_transmitter == NULL);
+	rle_config.implicit_payload_label_size = 0x0f;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter != NULL);
+	rle_transmitter_destroy(&rle_transmitter);
+	assert(rle_transmitter == NULL);
+	rle_config.implicit_payload_label_size = 0xff;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter == NULL);
+
+	/* different valid and invalid values for type_0_alpdu_label_size */
+	printf("\t\trle_transmitter_new() with different type_0_alpdu_label_size\n");
+	rle_config = rle_config_ok;
+	rle_config.type_0_alpdu_label_size = 0;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter != NULL);
+	rle_transmitter_destroy(&rle_transmitter);
+	assert(rle_transmitter == NULL);
+	rle_config.type_0_alpdu_label_size = 0x0f;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter != NULL);
+	rle_transmitter_destroy(&rle_transmitter);
+	assert(rle_transmitter == NULL);
+	rle_config.type_0_alpdu_label_size = 0xff;
+	rle_transmitter = rle_transmitter_new(&rle_config);
+	assert(rle_transmitter == NULL);
 
 	/* nominal case, valid config */
 	printf("\t\trle_transmitter_new() with valid config\n");
@@ -458,10 +580,15 @@ bool test_rle_api_robustness_transmitter(void)
 bool test_rle_api_robustness_receiver(void)
 {
 	struct rle_config rle_config_ok = {
-		.implicit_protocol_type = 0x30,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 1,
+		.allow_ptype_omission = 1,
 		.use_compressed_ptype = 1,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x30,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	struct rle_config rle_config;
 	struct rle_receiver *rle_receiver;
@@ -491,50 +618,95 @@ bool test_rle_api_robustness_receiver(void)
 		}
 	}
 
-	/* different valid and invalid values for use_alpdu_crc */
-	printf("\t\trle_receiver_new() with different use_alpdu_crc\n");
+	/* different valid and invalid values for allow_alpdu_crc */
+	printf("\t\trle_receiver_new() with different allow_alpdu_crc\n");
 	rle_config = rle_config_ok;
-	rle_config.use_alpdu_crc = 0;
+	rle_config.allow_alpdu_sequence_number = 1;
+	rle_config.allow_alpdu_crc = 0;
 	rle_receiver = rle_receiver_new(&rle_config);
 	assert(rle_receiver != NULL);
 	rle_receiver_destroy(&rle_receiver);
 	assert(rle_receiver == NULL);
-	rle_config.use_alpdu_crc = 1;
+	rle_config.allow_alpdu_crc = 1;
 	rle_receiver = rle_receiver_new(&rle_config);
 	assert(rle_receiver != NULL);
 	rle_receiver_destroy(&rle_receiver);
 	assert(rle_receiver == NULL);
-	rle_config.use_alpdu_crc = -1;
+	rle_config.allow_alpdu_crc = -1;
 	rle_receiver = rle_receiver_new(&rle_config);
-	assert(rle_receiver != NULL);
-	rle_receiver_destroy(&rle_receiver);
-	rle_config.use_alpdu_crc = 2;
+	assert(rle_receiver == NULL);
+	rle_config.allow_alpdu_crc = 2;
 	rle_receiver = rle_receiver_new(&rle_config);
-	assert(rle_receiver != NULL);
-	rle_receiver_destroy(&rle_receiver);
+	assert(rle_receiver == NULL);
 
-	/* different valid and invalid values for use_ptype_omission */
-	printf("\t\trle_receiver_new() with different use_ptype_omission\n");
+	/* different valid and invalid values for allow_alpdu_sequence_number */
+	printf("\t\trle_receiver_new() with different allow_alpdu_sequence_number\n");
 	rle_config = rle_config_ok;
-	rle_config.use_ptype_omission = 0;
+	rle_config.allow_alpdu_crc = 1;
+	rle_config.allow_alpdu_sequence_number = 0;
 	rle_receiver = rle_receiver_new(&rle_config);
 	assert(rle_receiver != NULL);
 	rle_receiver_destroy(&rle_receiver);
 	assert(rle_receiver == NULL);
-	rle_receiver_destroy(&rle_receiver);
-	rle_config.use_ptype_omission = 1;
+	rle_config.allow_alpdu_sequence_number = 1;
 	rle_receiver = rle_receiver_new(&rle_config);
 	assert(rle_receiver != NULL);
 	rle_receiver_destroy(&rle_receiver);
 	assert(rle_receiver == NULL);
-	rle_config.use_ptype_omission = -1;
+	rle_config.allow_alpdu_sequence_number = -1;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver == NULL);
+	rle_config.allow_alpdu_sequence_number = 2;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver == NULL);
+
+	/* different valid and invalid values for allow_alpdu_sequence_number and
+	 * allow_alpdu_crc*/
+	printf("\t\trle_receiver_new() with different allow_alpdu_sequence_number "
+	       "and allow_alpdu_crc\n");
+	rle_config = rle_config_ok;
+	rle_config.allow_alpdu_crc = 1;
+	rle_config.allow_alpdu_sequence_number = 1;
 	rle_receiver = rle_receiver_new(&rle_config);
 	assert(rle_receiver != NULL);
 	rle_receiver_destroy(&rle_receiver);
-	rle_config.use_ptype_omission = 2;
+	assert(rle_receiver == NULL);
+	rle_config.allow_alpdu_crc = 0;
+	rle_config.allow_alpdu_sequence_number = 0;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver == NULL);
+	rle_config.allow_alpdu_crc = 1;
+	rle_config.allow_alpdu_sequence_number = 0;
 	rle_receiver = rle_receiver_new(&rle_config);
 	assert(rle_receiver != NULL);
 	rle_receiver_destroy(&rle_receiver);
+	assert(rle_receiver == NULL);
+	rle_config.allow_alpdu_crc = 0;
+	rle_config.allow_alpdu_sequence_number = 1;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver != NULL);
+	rle_receiver_destroy(&rle_receiver);
+	assert(rle_receiver == NULL);
+
+	/* different valid and invalid values for allow_ptype_omission */
+	printf("\t\trle_receiver_new() with different allow_ptype_omission\n");
+	rle_config = rle_config_ok;
+	rle_config.allow_ptype_omission = 0;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver != NULL);
+	rle_receiver_destroy(&rle_receiver);
+	assert(rle_receiver == NULL);
+	rle_config.allow_ptype_omission = 1;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver != NULL);
+	rle_receiver_destroy(&rle_receiver);
+	assert(rle_receiver == NULL);
+	rle_config.allow_ptype_omission = -1;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver == NULL);
+	rle_config.allow_ptype_omission = 2;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver == NULL);
 
 	/* different valid and invalid values for use_compressed_ptype */
 	printf("\t\trle_receiver_new() with different use_compressed_ptype\n");
@@ -551,12 +723,79 @@ bool test_rle_api_robustness_receiver(void)
 	assert(rle_receiver == NULL);
 	rle_config.use_compressed_ptype = -1;
 	rle_receiver = rle_receiver_new(&rle_config);
-	assert(rle_receiver != NULL);
-	rle_receiver_destroy(&rle_receiver);
+	assert(rle_receiver == NULL);
 	rle_config.use_compressed_ptype = 2;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver == NULL);
+
+	/* different valid and invalid values for use_explicit_payload_header_map */
+	printf("\t\trle_receiver_new() with different use_explicit_payload_header_map\n");
+	rle_config = rle_config_ok;
+	rle_config.use_explicit_payload_header_map = 0;
 	rle_receiver = rle_receiver_new(&rle_config);
 	assert(rle_receiver != NULL);
 	rle_receiver_destroy(&rle_receiver);
+	assert(rle_receiver == NULL);
+	rle_config.use_explicit_payload_header_map = 1;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver == NULL);
+	rle_config.use_explicit_payload_header_map = -1;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver == NULL);
+	rle_config.use_explicit_payload_header_map = 2;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver == NULL);
+
+	/* different valid and invalid values for implicit_ppdu_label_size */
+	printf("\t\trle_receiver_new() with different implicit_ppdu_label_size\n");
+	rle_config = rle_config_ok;
+	rle_config.implicit_ppdu_label_size = 0;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver != NULL);
+	rle_receiver_destroy(&rle_receiver);
+	assert(rle_receiver == NULL);
+	rle_config.implicit_ppdu_label_size = 0x0f;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver != NULL);
+	rle_receiver_destroy(&rle_receiver);
+	assert(rle_receiver == NULL);
+	rle_config.implicit_ppdu_label_size = 0xff;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver == NULL);
+
+	/* different valid and invalid values for implicit_payload_label_size */
+	printf("\t\trle_receiver_new() with different implicit_payload_label_size\n");
+	rle_config = rle_config_ok;
+	rle_config.implicit_payload_label_size = 0;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver != NULL);
+	rle_receiver_destroy(&rle_receiver);
+	assert(rle_receiver == NULL);
+	rle_config.implicit_payload_label_size = 0x0f;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver != NULL);
+	rle_receiver_destroy(&rle_receiver);
+	assert(rle_receiver == NULL);
+	rle_config.implicit_payload_label_size = 0xff;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver == NULL);
+
+	/* different valid and invalid values for type_0_alpdu_label_size */
+	printf("\t\trle_receiver_new() with different type_0_alpdu_label_size\n");
+	rle_config = rle_config_ok;
+	rle_config.type_0_alpdu_label_size = 0;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver != NULL);
+	rle_receiver_destroy(&rle_receiver);
+	assert(rle_receiver == NULL);
+	rle_config.type_0_alpdu_label_size = 0x0f;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver != NULL);
+	rle_receiver_destroy(&rle_receiver);
+	assert(rle_receiver == NULL);
+	rle_config.type_0_alpdu_label_size = 0xff;
+	rle_receiver = rle_receiver_new(&rle_config);
+	assert(rle_receiver == NULL);
 
 	/* nominal case, valid config */
 	printf("\t\trle_receiver_new() with valid config\n");
@@ -760,10 +999,15 @@ bool test_rle_api_robustness_receiver(void)
 	printf("\ttest generic functions\n");
 	{
 		struct rle_config conf = {
-			.implicit_protocol_type = 0,
-			.use_alpdu_crc = 0,
-			.use_ptype_omission = 0,
-			.use_compressed_ptype = 0
+			.allow_ptype_omission = 0,
+			.use_compressed_ptype = 0,
+			.allow_alpdu_crc = 0,
+			.allow_alpdu_sequence_number = 1,
+			.use_explicit_payload_header_map = 0,
+			.implicit_protocol_type = 0x00,
+			.implicit_ppdu_label_size = 0,
+			.implicit_payload_label_size = 0,
+			.type_0_alpdu_label_size = 0,
 		};
 		enum rle_fpdu_types fpdu_type = RLE_TRAFFIC_FPDU;
 		size_t rle_hdr_len;

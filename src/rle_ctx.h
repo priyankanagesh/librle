@@ -75,7 +75,7 @@ struct rle_ctx_management {
 	/** next sequence number for frag_id */
 	uint8_t next_seq_nb;
 	/** CRC32 trailer usage status */
-	int use_crc;
+	bool use_crc;
 	/** Fragmentation/Reassembly buffer. */
 	void *buff;
 	/** Current octets counter. */
@@ -171,7 +171,7 @@ void rle_ctx_incr_seq_nb(struct rle_ctx_management *const _this);
  *
  * @ingroup RLE context
  */
-void rle_ctx_set_use_crc(struct rle_ctx_management *const _this, const int val);
+void rle_ctx_set_use_crc(struct rle_ctx_management *const _this, const bool val);
 
 /**
  * @brief  Get current CRC usage flag
@@ -182,7 +182,7 @@ void rle_ctx_set_use_crc(struct rle_ctx_management *const _this, const int val);
  *
  * @ingroup RLE context
  */
-int rle_ctx_get_use_crc(const struct rle_ctx_management *const _this);
+bool rle_ctx_get_use_crc(const struct rle_ctx_management *const _this);
 
 /**
  * @brief  Get RLE packet length

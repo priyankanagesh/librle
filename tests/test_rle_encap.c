@@ -187,7 +187,7 @@ static bool test_encap(const uint16_t protocol_type,
 	PRINT_TEST(
 	        "protocol type 0x%04x, length %zu, frag_id %d, conf %s", protocol_type, length,
 	        frag_id,
-	        conf.use_ptype_omission == 0 ?
+	        conf.allow_ptype_omission == 0 ?
 	        (conf.use_compressed_ptype == 0 ?  "uncompressed" : "compressed") :
 	        (conf.implicit_protocol_type == 0x00) ?  "non omitted" :
 	        (conf.implicit_protocol_type == 0x30 ? "ip omitted" : "omitted"));
@@ -406,10 +406,15 @@ bool test_encap_too_big(void)
 	};
 
 	const struct rle_config conf = {
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
 		.implicit_protocol_type = 0x0d,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 0,
-		.use_compressed_ptype = 0
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	struct rle_transmitter *transmitter;
 
@@ -478,7 +483,15 @@ bool test_encap_inv_config(void)
 	bool output = false;
 
 	const struct rle_config conf = {
-		.implicit_protocol_type = 0x31
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x31,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	struct rle_transmitter *transmitter;
 
@@ -548,42 +561,67 @@ bool test_encap_all(void)
 		for (frag_id = 0; frag_id < max_frag_id; ++frag_id) {
 			/* Configuration for uncompressed protocol type */
 			struct rle_config conf_uncomp = {
-				.implicit_protocol_type = 0x00,
-				.use_alpdu_crc = 0,
+				.allow_ptype_omission = 0,
 				.use_compressed_ptype = 0,
-				.use_ptype_omission = 0
+				.allow_alpdu_crc = 0,
+				.allow_alpdu_sequence_number = 1,
+				.use_explicit_payload_header_map = 0,
+				.implicit_protocol_type = 0x00,
+				.implicit_ppdu_label_size = 0,
+				.implicit_payload_label_size = 0,
+				.type_0_alpdu_label_size = 0,
 			};
 
 			/* Configuration for compressed protocol type */
 			struct rle_config conf_comp = {
-				.implicit_protocol_type = 0x00,
-				.use_alpdu_crc = 0,
+				.allow_ptype_omission = 0,
 				.use_compressed_ptype = 1,
-				.use_ptype_omission = 0
+				.allow_alpdu_crc = 0,
+				.allow_alpdu_sequence_number = 1,
+				.use_explicit_payload_header_map = 0,
+				.implicit_protocol_type = 0x00,
+				.implicit_ppdu_label_size = 0,
+				.implicit_payload_label_size = 0,
+				.type_0_alpdu_label_size = 0,
 			};
 
 			/* Configuration for omitted protocol type */
 			struct rle_config conf_omitted = {
-				.implicit_protocol_type = default_ptype,
-				.use_alpdu_crc = 0,
+				.allow_ptype_omission = 1,
 				.use_compressed_ptype = 0,
-				.use_ptype_omission = 1
+				.allow_alpdu_crc = 0,
+				.allow_alpdu_sequence_number = 1,
+				.use_explicit_payload_header_map = 0,
+				.implicit_protocol_type = default_ptype,
+				.implicit_ppdu_label_size = 0,
+				.implicit_payload_label_size = 0,
+				.type_0_alpdu_label_size = 0,
 			};
 
-			/* Special test for IPv4 and v6*/
+			/* Special test for IPv4 and v6 */
 			struct rle_config conf_omitted_ip = {
-				.implicit_protocol_type = 0x30,
-				.use_alpdu_crc = 0,
+				.allow_ptype_omission = 1,
 				.use_compressed_ptype = 0,
-				.use_ptype_omission = 1
+				.allow_alpdu_crc = 0,
+				.allow_alpdu_sequence_number = 1,
+				.use_explicit_payload_header_map = 0,
+				.implicit_protocol_type = 0x30,
+				.implicit_ppdu_label_size = 0,
+				.implicit_payload_label_size = 0,
+				.type_0_alpdu_label_size = 0,
 			};
 
 			/* Configuration for non omitted protocol type in omission conf */
 			struct rle_config conf_not_omitted = {
-				.implicit_protocol_type = 0x00,
-				.use_alpdu_crc = 0,
+				.allow_ptype_omission = 1,
 				.use_compressed_ptype = 0,
-				.use_ptype_omission = 1
+				.allow_alpdu_crc = 0,
+				.allow_alpdu_sequence_number = 1,
+				.use_explicit_payload_header_map = 0,
+				.implicit_protocol_type = 0x00,
+				.implicit_ppdu_label_size = 0,
+				.implicit_payload_label_size = 0,
+				.type_0_alpdu_label_size = 0,
 			};
 
 			/* Configurations */

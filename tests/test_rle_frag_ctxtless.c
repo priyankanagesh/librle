@@ -81,10 +81,15 @@ bool test_frag_ctxtless_null_transmitter(void)
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_config conf = {
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
 		.implicit_protocol_type = 0x00,
-		.use_alpdu_crc          = 0,
-		.use_ptype_omission     = 0,
-		.use_compressed_ptype   = 0,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 
 	unsigned char *ppdu;
@@ -133,10 +138,15 @@ bool test_frag_ctxtless_null_f_buff(void)
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_config conf = {
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
 		.implicit_protocol_type = 0x00,
-		.use_alpdu_crc          = 0,
-		.use_ptype_omission     = 0,
-		.use_compressed_ptype   = 0,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	struct rle_transmitter *transmitter;
 
@@ -193,10 +203,15 @@ bool test_frag_ctxtless_f_buff_not_init(void)
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_config conf = {
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
 		.implicit_protocol_type = 0x00,
-		.use_alpdu_crc          = 0,
-		.use_ptype_omission     = 0,
-		.use_compressed_ptype   = 0,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	struct rle_transmitter *transmitter;
 
@@ -248,10 +263,15 @@ bool test_frag_ctxtless_null_ppdu(void)
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_config conf = {
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
 		.implicit_protocol_type = 0x00,
-		.use_alpdu_crc          = 0,
-		.use_ptype_omission     = 0,
-		.use_compressed_ptype   = 0,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	struct rle_transmitter *transmitter;
 
@@ -306,10 +326,15 @@ bool test_frag_ctxtless_no_len(void)
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_config conf = {
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
 		.implicit_protocol_type = 0x00,
-		.use_alpdu_crc          = 0,
-		.use_ptype_omission     = 0,
-		.use_compressed_ptype   = 0,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	struct rle_transmitter *transmitter;
 
@@ -362,10 +387,15 @@ bool test_frag_ctxtless_too_small(void)
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_config conf = {
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
 		.implicit_protocol_type = 0x00,
-		.use_alpdu_crc          = 0,
-		.use_ptype_omission     = 0,
-		.use_compressed_ptype   = 0,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	struct rle_transmitter *transmitter;
 
@@ -421,10 +451,15 @@ bool test_frag_ctxtless_too_big(void)
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_config conf = {
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
 		.implicit_protocol_type = 0x00,
-		.use_alpdu_crc          = 0,
-		.use_ptype_omission     = 0,
-		.use_compressed_ptype   = 0,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	struct rle_transmitter *transmitter;
 

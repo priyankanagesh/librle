@@ -112,10 +112,15 @@ int rle_couple_init(struct rle_couple *couple)
 
 	memset(couple, '\0', sizeof(struct rle_couple));
 
-	couple->conf.implicit_protocol_type = (uint8_t)param_implicit_protocol_type;
-	couple->conf.use_alpdu_crc = param_use_alpdu_crc > 0 ? 1 : 0;
-	couple->conf.use_ptype_omission = param_use_ptype_omission > 0 ? 1 : 0;
+	couple->conf.allow_ptype_omission = param_use_ptype_omission > 0 ? 1 : 0;
 	couple->conf.use_compressed_ptype = param_use_compressed_ptype > 0 ? 1 : 0;
+	couple->conf.allow_alpdu_crc = param_use_alpdu_crc > 0 ? 1 : 0;
+	couple->conf.allow_alpdu_sequence_number = param_use_alpdu_crc > 0 ? 0 : 1;
+	couple->conf.use_explicit_payload_header_map = 0;
+	couple->conf.implicit_protocol_type = (uint8_t)param_implicit_protocol_type;
+	couple->conf.implicit_ppdu_label_size = 0;
+	couple->conf.implicit_payload_label_size = 0;
+	couple->conf.type_0_alpdu_label_size = 0;
 
 	/* create the transmitter */
 	couple->transmitter = rle_transmitter_new(&couple->conf);

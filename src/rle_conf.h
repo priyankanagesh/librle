@@ -16,6 +16,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #else
 
@@ -23,6 +24,15 @@
 #include <linux/types.h>
 
 #endif
+
+/**
+ * @brief Check the validity of the RLE configuration
+ *
+ * @param conf  The RLE configuration to check
+ * @return      true if configuration is OK, false if KO
+ */
+bool rle_config_check(const struct rle_config *const conf)
+	__attribute__((warn_unused_result));
 
 /**
  *  @brief	Check if a given protocol type is omissible depending of the conf

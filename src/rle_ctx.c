@@ -193,12 +193,12 @@ void rle_ctx_incr_seq_nb(struct rle_ctx_management *_this)
 	_this->next_seq_nb++;
 }
 
-void rle_ctx_set_use_crc(struct rle_ctx_management *_this, int val)
+void rle_ctx_set_use_crc(struct rle_ctx_management *_this, bool val)
 {
 	_this->use_crc = val;
 }
 
-int rle_ctx_get_use_crc(const struct rle_ctx_management *const _this)
+bool rle_ctx_get_use_crc(const struct rle_ctx_management *const _this)
 {
 	return _this->use_crc;
 }

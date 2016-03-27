@@ -147,7 +147,8 @@ static bool test_frag(const uint16_t protocol_type,
 	           "omission %s) with %s protection. SDU length %zu, burst sizes %zu, frag id %d",
 	           protocol_type, conf.implicit_protocol_type,
 	           GET_CONF_VALUE(conf.use_compressed_ptype),
-	           GET_CONF_VALUE(conf.use_ptype_omission), conf.use_alpdu_crc == 1 ? "CRC" : "Seq No",
+	           GET_CONF_VALUE(conf.allow_ptype_omission),
+	           conf.allow_alpdu_sequence_number == 1 ? "Seq No" : "CRC",
 	           length, burst_size, frag_id);
 	bool output = false;
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
@@ -283,10 +284,15 @@ bool test_frag_too_small(void)
 
 	const uint16_t protocol_type = 0x0800;
 	const struct rle_config conf = {
-		.implicit_protocol_type = 0x0000,
-		.use_alpdu_crc = 0,
+		.allow_ptype_omission = 0,
 		.use_compressed_ptype = 0,
-		.use_ptype_omission = 0
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x00,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	struct rle_transmitter *transmitter = NULL;
 
@@ -355,10 +361,15 @@ bool test_frag_null_context(void)
 
 	const uint16_t protocol_type = 0x0800;
 	const struct rle_config conf = {
-		.implicit_protocol_type = 0x0000,
-		.use_alpdu_crc = 0,
+		.allow_ptype_omission = 0,
 		.use_compressed_ptype = 0,
-		.use_ptype_omission = 0
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x00,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 
 	const size_t sdu_length = 100; /* We could remove all the SDU manipulation parts, but I want to
@@ -418,10 +429,15 @@ bool test_frag_real_world(void)
 	const uint8_t frag_id = 1;
 
 	const struct rle_config conf = {
-		.implicit_protocol_type = RLE_PROTO_TYPE_IPV4_COMP,
-		.use_alpdu_crc = 0,
+		.allow_ptype_omission = 1,
 		.use_compressed_ptype = 0,
-		.use_ptype_omission = 1
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = RLE_PROTO_TYPE_IPV4_COMP,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 
 	const size_t sdu_lengths[] = { 100, 1500 };
@@ -467,26 +483,54 @@ bool test_frag_all(void)
 
 	for (burst_iterator = 0; burst_iterator < 4; ++burst_iterator) {
 		struct rle_config conf_uncomp = {
-			.implicit_protocol_type = 0x0000,
-			.use_alpdu_crc = 0,
+			.allow_ptype_omission = 0,
 			.use_compressed_ptype = 0,
-			.use_ptype_omission = 0
+			.allow_alpdu_crc = 0,
+			.allow_alpdu_sequence_number = 1,
+			.use_explicit_payload_header_map = 0,
+			.implicit_protocol_type = 0x00,
+			.implicit_ppdu_label_size = 0,
+			.implicit_payload_label_size = 0,
+			.type_0_alpdu_label_size = 0,
 		};
 
 		/* Configuration for compressed protocol type */
 		struct rle_config conf_comp = {
-			.implicit_protocol_type = 0x0000,
-			.use_alpdu_crc = 0,
+			.allow_ptype_omission = 0,
 			.use_compressed_ptype = 1,
-			.use_ptype_omission = 0
+			.allow_alpdu_crc = 0,
+			.allow_alpdu_sequence_number = 1,
+			.use_explicit_payload_header_map = 0,
+			.implicit_protocol_type = 0x00,
+			.implicit_ppdu_label_size = 0,
+			.implicit_payload_label_size = 0,
+			.type_0_alpdu_label_size = 0,
 		};
 
 		/* Configuration for omitted protocol type */
 		struct rle_config conf_omitted = {
-			.implicit_protocol_type = protocol_type,
-			.use_alpdu_crc = 0,
+			.allow_ptype_omission = 1,
 			.use_compressed_ptype = 0,
-			.use_ptype_omission = 1
+			.allow_alpdu_crc = 0,
+			.allow_alpdu_sequence_number = 1,
+			.use_explicit_payload_header_map = 0,
+			.implicit_protocol_type = protocol_type,
+			.implicit_ppdu_label_size = 0,
+			.implicit_payload_label_size = 0,
+			.type_0_alpdu_label_size = 0,
+		};
+
+		/* Configuration for omitted and compressed protocol type */
+		struct rle_config conf_omitted_comp = {
+			.allow_ptype_omission = 1,
+			.use_compressed_ptype = 1,
+			.allow_alpdu_crc = 0,
+			.allow_alpdu_sequence_number = 1,
+			.use_explicit_payload_header_map = 0,
+			.implicit_protocol_type = protocol_type,
+			.implicit_ppdu_label_size = 0,
+			.implicit_payload_label_size = 0,
+			.type_0_alpdu_label_size = 0,
 		};
 
 		/* Configurations */
@@ -494,6 +538,7 @@ bool test_frag_all(void)
 			&conf_uncomp,
 			&conf_comp,
 			&conf_omitted,
+			&conf_omitted_comp,
 			NULL
 		};
 
@@ -511,9 +556,23 @@ bool test_frag_all(void)
 			}
 		}
 
-		/* With CRC. */
+		/* With CRC and seqnum */
 		for (conf = confs; *conf; ++conf) {
-			(**conf).use_alpdu_crc = 1;
+			(**conf).allow_alpdu_crc = 1;
+			(**conf).allow_alpdu_sequence_number = 1;
+			const bool ret =
+			        test_frag(protocol_type, **conf, sdu_length,
+			                  burst_sizes[burst_iterator], frag_id);
+			if (ret == false) {
+				/* Only one fail means the encap test fail. */
+				output = false;
+			}
+		}
+
+		/* With CRC only */
+		for (conf = confs; *conf; ++conf) {
+			(**conf).allow_alpdu_crc = 1;
+			(**conf).allow_alpdu_sequence_number = 0;
 			const bool ret =
 			        test_frag(protocol_type, **conf, sdu_length,
 			                  burst_sizes[burst_iterator], frag_id);
