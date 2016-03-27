@@ -727,20 +727,13 @@ bool test_decap_flush_ctxt(void)
 	enum rle_pack_status ret_pack = RLE_PACK_ERR;
 	enum rle_decap_status ret_decap = RLE_DECAP_ERR;
 
-	const size_t fpdu_length = 5000;
-	const size_t nb_fpdu = 3;
-	unsigned char fpdu[nb_fpdu][fpdu_length];
-	size_t fpdu_iterator = 0;
-
-	for (fpdu_iterator = 0; fpdu_iterator < fpdu_length; ++fpdu_iterator) {
-		size_t it;
-		for (it = 0; it < nb_fpdu; ++it) {
-			fpdu[it][fpdu_iterator] = '\0';
-		}
-	}
+	const size_t fpdu_length = 30;
+	const size_t fpdus_max_nr = 20;
+	unsigned char fpdu[fpdus_max_nr][fpdu_length];
 
 	const uint8_t frag_id = 0;
 
+	const size_t input_sdus_nr = 5;
 	const size_t sdu_length = 100;
 
 	unsigned char *const buffer_in[sdu_length];
@@ -754,11 +747,10 @@ bool test_decap_flush_ctxt(void)
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, sdu_length);
 	sdu.buffer[0] = 0x40; /* IPv4 */
 
-	const size_t sdus_max_nr = 1;
+	size_t sdus_total_nr;
+	const size_t sdus_max_nr = 2;
 	struct rle_sdu sdus[sdus_max_nr];
 	sdus[0].buffer = (unsigned char *)buffer_out;
-
-	size_t sdus_nr = 0;
 
 	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
@@ -768,6 +760,15 @@ bool test_decap_flush_ctxt(void)
 	};
 	struct rle_receiver *receiver;
 	struct rle_transmitter *transmitter;
+	size_t i;
+
+	size_t fpdus_nr;
+	size_t fpdu_current_pos;
+	size_t fpdu_remaining_size;
+	const size_t payload_label_size = 0;
+	unsigned char *payload_label = NULL;
+
+	size_t expected_bytes_dropped = 0;
 
 	receiver = rle_receiver_new(&conf);
 	if (receiver == NULL) {
@@ -781,75 +782,135 @@ bool test_decap_flush_ctxt(void)
 		goto exit_label;
 	}
 
-	{
-		const size_t payload_label_size = 0;
-		unsigned char *payload_label = NULL;
-		size_t fpdu_current_pos;
-		size_t fpdu_remaining_size;
-		size_t it;
+	/* encaspulate several SDUs */
+	fpdus_nr = 0;
+	fpdu_current_pos = 0;
+	fpdu_remaining_size = fpdu_length;
+	for (i = 0; i < input_sdus_nr; i++) {
 
-		for (it = 0; it < nb_fpdu; ++ it) {
-			fpdu_current_pos = 0;
-			fpdu_remaining_size = fpdu_length;
+		printf("encapsulate %zu-byte SDU #%zu:\n", sdu.size, i + 1);
+		ret_encap = rle_encapsulate(transmitter, &sdu, frag_id);
+		if (ret_encap != RLE_ENCAP_OK) {
+			PRINT_ERROR("Encap does not return OK.");
+			goto exit_label;
+		}
 
-			ret_encap = rle_encapsulate(transmitter, &sdu, frag_id);
-			if (ret_encap != RLE_ENCAP_OK) {
-				PRINT_ERROR("Encap does not return OK.");
-				goto exit_label;
-			}
+		/* simulate a loss of the 3rd SDU */
+		if (i == 2) {
+			unsigned char *ppdu;
+			size_t ppdu_length = 0;
+
+			printf("\tsimulate a loss of the FPDU\n");
 
 			while (rle_transmitter_stats_get_queue_size(transmitter, frag_id)) {
-				const size_t burst_size = 30;
-				unsigned char *ppdu;
-				size_t ppdu_length = 0;
-
-				ret_frag = rle_fragment(transmitter, frag_id, burst_size, &ppdu, &ppdu_length);
-
+				ret_frag = rle_fragment(transmitter, frag_id, fpdu_length,
+				                        &ppdu, &ppdu_length);
 				if (ret_frag != RLE_FRAG_OK) {
 					PRINT_ERROR("Frag does not return OK.");
 					goto exit_label;
 				}
+			}
+		}
 
-				ret_pack = rle_pack(ppdu, ppdu_length, payload_label, payload_label_size, fpdu[it],
-				                    &fpdu_current_pos, &fpdu_remaining_size);
+		while (rle_transmitter_stats_get_queue_size(transmitter, frag_id)) {
+			unsigned char *ppdu;
+			size_t ppdu_length = 0;
 
+			printf("\t\tfragment SDU into a max %zu-byte chunk\n",
+			       fpdu_remaining_size);
+			ret_frag = rle_fragment(transmitter, frag_id, fpdu_remaining_size,
+			                        &ppdu, &ppdu_length);
+			if (ret_frag == RLE_FRAG_ERR_BURST_TOO_SMALL) {
+				printf("\t\tFPDU too small for fragment, wait for the next one\n");
+				printf("\t\tpad FPDU on %zu bytes\n", fpdu_remaining_size);
+				rle_pad(fpdu[fpdus_nr], fpdu_current_pos, fpdu_remaining_size);
+				assert(fpdus_nr < fpdus_max_nr);
+				fpdus_nr++;
+				fpdu_current_pos = 0;
+				fpdu_remaining_size = fpdu_length;
+				printf("\tschedule SDU in FPDU #%zu\n", fpdus_nr + 1);
+			} else if (ret_frag != RLE_FRAG_OK) {
+				PRINT_ERROR("Frag does not return OK.");
+				goto exit_label;
+			} else {
+				printf("\t\t%zu-byte PPDU fragment generated\n", ppdu_length);
+
+				/* the SDU after the simulated loss will be dropped */
+				if (i == 3) {
+					expected_bytes_dropped += ppdu_length;
+				}
+
+				printf("\t\tpack PPDU into a %zu-byte FPDU with %zu bytes remaining\n",
+				       fpdu_length, fpdu_remaining_size);
+				ret_pack = rle_pack(ppdu, ppdu_length,
+				                    payload_label, payload_label_size,
+										  fpdu[fpdus_nr], &fpdu_current_pos, &fpdu_remaining_size);
 				if (ret_pack != RLE_PACK_OK) {
 					PRINT_ERROR("Pack does not return OK.");
 					goto exit_label;
 				}
+				printf("\t\t%zu/%zu bytes free in FPDU\n",
+				       fpdu_remaining_size, fpdu_length);
 			}
 		}
+	}
 
-		/* Modifying the seq no of the second FPDU. */
-		fpdu[1][fpdu_current_pos - 1] += 3;
-		/* To restart decapsulation. */
-		fpdu[2][fpdu_current_pos - 1] = fpdu[1][fpdu_current_pos - 1] + 1;
+	/* flush the last FPDU if needed */
+	if (fpdu_current_pos > 0) {
+		rle_pad(fpdu[fpdus_nr], fpdu_current_pos, fpdu_remaining_size);
+		assert(fpdus_nr < fpdus_max_nr);
+		fpdus_nr++;
+	}
 
-		for (it = 0; it < nb_fpdu; ++ it) {
-			rle_pad(fpdu[it], fpdu_current_pos, fpdu_remaining_size);
-		}
+	/* decapsulate all the generated FPDUs */
+	sdus_total_nr = 0;
+	for (i = 0; i < fpdus_nr; i++) {
+		size_t sdus_nr = 0;
 
-		ret_decap = rle_decapsulate(receiver, fpdu[0], fpdu_length, sdus, sdus_max_nr, &sdus_nr,
+		printf("decapsulate pad FPDU #%zu\n", i + 1);
+		ret_decap = rle_decapsulate(receiver, fpdu[i], fpdu_length,
+		                            sdus, sdus_max_nr, &sdus_nr,
 		                            payload_label, payload_label_size);
-
-		if (ret_decap != RLE_DECAP_OK) {
-			PRINT_ERROR("Decap does not return OK.");
+		if (i == 11 && ret_decap != RLE_DECAP_ERR) {
+			PRINT_ERROR("decapsulation of FPDU #%zu failed to report drops, "
+			            "it reported code %d instead", i + 1, ret_decap);
+			goto exit_label;
+		} else if (i != 11 && ret_decap != RLE_DECAP_OK) {
+			PRINT_ERROR("decapsulation of FPDU #%zu failed to report OK, "
+			            "it reported code %d instead", i + 1, ret_decap);
 			goto exit_label;
 		}
+		printf("\t%zu SDUs decapsulated\n", sdus_nr);
+		sdus_total_nr += sdus_nr;
+	}
 
-		ret_decap = rle_decapsulate(receiver, fpdu[1], fpdu_length, sdus, sdus_max_nr, &sdus_nr,
-                                  payload_label, payload_label_size);
+	if (sdus_total_nr != (input_sdus_nr - 2)) {
+		PRINT_ERROR("%zu SDUs decapsulated while %zu SDUs encapsulated, "
+		            "1 loss simulated and 1 expected drop",
+		            sdus_total_nr, input_sdus_nr);
+		goto exit_label;
+	}
 
-		if (ret_decap != RLE_DECAP_ERR) {
-			PRINT_ERROR("Decap does not drop.");
+	/* check stats */
+	{
+		const uint64_t sdus_lost =
+			rle_receiver_stats_get_counter_sdus_lost(receiver, frag_id);
+		const uint64_t sdus_dropped =
+			rle_receiver_stats_get_counter_sdus_dropped(receiver, frag_id);
+		const uint64_t bytes_dropped =
+			rle_receiver_stats_get_counter_bytes_dropped(receiver, frag_id);
+
+		if (sdus_lost != 1) {
+			PRINT_ERROR("%" PRIu64 " SDUs lost while 1 expected", sdus_lost);
 			goto exit_label;
 		}
-
-		ret_decap = rle_decapsulate(receiver, fpdu[2], fpdu_length, sdus, sdus_max_nr, &sdus_nr,
-                                  payload_label, payload_label_size);
-
-		if (ret_decap != RLE_DECAP_OK) {
-			PRINT_ERROR("Decap does not return OK.");
+		if (sdus_dropped != 1) {
+			PRINT_ERROR("%" PRIu64 " SDUs dropped while 1 expected", sdus_dropped);
+			goto exit_label;
+		}
+		if (bytes_dropped != expected_bytes_dropped) {
+			PRINT_ERROR("%" PRIu64 " bytes dropped while %zu bytes expected",
+			            bytes_dropped, expected_bytes_dropped);
 			goto exit_label;
 		}
 	}
@@ -1084,20 +1145,13 @@ bool test_decap_null_seqno(void)
 	enum rle_pack_status ret_pack = RLE_PACK_ERR;
 	enum rle_decap_status ret_decap = RLE_DECAP_ERR;
 
-	const size_t fpdu_length = 5000;
-	const size_t nb_fpdu = 3;
-	unsigned char fpdu[nb_fpdu][fpdu_length];
-	size_t fpdu_iterator = 0;
-
-	for (fpdu_iterator = 0; fpdu_iterator < fpdu_length; ++fpdu_iterator) {
-		size_t it;
-		for (it = 0; it < nb_fpdu; ++it) {
-			fpdu[it][fpdu_iterator] = '\0';
-		}
-	}
+	const size_t fpdu_length = 30;
+	const size_t fpdus_max_nr = 15;
+	unsigned char fpdu[fpdus_max_nr][fpdu_length];
 
 	const uint8_t frag_id = 0;
 
+	const size_t input_sdus_nr = 3;
 	const size_t sdu_length = 100;
 
 	unsigned char *const buffer_in[sdu_length];
@@ -1111,11 +1165,10 @@ bool test_decap_null_seqno(void)
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, sdu_length);
 	sdu.buffer[0] = 0x40; /* IPv4 */
 
-	const size_t sdus_max_nr = 1;
+	size_t sdus_total_nr;
+	const size_t sdus_max_nr = 2;
 	struct rle_sdu sdus[sdus_max_nr];
 	sdus[0].buffer = (unsigned char *)buffer_out;
-
-	size_t sdus_nr = 0;
 
 	const struct rle_config conf = {
 		.implicit_protocol_type = 0x0d,
@@ -1125,6 +1178,16 @@ bool test_decap_null_seqno(void)
 	};
 	struct rle_receiver *receiver;
 	struct rle_transmitter *transmitter;
+	size_t i;
+
+	size_t fpdus_nr;
+	size_t fpdu_current_pos;
+	size_t fpdu_remaining_size;
+	const size_t payload_label_size = 0;
+	unsigned char *payload_label = NULL;
+
+	/* ensure SDU is larger than burst so that test is meaningful */
+	assert(sdu_length > fpdu_length);
 
 	receiver = rle_receiver_new(&conf);
 	if (receiver == NULL) {
@@ -1138,75 +1201,107 @@ bool test_decap_null_seqno(void)
 		goto exit_label;
 	}
 
-	{
-		const size_t payload_label_size = 0;
-		unsigned char *payload_label = NULL;
-		size_t fpdu_current_pos;
-		size_t fpdu_remaining_size;
-		size_t it;
+	/* encaspulate several SDUs */
+	fpdus_nr = 0;
+	fpdu_current_pos = 0;
+	fpdu_remaining_size = fpdu_length;
+	for (i = 0; i < input_sdus_nr; i++) {
 
-		for (it = 0; it < nb_fpdu; ++ it) {
+		/* simulate a logoff/logon of the ST for the 3rd SDU */
+		if (i == 2) {
+			printf("simulate a logoff/logon of the ST\n");
+
+			printf("\tflush FPDU #%zu\n", fpdus_nr + 1);
+			rle_pad(fpdu[fpdus_nr], fpdu_current_pos, fpdu_remaining_size);
+			assert(fpdus_nr < fpdus_max_nr);
+			fpdus_nr++;
 			fpdu_current_pos = 0;
 			fpdu_remaining_size = fpdu_length;
 
-			ret_encap = rle_encapsulate(transmitter, &sdu, frag_id);
-			if (ret_encap != RLE_ENCAP_OK) {
-				PRINT_ERROR("Encap does not return OK.");
+			printf("\tdestroy then create RLE transmitter\n");
+			rle_transmitter_destroy(&transmitter);
+			transmitter = rle_transmitter_new(&conf);
+			if (transmitter == NULL) {
+				PRINT_ERROR("Error allocating transmitter");
 				goto exit_label;
 			}
+		}
 
-			while (rle_transmitter_stats_get_queue_size(transmitter, frag_id)) {
-				const size_t burst_size = 30;
-				unsigned char *ppdu;
-				size_t ppdu_length = 0;
+		printf("encapsulate %zu-byte SDU #%zu:\n", sdu.size, i + 1);
+		ret_encap = rle_encapsulate(transmitter, &sdu, frag_id);
+		if (ret_encap != RLE_ENCAP_OK) {
+			PRINT_ERROR("Encap does not return OK.");
+			goto exit_label;
+		}
 
-				ret_frag = rle_fragment(transmitter, frag_id, burst_size, &ppdu, &ppdu_length);
+		printf("\tschedule SDU in FPDU #%zu\n", fpdus_nr + 1);
 
-				if (ret_frag != RLE_FRAG_OK) {
-					PRINT_ERROR("Frag does not return OK.");
-					goto exit_label;
-				}
+		while (rle_transmitter_stats_get_queue_size(transmitter, frag_id)) {
+			unsigned char *ppdu;
+			size_t ppdu_length = 0;
 
-				ret_pack = rle_pack(ppdu, ppdu_length, payload_label, payload_label_size, fpdu[it],
-				                    &fpdu_current_pos, &fpdu_remaining_size);
+			printf("\t\tfragment SDU into a max %zu-byte chunk\n",
+			       fpdu_remaining_size);
+			ret_frag = rle_fragment(transmitter, frag_id, fpdu_remaining_size,
+			                        &ppdu, &ppdu_length);
+			if (ret_frag == RLE_FRAG_ERR_BURST_TOO_SMALL) {
+				printf("\t\tFPDU too small for fragment, wait for the next one\n");
+				printf("\t\tpad FPDU on %zu bytes\n", fpdu_remaining_size);
+				rle_pad(fpdu[fpdus_nr], fpdu_current_pos, fpdu_remaining_size);
+				assert(fpdus_nr < fpdus_max_nr);
+				fpdus_nr++;
+				fpdu_current_pos = 0;
+				fpdu_remaining_size = fpdu_length;
+				printf("\tschedule SDU in FPDU #%zu\n", fpdus_nr + 1);
+			} else if (ret_frag != RLE_FRAG_OK) {
+				PRINT_ERROR("Frag does not return OK.");
+				goto exit_label;
+			} else {
+				printf("\t\t%zu-byte PPDU fragment generated\n", ppdu_length);
 
+				printf("\t\tpack PPDU into a %zu-byte FPDU with %zu bytes remaining\n",
+				       fpdu_length, fpdu_remaining_size);
+				ret_pack = rle_pack(ppdu, ppdu_length,
+				                    payload_label, payload_label_size,
+										  fpdu[fpdus_nr], &fpdu_current_pos, &fpdu_remaining_size);
 				if (ret_pack != RLE_PACK_OK) {
 					PRINT_ERROR("Pack does not return OK.");
 					goto exit_label;
 				}
+				printf("\t\t%zu/%zu bytes free in FPDU\n",
+				       fpdu_remaining_size, fpdu_length);
 			}
 		}
+	}
 
-		/* Modifying the seq no of the third FPDU to null */
-		fpdu[2][fpdu_current_pos - 1] = 0;
+	/* flush the last FPDU if needed */
+	if (fpdu_current_pos > 0) {
+		rle_pad(fpdu[fpdus_nr], fpdu_current_pos, fpdu_remaining_size);
+		assert(fpdus_nr < fpdus_max_nr);
+		fpdus_nr++;
+	}
 
-		for (it = 0; it < nb_fpdu; ++ it) {
-			rle_pad(fpdu[it], fpdu_current_pos, fpdu_remaining_size);
-		}
+	/* decapsulate all the generated FPDUs */
+	sdus_total_nr = 0;
+	for (i = 0; i < fpdus_nr; i++) {
+		size_t sdus_nr = 0;
 
-		ret_decap = rle_decapsulate(receiver, fpdu[0], fpdu_length, sdus, sdus_max_nr, &sdus_nr,
+		printf("decapsulate pad FPDU #%zu\n", i + 1);
+		ret_decap = rle_decapsulate(receiver, fpdu[i], fpdu_length,
+		                            sdus, sdus_max_nr, &sdus_nr,
 		                            payload_label, payload_label_size);
-
 		if (ret_decap != RLE_DECAP_OK) {
 			PRINT_ERROR("Decap does not return OK.");
 			goto exit_label;
 		}
+		printf("\t%zu SDUs decapsulated\n", sdus_nr);
+		sdus_total_nr += sdus_nr;
+	}
 
-		ret_decap = rle_decapsulate(receiver, fpdu[1], fpdu_length, sdus, sdus_max_nr, &sdus_nr,
-                                  payload_label, payload_label_size);
-
-		if (ret_decap != RLE_DECAP_OK) {
-			PRINT_ERROR("Decap does not return OK.");
-			goto exit_label;
-		}
-
-		ret_decap = rle_decapsulate(receiver, fpdu[2], fpdu_length, sdus, sdus_max_nr, &sdus_nr,
-                                  payload_label, payload_label_size);
-
-		if (ret_decap != RLE_DECAP_OK) {
-			PRINT_ERROR("Decap does not return OK.");
-			goto exit_label;
-		}
+	if (sdus_total_nr != input_sdus_nr) {
+		PRINT_ERROR("%zu SDUs decapsulated while %zu SDUs encapsulated",
+		            sdus_total_nr, input_sdus_nr);
+		goto exit_label;
 	}
 
 	output = true;
