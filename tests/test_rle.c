@@ -173,6 +173,8 @@ static bool decap_tests(void)
 	const struct test alpdu_fragment_0_byte = { "Support for 0-byte ALPDU fragments", test_decap_alpdu_fragment_0_byte };
 	const struct test ppdu_2_bytes = { "Support for 2-byte PPDU fragments", test_decap_ppdu_2_bytes };
 	const struct test wrong_crc = { "Wrong CRC", test_decap_wrong_crc };
+	const struct test interlaced_reassembly = { "Interlaced reassembly",
+	                                            test_decap_interlaced_reassembly };
 
 	const struct test *const decapsulation_tests[] =
 	{
@@ -189,6 +191,7 @@ static bool decap_tests(void)
 		&alpdu_fragment_0_byte,
 		&ppdu_2_bytes,
 		&wrong_crc,
+		&interlaced_reassembly,
 		NULL
 	};
 

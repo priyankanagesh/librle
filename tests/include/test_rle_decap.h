@@ -122,6 +122,13 @@ bool test_decap_ppdu_2_bytes(void);
 bool test_decap_wrong_crc(void);
 
 /**
+ * @brief Test the robustness against interlaced reassembly
+ *
+ * @return        true if all SDUs are reassembled, else false
+ */
+bool test_decap_interlaced_reassembly(void);
+
+/**
  * @brief         All the Decapsulation tests
  *
  *                Decapsulation test for different protocol types (IPv4, v6, VLAN, QinQ,
