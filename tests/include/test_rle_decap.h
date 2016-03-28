@@ -115,6 +115,13 @@ bool test_decap_alpdu_fragment_0_byte(void);
 bool test_decap_ppdu_2_bytes(void);
 
 /**
+ * @brief Test the robustness against wrong CRC
+ *
+ * @return        true if such fragments are dropped, else false
+ */
+bool test_decap_wrong_crc(void);
+
+/**
  * @brief         All the Decapsulation tests
  *
  *                Decapsulation test for different protocol types (IPv4, v6, VLAN, QinQ,
