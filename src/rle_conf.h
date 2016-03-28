@@ -46,6 +46,6 @@ bool rle_config_check(const struct rle_config *const conf)
  *
  *  @ingroup
  */
-int ptype_is_omissible(const uint16_t ptype, const struct rle_config *const rle_conf);
+bool ptype_is_omissible(const uint16_t ptype, const struct rle_config *const rle_conf);
 
 #endif /* __RLE_CONF_H__ */

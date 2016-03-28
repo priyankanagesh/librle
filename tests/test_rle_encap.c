@@ -233,7 +233,8 @@ static bool test_encap(const uint16_t protocol_type,
 	}
 
 	/* Making of the ALPDU we theoricaly will have in the transmitter context. */
-	if (!is_suppressible(protocol_type, conf.implicit_protocol_type)) {
+	if (conf.allow_ptype_omission == 0 ||
+	    !is_suppressible(protocol_type, conf.implicit_protocol_type)) {
 		if (conf.use_compressed_ptype) {
 			/* The protocol type is compressed */
 
@@ -243,6 +244,12 @@ static bool test_encap(const uint16_t protocol_type,
 			unsigned char compressed_ptype = 0x00;
 			theorical_alpdu_header_size = 1;
 			switch (protocol_type) {
+			case 0x0082:         /* L2S */
+				theorical_alpdu_header =
+				        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
+				compressed_ptype = 0x42;
+				theorical_alpdu_header[0] = compressed_ptype;
+				break;
 			case 0x0800:         /* IPv4        */
 				theorical_alpdu_header =
 				        calloc(theorical_alpdu_header_size, sizeof(unsigned char));

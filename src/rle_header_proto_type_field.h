@@ -11,6 +11,7 @@
 #ifndef __KERNEL__
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #else
 
@@ -54,16 +55,17 @@
 /*------------------------------------------------------------------------------------------------*/
 
 /**
- *  @brief         Get the ALPDU label type depending on the protocol type.
+ * @brief Get the ALPDU label type depending on the protocol type.
  *
- *  @param[in]     protocol_type                the SDU protocol_type.
- *  @param[in]     is_protocol_type_suppressed  1 if protocol type is suppressed, else 0.
- *
- *  @return        0 if OK, 1 if KO.
- *
- *  @ingroup
+ * @param protocol_type                the SDU protocol_type.
+ * @param is_protocol_type_suppressed  Whether protocol type is suppressed or not
+ * @param type_0_alpdu_label_size      The size of the ALPDU label of type 0
+ * @return                             The ALPDU label type in range [0-3]
  */
-int get_alpdu_label_type(const uint16_t protocol_type, const int is_protocol_type_suppressed);
+uint8_t get_alpdu_label_type(const uint16_t protocol_type,
+                             const bool is_protocol_type_suppressed,
+                             const uint8_t type_0_alpdu_label_size)
+	__attribute__((warn_unused_result));
 
 
 #endif /* __RLE_HEADER_PROTO_TYPE_FIELD_H__ */

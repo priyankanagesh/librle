@@ -191,14 +191,16 @@ uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype)
 	return compressed_ptype;
 }
 
-int get_alpdu_label_type(const uint16_t protocol_type, const int is_protocol_type_suppressed)
+uint8_t get_alpdu_label_type(const uint16_t protocol_type,
+                             const bool is_protocol_type_suppressed,
+                             const uint8_t type_0_alpdu_label_size)
 {
 	int alpdu_label_type = 0; /* 0 by default. */
 
 	if (protocol_type == RLE_PROTO_TYPE_SIGNAL_UNCOMP) {
 		/* RCS2 requirement */
 		alpdu_label_type = RLE_LT_PROTO_SIGNAL;
-	} else if (is_protocol_type_suppressed) {
+	} else if (is_protocol_type_suppressed && type_0_alpdu_label_size != 0) {
 		alpdu_label_type = RLE_LT_IMPLICIT_PROTO_TYPE;
 	}
 

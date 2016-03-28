@@ -403,9 +403,11 @@ int push_ppdu_header(struct rle_frag_buf *const frag_buf,
 		}
 
 	} else {
-		const int protocol_type_suppressed = (frag_buf_get_alpdu_header_len(frag_buf) == 0);
-		const int alpdu_label_type = get_alpdu_label_type(frag_buf->sdu_info.protocol_type,
-		                                                  protocol_type_suppressed);
+		const bool protocol_type_suppressed = (frag_buf_get_alpdu_header_len(frag_buf) == 0);
+		const uint8_t alpdu_label_type =
+			get_alpdu_label_type(frag_buf->sdu_info.protocol_type,
+			                     protocol_type_suppressed,
+			                     rle_conf->type_0_alpdu_label_size);
 
 		max_alpdu_fragment_len -= sizeof(rle_ppdu_header_comp_t);
 

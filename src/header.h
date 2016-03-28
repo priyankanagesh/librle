@@ -409,7 +409,7 @@ static inline uint16_t rle_ppdu_header_start_get_total_length(
  *
  *  @ingroup RLE header
  */
-static inline int rle_start_ppdu_header_get_is_signal(const rle_ppdu_header_start_t *const header);
+static inline bool rle_start_ppdu_header_get_is_signal(const rle_ppdu_header_start_t *const header);
 
 /**
  *  @brief         Get if SDU in PPDU is signal.
@@ -420,7 +420,7 @@ static inline int rle_start_ppdu_header_get_is_signal(const rle_ppdu_header_star
  *
  *  @ingroup RLE header
  */
-static inline int rle_start_ppdu_header_get_is_suppressed(
+static inline bool rle_start_ppdu_header_get_is_suppressed(
         const rle_ppdu_header_start_t *const header);
 
 /**
@@ -535,27 +535,25 @@ static inline uint16_t rle_ppdu_header_start_get_total_length(
 	return total_length;
 }
 
-static inline int rle_comp_ppdu_header_get_is_signal(const rle_ppdu_header_comp_t *const header)
+static inline bool rle_comp_ppdu_header_get_is_signal(const rle_ppdu_header_comp_t *const header)
 {
-	return header->label_type == RLE_LT_PROTO_SIGNAL;
+	return !!(header->label_type == RLE_LT_PROTO_SIGNAL);
 }
 
-static inline int rle_comp_ppdu_header_get_is_suppressed(const rle_ppdu_header_comp_t *const header)
+static inline bool rle_comp_ppdu_header_get_is_suppressed(const rle_ppdu_header_comp_t *const header)
 {
-	return (header->proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
-	       (header->label_type == RLE_LT_IMPLICIT_PROTO_TYPE);
+	return !!(header->proto_type_supp == RLE_T_PROTO_TYPE_SUPP);
 }
 
-static inline int rle_start_ppdu_header_get_is_signal(const rle_ppdu_header_start_t *const header)
+static inline bool rle_start_ppdu_header_get_is_signal(const rle_ppdu_header_start_t *const header)
 {
-	return header->label_type == RLE_LT_PROTO_SIGNAL;
+	return !!(header->label_type == RLE_LT_PROTO_SIGNAL);
 }
 
-static inline int rle_start_ppdu_header_get_is_suppressed(
+static inline bool rle_start_ppdu_header_get_is_suppressed(
         const rle_ppdu_header_start_t *const header)
 {
-	return (header->proto_type_supp == RLE_T_PROTO_TYPE_SUPP) ||
-	       (header->label_type == RLE_LT_IMPLICIT_PROTO_TYPE);
+	return !!(header->proto_type_supp == RLE_T_PROTO_TYPE_SUPP);
 }
 
 static inline int rle_start_ppdu_header_get_use_crc(const rle_ppdu_header_start_t *const header)

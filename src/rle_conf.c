@@ -103,7 +103,7 @@ bool rle_config_check(const struct rle_config *const conf)
 	return true;
 }
 
-int ptype_is_omissible(const uint16_t ptype, const struct rle_config *const rle_conf)
+bool ptype_is_omissible(const uint16_t ptype, const struct rle_config *const rle_conf)
 {
 	int status = false;
 
@@ -125,9 +125,10 @@ int ptype_is_omissible(const uint16_t ptype, const struct rle_config *const rle_
 		if (ptype_is_default_ptype) {
 			status = true;
 		}
-	}
-	if (ptype_is_signal) {
-		status = true;
+
+		if (ptype_is_signal) {
+			status = true;
+		}
 	}
 
 	return status;
