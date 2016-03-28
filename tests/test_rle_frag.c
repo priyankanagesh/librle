@@ -61,10 +61,9 @@ static enum check_frag_status test_check_frag_transition(const enum frag_states 
  */
 static enum frag_states test_get_fragment_type(const unsigned char ppdu_first_octet);
 
-static void print_modules_stats(void)
+static void print_modules_stats(const struct rle_transmitter *const transmitter)
 {
-	print_transmitter_stats();
-	return;
+	print_transmitter_stats(transmitter);
 }
 
 static enum check_frag_status test_check_frag_transition(const enum frag_states old_state,
@@ -218,7 +217,7 @@ static bool test_frag(const uint16_t protocol_type,
 
 exit_label:
 
-	print_modules_stats();
+	print_modules_stats(transmitter);
 
 	if (transmitter != NULL) {
 		rle_transmitter_destroy(&transmitter);

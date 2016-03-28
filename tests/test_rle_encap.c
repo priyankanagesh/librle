@@ -38,10 +38,9 @@ static bool compare_packets(const unsigned char pkt_1[], const size_t pkt_1_leng
                                     const unsigned char pkt_2[],
                                     const size_t pkt_2_length);
 
-static void print_modules_stats(void)
+static void print_modules_stats(const struct rle_transmitter *const transmitter)
 {
-	print_transmitter_stats();
-	return;
+	print_transmitter_stats(transmitter);
 }
 
 /**
@@ -335,7 +334,7 @@ static bool test_encap(const uint16_t protocol_type,
 
 exit_label:
 
-	print_modules_stats();
+	print_modules_stats(transmitter);
 
 	if (transmitter != NULL) {
 		rle_transmitter_destroy(&transmitter);

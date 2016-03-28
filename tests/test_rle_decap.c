@@ -44,11 +44,11 @@ static bool test_decap(const uint16_t protocol_type,
                        const size_t burst_size,
                        const size_t label_length);
 
-static void print_modules_stats(void)
+static void print_modules_stats(const struct rle_transmitter *const transmitter,
+                                const struct rle_receiver *const receiver)
 {
-	print_transmitter_stats();
-	print_receiver_stats();
-	return;
+	print_transmitter_stats(transmitter);
+	print_receiver_stats(receiver);
 }
 
 static bool test_decap(const uint16_t protocol_type,
@@ -243,7 +243,7 @@ free_sdus:
 
 exit_label:
 
-	print_modules_stats();
+	print_modules_stats(transmitter, receiver);
 
 	if (transmitter != NULL) {
 		rle_transmitter_destroy(&transmitter);
