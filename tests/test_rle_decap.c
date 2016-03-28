@@ -1264,6 +1264,7 @@ bool test_decap_all(void)
 							if (ret == false) {
 								/* Only one fail means the decap test fail. */
 								output = false;
+								goto error;
 							}
 						}
 					}
@@ -1272,6 +1273,7 @@ bool test_decap_all(void)
 		}
 	}
 
+error:
 	PRINT_TEST_STATUS(output);
 	printf("\n");
 	return output;

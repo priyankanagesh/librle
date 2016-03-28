@@ -651,11 +651,13 @@ bool test_encap_all(void)
 				if (ret == false) {
 					/* Only one fail means the encap test fail. */
 					output = false;
+					goto error;
 				}
 			}
 		}
 	}
 
+error:
 	PRINT_TEST_STATUS(output);
 	printf("\n");
 	return output;
