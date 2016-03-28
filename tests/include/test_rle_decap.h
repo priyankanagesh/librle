@@ -101,6 +101,20 @@ bool test_decap_null_seqno(void);
 bool test_decap_context_free(void);
 
 /**
+ * @brief Test the robustness against PPDU fragment with 0 byte of ALPDU
+ *
+ * @return        true if such fragments are ignored, else false
+ */
+bool test_decap_alpdu_fragment_0_byte(void);
+
+/**
+ * @brief Test the robustness against 2-byte PPDU fragment
+ *
+ * @return        true if such fragments are ignored, else false
+ */
+bool test_decap_ppdu_2_bytes(void);
+
+/**
  * @brief         All the Decapsulation tests
  *
  *                Decapsulation test for different protocol types (IPv4, v6, VLAN, QinQ,

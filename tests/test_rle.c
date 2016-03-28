@@ -170,6 +170,8 @@ static bool decap_tests(void)
 	const struct test ctxt_flush = { "Context Flushing", test_decap_flush_ctxt };
 	const struct test null_seqno = { "Null sequence number", test_decap_null_seqno };
 	const struct test context_free = { "Context freeing index", test_decap_context_free };
+	const struct test alpdu_fragment_0_byte = { "Support for 0-byte ALPDU fragments", test_decap_alpdu_fragment_0_byte };
+	const struct test ppdu_2_bytes = { "Support for 2-byte PPDU fragments", test_decap_ppdu_2_bytes };
 
 	const struct test *const decapsulation_tests[] =
 	{
@@ -183,6 +185,8 @@ static bool decap_tests(void)
 		&ctxt_flush,
 		&null_seqno,
 		&context_free,
+		&alpdu_fragment_0_byte,
+		&ppdu_2_bytes,
 		NULL
 	};
 

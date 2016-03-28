@@ -1662,3 +1662,234 @@ exit_label:
 	return output;
 }
 
+bool test_decap_alpdu_fragment_0_byte(void)
+{
+	bool is_success = false;
+
+	const struct rle_config conf = {
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x30,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
+	};
+
+	size_t sdu_len = 21; /* IPv4 */
+	size_t protocol_type_len = 2; /* uncompressed protocol type */
+	size_t trailer_len = 1; /* seqnum */
+
+	size_t alpdu_len = protocol_type_len + sdu_len + trailer_len;
+	size_t ppdu_start_len = 2 + 2 + 10 /* 10 bytes of ALPDU */;
+	size_t ppdu_cont1_len = 2 + 0 /* 0-byte of ALPDU */;
+	size_t ppdu_cont2_len = 2 + 0 /* 0-byte of ALPDU */;
+	size_t ppdu_end_len = 2 + (alpdu_len - 10) /* remaining of ALPDU */;
+
+	uint8_t frag_id = 2;
+	uint8_t use_alpdu_crc = 0;
+	uint8_t alpdu_label_type = 0;
+
+	size_t fpdu_label_len = 3;
+	unsigned char fpdu_label[fpdu_label_len];
+
+	unsigned char fpdu1[] = {
+		0x00, 0x01, 0x02, /* payload label */
+		(1 << 7) | (0 << 6) | (((ppdu_start_len - 2) >> 5) & 0x3f), /* 1st PPDU byte */
+		(((ppdu_start_len - 2) & 0x1f) << 3) | frag_id,             /* 2nd PPDU byte */
+		(use_alpdu_crc << 7) | ((alpdu_len >> 5) & 0x7f),           /* 3rd PPDU byte */
+		((alpdu_len & 0x1f) << 3) | (alpdu_label_type << 1) | conf.allow_ptype_omission, /* 4th PPDU byte */
+		0x08, 0x00,                                     /* ALPDU protocol type */
+		0x45, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, /* ALPDU payload: IPv4 */
+	};
+	unsigned char fpdu2[] = {
+		0x00, 0x01, 0x02, /* payload label */
+		(0 << 7) | (0 << 6) | (((ppdu_cont1_len - 2) >> 5) & 0x3f), /* 1st PPDU byte */
+		(((ppdu_cont1_len - 2) & 0x1f) << 3) | frag_id,             /* 2nd PPDU byte */
+	};
+	unsigned char fpdu3[] = {
+		0x00, 0x01, 0x02, /* payload label */
+		(0 << 7) | (0 << 6) | (((ppdu_cont2_len - 2) >> 5) & 0x3f), /* 1st PPDU byte */
+		(((ppdu_cont2_len - 2) & 0x1f) << 3) | frag_id,             /* 2nd PPDU byte */
+	};
+	unsigned char fpdu4[] = {
+		0x00, 0x01, 0x02, /* payload label */
+		(0 << 7) | (1 << 6) | (((ppdu_end_len - 2) >> 5) & 0x3f), /* 1st PPDU byte */
+		(((ppdu_end_len - 2) & 0x1f) << 3) | frag_id,             /* 2nd PPDU byte */
+		0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+		0xff, 0xff, 0xff, 0xff,
+		0x42,                                           /* IPv4 payload */
+		0x00,                                           /* ALPDU trailer */
+	};
+
+	const size_t sdu_buffer_len = 100;
+	unsigned char sdu_buffer[sdu_buffer_len];
+	size_t sdus_max_nr = 1;
+	struct rle_sdu sdus[sdus_max_nr];
+	size_t sdus_nr = 0;
+
+	struct rle_receiver *receiver;
+	enum rle_decap_status ret_decap;
+
+	PRINT_TEST("Support for 0-byte ALPDU fragments");
+
+	receiver = rle_receiver_new(&conf);
+	if (receiver == NULL) {
+		PRINT_ERROR("Error allocating receiver");
+		goto error;
+	}
+
+	sdus[0].buffer = sdu_buffer;
+	sdus[0].size = sdu_buffer_len;
+	sdus[0].protocol_type = 0x0000;
+
+	printf("\tdecapsulate %zu-byte FPDU\n", sizeof(fpdu1));
+	ret_decap = rle_decapsulate(receiver, fpdu1, sizeof(fpdu1),
+	                            sdus, sdus_max_nr, &sdus_nr,
+	                            fpdu_label, fpdu_label_len);
+	if (ret_decap != RLE_DECAP_OK) {
+		PRINT_ERROR("Decap does not return OK.");
+		goto free_receiver;
+	}
+	if (sdus_nr != 0) {
+		PRINT_ERROR("%zu SDUs decapsulated while 0 expected", sdus_nr);
+		goto free_receiver;
+	}
+
+	printf("\tdecapsulate %zu-byte FPDU\n", sizeof(fpdu2));
+	ret_decap = rle_decapsulate(receiver, fpdu2, sizeof(fpdu2),
+	                            sdus, sdus_max_nr, &sdus_nr,
+	                            fpdu_label, fpdu_label_len);
+	if (ret_decap != RLE_DECAP_OK) {
+		PRINT_ERROR("Decap does not return OK.");
+		goto free_receiver;
+	}
+	if (sdus_nr != 0) {
+		PRINT_ERROR("%zu SDUs decapsulated while 0 expected", sdus_nr);
+		goto free_receiver;
+	}
+
+	printf("\tdecapsulate %zu-byte FPDU\n", sizeof(fpdu3));
+	ret_decap = rle_decapsulate(receiver, fpdu3, sizeof(fpdu3),
+	                            sdus, sdus_max_nr, &sdus_nr,
+	                            fpdu_label, fpdu_label_len);
+	if (ret_decap != RLE_DECAP_OK) {
+		PRINT_ERROR("Decap does not return OK.");
+		goto free_receiver;
+	}
+	if (sdus_nr != 0) {
+		PRINT_ERROR("%zu SDUs decapsulated while 0 expected", sdus_nr);
+		goto free_receiver;
+	}
+
+	printf("\tdecapsulate %zu-byte FPDU\n", sizeof(fpdu4));
+	ret_decap = rle_decapsulate(receiver, fpdu4, sizeof(fpdu4),
+	                            sdus, sdus_max_nr, &sdus_nr,
+	                            fpdu_label, fpdu_label_len);
+	if (ret_decap != RLE_DECAP_OK) {
+		PRINT_ERROR("Decap does not return OK.");
+		goto free_receiver;
+	}
+	if (sdus_nr != 1) {
+		PRINT_ERROR("%zu SDUs decapsulated while 1 expected", sdus_nr);
+		goto free_receiver;
+	}
+
+	assert(rle_receiver_stats_get_counter_sdus_lost(receiver, frag_id) == 0);
+	assert(rle_receiver_stats_get_counter_sdus_dropped(receiver, frag_id) == 0);
+	assert(rle_receiver_stats_get_counter_bytes_dropped(receiver, frag_id) == 0);
+
+	is_success = true;
+
+free_receiver:
+	rle_receiver_destroy(&receiver);
+error:
+	PRINT_TEST_STATUS(is_success);
+	printf("\n");
+	return is_success;
+}
+
+bool test_decap_ppdu_2_bytes(void)
+{
+	bool is_success = false;
+
+	const struct rle_config conf = {
+		.allow_ptype_omission = 1,
+		.use_compressed_ptype = 1,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x0d,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
+	};
+
+	size_t sdu_len = 0; /* 0-byte SDU */
+	size_t protocol_type_len = 0; /* omitted protocol type */
+	size_t trailer_len = 0; /* no fragmentation */
+
+	size_t alpdu_len = protocol_type_len + sdu_len + trailer_len;
+	size_t ppdu_len = 2 + alpdu_len;
+
+	uint8_t alpdu_label_type = 0;
+
+	size_t fpdu_label_len = 3;
+	unsigned char fpdu_label[fpdu_label_len];
+
+	unsigned char fpdu[] = {
+		0x00, 0x01, 0x02, /* payload label */
+		(1 << 7) | (1 << 6) | (((ppdu_len - 2) >> 5) & 0x3f), /* 1st PPDU byte */
+		(((ppdu_len - 2) & 0x1f) << 3) | (alpdu_label_type << 1) | conf.allow_ptype_omission, /* 2nd PPDU byte */
+		/* empty ALPDU header */
+		/* 0-byte SDU */
+	};
+
+	const size_t sdu_buffer_len = 100;
+	unsigned char sdu_buffer[sdu_buffer_len];
+	size_t sdus_max_nr = 1;
+	struct rle_sdu sdus[sdus_max_nr];
+	size_t sdus_nr = 0;
+
+	struct rle_receiver *receiver;
+	enum rle_decap_status ret_decap;
+
+	PRINT_TEST("Support for 2-byte PPDU fragments");
+
+	receiver = rle_receiver_new(&conf);
+	if (receiver == NULL) {
+		PRINT_ERROR("Error allocating receiver");
+		goto error;
+	}
+
+	sdus[0].buffer = sdu_buffer;
+	sdus[0].size = sdu_buffer_len;
+	sdus[0].protocol_type = 0x0000;
+
+	printf("\tdecapsulate %zu-byte FPDU\n", sizeof(fpdu));
+	ret_decap = rle_decapsulate(receiver, fpdu, sizeof(fpdu),
+	                            sdus, sdus_max_nr, &sdus_nr,
+	                            fpdu_label, fpdu_label_len);
+	if (ret_decap != RLE_DECAP_OK) {
+		PRINT_ERROR("Decap does not return OK.");
+		goto free_receiver;
+	}
+	if (sdus_nr != 1) {
+		PRINT_ERROR("%zu SDUs decapsulated while 1 expected", sdus_nr);
+		goto free_receiver;
+	}
+	assert(sdus[0].size == 0);
+	assert(sdus[0].protocol_type == 0x0800);
+
+	is_success = true;
+
+free_receiver:
+	rle_receiver_destroy(&receiver);
+error:
+	PRINT_TEST_STATUS(is_success);
+	printf("\n");
+	return is_success;
+}
+

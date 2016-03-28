@@ -65,8 +65,7 @@ int reassembly_comp_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	comp_ppdu_extract_alpdu_fragment(ppdu, ppdu_length, &alpdu_fragment, &alpdu_fragment_len);
 
 	if (alpdu_fragment_len == 0) {
-		PRINT_RLE_ERROR("Error: No ALPDU in Complete PPDU.");
-		goto out;
+		PRINT_RLE_WARNING("warning: 0-byte ALPDU in Complete PPDU");
 	}
 
 	if (rle_comp_ppdu_header_get_is_suppressed(header)) {
@@ -315,6 +314,10 @@ int reassembly_cont_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 
 	cont_end_ppdu_extract_alpdu_fragment(ppdu, ppdu_length, &alpdu_fragment,
 	                                     &alpdu_fragment_len);
+
+	if (alpdu_fragment_len == 0) {
+		PRINT_RLE_WARNING("warning: 0-byte ALPDU in PPDU CONT");
+	}
 
 	sdu_fragment = alpdu_fragment;
 	sdu_fragment_len = alpdu_fragment_len;
