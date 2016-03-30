@@ -9,6 +9,7 @@
 
 #include "rle_transmitter.h"
 #include "rle_ctx.h"
+#include "rle_conf.h"
 #include "constants.h"
 #include "encap.h"
 #include "fragmentation.h"
@@ -105,22 +106,12 @@ struct rle_transmitter *rle_transmitter_new(const struct rle_config *const conf)
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
-	if (conf == NULL) {
-		PRINT_RLE_ERROR("failed to created RLE transmitter: invalid configuration, "
-		                "NULL is not accepted");
-		goto error;
-	}
-
-	if (conf->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
-		PRINT_RLE_ERROR(
-		        "could not initialize transmitter with 0x31 as implicit protocol type : "
-		        "Not supported yet.\n");
-
+	if (!rle_config_check(conf)) {
+		PRINT_RLE_ERROR("failed to created RLE transmitter: invalid configuration");
 		goto error;
 	}
 
 	transmitter = (struct rle_transmitter *)MALLOC(sizeof(struct rle_transmitter));
-
 	if (!transmitter) {
 		PRINT_RLE_ERROR("allocating transmitter module failed\n");
 

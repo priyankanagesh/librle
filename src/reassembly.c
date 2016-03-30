@@ -65,27 +65,33 @@ int reassembly_comp_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	comp_ppdu_extract_alpdu_fragment(ppdu, ppdu_length, &alpdu_fragment, &alpdu_fragment_len);
 
 	if (alpdu_fragment_len == 0) {
-		PRINT_RLE_ERROR("Error: No ALPDU in Complete PPDU.");
-		goto out;
+		PRINT_RLE_WARNING("warning: 0-byte ALPDU in Complete PPDU");
 	}
 
-	if (rle_comp_ppdu_header_get_is_signal(header)) {
-		ret = signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
-		                                        &protocol_type, &sdu_fragment,
-		                                        &sdu_fragment_len);
-	} else if (rle_comp_ppdu_header_get_is_suppressed(header)) {
-		ret =
-		        suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
-		                                              &protocol_type,
-		                                              &sdu_fragment, &sdu_fragment_len,
-		                                              &_this->conf);
+	if (rle_comp_ppdu_header_get_is_suppressed(header)) {
+		/* protocol type is suppressed */
+		if (rle_comp_ppdu_header_get_is_signal(header)) {
+			/* ALPDU label type 3 means that the implicit protocol type is L2S */
+			ret = signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+			                                        &protocol_type, &sdu_fragment,
+			                                        &sdu_fragment_len);
+		} else {
+			/* ALPDU label type 0, 1 or 2 mean that the implicit protocol type
+			 * is given by the configuration */
+			ret = suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+			                                            &protocol_type,
+			                                            &sdu_fragment, &sdu_fragment_len,
+			                                            &_this->conf);
+		}
 	} else if (_this->conf.use_compressed_ptype) {
+		/* protocol type is not suppressed, but compressed */
 		ret =
 		        compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                              &protocol_type,
 		                                              &sdu_fragment, &sdu_fragment_len,
 		                                              NULL);
 	} else {
+		/* protocol type is not suppressed nor compressed */
 		ret = uncompressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                              &protocol_type, &sdu_fragment,
 		                                              &sdu_fragment_len);
@@ -171,27 +177,29 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 
 	sdu_total_len = alpdu_total_len;
 
-	if (rle_start_ppdu_header_get_is_signal(header)) {
-		ret =
-		        signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
-		                                          &protocol_type,
-		                                          &sdu_fragment,
-		                                          &sdu_fragment_len);
-		alpdu_hdr_len = 0;
-	} else if (rle_start_ppdu_header_get_is_suppressed(header)) {
-		ret =
-		        suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
-		                                              &protocol_type,
-		                                              &sdu_fragment, &sdu_fragment_len,
-		                                              &_this->conf);
+	if (rle_start_ppdu_header_get_is_suppressed(header)) {
+		/* protocol type is suppressed */
+		if (rle_start_ppdu_header_get_is_signal(header)) {
+			/* ALPDU label type 3 means that the implicit protocol type is L2S */
+			ret = signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+			                                        &protocol_type,
+			                                        &sdu_fragment, &sdu_fragment_len);
+		} else {
+			ret = suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+			                                            &protocol_type,
+			                                            &sdu_fragment, &sdu_fragment_len,
+			                                            &_this->conf);
+		}
 		alpdu_hdr_len = 0;
 	} else if (_this->conf.use_compressed_ptype) {
+		/* protocol type is not suppressed, but compressed */
 		ret =
 		        compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                              &protocol_type,
 		                                              &sdu_fragment, &sdu_fragment_len,
 		                                              &alpdu_hdr_len);
 	} else {
+		/* protocol type is not suppressed nor compressed */
 		ret = uncompressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                              &protocol_type, &sdu_fragment,
 		                                              &sdu_fragment_len);
@@ -306,6 +314,10 @@ int reassembly_cont_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 
 	cont_end_ppdu_extract_alpdu_fragment(ppdu, ppdu_length, &alpdu_fragment,
 	                                     &alpdu_fragment_len);
+
+	if (alpdu_fragment_len == 0) {
+		PRINT_RLE_WARNING("warning: 0-byte ALPDU in PPDU CONT");
+	}
 
 	sdu_fragment = alpdu_fragment;
 	sdu_fragment_len = alpdu_fragment_len;

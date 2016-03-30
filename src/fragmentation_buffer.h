@@ -270,17 +270,6 @@ static inline ssize_t frag_buf_get_alpdu_header_len(const rle_frag_buf_t *const 
 static inline ssize_t frag_buf_get_alpdu_trailer_len(const rle_frag_buf_t *const frag_buf);
 
 /**
- * @brief         Get the length of the PPDU header in the fragmentation buffer.
- *
- * @param[in,out] frag_buf                   The fragmentation buffer.
- *
- * @return        0 if OK, else 1.
- *
- * @ingroup       RLE Fragmentation buffer.
- */
-static inline ssize_t frag_buf_get_ppdu_header_len(const rle_frag_buf_t *const frag_buf);
-
-/**
  * @brief         Dump memory from the fragmentation buffer.
  *
  * @param[in,out] frag_buf                   The fragmentation buffer.
@@ -454,11 +443,6 @@ static inline ssize_t frag_buf_get_alpdu_header_len(const rle_frag_buf_t *const 
 static inline ssize_t frag_buf_get_alpdu_trailer_len(const rle_frag_buf_t *const frag_buf)
 {
 	return (ssize_t)(frag_buf->alpdu.end - frag_buf->sdu.end);
-}
-
-static inline ssize_t frag_buf_get_ppdu_header_len(const rle_frag_buf_t *const frag_buf)
-{
-	return (ssize_t)(frag_buf->cur_pos - frag_buf->ppdu.start);
 }
 
 static inline int frag_buf_dump_mem(const rle_frag_buf_t *const frag_buf,

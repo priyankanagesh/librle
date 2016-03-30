@@ -97,7 +97,8 @@ int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
                        struct rle_ctx_management *const rle_ctx)
 {
 	int status = 1;
-	const int use_alpdu_crc = rle_conf->use_alpdu_crc;
+	const bool use_alpdu_crc =
+		(rle_conf->allow_alpdu_sequence_number ? 0 : rle_conf->allow_alpdu_crc);
 	size_t alpdu_trailer_len;
 
 #ifdef DEBUG
@@ -149,7 +150,7 @@ int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
                         size_t *const lost_packets)
 {
 	int status = 0;
-	const int use_alpdu_crc = rle_ctx_get_use_crc(rle_ctx);
+	const bool use_alpdu_crc = rle_ctx_get_use_crc(rle_ctx);
 
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);

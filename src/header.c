@@ -107,7 +107,7 @@ static void push_comp_ppdu_header(struct rle_frag_buf *const frag_buf,
 static void push_start_ppdu_header(struct rle_frag_buf *const frag_buf, const uint8_t frag_id,
                                    const uint8_t alpdu_label_type,
                                    const uint8_t protocol_type_suppressed,
-                                   const uint8_t use_alpdu_crc);
+                                   const bool use_alpdu_crc);
 
 /**
  *  @brief         create and push CONT PPDU header into a fragmentation buffer.
@@ -197,8 +197,7 @@ static void push_comp_ppdu_header(struct rle_frag_buf *const frag_buf,
 
 	frag_buf_ppdu_push(frag_buf, sizeof(**p_ppdu_header));
 
-	ppdu_length_field = frag_buf_get_current_ppdu_len(frag_buf) -
-	                    frag_buf_get_ppdu_header_len(frag_buf);
+	ppdu_length_field = frag_buf_get_current_ppdu_len(frag_buf) - 2;
 
 	(*p_ppdu_header)->start_ind = 1;
 	(*p_ppdu_header)->end_ind = 1;
@@ -211,7 +210,7 @@ static void push_comp_ppdu_header(struct rle_frag_buf *const frag_buf,
 static void push_start_ppdu_header(struct rle_frag_buf *const frag_buf, const uint8_t frag_id,
                                    const uint8_t alpdu_label_type,
                                    const uint8_t protocol_type_suppressed,
-                                   const uint8_t use_alpdu_crc)
+                                   const bool use_alpdu_crc)
 {
 	uint16_t ppdu_length_field;
 	uint16_t total_length_field;
@@ -225,8 +224,7 @@ static void push_start_ppdu_header(struct rle_frag_buf *const frag_buf, const ui
 
 	frag_buf_ppdu_push(frag_buf, sizeof(**p_ppdu_header));
 
-	ppdu_length_field = frag_buf_get_current_ppdu_len(frag_buf) - frag_buf_get_ppdu_header_len(
-	        frag_buf);
+	ppdu_length_field = frag_buf_get_current_ppdu_len(frag_buf) - 2;
 	total_length_field = frag_buf_get_alpdu_header_len(frag_buf) + frag_buf->sdu_info.size +
 	                     frag_buf_get_alpdu_trailer_len(frag_buf);
 
@@ -235,7 +233,7 @@ static void push_start_ppdu_header(struct rle_frag_buf *const frag_buf, const ui
 	rle_ppdu_header_set_ppdu_length((rle_ppdu_header_t *)*p_ppdu_header,
 	                                ppdu_length_field);
 	(*p_ppdu_header)->frag_id = frag_id;
-	(*p_ppdu_header)->use_crc = use_alpdu_crc;
+	(*p_ppdu_header)->use_crc = (use_alpdu_crc ? 1 : 0);
 	rle_ppdu_header_start_set_total_length(*p_ppdu_header, total_length_field);
 	(*p_ppdu_header)->label_type = alpdu_label_type;
 	(*p_ppdu_header)->proto_type_supp = protocol_type_suppressed;
@@ -254,8 +252,7 @@ static void push_cont_ppdu_header(struct rle_frag_buf *const frag_buf, const uin
 
 	frag_buf_ppdu_push(frag_buf, sizeof(**p_ppdu_header));
 
-	ppdu_length_field = frag_buf_get_current_ppdu_len(frag_buf) - frag_buf_get_ppdu_header_len(
-	        frag_buf);
+	ppdu_length_field = frag_buf_get_current_ppdu_len(frag_buf) - 2;
 
 	(*p_ppdu_header)->start_ind = 0;
 	(*p_ppdu_header)->end_ind = 0;
@@ -277,8 +274,7 @@ static void push_end_ppdu_header(struct rle_frag_buf *const frag_buf, const uint
 
 	frag_buf_ppdu_push(frag_buf, sizeof(**p_ppdu_header));
 
-	ppdu_length_field = frag_buf_get_current_ppdu_len(frag_buf) - frag_buf_get_ppdu_header_len(
-	        frag_buf);
+	ppdu_length_field = frag_buf_get_current_ppdu_len(frag_buf) - 2;
 
 	(*p_ppdu_header)->start_ind = 0;
 	(*p_ppdu_header)->end_ind = 1;
@@ -338,7 +334,8 @@ int push_ppdu_header(struct rle_frag_buf *const frag_buf,
 	int status = 1;
 	size_t max_alpdu_fragment_len = ppdu_length;
 	const size_t remain_alpdu_len = frag_buf_get_remaining_alpdu_length(frag_buf);
-	const int use_alpdu_crc = rle_conf->use_alpdu_crc;
+	const bool use_alpdu_crc =
+		(rle_conf->allow_alpdu_sequence_number ? false : !!rle_conf->allow_alpdu_crc);
 
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);
@@ -402,9 +399,11 @@ int push_ppdu_header(struct rle_frag_buf *const frag_buf,
 		}
 
 	} else {
-		const int protocol_type_suppressed = (frag_buf_get_alpdu_header_len(frag_buf) == 0);
-		const int alpdu_label_type = get_alpdu_label_type(frag_buf->sdu_info.protocol_type,
-		                                                  protocol_type_suppressed);
+		const bool protocol_type_suppressed = (frag_buf_get_alpdu_header_len(frag_buf) == 0);
+		const uint8_t alpdu_label_type =
+			get_alpdu_label_type(frag_buf->sdu_info.protocol_type,
+			                     protocol_type_suppressed,
+			                     rle_conf->type_0_alpdu_label_size);
 
 		max_alpdu_fragment_len -= sizeof(rle_ppdu_header_comp_t);
 
@@ -461,12 +460,8 @@ void comp_ppdu_extract_alpdu_fragment(const unsigned char comp_ppdu[], const siz
                                       const unsigned char *alpdu_fragment[],
                                       size_t *alpdu_fragment_len)
 {
-	const rle_ppdu_header_comp_t *const comp_ppdu_header = (rle_ppdu_header_comp_t *)comp_ppdu;
-
 	*alpdu_fragment = comp_ppdu + sizeof(rle_ppdu_header_comp_t);
-	*alpdu_fragment_len = rle_ppdu_header_get_ppdu_length((rle_ppdu_header_t *)comp_ppdu_header);
-
-	assert(ppdu_len == (sizeof(rle_ppdu_header_comp_t) + (*alpdu_fragment_len)));
+	*alpdu_fragment_len = ppdu_len - sizeof(rle_ppdu_header_comp_t);
 }
 
 void start_ppdu_extract_alpdu_fragment(const unsigned char start_ppdu[], const size_t ppdu_len,
@@ -479,8 +474,7 @@ void start_ppdu_extract_alpdu_fragment(const unsigned char start_ppdu[], const s
 	        (rle_ppdu_header_start_t *)start_ppdu;
 
 	*alpdu_fragment = start_ppdu + sizeof(rle_ppdu_header_start_t);
-	*alpdu_fragment_len = rle_ppdu_header_get_ppdu_length(
-	        (rle_ppdu_header_t *)start_ppdu_header);
+	*alpdu_fragment_len = ppdu_len - sizeof(rle_ppdu_header_start_t);
 	*alpdu_total_len = rle_ppdu_header_start_get_total_length(start_ppdu_header);
 	*is_crc_used = start_ppdu_header->use_crc;
 
@@ -491,14 +485,8 @@ void cont_end_ppdu_extract_alpdu_fragment(const unsigned char cont_end_ppdu[], c
                                           const unsigned char *alpdu_fragment[],
                                           size_t *const alpdu_fragment_len)
 {
-	const rle_ppdu_header_cont_end_t *const cont_end_ppdu_header =
-	        (rle_ppdu_header_cont_end_t *)cont_end_ppdu;
-
 	*alpdu_fragment = cont_end_ppdu + sizeof(rle_ppdu_header_cont_end_t);
-	*alpdu_fragment_len = rle_ppdu_header_get_ppdu_length(
-	        (rle_ppdu_header_t *)cont_end_ppdu_header);
-
-	assert(ppdu_len == (sizeof(rle_ppdu_header_cont_end_t) + (*alpdu_fragment_len)));
+	*alpdu_fragment_len = ppdu_len - sizeof(rle_ppdu_header_cont_end_t);
 }
 
 int signal_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],

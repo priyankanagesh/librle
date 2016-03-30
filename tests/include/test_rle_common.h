@@ -44,15 +44,17 @@ const unsigned char payload_initializer[5000];
 /**
  * @brief         Specific statistics printer for transmitter
  *
+ * @param receiver  The transmitter to print stats for
  * @return        true if OK, else false.
  */
-void print_transmitter_stats(void);
+void print_transmitter_stats(const struct rle_transmitter *const transmitter);
 
 /**
  * @brief         Specific statistics printer for receiver
  *
+ * @param receiver  The receiver to print stats for
  * @return        true if OK, else false.
  */
-void print_receiver_stats(void);
+void print_receiver_stats(const struct rle_receiver *const receiver);
 
 #endif /* __TEST_RLE_COMMON_H__ */

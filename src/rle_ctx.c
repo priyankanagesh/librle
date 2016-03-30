@@ -193,41 +193,19 @@ void rle_ctx_incr_seq_nb(struct rle_ctx_management *_this)
 	_this->next_seq_nb++;
 }
 
-void rle_ctx_set_use_crc(struct rle_ctx_management *_this, int val)
+void rle_ctx_set_use_crc(struct rle_ctx_management *_this, bool val)
 {
 	_this->use_crc = val;
 }
 
-int rle_ctx_get_use_crc(const struct rle_ctx_management *const _this)
+bool rle_ctx_get_use_crc(const struct rle_ctx_management *const _this)
 {
 	return _this->use_crc;
 }
 
 size_t get_fragment_length(const unsigned char *const buffer)
 {
-	size_t fragment_length = 0;
-	enum frag_states fragment_type = RLE_PDU_COMPLETE;
+	const rle_ppdu_header_t *const ppdu_hdr = (rle_ppdu_header_t *) buffer;
 
-	fragment_type = rle_ppdu_get_fragment_type((rle_ppdu_header_t *)buffer);
-
-	switch (fragment_type) {
-	case RLE_PDU_COMPLETE:
-		fragment_length += sizeof(rle_ppdu_header_comp_t);
-		break;
-	case RLE_PDU_CONT_FRAG:
-	case RLE_PDU_END_FRAG:
-		fragment_length += sizeof(rle_ppdu_header_cont_end_t);
-		break;
-	case RLE_PDU_START_FRAG:
-		fragment_length += sizeof(rle_ppdu_header_start_t);
-		break;
-	default:
-		PRINT_RLE_ERROR("Unhandled fragment type '%i'.", fragment_type);
-		assert(0);
-		break;
-	}
-
-	fragment_length += rle_ppdu_header_get_ppdu_length((rle_ppdu_header_t *)buffer);
-
-	return fragment_length;
+	return (rle_ppdu_header_get_ppdu_length(ppdu_hdr) + sizeof(ppdu_hdr->common));
 }

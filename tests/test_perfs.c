@@ -500,10 +500,15 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 	size_t fpdus_processed = 0;
 
 	const struct rle_config conf = {
-		.implicit_protocol_type = 0x30,
-		.use_alpdu_crc = 0,
+		.allow_ptype_omission = 1,
 		.use_compressed_ptype = 1,
-		.use_ptype_omission = 1
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x30,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 
 	transmitter = rle_transmitter_new(&conf);
@@ -538,9 +543,9 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 
 	printf("=== test: \n");
 	printf("===\timplicit ptype:      0x%02x\n", conf.implicit_protocol_type);
-	printf("===\tALPDU protection:    %s\n", conf.use_alpdu_crc ? "CRC" : "SeqNo");
+	printf("===\tALPDU protection:    %s\n", conf.allow_alpdu_sequence_number ? "SeqNo" : "CRC");
 	printf("===\tptype compression:   %s\n", conf.use_compressed_ptype ? "On" : "Off");
-	printf("===\tptype ommission:     %s\n", conf.use_ptype_omission ? "On" : "Off");
+	printf("===\tptype ommission:     %s\n", conf.allow_ptype_omission ? "On" : "Off");
 
 	stop_program = 0;
 

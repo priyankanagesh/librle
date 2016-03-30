@@ -101,10 +101,15 @@ bool test_request_rle_header_overhead_traffic(void)
 	size_t overhead_size = 0;
 	enum rle_header_size_status header_size_status;
 	const struct rle_config conf = {
-		.implicit_protocol_type = 0,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 0,
-		.use_compressed_ptype = 0
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x00,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 
 	header_size_status = rle_get_header_size(&conf, RLE_TRAFFIC_FPDU, &overhead_size);
@@ -125,10 +130,15 @@ bool test_request_rle_header_overhead_all(void)
 
 	/* Logon */
 	const struct rle_config conf_logon = {
-		.implicit_protocol_type = 0,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 0,
-		.use_compressed_ptype = 0
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x00,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	const struct test_request test_logon = {
 		.fpdu_type = RLE_LOGON_FPDU,
@@ -138,10 +148,15 @@ bool test_request_rle_header_overhead_all(void)
 
 	/* Control */
 	const struct rle_config conf_control = {
-		.implicit_protocol_type = 0,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 0,
-		.use_compressed_ptype = 0
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x00,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	const struct test_request test_control = {
 		.fpdu_type = RLE_CTRL_FPDU,
@@ -152,10 +167,15 @@ bool test_request_rle_header_overhead_all(void)
 	/* Traffic-Control */
 	/* Conf omitted */
 	const struct rle_config conf_omitted = {
-		.implicit_protocol_type = 0x34,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 1,
+		.allow_ptype_omission = 1,
 		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x34,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	const struct test_request test_tc_omitted = {
 		.fpdu_type = RLE_TRAFFIC_CTRL_FPDU,
@@ -166,10 +186,15 @@ bool test_request_rle_header_overhead_all(void)
 	/* Traffic-Control */
 	/* Conf non-omitted, compressed. */
 	const struct rle_config conf_non_omitted_comp = {
-		.implicit_protocol_type = 0x34,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 0,
+		.allow_ptype_omission = 0,
 		.use_compressed_ptype = 1,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x34,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	const struct test_request test_tc_non_omitted_comp = {
 		.fpdu_type = RLE_TRAFFIC_CTRL_FPDU,
@@ -180,10 +205,15 @@ bool test_request_rle_header_overhead_all(void)
 	/* Traffic-Control */
 	/* Conf non-omitted, uncompressed. */
 	const struct rle_config conf_non_omitted_non_comp = {
-		.implicit_protocol_type = 0x34,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 0,
+		.allow_ptype_omission = 0,
 		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x34,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	const struct test_request test_tc_non_omitted_non_comp = {
 		.fpdu_type = RLE_TRAFFIC_CTRL_FPDU,
@@ -218,16 +248,26 @@ bool test_rle_allocation_transmitter(void)
 {
 	bool output = false;
 	const struct rle_config bad_conf = {
-		.implicit_protocol_type = 0x31,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 0,
+		.allow_ptype_omission = 0,
 		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x31,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	const struct rle_config good_conf = {
-		.implicit_protocol_type = 0x00,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 0,
+		.allow_ptype_omission = 0,
 		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x00,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 
 	struct rle_transmitter *t = NULL;
@@ -265,10 +305,15 @@ bool test_rle_destruction_transmitter(void)
 {
 	bool output = false;
 	const struct rle_config conf = {
-		.implicit_protocol_type = 0x00,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 0,
+		.allow_ptype_omission = 0,
 		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x00,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 
 	PRINT_TEST("RLE transmitter destruction.\n");
@@ -309,16 +354,26 @@ bool test_rle_allocation_receiver(void)
 {
 	bool output = false;
 	const struct rle_config bad_conf = {
-		.implicit_protocol_type = 0x31,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 0,
+		.allow_ptype_omission = 0,
 		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x31,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	const struct rle_config good_conf = {
-		.implicit_protocol_type = 0x00,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 0,
+		.allow_ptype_omission = 0,
 		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x00,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 
 	struct rle_receiver *r = NULL;
@@ -355,10 +410,15 @@ bool test_rle_destruction_receiver(void)
 {
 	bool output = false;
 	const struct rle_config conf = {
-		.implicit_protocol_type = 0x00,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 0,
+		.allow_ptype_omission = 0,
 		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x00,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 
 	struct rle_receiver *r = NULL;

@@ -45,15 +45,6 @@
 #define C_OK            0
 #define C_REASSEMBLY_OK 1
 #define C_ERROR         -1
-#define C_ERROR_DROP    -2
-#define C_ERROR_BUF     -3
-#define C_ERROR_TOO_MUCH_FRAG -4
-#define C_ERROR_FRAG_SIZE -5
-
-#define IP_VERSION_4    4
-#define IP_VERSION_6    6
-
-#define SIZEOF_PTR      sizeof(char *)
 
 /** Type of payload in RLE packet */
 enum {

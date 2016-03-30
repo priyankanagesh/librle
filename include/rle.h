@@ -199,10 +199,92 @@ struct rle_sdu {
  * Interface for the configuration initialisation in transmitter and receiver "new" functions.
  */
 struct rle_config {
-	uint8_t implicit_protocol_type; /**< Protocol type that could be omitted.                  */
-	int use_alpdu_crc;              /**< If set to 1, RLE check on CRC, else if 0, Seq number. */
-	int use_ptype_omission;         /**< If set to 1, implicit_protocol_type is omitted.       */
-	int use_compressed_ptype;       /**< If set to 1, protocol types are compressed.           */
+
+	/**
+	 * @brief Whether RLE may use omit the protocol type
+	 *
+	 * If set to 1, the protocol type is omitted for ALPDUs whose protocol type
+	 * matches the implicit_protocol_type.
+	 */
+	int allow_ptype_omission;
+
+	/**
+	 * @brief Whether RLE may compress the protocol type to 1 byte
+	 *
+	 * If set to 1, RLE tries to compress protocol types from 2 bytes to 1 byte.
+	 * If compression is not possible (compressed value for a protocol type is
+	 * not known), then 3 bytes are required.
+	 */
+	int use_compressed_ptype;
+
+	/**
+	 * @brief Whether RLE may use CRC for protection or not
+	 *
+	 * If set to 1, RLE may use CRC for protection. If set to 0, RLE may not.
+	 *
+	 * If both allow_alpdu_crc and allow_alpdu_sequence_number are set to 1,
+	 * RLE uses sequence number.
+	 */
+	int allow_alpdu_crc;
+
+	/**
+	 * @brief Whether RLE may use sequence number for protection or not
+	 *
+	 * If set to 1, RLE may use sequence number for protection. If set to 0,
+	 * RLE may not.
+	 *
+	 * If both allow_alpdu_crc and allow_alpdu_sequence_number are set to 1,
+	 * RLE uses sequence number.
+	 */
+	int allow_alpdu_sequence_number;
+
+	/**
+	 * @brief Whether the optional first byte of the payload header is present
+	 *
+	 * If set to 1, the optional first byte of the payload header is present. If
+	 * set to 0, the first byte is not present.
+	 *
+	 * Only value 0 is supported at the moment.
+	 */
+	int use_explicit_payload_header_map;
+
+	/**
+	 * @brief The implicit protocol type
+	 *
+	 * The implicit protocol type is used for protocol omission if
+	 * allow_ptype_omission is set to 1.
+	 */
+	uint8_t implicit_protocol_type;
+
+	/**
+	 * @brief The size of the PPDU label when not explicitly indicated
+	 *
+	 * This is a value on 4 bits.
+	 *
+	 * Not used at the moment.
+	 */
+	uint8_t implicit_ppdu_label_size;
+
+	/**
+	 * @brief The size of the payload label when not explicitly indicated
+	 *
+	 * This is a value on 4 bits.
+	 *
+	 * Not used at the moment.
+	 */
+	uint8_t implicit_payload_label_size;
+
+	/**
+	 * @brief The size of the ALPDU label for label type 0
+	 *
+	 * The size of the ALPDU label associated with the indication of the
+	 * configurable-size ALPDU label type '0'.
+	 *
+	 * This is a value on 4 bits.
+	 *
+	 * Not used at the moment.
+	 */
+	uint8_t type_0_alpdu_label_size;
 };
 
 /**

@@ -10,6 +10,7 @@
 #include "rle_receiver.h"
 #include "reassembly.h"
 #include "rle_ctx.h"
+#include "rle_conf.h"
 #include "constants.h"
 #include "header.h"
 #include "trailer.h"
@@ -89,21 +90,12 @@ struct rle_receiver *rle_receiver_new(const struct rle_config *const conf)
 	struct rle_receiver *receiver = NULL;
 	size_t iterator;
 
-	if (conf == NULL) {
-		PRINT_RLE_ERROR("failed to created RLE receiver: invalid configuration, "
-		                "NULL is not accepted");
-		goto error;
-	}
-
-	if (conf->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
-		PRINT_RLE_ERROR(
-		        "could not initialize receiver with 0x31 as implicit protocol type : "
-		        "Not supported yet.");
+	if (!rle_config_check(conf)) {
+		PRINT_RLE_ERROR("failed to created RLE receiver: invalid configuration");
 		goto error;
 	}
 
 	receiver = (struct rle_receiver *)MALLOC(sizeof(struct rle_receiver));
-
 	if (!receiver) {
 		PRINT_RLE_ERROR("allocating receiver module failed");
 		goto error;

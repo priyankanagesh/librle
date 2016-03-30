@@ -90,10 +90,15 @@ bool test_encap_ctxtless_null_f_buff(void)
 	enum rle_encap_status ret;
 
 	const struct rle_config conf = {
-		.implicit_protocol_type                 = 0x00,
-		.use_alpdu_crc                          = 0,
-		.use_ptype_omission                     = 0,
-		.use_compressed_ptype                   = 0,
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x00,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 
 	struct rle_frag_buf *f_buff = NULL;
@@ -149,10 +154,15 @@ bool test_encap_ctxtless_f_buff_not_init(void)
 	enum rle_encap_status ret;
 
 	const struct rle_config conf = {
-		.implicit_protocol_type = 0x00,
-		.use_alpdu_crc = 0,
-		.use_ptype_omission = 0,
+		.allow_ptype_omission = 0,
 		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x00,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
@@ -223,10 +233,15 @@ bool test_encap_ctxtless_too_big(void)
 	};
 
 	const struct rle_config conf = {
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
 		.implicit_protocol_type = 0x00,
-		.use_alpdu_crc          = 0,
-		.use_ptype_omission     = 0,
-		.use_compressed_ptype   = 0,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
 	};
 	struct rle_transmitter *transmitter;
 

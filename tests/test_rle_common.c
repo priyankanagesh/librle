@@ -351,8 +351,6 @@ const unsigned char payload_initializer[5000] =
   0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5a,
   0x61, 0x62, 0x63, 0x64 };
 
-struct rle_transmitter *transmitter = NULL;
-struct rle_receiver *receiver = NULL;
 
 /**
  * @brief         Generic functions that execute the statistics functions of a given module.
@@ -404,7 +402,7 @@ exit_label:
 	return;
 }
 
-void print_transmitter_stats(void)
+void print_transmitter_stats(const struct rle_transmitter *const transmitter)
 {
 	if (transmitter == NULL) {
 		PRINT_ERROR("Unable to print stats.");
@@ -443,7 +441,7 @@ exit_label:
 	return;
 }
 
-void print_receiver_stats(void)
+void print_receiver_stats(const struct rle_receiver *const receiver)
 {
 	if (receiver == NULL) {
 		PRINT_ERROR("Unable to print stats.");

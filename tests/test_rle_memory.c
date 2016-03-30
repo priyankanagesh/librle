@@ -45,7 +45,17 @@ void test_rle_memory_frag_buf_new(void **state __attribute__((unused)))
 
 void test_rle_memory_transmitter_new(void **state __attribute__((unused)))
 {
-	struct rle_config conf;
+	const struct rle_config conf = {
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x00,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
+	};
 	struct rle_transmitter *transmitter;
 	size_t i;
 
@@ -70,7 +80,17 @@ void test_rle_memory_transmitter_new(void **state __attribute__((unused)))
 
 void test_rle_memory_receiver_new(void **state __attribute__((unused)))
 {
-	struct rle_config conf;
+	const struct rle_config conf = {
+		.allow_ptype_omission = 0,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x00,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
+	};
 	struct rle_receiver *receiver;
 	size_t i;
 
