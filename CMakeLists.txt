@@ -83,4 +83,4 @@ INSTALL(FILES
 	include/rle.h
 	DESTINATION include/)
 
-gen_pkg_config("librle" "${DESCRIPTION_SUMMARY}" "" "librle")
+gen_pkg_config("librle" "${DESCRIPTION_SUMMARY}" "" "")
