@@ -81,8 +81,8 @@ static bool test_decap(const uint16_t protocol_type,
 		.size = 0,
 		.protocol_type = protocol_type
 	};
-	struct rle_receiver *receiver;
-	struct rle_transmitter *transmitter;
+	struct rle_receiver *receiver = NULL;
+	struct rle_transmitter *transmitter = NULL;
 
 	const size_t fpdu_length = 1000; /* Arbitrarly */
 	unsigned char fpdu[fpdu_length];
@@ -655,8 +655,8 @@ bool test_decap_not_null_padding(void)
 		.implicit_payload_label_size = 0,
 		.type_0_alpdu_label_size = 0,
 	};
-	struct rle_receiver *receiver;
-	struct rle_transmitter *transmitter;
+	struct rle_receiver *receiver = NULL;
+	struct rle_transmitter *transmitter = NULL;
 
 	receiver = rle_receiver_new(&conf);
 	if (receiver == NULL) {
@@ -783,8 +783,8 @@ bool test_decap_flush_ctxt(void)
 		.implicit_payload_label_size = 0,
 		.type_0_alpdu_label_size = 0,
 	};
-	struct rle_receiver *receiver;
-	struct rle_transmitter *transmitter;
+	struct rle_receiver *receiver = NULL;
+	struct rle_transmitter *transmitter = NULL;
 	size_t i;
 
 	size_t fpdus_nr;
@@ -1328,8 +1328,8 @@ bool test_decap_null_seqno(void)
 		.implicit_payload_label_size = 0,
 		.type_0_alpdu_label_size = 0,
 	};
-	struct rle_receiver *receiver;
-	struct rle_transmitter *transmitter;
+	struct rle_receiver *receiver = NULL;
+	struct rle_transmitter *transmitter = NULL;
 	size_t i;
 
 	size_t fpdus_nr;
@@ -1527,8 +1527,8 @@ bool test_decap_context_free(void)
 		.implicit_payload_label_size = 0,
 		.type_0_alpdu_label_size = 0,
 	};
-	struct rle_receiver *receiver;
-	struct rle_transmitter *transmitter;
+	struct rle_receiver *receiver = NULL;
+	struct rle_transmitter *transmitter = NULL;
 
 	receiver = rle_receiver_new(&conf);
 	if (receiver == NULL) {
