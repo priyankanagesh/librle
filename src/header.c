@@ -326,12 +326,11 @@ void push_alpdu_header(struct rle_frag_buf *const frag_buf,
 	}
 }
 
-int push_ppdu_header(struct rle_frag_buf *const frag_buf,
-                     const struct rle_config *const rle_conf,
-                     const size_t ppdu_length,
-                     struct rle_ctx_management *const rle_ctx)
+bool push_ppdu_header(struct rle_frag_buf *const frag_buf,
+                      const struct rle_config *const rle_conf,
+                      const size_t ppdu_length,
+                      struct rle_ctx_management *const rle_ctx)
 {
-	int status = 1;
 	size_t max_alpdu_fragment_len = ppdu_length;
 	const size_t remain_alpdu_len = frag_buf_get_remaining_alpdu_length(frag_buf);
 	const bool use_alpdu_crc =
@@ -349,8 +348,7 @@ int push_ppdu_header(struct rle_frag_buf *const frag_buf,
 
 		if (ppdu_length < sizeof(rle_ppdu_header_cont_end_t)) {
 			/* buffer is too small for the smallest PPDU CONT or END fragment */
-			status = 2;
-			goto out;
+			goto error;
 		}
 
 		max_alpdu_fragment_len -= sizeof(rle_ppdu_header_cont_end_t);
@@ -416,7 +414,7 @@ int push_ppdu_header(struct rle_frag_buf *const frag_buf,
 			/* RLE context needed if ALPDU is fragmented */
 			if (!rle_ctx) {
 				PRINT_RLE_ERROR("RLE context needed.");
-				goto out;
+				goto error;
 			}
 
 			if (ppdu_length < (ppdu_and_alpdu_hdrs_len + 1)) {
@@ -424,8 +422,7 @@ int push_ppdu_header(struct rle_frag_buf *const frag_buf,
 				 * enough for the PPDU START header, the full ALDPU header and at least one byte of
 				 * ALPDU because the fragmentation of the ALPDU header is not supported by the RLE
 				 * reassembler yet */
-				status = 2;
-				goto out;
+				goto error;
 			}
 
 			push_alpdu_trailer(frag_buf, rle_conf, rle_ctx);
@@ -438,8 +435,7 @@ int push_ppdu_header(struct rle_frag_buf *const frag_buf,
 		} else {
 			/* Complete PPDU */
 			if (ppdu_length < sizeof(rle_ppdu_header_comp_t)) {
-				status = 2;
-				goto out;
+				goto error;
 			}
 
 			frag_buf_ppdu_put(frag_buf, ppdu_length - sizeof(rle_ppdu_header_comp_t));
@@ -450,10 +446,10 @@ int push_ppdu_header(struct rle_frag_buf *const frag_buf,
 
 	frag_buf_set_cur_pos(frag_buf);
 
-	status = 0;
+	return true;
 
-out:
-	return status;
+error:
+	return false;
 }
 
 void comp_ppdu_extract_alpdu_fragment(const unsigned char comp_ppdu[], const size_t ppdu_len,

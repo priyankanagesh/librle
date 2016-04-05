@@ -14,6 +14,7 @@
 
 #include <stdint.h>
 #include <endian.h>
+#include <stdbool.h>
 
 #else
 
@@ -215,15 +216,15 @@ void push_alpdu_header(struct rle_frag_buf *const frag_buf,
  *  @param[in]     rle_conf             the RLE configuration
  *  @param[in,out] rle_ctx              the RLE context if needed (NULL if not).
  *
- *  @return        0 if OK
- *                 1 if KO
- *                 2 if buffer is too small for the smallest PPDU fragment
+ *  @return        true if OK
+ *                 false if buffer is too small for the smallest PPDU fragment
  *
  *  @ingroup RLE header
  */
-int push_ppdu_header(struct rle_frag_buf *const frag_buf,
-                     const struct rle_config *const rle_conf, const size_t ppdu_length,
-                     struct rle_ctx_management *const rle_ctx);
+bool push_ppdu_header(struct rle_frag_buf *const frag_buf,
+                      const struct rle_config *const rle_conf,
+                      const size_t ppdu_length,
+                      struct rle_ctx_management *const rle_ctx);
 
 /**
  *  @brief         Extract ALPDU fragment from complete PPDU.

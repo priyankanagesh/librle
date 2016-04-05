@@ -132,11 +132,12 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 	rle_rasm_buf_t *rasm_buf;
 	size_t alpdu_total_len;
 	const rle_ppdu_header_start_t *header;
-	struct rle_ctx_management *rle_ctx = NULL;
+	struct rle_ctx_management *rle_ctx;
 	size_t sdu_total_len;
 	int is_crc_used;
 	size_t alpdu_hdr_len;
 	size_t alpdu_trailer_len;
+	int ret_extract;
 
 #ifdef TIME_DEBUG
 	struct timeval tv_start = { .tv_sec = 0L, .tv_usec = 0L };
@@ -181,32 +182,34 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 		/* protocol type is suppressed */
 		if (rle_start_ppdu_header_get_is_signal(header)) {
 			/* ALPDU label type 3 means that the implicit protocol type is L2S */
-			ret = signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
-			                                        &protocol_type,
-			                                        &sdu_fragment, &sdu_fragment_len);
+			ret_extract =
+				signal_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+				                                  &protocol_type,
+				                                  &sdu_fragment, &sdu_fragment_len);
 		} else {
-			ret = suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
-			                                            &protocol_type,
-			                                            &sdu_fragment, &sdu_fragment_len,
-			                                            &_this->conf);
+			ret_extract =
+				suppressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+				                                      &protocol_type,
+				                                      &sdu_fragment, &sdu_fragment_len,
+				                                      &_this->conf);
 		}
 		alpdu_hdr_len = 0;
 	} else if (_this->conf.use_compressed_ptype) {
 		/* protocol type is not suppressed, but compressed */
-		ret =
+		ret_extract =
 		        compressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
 		                                              &protocol_type,
 		                                              &sdu_fragment, &sdu_fragment_len,
 		                                              &alpdu_hdr_len);
 	} else {
 		/* protocol type is not suppressed nor compressed */
-		ret = uncompressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
-		                                              &protocol_type, &sdu_fragment,
-		                                              &sdu_fragment_len);
+		ret_extract =
+			uncompressed_alpdu_extract_sdu_fragment(alpdu_fragment, alpdu_fragment_len,
+			                                        &protocol_type, &sdu_fragment,
+			                                        &sdu_fragment_len);
 		alpdu_hdr_len = sizeof(rle_alpdu_header_uncompressed_t);
 	}
-	if (ret) {
-		ret = C_ERROR;
+	if (ret_extract) {
 		goto out;
 	}
 
@@ -253,7 +256,7 @@ int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[]
 
 out:
 
-	if ((ret != C_OK) && rle_ctx) {
+	if (ret != C_OK) {
 		rle_ctx_incr_counter_dropped(rle_ctx);
 		rle_ctx_incr_counter_lost(rle_ctx, 1);
 		rle_ctx_incr_counter_bytes_dropped(rle_ctx, rle_ctx->current_counter);
@@ -280,7 +283,7 @@ int reassembly_cont_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	const unsigned char *sdu_fragment;
 	size_t sdu_fragment_len;
 	rle_rasm_buf_t *rasm_buf;
-	struct rle_ctx_management *rle_ctx = NULL;
+	struct rle_ctx_management *rle_ctx;
 
 #ifdef TIME_DEBUG
 	struct timeval tv_start = { .tv_sec = 0L, .tv_usec = 0L };
@@ -337,7 +340,7 @@ int reassembly_cont_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 
 out:
 
-	if ((ret != C_OK) && rle_ctx) {
+	if (ret != C_OK) {
 		rle_ctx_incr_counter_dropped(rle_ctx);
 		rle_ctx_incr_counter_lost(rle_ctx, 1);
 		rle_ctx_incr_counter_bytes_dropped(rle_ctx, rle_ctx->current_counter);
@@ -364,7 +367,7 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	const unsigned char *sdu_fragment;
 	size_t sdu_fragment_len;
 	rle_rasm_buf_t *rasm_buf;
-	struct rle_ctx_management *rle_ctx = NULL;
+	struct rle_ctx_management *rle_ctx;
 	const rle_alpdu_trailer_t *rle_trailer = NULL;
 	size_t lost_packets = 0;
 
@@ -459,7 +462,7 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 
 out:
 
-	if ((ret != C_REASSEMBLY_OK) && rle_ctx) {
+	if (ret != C_REASSEMBLY_OK) {
 		rle_ctx_incr_counter_dropped(rle_ctx);
 		rle_ctx_incr_counter_lost(rle_ctx, lost_packets);
 		rle_ctx_incr_counter_bytes_dropped(rle_ctx, rle_ctx->current_counter);

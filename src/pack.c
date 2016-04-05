@@ -41,7 +41,7 @@ enum rle_pack_status rle_pack(const unsigned char *const ppdu, const size_t ppdu
                               size_t *const fpdu_current_pos,
                               size_t *const fpdu_remaining_size)
 {
-	enum rle_pack_status status = RLE_PACK_ERR;
+	enum rle_pack_status status;
 
 	if (ppdu == NULL || ppdu_length == 0) {
 		status = RLE_PACK_ERR_INVALID_PPDU;

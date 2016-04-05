@@ -48,7 +48,6 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 {
 	enum rle_frag_status status = RLE_FRAG_ERR; /* Error by default. */
 
-	int ret_push = 0;
 	rle_frag_buf_t *frag_buf;
 	struct rle_ctx_management *rle_ctx;
 
@@ -79,13 +78,9 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 
 	frag_buf_ppdu_init(frag_buf);
 
-	ret_push = push_ppdu_header(frag_buf, &transmitter->conf, remaining_burst_size, rle_ctx);
-
-	if (ret_push != 0) {
-		if (ret_push == 2) {
-			/* Burst to small for header. */
-			status = RLE_FRAG_ERR_BURST_TOO_SMALL;
-		}
+	if (!push_ppdu_header(frag_buf, &transmitter->conf, remaining_burst_size, rle_ctx)) {
+		/* Burst to small for header. */
+		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
 		goto out;
 	}
 
@@ -144,7 +139,7 @@ enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmit
 
 	frag_buf_ppdu_init(frag_buf);
 
-	if (push_ppdu_header(frag_buf, &transmitter->conf, *ppdu_length, NULL) != 0) {
+	if (!push_ppdu_header(frag_buf, &transmitter->conf, *ppdu_length, NULL)) {
 		goto out;
 	}
 

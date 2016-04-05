@@ -59,7 +59,7 @@
         RLE_PROTO_TYPE_USER_DEFINED
 
 /* Protocol type references decompression array. ref: Table 7-3 p. 110 ETSI EN 301 545-2 v.1.2.1 */
-const uint16_t rle_header_ptype_decomp[RLE_PROTO_TYPE_MAX_COMP_VALUE + 1] = {
+static const uint16_t rle_header_ptype_decomp[RLE_PROTO_TYPE_MAX_COMP_VALUE + 1] = {
 	/* 0x00 -> 0x1a */
 	0x0000,
 	0x0001,

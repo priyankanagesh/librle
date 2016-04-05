@@ -194,15 +194,16 @@ void rle_transmitter_free_context(struct rle_transmitter *const _this, const uin
 size_t rle_transmitter_stats_get_queue_size(const struct rle_transmitter *const transmitter,
                                             const uint8_t fragment_id)
 {
-	size_t stat = 0;
 	const struct rle_ctx_management *ctx_man = NULL;
 	const rle_frag_buf_t *frag_buf = NULL;
+	size_t stat;
 
 #ifdef DEBUG
 	PRINT_RLE_DEBUG("", MODULE_NAME);
 #endif
 
 	if (get_transmitter_context(transmitter, fragment_id, &ctx_man)) {
+		stat = 0;
 		goto error;
 	}
 
