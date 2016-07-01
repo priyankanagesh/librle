@@ -109,6 +109,14 @@ int rle_frag_buf_cpy_sdu(struct rle_frag_buf *const frag_buf, const struct rle_s
 	return 0;
 }
 
+void frag_buf_sdu_push(rle_frag_buf_t *const frag_buf, const ssize_t size)
+{
+	frag_buf_ptrs_push(&frag_buf->sdu, size);
+	frag_buf_ptrs_push(&frag_buf->alpdu, size);
+	frag_buf_ptrs_set(&frag_buf->ppdu, frag_buf->alpdu.start);
+	frag_buf_set_cur_pos(frag_buf);
+}
+
 void frag_buf_ppdu_put(rle_frag_buf_t *const frag_buf, const size_t size)
 {
 	const size_t ppdu_base_hdr_len = 2;

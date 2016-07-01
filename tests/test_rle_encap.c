@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <assert.h>
+#include <net/ethernet.h>
 
 /**
  * @brief         Compare two packets.
@@ -216,6 +217,15 @@ static bool test_encap(const uint16_t protocol_type,
 	sdu.buffer = calloc(length, sizeof(unsigned char));
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, length);
 	sdu.size = length;
+	if (protocol_type == RLE_PROTO_TYPE_IPV4_UNCOMP) {
+		sdu.buffer[0] = 0x45;
+	} else if (protocol_type == RLE_PROTO_TYPE_IPV6_UNCOMP) {
+		sdu.buffer[0] = 0x60;
+	} else if (protocol_type == RLE_PROTO_TYPE_VLAN_UNCOMP) {
+		struct ether_header *const eth_hdr = (struct ether_header *) sdu.buffer;
+		assert(sdu.size >= sizeof(struct ether_header));
+		eth_hdr->ether_type = htons(RLE_PROTO_TYPE_VLAN_UNCOMP);
+	}
 
 	/* The function we are currently testing. */
 	ret_encap = rle_encapsulate(transmitter, &sdu, frag_id);
@@ -495,7 +505,7 @@ bool test_encap_inv_config(void)
 		.allow_alpdu_sequence_number = 1,
 		.use_explicit_payload_header_map = 0,
 		.implicit_protocol_type = 0x31,
-		.implicit_ppdu_label_size = 0,
+		.implicit_ppdu_label_size = 0x0f + 1, /* invalid value: 0x0f max */
 		.implicit_payload_label_size = 0,
 		.type_0_alpdu_label_size = 0,
 	};

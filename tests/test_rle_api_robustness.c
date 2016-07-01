@@ -51,14 +51,9 @@ bool test_rle_api_robustness_transmitter(void)
 	for (i = 0x00; i <= 0xff; i++) {
 		rle_config.implicit_protocol_type = i;
 		rle_transmitter = rle_transmitter_new(&rle_config);
-		if (i == 0x31) {
-			/* compressed VLAN without protocol type field is not supported yet */
-			assert(rle_transmitter == NULL);
-		} else {
-			assert(rle_transmitter != NULL);
-			rle_transmitter_destroy(&rle_transmitter);
-			assert(rle_transmitter == NULL);
-		}
+		assert(rle_transmitter != NULL);
+		rle_transmitter_destroy(&rle_transmitter);
+		assert(rle_transmitter == NULL);
 	}
 
 	/* different valid and invalid values for allow_alpdu_crc */
@@ -608,14 +603,9 @@ bool test_rle_api_robustness_receiver(void)
 	for (i = 0x00; i <= 0xff; i++) {
 		rle_config.implicit_protocol_type = i;
 		rle_receiver = rle_receiver_new(&rle_config);
-		if (i == 0x31) {
-			/* compressed VLAN without protocol type field is not supported yet */
-			assert(rle_receiver == NULL);
-		} else {
-			assert(rle_receiver != NULL);
-			rle_receiver_destroy(&rle_receiver);
-			assert(rle_receiver == NULL);
-		}
+		assert(rle_receiver != NULL);
+		rle_receiver_destroy(&rle_receiver);
+		assert(rle_receiver == NULL);
 	}
 
 	/* different valid and invalid values for allow_alpdu_crc */
@@ -1022,11 +1012,73 @@ bool test_rle_api_robustness_receiver(void)
 		ret = rle_get_header_size(&conf, fpdu_type, NULL);
 		assert(ret == RLE_HEADER_SIZE_ERR);
 
-		printf("\ttest generic function rle_header_ptype_compression()\n");
-		comp_protocol_type = rle_header_ptype_compression(RLE_PROTO_TYPE_SIGNAL_UNCOMP);
-		assert(comp_protocol_type == RLE_PROTO_TYPE_SIGNAL_COMP);
-		comp_protocol_type = rle_header_ptype_compression(0xffff);
-		assert(comp_protocol_type == 0);
+		{
+			const unsigned char sdu_vlan_ipv4_data[] = {
+				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, /* destination MAC address */
+				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, /* source MAC address */
+				0x81, 0x00,                         /* Ethertype VLAN */
+				0x00, 0xff,                         /* VLAN infos */
+				0x08, 0x00,                         /* Ethertype IPv4 */
+				0x45,                               /* fake start of IPv4 header */
+			};
+			const struct rle_sdu sdu_vlan_ipv4 = {
+				.buffer        = (unsigned char *) sdu_vlan_ipv4_data,
+				.size          = sizeof(sdu_vlan_ipv4_data),
+				.protocol_type = RLE_PROTO_TYPE_SIGNAL_UNCOMP,
+			};
+			const unsigned char sdu_vlan_arp_data[] = {
+				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, /* destination MAC address */
+				0x00, 0x01, 0x02, 0x03, 0x04, 0x05, /* source MAC address */
+				0x81, 0x00,                         /* Ethertype VLAN */
+				0x00, 0xff,                         /* VLAN infos */
+				0x08, 0x06,                         /* Ethertype ARP */
+				0x00,                               /* fake start of ARP header */
+			};
+			const struct rle_sdu sdu_vlan_arp = {
+				.buffer        = (unsigned char *) sdu_vlan_arp_data,
+				.size          = sizeof(sdu_vlan_arp_data),
+				.protocol_type = RLE_PROTO_TYPE_SIGNAL_UNCOMP,
+			};
+
+			struct rle_frag_buf *buf;
+
+			buf = rle_frag_buf_new();
+			assert(buf != NULL);
+			ret = rle_frag_buf_init(buf);
+			assert(ret == 0);
+			ret = rle_frag_buf_cpy_sdu(buf, &sdu_vlan_ipv4);
+			assert(ret == 0);
+
+			printf("\ttest generic function rle_header_ptype_compression()\n");
+
+			comp_protocol_type = rle_header_ptype_compression(RLE_PROTO_TYPE_SIGNAL_UNCOMP, buf);
+			printf("\t\tprotocol type signaling (0x%02x) is compressed as 0x%02x (0x%02x expected)\n",
+			       RLE_PROTO_TYPE_SIGNAL_UNCOMP, comp_protocol_type, RLE_PROTO_TYPE_SIGNAL_COMP);
+			assert(comp_protocol_type == RLE_PROTO_TYPE_SIGNAL_COMP);
+
+			comp_protocol_type = rle_header_ptype_compression(0xffff, buf);
+			printf("\t\tprotocol type unsupported (0x%02x) is compressed as 0x%02x (0x%02x expected)\n",
+			       0xffff, comp_protocol_type, RLE_PROTO_TYPE_FALLBACK);
+			assert(comp_protocol_type == RLE_PROTO_TYPE_FALLBACK);
+
+			comp_protocol_type = rle_header_ptype_compression(RLE_PROTO_TYPE_VLAN_UNCOMP, buf);
+			printf("\t\tprotocol type VLAN (0x%02x) is compressed as 0x%02x (0x%02x expected)\n",
+			       RLE_PROTO_TYPE_SIGNAL_UNCOMP, comp_protocol_type,
+			       RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD);
+			assert(comp_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD);
+
+			ret = rle_frag_buf_init(buf);
+			assert(ret == 0);
+			ret = rle_frag_buf_cpy_sdu(buf, &sdu_vlan_arp);
+			assert(ret == 0);
+			comp_protocol_type = rle_header_ptype_compression(RLE_PROTO_TYPE_VLAN_UNCOMP, buf);
+			printf("\t\tprotocol type VLAN (0x%02x) is compressed as 0x%02x (0x%02x expected)\n",
+			       RLE_PROTO_TYPE_SIGNAL_UNCOMP, comp_protocol_type,
+			       RLE_PROTO_TYPE_VLAN_COMP);
+			assert(comp_protocol_type == RLE_PROTO_TYPE_VLAN_COMP);
+
+			rle_frag_buf_del(&buf);
+		}
 	}
 
 	return true;

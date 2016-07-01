@@ -874,13 +874,15 @@ int rle_header_ptype_is_compressible(uint16_t uncompressed_ptype)
  * @brief       RLE header compression of protocol type function.
  *
  * @param[in]   uncompressed_ptype  An uncompressed protocol type to compress.
+ * @param[in]   frag_buf            The SDU to encapsulate
  *
  * @return      The compressed protocol type.
  *
  * @ingroup     RLE header
  */
-uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype)
-	__attribute__((warn_unused_result));
+uint8_t rle_header_ptype_compression(const uint16_t uncompressed_ptype,
+                                     const struct rle_frag_buf *const frag_buf)
+	__attribute__((warn_unused_result, nonnull(2)));
 
 /**
  * @brief         Get the size of an RLE headers overhead (ALPDU + PPDU + FPDU headers).

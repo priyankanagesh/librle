@@ -192,9 +192,51 @@ union rle_alpdu_header {
 typedef union rle_alpdu_header rle_alpdu_header_t;
 
 
+/** The IEEE 802.1q (VLAN) header */
+struct vlan_hdr
+{
+	union
+	{
+		uint16_t tci;         /**< Tag Control Information (TCI) */
+		struct
+		{
+#if __BYTE_ORDER == __BIG_ENDIAN
+			uint16_t pcp:3;    /**< Priority Code Point (PCP) */
+			uint16_t dei:1;    /**< Drop Eligible Indicator (DEI) */
+			uint16_t vid:12;   /**< VLAN identifier (VID) */
+#elif __BYTE_ORDER == __LITTLE_ENDIAN
+			uint16_t vid:12;
+			uint16_t dei:1;
+			uint16_t pcp:3;
+#else
+#error "Please fix <asm/byteorder.h>"
+#endif
+		};
+	};
+	uint16_t tpid;           /**< Tag Protocol Identifier (TPID) */
+
+} __attribute__((packed));
+
+
+
 /*------------------------------------------------------------------------------------------------*/
 /*--------------------------------------- PUBLIC FUNCTIONS ---------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
+
+/**
+ * @brief Check whether the Ethernet/VLAN header contains IP or not
+ *
+ * @param sdu      The SDU to check for Ethernet/VLAN/IP
+ * @param sdu_len  The length of the SDU to check
+ * @return         RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD if the frame is Ethernet/VLAN/IPv4,
+ *                 RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD if the frame is Ethernet/VLAN/IPv6,
+ *                 RLE_PROTO_TYPE_VLAN_COMP if the frame is Ethernet/VLAN/<not IPv4 nor IPv6>,
+ *                 RLE_PROTO_TYPE_FALLBACK if the SDU is malformed
+ *
+ * @ingroup RLE header
+ */
+int is_eth_vlan_ip_frame(const uint8_t *const sdu, const size_t sdu_len)
+	__attribute__((warn_unused_result, nonnull(1)));
 
 /**
  *  @brief         create and push ALPDU header into a fragmentation buffer.

@@ -225,7 +225,7 @@ static void push_start_ppdu_header(struct rle_frag_buf *const frag_buf, const ui
 	frag_buf_ppdu_push(frag_buf, sizeof(**p_ppdu_header));
 
 	ppdu_length_field = frag_buf_get_current_ppdu_len(frag_buf) - 2;
-	total_length_field = frag_buf_get_alpdu_header_len(frag_buf) + frag_buf->sdu_info.size +
+	total_length_field = frag_buf_get_alpdu_header_len(frag_buf) + frag_buf_get_sdu_len(frag_buf) +
 	                     frag_buf_get_alpdu_trailer_len(frag_buf);
 
 	(*p_ppdu_header)->start_ind = 1;
@@ -288,6 +288,46 @@ static void push_end_ppdu_header(struct rle_frag_buf *const frag_buf, const uint
 /*------------------------------------- PUBLIC FUNCTIONS CODE-------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
+int is_eth_vlan_ip_frame(const uint8_t *const sdu, const size_t sdu_len)
+{
+	const size_t eth_vlan_hdr_min_len = sizeof(struct ether_header) + sizeof(struct vlan_hdr);
+	uint8_t compressed_ptype = RLE_PROTO_TYPE_FALLBACK;
+
+	if (sdu_len <= eth_vlan_hdr_min_len) {
+		/* the protocol type of short Ethernet/VLAN frames cannot be compressed */
+		goto error;
+	}
+
+	/* retrieve the Ethernet protocol type */
+	{
+		const struct ether_header *const eth_hdr = (struct ether_header *) sdu;
+		const uint16_t eth_proto_type = ntohs(eth_hdr->ether_type);
+
+		const struct vlan_hdr *const vlan_hdr = (struct vlan_hdr *) (eth_hdr + 1);
+		const uint16_t vlan_proto_type = ntohs(vlan_hdr->tpid);
+
+		const uint8_t *const vlan_payload = (uint8_t *) (vlan_hdr + 1);
+		const uint8_t ip_version = (vlan_payload[0] >> 4) & 0x0f;
+
+		if (eth_proto_type != RLE_PROTO_TYPE_VLAN_UNCOMP) {
+			/* unexpected protocol type in Ethernet frame: it should be VLAN */
+			goto error;
+		}
+
+		/* embedded IPv4 or IPv6 use a special compressed protocol type that indicates
+		 * to the RLE receiver that the protocol field of the VLAN header is suppressed */
+		if ((vlan_proto_type == RLE_PROTO_TYPE_IPV4_UNCOMP && ip_version == 4) ||
+		    (vlan_proto_type == RLE_PROTO_TYPE_IPV6_UNCOMP && ip_version == 6)) {
+			compressed_ptype = RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD;
+		} else {
+			compressed_ptype = RLE_PROTO_TYPE_VLAN_COMP;
+		}
+	}
+
+error:
+	return compressed_ptype;
+}
+
 void push_alpdu_header(struct rle_frag_buf *const frag_buf,
                        const struct rle_config *const rle_conf)
 {
@@ -303,26 +343,59 @@ void push_alpdu_header(struct rle_frag_buf *const frag_buf,
 
 	/* don't fill ALPDU ptype field if given ptype is equal to the default one and suppression is
 	 * active, or if given ptype is for signalling packet */
-	if (!ptype_is_omissible(protocol_type, rle_conf)) {
+	if (!ptype_is_omissible(protocol_type, rle_conf, frag_buf)) {
 		const uint16_t net_protocol_type = ntohs(protocol_type);
 
+		/* suppression is not possible, is compression enabled? */
 		if (!rle_conf->use_compressed_ptype) {
 			/* No compression, no suppression, ALPDU len = 2 */
 			push_uncompressed_alpdu_header(frag_buf, net_protocol_type);
 		} else {
-			/* No suppression, compression */
+			/* No suppression, compression is enabled */
+			uint8_t compressed_ptype;
+
+			/* is protocol type compressible? */
 			if (rle_header_ptype_is_compressible(protocol_type) == C_OK) {
-				/* Supported case, ALPDU len = 1 */
-				uint8_t compressed_ptype = rle_header_ptype_compression(
-				        protocol_type);
-				push_compressed_supported_alpdu_header(frag_buf, compressed_ptype);
+				compressed_ptype = rle_header_ptype_compression(protocol_type, frag_buf);
 			} else {
-				/* Fallback case, ALPDU len = 3 */
+				compressed_ptype = RLE_PROTO_TYPE_FALLBACK;
+			}
+
+			if (compressed_ptype == RLE_PROTO_TYPE_FALLBACK) {
+				/* protocol type is NOT compressible, prepend the 3-byte ALDPU before the SDU */
 				push_compressed_fallback_alpdu_header(frag_buf, net_protocol_type);
+
+			} else {
+				/* protocol type is compressible, ALPDU len = 1 */
+
+				/* special case if the payload is VLAN with embedded IPv4 or IPv6:
+				 *  - the RLE transmitter shall suppress the protocol field of the VLAN header,
+				 *  - the RLE receiver shall detect IPv4/IPv6 with the 4 first bits of the
+				 *    embedded payload. */
+				if (protocol_type == RLE_PROTO_TYPE_VLAN_UNCOMP &&
+				    compressed_ptype == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
+					memmove(frag_buf->sdu.start + sizeof(protocol_type), frag_buf->sdu.start,
+					        sizeof(struct ether_header) + sizeof(struct vlan_hdr) - sizeof(protocol_type));
+					frag_buf_sdu_push(frag_buf, -(sizeof(protocol_type)));
+				}
+
+				/* prepend the 1-byte ALDPU before the SDU */
+				push_compressed_supported_alpdu_header(frag_buf, compressed_ptype);
 			}
 		}
 	} else {
-		/* Nothing to do, ALDPU len == 0 */
+		/* protocol type is omitted, ALDPU len == 0 */
+
+		/* special case if the payload is VLAN with embedded IPv4 or IPv6:
+		 *  - the RLE transmitter shall suppress the protocol field of the VLAN header,
+		 *  - the RLE receiver shall detect IPv4/IPv6 with the 4 first bits of the
+		 *    embedded payload. */
+		if (protocol_type == RLE_PROTO_TYPE_VLAN_UNCOMP &&
+		    rle_conf->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
+			memmove(frag_buf->sdu.start + sizeof(protocol_type), frag_buf->sdu.start,
+			        sizeof(struct ether_header) + sizeof(struct vlan_hdr) - sizeof(protocol_type));
+			frag_buf_sdu_push(frag_buf, -(sizeof(protocol_type)));
+		}
 	}
 }
 
