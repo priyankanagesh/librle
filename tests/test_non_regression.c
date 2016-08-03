@@ -58,6 +58,9 @@ static char *str_decap_error(const enum rle_decap_status status);
 /** Whether the application runs in verbose mode or not */
 static int is_verbose = 0;
 
+/** Whether the application includes the layer2 of packets or not */
+static int include_layer2 = 0;
+
 /** Whether the application ignores malformed packets or not. */
 static int ignore_malformed = 0;
 
@@ -89,6 +92,7 @@ int main(int argc, char *argv[])
 		static struct option long_options[] =
 		{
 			{ "verbose", no_argument, &is_verbose, 1 },
+			{ "include-layer2", no_argument, &include_layer2, 1 },
 			{ "ignore-malformed", no_argument, &ignore_malformed, 1 },
 			{ "fragment_size", required_argument, 0, 'b' },
 			{ 0, 0, 0, 0 }
@@ -170,6 +174,7 @@ static void usage(void)
 	        "  -v                      Print version information and exit\n"
 	        "  -h                      Print this usage and exit\n"
 			  "  -f                      Size of the PPDU fragments (burst size by default)\n"
+	        "  --include-layer2        Do not skip Ethernet header of packets\n"
 	        "  --ignore-malformed      Ignore malformed packets for test\n"
 	        "  --verbose               Run the test in verbose mode\n");
 }
@@ -656,6 +661,19 @@ static int test_encap_and_decap(const char *const src_filename)
 		.type_0_alpdu_label_size = 0,
 	};
 
+	/* Ditto for IPv4 and v6 in VLAN */
+	struct rle_config conf_omitted_vlan_ip = {
+		.allow_ptype_omission = 1,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 0,
+		.allow_alpdu_sequence_number = 1,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x31,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
+	};
+
 	/* Configuration for non omitted protocol type in omission conf */
 	struct rle_config conf_not_omitted = {
 		.allow_ptype_omission = 1,
@@ -721,6 +739,19 @@ static int test_encap_and_decap(const char *const src_filename)
 		.type_0_alpdu_label_size = 0,
 	};
 
+	/* Ditto for IPv4 and v6 in VLAN */
+	struct rle_config conf_omitted_vlan_ip_crc = {
+		.allow_ptype_omission = 1,
+		.use_compressed_ptype = 0,
+		.allow_alpdu_crc = 1,
+		.allow_alpdu_sequence_number = 0,
+		.use_explicit_payload_header_map = 0,
+		.implicit_protocol_type = 0x31,
+		.implicit_ppdu_label_size = 0,
+		.implicit_payload_label_size = 0,
+		.type_0_alpdu_label_size = 0,
+	};
+
 	/* Configuration for non omitted protocol type in omission conf with CRC */
 	struct rle_config conf_not_omitted_crc = {
 		.allow_ptype_omission = 1,
@@ -740,11 +771,13 @@ static int test_encap_and_decap(const char *const src_filename)
 		&conf_comp,
 		&conf_omitted,
 		&conf_omitted_ip,
+		&conf_omitted_vlan_ip,
 		&conf_not_omitted,
 		&conf_uncomp_crc,
 		&conf_comp_crc,
 		&conf_omitted_crc,
 		&conf_omitted_ip_crc,
+		&conf_omitted_vlan_ip_crc,
 		&conf_not_omitted_crc,
 		NULL
 	};
@@ -767,7 +800,11 @@ static int test_encap_and_decap(const char *const src_filename)
 		status = 77;
 		goto close_input;
 	}
-	link_len_src = ETHER_HDR_LEN;
+	if (include_layer2 == 1) {
+		link_len_src = 0;
+	} else {
+		link_len_src = ETHER_HDR_LEN;
+	}
 
 	printf("\n");
 
