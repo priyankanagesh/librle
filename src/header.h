@@ -279,8 +279,9 @@ bool push_ppdu_header(struct rle_frag_buf *const frag_buf,
  *
  *  @ingroup RLE header
  */
-void comp_ppdu_extract_alpdu_fragment(const unsigned char comp_ppdu[], const size_t ppdu_len,
-                                      const unsigned char *alpdu_fragment[],
+void comp_ppdu_extract_alpdu_fragment(unsigned char comp_ppdu[],
+                                      const size_t ppdu_len,
+                                      unsigned char **alpdu_fragment,
                                       size_t *alpdu_fragment_len);
 
 /**
@@ -296,8 +297,9 @@ void comp_ppdu_extract_alpdu_fragment(const unsigned char comp_ppdu[], const siz
  *
  *  @ingroup RLE header
  */
-void start_ppdu_extract_alpdu_fragment(const unsigned char start_ppdu[], const size_t ppdu_len,
-                                       const unsigned char *alpdu_fragment[],
+void start_ppdu_extract_alpdu_fragment(unsigned char start_ppdu[],
+                                       const size_t ppdu_len,
+                                       unsigned char *alpdu_fragment[],
                                        size_t *const alpdu_fragment_len,
                                        size_t *const alpdu_total_len,
                                        int *const is_crc_used);
@@ -323,6 +325,7 @@ void cont_end_ppdu_extract_alpdu_fragment(const unsigned char cont_end_ppdu[], c
  *  @param[in]     alpdu_fragment       the ALPDU fragment containing the ALPDU header.
  *  @param[in]     alpdu_fragment_len   the length of the ALPDU fragment.
  *  @param[out]    protocol_type        the protocol type extracted from the ALPDU header.
+ *  @param[out]    comp_protocol_type   the compressed protocol type extracted from the ALPDU header
  *  @param[out]    sdu_fragment         the fragment of SDU extracted.
  *  @param[out]    sdu_fragment_len     the length of the SDU fragment.
  *
@@ -331,7 +334,9 @@ void cont_end_ppdu_extract_alpdu_fragment(const unsigned char cont_end_ppdu[], c
  *  @ingroup RLE header
  */
 int signal_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                      const size_t alpdu_fragment_len, uint16_t *protocol_type,
+                                      const size_t alpdu_fragment_len,
+                                      uint16_t *protocol_type,
+                                      uint8_t *comp_protocol_type,
                                       const unsigned char *sdu_fragment[],
                                       size_t *const sdu_fragment_len);
 
@@ -341,6 +346,7 @@ int signal_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
  *  @param[in]     alpdu_fragment       the ALPDU fragment containing the ALPDU header.
  *  @param[in]     alpdu_fragment_len   the length of the ALPDU fragment.
  *  @param[out]    protocol_type        the protocol type extracted from the ALPDU header.
+ *  @param[out]    comp_protocol_type   the compressed protocol type extracted from the ALPDU header
  *  @param[out]    sdu_fragment         the fragment of SDU extracted.
  *  @param[out]    sdu_fragment_len     the length of the SDU fragment.
  *  @param[out]    rle_conf             the RLE configuration (for suppressed protocol type).
@@ -350,7 +356,9 @@ int signal_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
  *  @ingroup RLE header
  */
 int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                          const size_t alpdu_fragment_len, uint16_t *protocol_type,
+                                          const size_t alpdu_fragment_len,
+                                          uint16_t *protocol_type,
+                                          uint8_t *comp_protocol_type,
                                           const unsigned char *sdu_fragment[],
                                           size_t *const sdu_fragment_len,
                                           const struct rle_config *const rle_conf);
@@ -362,6 +370,7 @@ int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
  *  @param[in]     alpdu_fragment       the ALPDU fragment containing the ALPDU header.
  *  @param[in]     alpdu_fragment_len   the length of the ALPDU fragment.
  *  @param[out]    protocol_type        the protocol type extracted from the ALPDU header.
+ *  @param[out]    comp_protocol_type   the compressed protocol type extracted from the ALPDU header
  *  @param[out]    sdu_fragment         the fragment of SDU extracted.
  *  @param[out]    sdu_fragment_len     the length of the SDU fragment.
  *
@@ -372,6 +381,7 @@ int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 int uncompressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
                                             const size_t alpdu_fragment_len,
                                             uint16_t *protocol_type,
+                                            uint8_t *comp_protocol_type,
                                             const unsigned char *sdu_fragment[],
                                             size_t *const sdu_fragment_len);
 
@@ -382,6 +392,7 @@ int uncompressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[]
  *  @param[in]     alpdu_fragment       the ALPDU fragment containing the ALPDU header.
  *  @param[in]     alpdu_fragment_len   the length of the ALPDU fragment.
  *  @param[out]    protocol_type        the protocol type extracted from the ALPDU header.
+ *  @param[out]    comp_protocol_type   the compressed protocol type extracted from the ALPDU header
  *  @param[out]    sdu_fragment         the fragment of SDU extracted.
  *  @param[out]    sdu_fragment_len     the length of the SDU fragment.
  *  @param[out]    alpdu_hdr_len        the length of the ALPDU header
@@ -391,7 +402,9 @@ int uncompressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[]
  *  @ingroup RLE header
  */
 int compressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                          const size_t alpdu_fragment_len, uint16_t *protocol_type,
+                                          const size_t alpdu_fragment_len,
+                                          uint16_t *protocol_type,
+                                          uint8_t *comp_protocol_type,
                                           const unsigned char *sdu_fragment[],
                                           size_t *const sdu_fragment_len,
                                           size_t *const alpdu_hdr_len);

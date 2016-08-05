@@ -559,7 +559,7 @@ void rle_pad(unsigned char *const fpdu,
  * @ingroup       RLE receiver
  */
 enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
-                                      const unsigned char *const fpdu,
+                                      unsigned char *const fpdu,
                                       const size_t fpdu_length,
                                       struct rle_sdu sdus[],
                                       const size_t sdus_max_nr,
@@ -855,7 +855,7 @@ void rle_receiver_stats_reset_counters(struct rle_receiver *const receiver,
  *
  * @ingroup     RLE header
  */
-uint16_t rle_header_ptype_decompression(uint8_t compressed_ptype)
+uint16_t rle_header_ptype_decompression(const uint8_t compressed_ptype)
 	__attribute__((warn_unused_result));
 
 /**

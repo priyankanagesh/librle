@@ -106,7 +106,7 @@ int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
 }
 
 int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
-                        const rle_rasm_buf_t *const rasm_buf,
+                        const struct rle_sdu *const reassembled_sdu,
                         struct rle_ctx_management *const rle_ctx,
                         size_t *const lost_packets)
 {
@@ -120,8 +120,11 @@ int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
 	*lost_packets = 0;
 
 	if (use_alpdu_crc) {
-		const uint32_t expected_crc = compute_crc32(&rasm_buf->sdu_info);
+		const uint32_t expected_crc = compute_crc32(reassembled_sdu);
 		if (trailer->crc_trailer.crc != expected_crc) {
+			PRINT_RLE_ERROR("wrong CRC for %zu-byte SDU of protocol 0x%02x: 0x%08x found while 0x%08x "
+			                "expected", reassembled_sdu->size, reassembled_sdu->protocol_type,
+			                ntohl(trailer->crc_trailer.crc), expected_crc);
 			status = 1;
 			*lost_packets = 1;
 		}

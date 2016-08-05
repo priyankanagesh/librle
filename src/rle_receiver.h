@@ -60,8 +60,10 @@ struct rle_receiver {
  *
  * @ingroup RLE receiver
  */
-int rle_receiver_deencap_data(struct rle_receiver *_this, const unsigned char ppdu[],
-                              const size_t ppdu_length, int *const index_ctx,
+int rle_receiver_deencap_data(struct rle_receiver *_this,
+                              unsigned char ppdu[],
+                              const size_t ppdu_length,
+                              int *const index_ctx,
                               struct rle_sdu *const potential_sdu);
 
 /**

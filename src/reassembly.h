@@ -66,7 +66,8 @@ int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
  *
  * @ingroup RLE receiver
  */
-int reassembly_comp_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
+int reassembly_comp_ppdu(struct rle_receiver *_this,
+                         unsigned char *const ppdu,
                          const size_t ppdu_length,
                          struct rle_sdu *const reassembled_sdu);
 
@@ -80,7 +81,8 @@ int reassembly_comp_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
  *
  * @ingroup RLE receiver
  */
-int reassembly_start_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
+int reassembly_start_ppdu(struct rle_receiver *_this,
+                          unsigned char ppdu[],
                           const size_t ppdu_length,
                           int *const index_ctx);
 

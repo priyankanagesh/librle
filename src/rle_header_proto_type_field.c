@@ -123,13 +123,9 @@ static const uint16_t rle_header_ptype_decomp[RLE_PROTO_TYPE_MAX_COMP_VALUE + 1]
 /*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-uint16_t rle_header_ptype_decompression(uint8_t compressed_ptype)
+uint16_t rle_header_ptype_decompression(const uint8_t compressed_ptype)
 {
-	uint16_t uncompressed_ptype = 0x0000;
-
-	uncompressed_ptype = rle_header_ptype_decomp[compressed_ptype];
-
-	return uncompressed_ptype;
+	return rle_header_ptype_decomp[compressed_ptype];
 }
 
 int rle_header_ptype_is_compressible(uint16_t uncompressed_ptype)

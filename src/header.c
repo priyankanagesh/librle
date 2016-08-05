@@ -532,16 +532,18 @@ error:
 	return false;
 }
 
-void comp_ppdu_extract_alpdu_fragment(const unsigned char comp_ppdu[], const size_t ppdu_len,
-                                      const unsigned char *alpdu_fragment[],
+void comp_ppdu_extract_alpdu_fragment(unsigned char comp_ppdu[],
+                                      const size_t ppdu_len,
+                                      unsigned char **alpdu_fragment,
                                       size_t *alpdu_fragment_len)
 {
 	*alpdu_fragment = comp_ppdu + sizeof(rle_ppdu_header_comp_t);
 	*alpdu_fragment_len = ppdu_len - sizeof(rle_ppdu_header_comp_t);
 }
 
-void start_ppdu_extract_alpdu_fragment(const unsigned char start_ppdu[], const size_t ppdu_len,
-                                       const unsigned char *alpdu_fragment[],
+void start_ppdu_extract_alpdu_fragment(unsigned char start_ppdu[],
+                                       const size_t ppdu_len,
+                                       unsigned char *alpdu_fragment[],
                                        size_t *const alpdu_fragment_len,
                                        size_t *const alpdu_total_len,
                                        int *const is_crc_used)
@@ -566,11 +568,14 @@ void cont_end_ppdu_extract_alpdu_fragment(const unsigned char cont_end_ppdu[], c
 }
 
 int signal_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                      const size_t alpdu_fragment_len, uint16_t *protocol_type,
+                                      const size_t alpdu_fragment_len,
+                                      uint16_t *protocol_type,
+                                      uint8_t *comp_protocol_type,
                                       const unsigned char *sdu_fragment[],
                                       size_t *const sdu_fragment_len)
 {
 	*protocol_type = RLE_PROTO_TYPE_SIGNAL_UNCOMP;
+	*comp_protocol_type = RLE_PROTO_TYPE_SIGNAL_COMP;
 	*sdu_fragment = alpdu_fragment;
 	*sdu_fragment_len = alpdu_fragment_len;
 
@@ -578,7 +583,9 @@ int signal_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 }
 
 int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                          const size_t alpdu_fragment_len, uint16_t *protocol_type,
+                                          const size_t alpdu_fragment_len,
+                                          uint16_t *protocol_type,
+                                          uint8_t *comp_protocol_type,
                                           const unsigned char *sdu_fragment[],
                                           size_t *const sdu_fragment_len,
                                           const struct rle_config *const rle_conf)
@@ -586,6 +593,7 @@ int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 	int status = 0;
 	const uint8_t default_ptype = rle_conf->implicit_protocol_type;
 
+	*comp_protocol_type = default_ptype;
 	*sdu_fragment = alpdu_fragment;
 	*sdu_fragment_len = alpdu_fragment_len;
 
@@ -622,6 +630,7 @@ out:
 int uncompressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
                                             const size_t alpdu_fragment_len,
                                             uint16_t *protocol_type,
+                                            uint8_t *comp_protocol_type,
                                             const unsigned char *sdu_fragment[],
                                             size_t *const sdu_fragment_len)
 {
@@ -634,6 +643,7 @@ int uncompressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[]
 		status = 1;
 		goto out;
 	}
+	*comp_protocol_type = RLE_PROTO_TYPE_FALLBACK;
 	*protocol_type = htons(uncompressed_alpdu_header->proto_type);
 	*sdu_fragment = alpdu_fragment + sizeof(rle_alpdu_header_uncompressed_t);
 	*sdu_fragment_len = alpdu_fragment_len - sizeof(rle_alpdu_header_uncompressed_t);
@@ -643,16 +653,25 @@ out:
 }
 
 int compressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                          const size_t alpdu_fragment_len, uint16_t *protocol_type,
+                                          const size_t alpdu_fragment_len,
+                                          uint16_t *protocol_type,
+                                          uint8_t *comp_protocol_type,
                                           const unsigned char *sdu_fragment[],
                                           size_t *const sdu_fragment_len,
                                           size_t *const alpdu_hdr_len)
 {
-	int status = 0;
 	const rle_alpdu_header_t *const alpdu_header = (rle_alpdu_header_t *)alpdu_fragment;
-	const uint8_t compressed_protocol_type = alpdu_header->compressed_supported.proto_type;
+	int status = 0;
 
-	if (compressed_protocol_type == RLE_PROTO_TYPE_FALLBACK) {
+	if (alpdu_fragment_len < 1) {
+		PRINT_RLE_ERROR("ALPDU fragment smaller (%zu) than the ALPDU header with compressed "
+		                "protocol type\n", alpdu_fragment_len);
+		status = 1;
+		goto out;
+	}
+	*comp_protocol_type = alpdu_header->compressed_supported.proto_type;
+
+	if ((*comp_protocol_type) == RLE_PROTO_TYPE_FALLBACK) {
 		if (alpdu_fragment_len < sizeof(alpdu_header->compressed_fallback)) {
 			PRINT_RLE_ERROR("Alpdu fragment smaller (%zu) than a header (%zu)\n",
 			                alpdu_fragment_len,
