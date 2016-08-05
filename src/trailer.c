@@ -122,28 +122,6 @@ int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
 	return status;
 }
 
-void trailer_alpdu_crc_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                            const size_t alpdu_fragment_len,
-                                            const unsigned char *sdu_fragment[],
-                                            size_t *const sdu_fragment_len,
-                                            const rle_alpdu_crc_trailer_t **const trailer)
-{
-	*sdu_fragment = alpdu_fragment;
-	*sdu_fragment_len = alpdu_fragment_len - sizeof **(trailer);
-	*trailer = (rle_alpdu_crc_trailer_t *)(alpdu_fragment + *sdu_fragment_len);
-}
-
-void trailer_alpdu_seqno_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                              const size_t alpdu_fragment_len,
-                                              const unsigned char *sdu_fragment[],
-                                              size_t *const sdu_fragment_len,
-                                              const rle_alpdu_seqno_trailer_t **const trailer)
-{
-	*sdu_fragment = alpdu_fragment;
-	*sdu_fragment_len = alpdu_fragment_len - sizeof **(trailer);
-	*trailer = (rle_alpdu_seqno_trailer_t *)(alpdu_fragment + *sdu_fragment_len);
-}
-
 int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
                         const rle_rasm_buf_t *const rasm_buf,
                         struct rle_ctx_management *const rle_ctx,

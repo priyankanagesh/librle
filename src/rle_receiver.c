@@ -52,8 +52,6 @@ static int get_receiver_context(const struct rle_receiver *const receiver,
                                 const uint8_t fragment_id,
                                 const struct rle_ctx_management **const ctx_man);
 
-/* TODO */
-
 
 /*------------------------------------------------------------------------------------------------*/
 /*----------------------------------- PRIVATE FUNCTIONS CODE -------------------------------------*/

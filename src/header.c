@@ -346,14 +346,14 @@ bool push_ppdu_header(struct rle_frag_buf *const frag_buf,
 		/* RLE context needed if ALPDU is fragmented */
 		assert(rle_ctx != NULL);
 
-		if (ppdu_length < sizeof(rle_ppdu_header_cont_end_t)) {
-			/* buffer is too small for the smallest PPDU CONT or END fragment */
+		if (ppdu_length <= sizeof(rle_ppdu_header_cont_end_t)) {
+			/* buffer is too small for the smallest PPDU CONT or END fragment plus 1 byte of payload:
+			 * sending 0 byte of payload is useless, and even a problem: a CONT PPDU with 0 byte of
+			 * payload may be confused with padding */
 			goto error;
 		}
 
 		max_alpdu_fragment_len -= sizeof(rle_ppdu_header_cont_end_t);
-
-		/* /!\ TODO Currently 0-octets wide ALPDU fragment accepted /!\ */
 
 		/* Determine whether a END PPDU is possible or not: a END PPDU is possible only if all
 		 * remaining ALPDU bytes may fit into the available room after the END PPDU header
@@ -384,8 +384,15 @@ bool push_ppdu_header(struct rle_frag_buf *const frag_buf,
 				 * trailer, so make the PPDU fragment shorter */
 
 				size_t trailer_len_in_cur_ppdu = trailer_len - alpdu_overflow_len;
+				size_t alpdu_fragment_len = max_alpdu_fragment_len - trailer_len_in_cur_ppdu;
 
-				frag_buf_ppdu_put(frag_buf, max_alpdu_fragment_len - trailer_len_in_cur_ppdu);
+				/* do not build CONT PPDU with 0 byte of ALPDU: sending 0 byte of payload is useless,
+				 * and even a problem: a CONT PPDU with 0 byte of payload may be confused with padding */
+				if (alpdu_fragment_len == 0) {
+					goto error;
+				}
+
+				frag_buf_ppdu_put(frag_buf, alpdu_fragment_len);
 				push_cont_ppdu_header(frag_buf, rle_ctx->frag_id);
 
 			} else {
