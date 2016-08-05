@@ -387,7 +387,7 @@ static int test_decap(const char *const device_name)
 	printf("===\timplicit ptype:      0x%02x\n", conf.implicit_protocol_type);
 	printf("===\tALPDU protection:    %s\n",     conf.allow_alpdu_sequence_number ?        "SeqNo" : "CRC");
 	printf("===\tptype compression:   %s\n",     conf.use_compressed_ptype ? "On"  : "Off");
-	printf("===\tptype ommission:     %s\n",     conf.allow_ptype_omission ?   "On"  : "Off");
+	printf("===\tptype omission:      %s\n",     conf.allow_ptype_omission ?   "On"  : "Off");
 
 	stop_program = 0;
 

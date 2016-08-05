@@ -27,26 +27,6 @@
 
 
 /*------------------------------------------------------------------------------------------------*/
-/*--------------------------------- PUBLIC MACROS AND CONSTANTS ----------------------------------*/
-/*------------------------------------------------------------------------------------------------*/
-
-/** Status for the fragmentation checking */
-enum check_frag_status {
-	FRAG_STATUS_OK, /**< Fragementation is ok. */
-	FRAG_STATUS_KO  /**< Error case.           */
-};
-
-/** States of fragmentation */
-enum frag_states {
-	FRAG_STATE_UNINIT, /**< Fragmentation not started */
-	FRAG_STATE_START,  /**< Fragmentation is in starting state   */
-	FRAG_STATE_CONT,   /**< Fragmentation is in continuing state */
-	FRAG_STATE_END,    /**< Fragmentation is in ending state     */
-	FRAG_STATE_COMP    /**< No fragmentation */
-};
-
-
-/*------------------------------------------------------------------------------------------------*/
 /*--------------------------------- PUBLIC STRUCTS AND TYPEDEFS ----------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
