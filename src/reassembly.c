@@ -421,11 +421,12 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 		        (const rle_alpdu_seqno_trailer_t **const)&rle_trailer);
 	}
 
-	if (sdu_fragment_len > rasm_buf_get_sdu_length(rasm_buf)) {
-		PRINT_RLE_ERROR("PPDU END with frag id %d contains more SDU bytes than "
-		                "expected in total (%zu bytes in fragment, %zu bytes "
-		                "expected in total)", *index_ctx, sdu_fragment_len,
-		                rasm_buf_get_sdu_length(rasm_buf));
+	if (rasm_buf_get_reassembled_sdu_length(rasm_buf) + sdu_fragment_len >
+	    rasm_buf_get_sdu_length(rasm_buf)) {
+		PRINT_RLE_ERROR("PPDU END with frag id %d contains more SDU bytes than expected in total "
+		                "(%zu bytes already received, %zu bytes in fragment, %zu bytes expected "
+		                "in total)", *index_ctx, rasm_buf_get_reassembled_sdu_length(rasm_buf),
+		                sdu_fragment_len, rasm_buf_get_sdu_length(rasm_buf));
 		goto out;
 	}
 	rasm_buf_init_sdu_frag(rasm_buf);

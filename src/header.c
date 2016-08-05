@@ -510,7 +510,17 @@ int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 	*sdu_fragment_len = alpdu_fragment_len;
 
 	if (default_ptype == RLE_PROTO_TYPE_IP_COMP) {
-		uint8_t ip_version = (*sdu_fragment[0] >> 4) & 0x0F;
+		uint8_t ip_version;
+
+		if ((*sdu_fragment_len) < 1) {
+			/* the protocol type cannot be deduced from the IP payload */
+			PRINT_RLE_ERROR("ALDPU fragment is too short to deduce IP version from the first IP byte: "
+			                "%zu bytes available, 1 byte required at least\n", (*sdu_fragment_len));
+			status = 1;
+			goto out;
+		}
+
+		ip_version = (*sdu_fragment[0] >> 4) & 0x0F;
 		if (ip_version == 4) {
 			*protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP;
 		} else if (ip_version == 6) {
@@ -520,6 +530,7 @@ int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 			status = 1;
 			goto out;
 		}
+
 	} else {
 		*protocol_type = rle_header_ptype_decompression(default_ptype);
 	}
