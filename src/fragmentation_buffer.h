@@ -97,6 +97,7 @@ struct rle_frag_buf {
 	unsigned char buffer[RLE_F_BUFF_LEN]; /** Buffer itself.                                     */
 	unsigned char *cur_pos;               /** Current position.                                  */
 	struct rle_sdu sdu_info;              /** RLE SDU struct used without buffer to store infos. */
+	uint32_t crc;                         /**< The computed CRC if needed */
 	frag_buf_ptrs_t sdu;                  /** SDU after copying it.                              */
 	frag_buf_ptrs_t alpdu;                /** ALPDU after encapsulation.                         */
 	frag_buf_ptrs_t ppdu;                 /** PPDU after each fragmentation.                     */

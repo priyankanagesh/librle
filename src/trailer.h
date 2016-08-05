@@ -81,4 +81,16 @@ int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
                         struct rle_ctx_management *const rle_ctx,
                         size_t *const lost_packets);
 
+/**
+ * @brief Compute the CRC of a gven SDU for CRC ALPDU trailer
+ *
+ * @param sdu  the SDU to compute a CRC for
+ * @return     the computed CRC32
+ *
+ * @ingroup RLE trailer.
+ */
+uint32_t compute_crc32(const struct rle_sdu *const sdu)
+	__attribute__((warn_unused_result, nonnull(1)));
+
+
 #endif /* __TRAILER_H__ */
