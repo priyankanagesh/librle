@@ -139,11 +139,6 @@ int rle_header_ptype_is_compressible(uint16_t uncompressed_ptype)
 	case RLE_PROTO_TYPE_IPV4_UNCOMP:
 	case RLE_PROTO_TYPE_IPV6_UNCOMP:
 	case RLE_PROTO_TYPE_ARP_UNCOMP:
-		/* TODO: To modify when RLE_PROTO_TYPE_SACH_UNCOMP and RLE_PROTO_TYPE_IP_UNCOMP will be
-		 * different. */
-		/* case RLE_PROTO_TYPE_SACH_UNCOMP:
-		 * compressed_ptype = RLE_PROTO_TYPE_SACH_COMP;
-		 * break; */
 		return_value = C_OK;
 		break;
 	default:
@@ -179,11 +174,6 @@ uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype)
 	case RLE_PROTO_TYPE_ARP_UNCOMP:
 		compressed_ptype = RLE_PROTO_TYPE_ARP_COMP;
 		break;
-	/* TODO: To modify when RLE_PROTO_TYPE_SACH_UNCOMP and RLE_PROTO_TYPE_IP_UNCOMP will be
-	 * different. */
-	/* case RLE_PROTO_TYPE_SACH_UNCOMP:
-	 * compressed_ptype = RLE_PROTO_TYPE_SACH_COMP;
-	 * break; */
 	default:
 		break;
 	}
