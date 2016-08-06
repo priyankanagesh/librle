@@ -1002,7 +1002,6 @@ bool test_rle_api_robustness_receiver(void)
 		enum rle_fpdu_types fpdu_type = RLE_TRAFFIC_FPDU;
 		size_t rle_hdr_len;
 		enum rle_header_size_status ret;
-		uint8_t comp_protocol_type;
 
 		printf("\ttest generic function rle_get_header_size()\n");
 		ret = rle_get_header_size(NULL, fpdu_type, &rle_hdr_len);
@@ -1040,6 +1039,7 @@ bool test_rle_api_robustness_receiver(void)
 				.protocol_type = RLE_PROTO_TYPE_SIGNAL_UNCOMP,
 			};
 
+			uint8_t comp_protocol_type;
 			struct rle_frag_buf *buf;
 
 			buf = rle_frag_buf_new();

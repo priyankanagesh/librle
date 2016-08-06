@@ -162,12 +162,10 @@ static bool is_suppressible(uint16_t protocol_type, uint8_t default_ptype)
 		suppressible = (default_ptype == 0x1a);
 		break;
 	case 0x0800:
-		suppressible = (default_ptype == 0x0d);
-		suppressible |= (default_ptype == 0x30);
+		suppressible = (default_ptype == 0x0d || default_ptype == 0x30);
 		break;
 	case 0x86dd:
-		suppressible = (default_ptype == 0x11);
-		suppressible |= (default_ptype == 0x30);
+		suppressible = (default_ptype == 0x11 || default_ptype == 0x30);
 		break;
 	case 0x0806:
 		suppressible = (default_ptype == 0x0e);
@@ -215,6 +213,7 @@ static bool test_encap(const uint16_t protocol_type,
 	}
 	/* Preparation of the SDU to encap.  */
 	sdu.buffer = calloc(length, sizeof(unsigned char));
+	assert(sdu.buffer != NULL);
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, length);
 	sdu.size = length;
 	if (protocol_type == RLE_PROTO_TYPE_IPV4_UNCOMP) {
@@ -252,46 +251,35 @@ static bool test_encap(const uint16_t protocol_type,
 
 			unsigned char compressed_ptype = 0x00;
 			theorical_alpdu_header_size = 1;
+			theorical_alpdu_header =
+				calloc(theorical_alpdu_header_size, sizeof(unsigned char));
+			assert(theorical_alpdu_header != NULL);
 			switch (protocol_type) {
 			case 0x0082:         /* L2S */
-				theorical_alpdu_header =
-				        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
 				compressed_ptype = 0x42;
 				theorical_alpdu_header[0] = compressed_ptype;
 				break;
 			case 0x0800:         /* IPv4        */
-				theorical_alpdu_header =
-				        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
 				compressed_ptype = 0x0d;
 				theorical_alpdu_header[0] = compressed_ptype;
 				break;
 			case 0x86dd:         /* IPv6        */
-				theorical_alpdu_header =
-				        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
 				compressed_ptype = 0x11;
 				theorical_alpdu_header[0] = compressed_ptype;
 				break;
 			case 0x8100:         /* VLAN        */
-				theorical_alpdu_header =
-				        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
 				compressed_ptype = 0x0f;
 				theorical_alpdu_header[0] = compressed_ptype;
 				break;
 			case 0x88a8:         /* QiNQ        */
-				theorical_alpdu_header =
-				        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
 				compressed_ptype = 0x19;
 				theorical_alpdu_header[0] = compressed_ptype;
 				break;
 			case 0x9100:         /* QinQ legacy */
-				theorical_alpdu_header =
-				        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
 				compressed_ptype = 0x1a;
 				theorical_alpdu_header[0] = compressed_ptype;
 				break;
 			case 0x0806:         /* ARP         */
-				theorical_alpdu_header =
-				        calloc(theorical_alpdu_header_size, sizeof(unsigned char));
 				compressed_ptype = 0x0e;
 				theorical_alpdu_header[0] = compressed_ptype;
 				break;
@@ -299,7 +287,9 @@ static bool test_encap(const uint16_t protocol_type,
 				/* Fallback */
 				compressed_ptype = 0xff;
 				theorical_alpdu_header_size += (size_t)2;
+				free(theorical_alpdu_header);
 				theorical_alpdu_header = calloc(theorical_alpdu_header_size, sizeof(unsigned char));
+				assert(theorical_alpdu_header != NULL);
 				theorical_alpdu_header[0] = compressed_ptype;
 				theorical_alpdu_header[1] = (unsigned char)((protocol_type & 0xff00) >> 8);
 				theorical_alpdu_header[2] = (unsigned char)(protocol_type & 0x00ff);
@@ -309,6 +299,7 @@ static bool test_encap(const uint16_t protocol_type,
 
 			theorical_alpdu_header_size = (size_t)2;
 			theorical_alpdu_header = calloc(theorical_alpdu_header_size, sizeof(unsigned char));
+			assert(theorical_alpdu_header != NULL);
 			theorical_alpdu_header[0] = (unsigned char)((protocol_type & 0xff00) >> 8);
 			theorical_alpdu_header[1] = (unsigned char)(protocol_type & 0x00ff);
 		}
@@ -383,6 +374,7 @@ bool test_encap_null_transmitter(void)
 		sdu.buffer = NULL;
 	}
 	sdu.buffer = calloc(max_size, sizeof(unsigned char));
+	assert(sdu.buffer != NULL);
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, max_size);
 	sdu.size = max_size;
 
@@ -444,6 +436,7 @@ bool test_encap_too_big(void)
 		sdu.buffer = NULL;
 	}
 	sdu.buffer = calloc(max_size, sizeof(unsigned char));
+	assert(sdu.buffer != NULL);
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, max_size);
 	sdu.size = max_size;
 
@@ -465,6 +458,7 @@ bool test_encap_too_big(void)
 		sdu.buffer = NULL;
 	}
 	sdu.buffer = calloc(max_size + 1, sizeof(unsigned char));
+	assert(sdu.buffer != NULL);
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, max_size + 1);
 	sdu.size = max_size + 1;
 
@@ -496,7 +490,7 @@ bool test_encap_inv_config(void)
 {
 	PRINT_TEST("Special test: try to create an RLE transmitter module with an invalid conf. "
 	           "Warning: An error message may be printed.");
-	bool output = false;
+	bool output;
 
 	const struct rle_config conf = {
 		.allow_ptype_omission = 0,

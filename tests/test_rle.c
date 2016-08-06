@@ -21,11 +21,11 @@
 static bool tests(const char *const test_name, const struct test *const current_tests[])
 {
 	const struct test *const *current_test;
-	bool success;
 
 	printf("\tTest %s\n\n", test_name);
 
 	for (current_test = current_tests; *current_test; ++current_test) {
+		bool success;
 		printf("Test %s\n", (**current_test).name);
 		success = (**current_test).function();
 		if (!success) {

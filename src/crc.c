@@ -138,13 +138,16 @@ static const uint32_t crctab[] =
  *
  *  @return          The CRC32
  */
-uint32_t compute_crc(unsigned char *data, size_t length, uint32_t crc_init)
+uint32_t compute_crc(const unsigned char *data,
+                     const size_t length,
+                     const uint32_t crc_init)
 {
+	uint32_t crc = crc_init;
 	size_t i;
 
 #define COMPUTE(var, ch)  (var) = (var) << 8 ^ crctab[(var) >> 24 ^ (ch)]
 	for (i = 0; i < length; i++) {
-		COMPUTE(crc_init, data[i]);
+		COMPUTE(crc, data[i]);
 	}
-	return crc_init;
+	return crc;
 }
