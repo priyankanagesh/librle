@@ -208,15 +208,10 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 	enum rle_pack_status ret_pack = RLE_PACK_ERR;
 	enum rle_decap_status ret_decap = RLE_DECAP_ERR;
 
-	/*static const size_t number_of_packets = 2;*/
 	size_t packet_iterator = 0;
 	struct rle_sdu sdus_in[number_of_packets];
 
-	for (packet_iterator = 0; packet_iterator < number_of_packets; ++packet_iterator) {
-		sdus_in[packet_iterator].buffer = (unsigned char *)packets[packet_iterator] +
-		                                  link_len_src;
-		sdus_in[packet_iterator].size = packets_length[packet_iterator] - link_len_src;
-	}
+	int status = 3;
 
 	size_t sdus_out_order[number_of_packets];
 	size_t sdus_out_nr = 0;
@@ -227,17 +222,9 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 	size_t fpdus_nr = 0;
 	size_t fpdu_id;
 
-	memset(fpdus, -1, fpdus_max_nr * fpdu_length);
-
-
 	struct rle_sdu sdus_out[number_of_packets];
 	const size_t sdu_out_buf_length = 5000;
 	uint8_t sdu_out_buf[number_of_packets][sdu_out_buf_length];
-
-	for (packet_iterator = 0; packet_iterator < number_of_packets; ++packet_iterator) {
-		memset((void *)sdu_out_buf[packet_iterator], '\0', sdu_out_buf_length);
-		sdus_out[packet_iterator].buffer = sdu_out_buf[packet_iterator] + link_len_src;
-	}
 
 	const size_t label_size = 3;
 	const unsigned char label[3] = { 0x00, 0x01, 0x02 };
@@ -249,8 +236,24 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 
 	uint8_t frag_id;
 
-	int status = 3;
+	/* empty capture means immediate success */
+	if (number_of_packets == 0) {
+		status = 1;
+		goto exit;
+	}
 
+	for (packet_iterator = 0; packet_iterator < number_of_packets; ++packet_iterator) {
+		sdus_in[packet_iterator].buffer = (unsigned char *)packets[packet_iterator] +
+		                                  link_len_src;
+		sdus_in[packet_iterator].size = packets_length[packet_iterator] - link_len_src;
+	}
+
+	memset(fpdus, -1, fpdus_max_nr * fpdu_length);
+
+	for (packet_iterator = 0; packet_iterator < number_of_packets; ++packet_iterator) {
+		memset((void *)sdu_out_buf[packet_iterator], '\0', sdu_out_buf_length);
+		sdus_out[packet_iterator].buffer = sdu_out_buf[packet_iterator] + link_len_src;
+	}
 
 	printf_verbose("\n=== prepare %zu packet(s)\n", number_of_packets);
 	for (packet_iterator = 0; packet_iterator < number_of_packets; ++packet_iterator) {
@@ -509,7 +512,9 @@ static int encap_decap(struct rle_transmitter *const transmitter,
 	/* decapsulate the FPDUs */
 	size_t packet_offset = 0;
 	for(fpdu_id = 0; fpdu_id < fpdus_nr; fpdu_id++) {
-		printf_verbose("\n=== RLE decapsulation of FPDU #%zu: start\n", fpdu_id + 1);
+		printf_verbose("\n=== RLE decapsulation of FPDU #%zu: start (sdus = %p, "
+		               "sdus_max_nr = %zu, sdus_nr = %p)\n", fpdu_id + 1, sdus_out,
+                     number_of_packets, &sdus_nr);
 		ret_decap =
 		        rle_decapsulate(receiver, fpdus[fpdu_id], fragment_size, sdus_out,
 		                        number_of_packets, &sdus_nr, label_out, label_size);
