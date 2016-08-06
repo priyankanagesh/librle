@@ -358,7 +358,7 @@ static int encap(struct rle_transmitter *const transmitter, const size_t fpdu_ma
 	case RLE_ENCAP_ERR_NULL_TRMT:
 	case RLE_ENCAP_ERR_SDU_TOO_BIG:
 		printf_verbose("=== RLE encapsulation: misuse\n    %s\n", str_encap_error(ret_encap));
-		status = 2;
+		status = -1;
 		goto exit;
 	case RLE_ENCAP_ERR:
 	default:
@@ -410,7 +410,7 @@ static int encap(struct rle_transmitter *const transmitter, const size_t fpdu_ma
 			case RLE_FRAG_ERR_CONTEXT_IS_NULL:
 				printf_verbose("=== RLE fragmentation: misuse\n"
 				               "    %s\n", str_frag_error(ret_frag));
-				status = 2;
+				status = -1;
 				goto exit;
 			case RLE_FRAG_ERR:
 			default:
@@ -450,7 +450,7 @@ static int encap(struct rle_transmitter *const transmitter, const size_t fpdu_ma
 			case RLE_PACK_ERR_INVALID_PPDU:
 				printf_verbose("=== RLE packing: misuse\n"
 				               "    %s\n", str_pack_error(ret_pack));
-				status = 2;
+				status = -1;
 				goto exit;
 			case RLE_PACK_ERR:
 			default:
@@ -505,7 +505,7 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 		.allow_alpdu_crc = 0,
 		.allow_alpdu_sequence_number = 1,
 		.use_explicit_payload_header_map = 0,
-		.implicit_protocol_type = 0x30,
+		.implicit_protocol_type = 0x31,
 		.implicit_ppdu_label_size = 0,
 		.implicit_payload_label_size = 0,
 		.type_0_alpdu_label_size = 0,
@@ -585,6 +585,10 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 			nb_inv++;
 		} else {
 			nb_bad++;
+		}
+
+		if (ret != 1) {
+			break;
 		}
 	}
 
