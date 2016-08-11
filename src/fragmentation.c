@@ -43,7 +43,7 @@
 /*------------------------------------------------------------------------------------------------*/
 
 enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, const uint8_t frag_id,
-                                  const size_t remaining_burst_size, unsigned char **const ppdu,
+                                  const size_t remaining_burst_size, unsigned char *ppdu[],
                                   size_t *const ppdu_length)
 {
 	enum rle_frag_status status = RLE_FRAG_ERR; /* Error by default. */
