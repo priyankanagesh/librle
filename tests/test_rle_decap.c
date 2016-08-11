@@ -188,7 +188,7 @@ static bool test_decap(const uint16_t protocol_type,
 			}
 		}
 
-		ret_decap = rle_decapsulate(receiver, (const unsigned char *)fpdu, fpdu_length, sdus,
+		ret_decap = rle_decapsulate(receiver, fpdu, fpdu_length, sdus,
 		                            sdus_max_nr, &sdus_nr, labelp, label_length);
 
 		if (ret_decap != RLE_DECAP_OK) {

@@ -65,43 +65,6 @@ int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
                        const struct rle_config *const rle_conf,
                        struct rle_ctx_management *const rle_ctx);
 
-
-/**
- *  @brief         Extract the SDU fragment from the ALPDU fragment with CRC trailer.
- *
- *
- *  @param[in]     alpdu_fragment       the ALPDU fragment.
- *  @param[in]     alpdu_fragment_len   the length of the ALPDU fragment.
- *  @param[out]    sdu_fragment         the extracted SDU fragment.
- *  @param[out]    sdu_fragment_len     the length of the SDU fragment.
- *  @param[out]    trailer              the extracted trailer.
- *
- *  @ingroup RLE trailer.
- */
-void trailer_alpdu_crc_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                            const size_t alpdu_fragment_len,
-                                            const unsigned char *sdu_fragment[],
-                                            size_t *const sdu_fragment_len,
-                                            const rle_alpdu_crc_trailer_t **const trailer);
-
-/**
- *  @brief         Extract the SDU fragment from the ALPDU fragment with Seq No trailer.
- *
- *
- *  @param[in]     alpdu_fragment       the ALPDU fragment.
- *  @param[in]     alpdu_fragment_len   the length of the ALPDU fragment.
- *  @param[out]    sdu_fragment         the extracted SDU fragment.
- *  @param[out]    sdu_fragment_len     the length of the SDU fragment.
- *  @param[out]    trailer              the extracted trailer.
- *
- *  @ingroup RLE trailer.
- */
-void trailer_alpdu_seqno_extract_sdu_fragment(const unsigned char alpdu_fragment[],
-                                              const size_t alpdu_fragment_len,
-                                              const unsigned char *sdu_fragment[],
-                                              size_t *const sdu_fragment_len,
-                                              const rle_alpdu_seqno_trailer_t **const trailer);
-
 /**
  *  @brief         check the ALPDU trailer with its SDU.
  *

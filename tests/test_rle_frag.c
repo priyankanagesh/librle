@@ -22,6 +22,23 @@
 
 #define GET_CONF_VALUE(x) ((x) == 1 ? "True" : "False")
 
+
+/** Status for the fragmentation checking */
+enum check_frag_status {
+	FRAG_STATUS_OK, /**< Fragementation is ok. */
+	FRAG_STATUS_KO  /**< Error case.           */
+};
+
+/** States of fragmentation */
+enum frag_states {
+	FRAG_STATE_UNINIT = 0, /**< Fragmentation not started */
+	FRAG_STATE_START  = 1, /**< Fragmentation is in starting state   */
+	FRAG_STATE_CONT   = 2, /**< Fragmentation is in continuing state */
+	FRAG_STATE_END    = 3, /**< Fragmentation is in ending state     */
+	FRAG_STATE_COMP   = 4, /**< No fragmentation */
+};
+
+
 /**
  * @brief         Generic fragmentation test.
  *
@@ -203,7 +220,8 @@ static bool test_frag(const uint16_t protocol_type,
 			frag_status = test_check_frag_transition(old_state, new_state);
 
 			if (frag_status != FRAG_STATUS_OK) {
-				PRINT_ERROR("Check integrity.");
+				PRINT_ERROR("Check integrity: invalid transition from state %d to %d",
+				            old_state, new_state);
 				goto exit_label;
 			}
 
@@ -468,7 +486,6 @@ bool test_frag_real_world(void)
 bool test_frag_all(void)
 {
 	PRINT_TEST("Test all the general fragmentation cases.");
-	bool output = true;
 	uint16_t protocol_type = 0x0800; /* IPv4 Arbitrarily. */
 	uint8_t frag_id = 1;
 	const size_t sdu_length = 100;
@@ -551,7 +568,7 @@ bool test_frag_all(void)
 			                  burst_sizes[burst_iterator], frag_id);
 			if (ret == false) {
 				/* Only one fail means the encap test fail. */
-				output = false;
+				return false;
 			}
 		}
 
@@ -564,7 +581,7 @@ bool test_frag_all(void)
 			                  burst_sizes[burst_iterator], frag_id);
 			if (ret == false) {
 				/* Only one fail means the encap test fail. */
-				output = false;
+				return false;
 			}
 		}
 
@@ -577,12 +594,12 @@ bool test_frag_all(void)
 			                  burst_sizes[burst_iterator], frag_id);
 			if (ret == false) {
 				/* Only one fail means the encap test fail. */
-				output = false;
+				return false;
 			}
 		}
 	}
 
-	PRINT_TEST_STATUS(output);
+	PRINT_TEST_STATUS(true);
 	printf("\n");
-	return output;
+	return true;
 }

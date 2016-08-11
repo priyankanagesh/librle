@@ -369,6 +369,7 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	rle_rasm_buf_t *rasm_buf;
 	struct rle_ctx_management *rle_ctx;
 	const rle_alpdu_trailer_t *rle_trailer = NULL;
+	size_t rle_trailer_len;
 	size_t lost_packets = 0;
 
 #ifdef TIME_DEBUG
@@ -410,22 +411,25 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	                                     &alpdu_fragment_len);
 
 	if (rle_ctx_get_use_crc(rle_ctx)) {
-		trailer_alpdu_crc_extract_sdu_fragment(
-		        alpdu_fragment, alpdu_fragment_len, &sdu_fragment,
-		        &sdu_fragment_len,
-		        (const rle_alpdu_crc_trailer_t **)&
-		        rle_trailer);
+		rle_trailer_len = sizeof(rle_alpdu_crc_trailer_t);
 	} else {
-		trailer_alpdu_seqno_extract_sdu_fragment(
-		        alpdu_fragment, alpdu_fragment_len, &sdu_fragment, &sdu_fragment_len,
-		        (const rle_alpdu_seqno_trailer_t **const)&rle_trailer);
+		rle_trailer_len = sizeof(rle_alpdu_seqno_trailer_t);
 	}
+	if (alpdu_fragment_len < rle_trailer_len) {
+		PRINT_RLE_ERROR("PPDU END does not contain enough bytes for the trailer: %zu bytes available "
+		                "while at least %zu bytes required", alpdu_fragment_len, rle_trailer_len);
+		goto out;
+	}
+	sdu_fragment = alpdu_fragment;
+	sdu_fragment_len = alpdu_fragment_len - rle_trailer_len;
+	rle_trailer = (rle_alpdu_trailer_t *) (sdu_fragment + sdu_fragment_len);
 
-	if (sdu_fragment_len > rasm_buf_get_sdu_length(rasm_buf)) {
-		PRINT_RLE_ERROR("PPDU END with frag id %d contains more SDU bytes than "
-		                "expected in total (%zu bytes in fragment, %zu bytes "
-		                "expected in total)", *index_ctx, sdu_fragment_len,
-		                rasm_buf_get_sdu_length(rasm_buf));
+	if (rasm_buf_get_reassembled_sdu_length(rasm_buf) + sdu_fragment_len >
+	    rasm_buf_get_sdu_length(rasm_buf)) {
+		PRINT_RLE_ERROR("PPDU END with frag id %d contains more SDU bytes than expected in total "
+		                "(%zu bytes already received, %zu bytes in fragment, %zu bytes expected "
+		                "in total)", *index_ctx, rasm_buf_get_reassembled_sdu_length(rasm_buf),
+		                sdu_fragment_len, rasm_buf_get_sdu_length(rasm_buf));
 		goto out;
 	}
 	rasm_buf_init_sdu_frag(rasm_buf);

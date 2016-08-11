@@ -114,13 +114,15 @@ ADD_TEST(NAME unit_test COMMAND test_rle)
 
 ADD_TEST(NAME memory_test COMMAND test_rle_memory)
 
-ADD_TEST(NAME non_regression_sdu
+ADD_TEST(NAME non_regression_sdu_large_fragments
          COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
-                                              ${SAMPLE_DIR}/non_reg)
-
-ADD_TEST(NAME non_regression_sdu_small_bursts
+                                              ${SAMPLE_DIR}/non_reg -f 2000)
+ADD_TEST(NAME non_regression_sdu_medium_fragments
          COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
-                                              ${SAMPLE_DIR}/non_reg -f5)
+                                              ${SAMPLE_DIR}/non_reg -f 50)
+ADD_TEST(NAME non_regression_sdu_small_fragments
+         COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
+                                              ${SAMPLE_DIR}/non_reg -f 11)
 
 ADD_TEST(NAME non_regression_sdu_fuzzing
          COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression

@@ -111,11 +111,7 @@ enum {
 	RLE_PROTO_TYPE_IPV4_COMP                = 0x0d,
 	RLE_PROTO_TYPE_IPV6_COMP                = 0x11,
 	/* for ARP. */
-	/* TODO: ARP not in the RLE_ICD v.10 (19/02/2015). Should we considere to remove it ? */
 	RLE_PROTO_TYPE_ARP_COMP                 = 0x0e,
-	/* for SACH. */
-	/* TODO: SACH not in the RLE_ICD v.10 (19/02/2015). Should we considere to remove it ? */
-	RLE_PROTO_TYPE_SACH_COMP                = RLE_PROTO_TYPE_IP_COMP,
 	RLE_PROTO_TYPE_FALLBACK                 = 0xff,
 };
 
@@ -131,11 +127,7 @@ enum {
 	RLE_PROTO_TYPE_IPV4_UNCOMP              = 0x0800,
 	RLE_PROTO_TYPE_IPV6_UNCOMP              = 0x86dd,
 	/* for ARP */
-	/* TODO: ARP not in the ICD (19/02/2015). Should we considere to remove it ? */
 	RLE_PROTO_TYPE_ARP_UNCOMP               = 0x0806,
-	/* for SACH */
-	/* TODO: SACH not in the ICD (19/02/2015). Should we considere to remove it ? */
-	RLE_PROTO_TYPE_SACH_UNCOMP              = RLE_PROTO_TYPE_IPV4_UNCOMP
 };
 
 /**

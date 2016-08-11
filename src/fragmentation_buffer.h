@@ -422,7 +422,7 @@ static inline void frag_buf_ppdu_push(rle_frag_buf_t *const frag_buf, const size
 
 static inline void frag_buf_ppdu_init(rle_frag_buf_t *const frag_buf)
 {
-	frag_buf_ptrs_set(&frag_buf->ppdu, frag_buf->ppdu.end);
+	frag_buf_ptrs_set(&frag_buf->ppdu, frag_buf->cur_pos);
 }
 
 static inline void frag_buf_set_cur_pos(rle_frag_buf_t *const frag_buf)

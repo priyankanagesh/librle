@@ -35,7 +35,7 @@
 static void usage(void);
 static int test_decap_fpdus(const bool ignore_malformed, const char *const src_filename);
 static int decap_fpdus(struct rle_receiver *const receiver, const size_t *const fpdus_lengths,
-                       const unsigned char *const *const fpdus, const size_t number_of_fpdus,
+                       unsigned char *const *const fpdus, const size_t number_of_fpdus,
                        const size_t link_len_src);
 
 
@@ -152,7 +152,7 @@ static void usage(void)
  *                          -2 if an error occurs while receiving
  */
 static int decap_fpdus(struct rle_receiver *const receiver, const size_t *const fpdus_lengths,
-                       const unsigned char *const *const fpdus, const size_t number_of_fpdus,
+                       unsigned char *const *const fpdus, const size_t number_of_fpdus,
                        const size_t link_len_src)
 {
 	enum rle_decap_status ret_decap = RLE_DECAP_ERR;
@@ -198,15 +198,13 @@ static int decap_fpdus(struct rle_receiver *const receiver, const size_t *const 
 
 	for (fpdu_iterator = 0; fpdu_iterator < number_of_fpdus; ++fpdu_iterator) {
 		/* decapsulate the FPDU */
-		const unsigned char *const fpdu = fpdus[fpdu_iterator];
+		unsigned char *const fpdu = fpdus[fpdu_iterator];
 		const size_t fpdu_length = fpdus_lengths[fpdu_iterator];
 
 		printf_verbose("=== RLE decapsulation: start\n");
 		ret_decap =
-		        rle_decapsulate(receiver, (const unsigned char *)fpdu, fpdu_length,
-		                        &sdus_out[total_sdu],
-		                        max_number_of_packets, &sdus_nr, label,
-		                        label_size);
+		        rle_decapsulate(receiver, fpdu, fpdu_length, &sdus_out[total_sdu],
+		                        max_number_of_packets, &sdus_nr, label, label_size);
 
 		total_sdu += sdus_nr;
 
@@ -457,19 +455,17 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 
 		/* Encapsulate & decapsulate from transmitter to receiver. */
 		printf("=== test: \n");
-		printf("===\tnumber of fpdus:   %d\n", counter);
+		printf("===\tnumber of fpdus:     %d\n", counter);
 		printf("===\timplicit ptype:      0x%02x\n",
 		       (**conf).implicit_protocol_type);
 		printf("===\tALPDU protection:    %s\n",
 		       (**conf).allow_alpdu_sequence_number ? "SeqNo" : "CRC");
 		printf("===\tptype compression:   %s\n",
 		       (**conf).use_compressed_ptype ? "On" : "Off");
-		printf("===\tptype ommission:     %s\n",
+		printf("===\tptype omission:      %s\n",
 		       (**conf).allow_ptype_omission ? "On" : "Off");
 
-		ret = decap_fpdus(receiver, (const size_t *const)fpdus_lengths,
-		                  (const unsigned char *const *const)fpdus, (const size_t)counter,
-		                  link_len_src);
+		ret = decap_fpdus(receiver, fpdus_lengths, fpdus, counter, link_len_src);
 
 		printf("=== statistics: \n");
 		{

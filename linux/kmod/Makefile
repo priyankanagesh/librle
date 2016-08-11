@@ -14,26 +14,27 @@ librle_mod = $(librle_modname).ko
 librle_test_modname = librle_test
 librle_test_mod = $(librle_test_modname).ko
 
-librle_common_sources = ../src/crc.c \
-                        ../src/deencap.c \
-                        ../src/encap.c \
-                        ../src/pack.c \
-                        ../src/fragmentation.c \
-                        ../src/reassembly.c \
-                        ../src/rle_conf.c \
-                        ../src/rle_ctx.c \
-                        ../src/header.c \
-						../src/trailer.c \
-                        ../src/rle_header_proto_type_field.c \
-                        ../src/rle_receiver.c \
-                        ../src/rle_transmitter.c \
-                        ../src/fragmentation_buffer.c
+librle_common_sources = ../../src/crc.c \
+                        ../../src/deencap.c \
+                        ../../src/encap.c \
+                        ../../src/pack.c \
+                        ../../src/fragmentation.c \
+                        ../../src/reassembly.c \
+                        ../../src/rle_conf.c \
+                        ../../src/rle_ctx.c \
+                        ../../src/header.c \
+                        ../../src/trailer.c \
+                        ../../src/rle_header_proto_type_field.c \
+                        ../../src/rle_receiver.c \
+                        ../../src/rle_transmitter.c \
+                        ../../src/fragmentation_buffer.c \
+                        ../../src/reassembly_buffer.c
 
 librle_sources = ../kmod.c \
                  $(librle_common_sources)
 
-INCDIRS = -I$(M)/../include \
-          -I$(M)/../src
+INCDIRS = -I$(M)/../../include \
+          -I$(M)/../../src
 EXTRA_CFLAGS += -Wall $(INCDIRS)
 
 librle_objs = $(patsubst %.c,%.o,$(librle_sources))

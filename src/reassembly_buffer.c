@@ -33,8 +33,10 @@ void rasm_buf_cpy_sdu_frag(rle_rasm_buf_t *const rasm_buf,
 {
 	assert(rasm_buf_in_use(rasm_buf));
 
-	memcpy(rasm_buf->sdu_frag.start, sdu_frag,
-	       rasm_buf->sdu_frag.end - rasm_buf->sdu_frag.start);
+	if (rasm_buf->sdu_frag.end != rasm_buf->sdu_frag.start) {
+		memcpy(rasm_buf->sdu_frag.start, sdu_frag,
+		       rasm_buf->sdu_frag.end - rasm_buf->sdu_frag.start);
+	}
 }
 
 size_t rasm_buf_get_sdu_length(const rle_rasm_buf_t *const rasm_buf)

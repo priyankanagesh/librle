@@ -151,7 +151,8 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 	/* remaining FPDU bytes are padding: they should be all zero, warn if it is not the case */
 	for (; offset < fpdu_length; offset++) {
 		if (fpdu[offset] != 0x00) {
-			PRINT("WARNING: Current padding contains octets non equal to 0x00.\n");
+			PRINT("WARNING: FPDU padding contains octets non equal to 0x00 (at least byte #%zu "
+			      "of the %zu-byte FPDU)\n", offset + 1, fpdu_length);
 			break; /* stop padding verification after first error */
 		}
 	}

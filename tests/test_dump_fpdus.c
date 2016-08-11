@@ -755,7 +755,7 @@ static int test_encap(const char device_name[], const char output[], const size_
 	struct rle_transmitter *transmitter;
 
 	int ret;
-	size_t nb_bad = 0, nb_ok = 0, err_transmition = 0, nb_ref = 0, nb_inv = 0;
+	size_t nb_bad = 0, nb_ok = 0, err_transmission = 0, nb_ref = 0, nb_inv = 0;
 	int status = 1;
 
 	size_t fpdus_processed = 0;
@@ -816,7 +816,7 @@ static int test_encap(const char device_name[], const char output[], const size_
 	printf("===\timplicit ptype:      0x%02x\n", conf.implicit_protocol_type);
 	printf("===\tALPDU protection:    %s\n", conf.allow_alpdu_sequence_number ? "SeqNo" : "CRC");
 	printf("===\tptype compression:   %s\n", conf.use_compressed_ptype ? "On" : "Off");
-	printf("===\tptype ommission:     %s\n", conf.allow_ptype_omission ? "On" : "Off");
+	printf("===\tptype omission:      %s\n", conf.allow_ptype_omission ? "On" : "Off");
 
 	stop_program = 0;
 
@@ -843,7 +843,7 @@ static int test_encap(const char device_name[], const char output[], const size_
 		fpdus_processed += delta_fpdus_processed;
 
 		if (ret == -1) {
-			err_transmition++;
+			err_transmission++;
 			/* break; */
 		} else if (ret == 0) {
 			nb_ref++;
@@ -894,12 +894,12 @@ static int test_encap(const char device_name[], const char output[], const size_
 	printf("===\tFPDU processed:       %zu\n", fpdus_processed);
 	printf("===\tmalformed:            %zu\n", nb_bad);
 	printf("===\tinvalid:              %zu\n", nb_inv);
-	printf("===\ttransmition_failed:   %zu\n", err_transmition);
+	printf("===\ttransmission_failed:  %zu\n", err_transmission);
 	printf("===\tvalid:                %zu\n", nb_ok);
 	printf("\n");
 
 	printf("=== shutdown:\n");
-	if (err_transmition == 0 &&
+	if (err_transmission == 0 &&
 	    (ignore_malformed || nb_bad == 0) && nb_ref == 0 &&
 	    (nb_ok + nb_bad + nb_inv) == packets_counter) {
 		/* test is successful */

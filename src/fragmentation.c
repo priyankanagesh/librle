@@ -43,7 +43,7 @@
 /*------------------------------------------------------------------------------------------------*/
 
 enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, const uint8_t frag_id,
-                                  const size_t remaining_burst_size, unsigned char **const ppdu,
+                                  const size_t remaining_burst_size, unsigned char *ppdu[],
                                   size_t *const ppdu_length)
 {
 	enum rle_frag_status status = RLE_FRAG_ERR; /* Error by default. */
@@ -86,6 +86,10 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 
 	*ppdu = frag_buf->ppdu.start;
 	*ppdu_length = frag_buf_get_current_ppdu_len(frag_buf);
+
+	/* PPDU shall always be > 2, sending 0 byte of payload is useless, and even a problem:
+	 * a CONT PPDU with 0 byte of payload may be confused with padding */
+	assert((*ppdu_length) > 2);
 
 	if (frag_buf_get_remaining_alpdu_length(frag_buf) == 0) {
 		rle_transmitter_free_context(transmitter, frag_id);
