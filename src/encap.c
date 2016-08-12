@@ -161,6 +161,11 @@ enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transm
 		goto out;
 	}
 
+	if (transmitter->conf.allow_alpdu_sequence_number == 0 &&
+	    transmitter->conf.allow_alpdu_crc == 1) {
+		frag_buf->crc = compute_crc32(&frag_buf->sdu_info);
+	}
+
 	push_alpdu_header(frag_buf, &transmitter->conf);
 	status = RLE_ENCAP_OK;
 

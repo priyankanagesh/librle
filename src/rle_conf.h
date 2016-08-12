@@ -41,11 +41,15 @@ bool rle_config_check(const struct rle_config *const conf)
  *
  *  @param	ptype    The protocol type
  *  @param	rle_conf The configuration
+ *  @param  frag_buf The SDU to encapsulate
  *
  *  @return	true if omissible, else false
  *
  *  @ingroup
  */
-bool ptype_is_omissible(const uint16_t ptype, const struct rle_config *const rle_conf);
+bool ptype_is_omissible(const uint16_t ptype,
+                        const struct rle_config *const rle_conf,
+                        const struct rle_frag_buf *const frag_buf)
+	__attribute__((warn_unused_result, nonnull(2, 3)));
 
 #endif /* __RLE_CONF_H__ */

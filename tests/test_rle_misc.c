@@ -254,7 +254,7 @@ bool test_rle_allocation_transmitter(void)
 		.allow_alpdu_sequence_number = 1,
 		.use_explicit_payload_header_map = 0,
 		.implicit_protocol_type = 0x31,
-		.implicit_ppdu_label_size = 0,
+		.implicit_ppdu_label_size = 0x0f + 1, /* invalid config: 0x0f max */
 		.implicit_payload_label_size = 0,
 		.type_0_alpdu_label_size = 0,
 	};
@@ -277,8 +277,8 @@ bool test_rle_allocation_transmitter(void)
 	t = rle_transmitter_new(&bad_conf);
 
 	if (t) {
-		PRINT_ERROR("Transmitter should not be allocated with %02x protocol type.",
-		            bad_conf.implicit_protocol_type);
+		PRINT_ERROR("Transmitter should not be allocated with implicit_ppdu_label_size 0x%02x",
+		            bad_conf.implicit_ppdu_label_size);
 		goto out;
 	}
 
@@ -360,7 +360,7 @@ bool test_rle_allocation_receiver(void)
 		.allow_alpdu_sequence_number = 1,
 		.use_explicit_payload_header_map = 0,
 		.implicit_protocol_type = 0x31,
-		.implicit_ppdu_label_size = 0,
+		.implicit_ppdu_label_size = 0x0f + 1, /* invalid config: 0x0f max */
 		.implicit_payload_label_size = 0,
 		.type_0_alpdu_label_size = 0,
 	};
@@ -383,8 +383,8 @@ bool test_rle_allocation_receiver(void)
 	r = rle_receiver_new(&bad_conf);
 
 	if (r) {
-		PRINT_ERROR("Receiver should not be allocated with %02x protocol type.",
-						bad_conf.implicit_protocol_type);
+		PRINT_ERROR("Receiver should not be allocated with implicit_ppdu_label_size 0x%02x",
+						bad_conf.implicit_ppdu_label_size);
 		goto out;
 	}
 

@@ -587,7 +587,7 @@ bool test_decap_inv_config(void)
 {
 	PRINT_TEST("Special test: try to create an RLE receiver module with an invalid conf. "
 	           "Warning: An error message may be printed.");
-	bool output = false;
+	bool output;
 
 	const struct rle_config conf = {
 		.implicit_protocol_type = 0x31
@@ -2021,6 +2021,7 @@ bool test_decap_wrong_crc(void)
 	assert(fpdus_nr == 2);
 
 	/* damage the CRC */
+	assert(fpdu_current_pos >= 4);
 	fpdu[1][fpdu_current_pos - 1] = ~(fpdu[1][fpdu_current_pos - 1]);
 	fpdu[1][fpdu_current_pos - 2] = ~(fpdu[1][fpdu_current_pos - 2]);
 	fpdu[1][fpdu_current_pos - 3] = ~(fpdu[1][fpdu_current_pos - 3]);

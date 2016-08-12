@@ -40,7 +40,7 @@
 /*------------------------------------------------------------------------------------------------*/
 
 enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
-                                      const unsigned char *const fpdu, const size_t fpdu_length,
+                                      unsigned char *const fpdu, const size_t fpdu_length,
                                       struct rle_sdu sdus[],
                                       const size_t sdus_max_nr, size_t *const sdus_nr,
                                       unsigned char *const payload_label,
@@ -95,7 +95,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 	/* parse all PPDUs that the FPDU contains until there is less than 2 bytes
 	 * in the FPDU payload and padding is not detected */
 	while ((offset + 1) < fpdu_length && !padding_detected) {
-		const unsigned char *const ppdu = &fpdu[offset];
+		unsigned char *const ppdu = &fpdu[offset];
 		size_t ppdu_length;
 		int fragment_id;
 		int ret;

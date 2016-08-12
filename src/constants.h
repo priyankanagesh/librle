@@ -90,6 +90,14 @@ enum {
 
 #define assert BUG_ON
 
+/** 10Mb/s ethernet header */
+struct ether_header
+{
+  u_int8_t  ether_dhost[ETH_ALEN];	/**< destination ethernet address */
+  u_int8_t  ether_shost[ETH_ALEN];	/**< source ethernet address */
+  u_int16_t ether_type;		         /**< packet type ID field	*/
+} __attribute__((__packed__));
+
 #endif
 
 #endif /* __CONSTANTS_H__ */

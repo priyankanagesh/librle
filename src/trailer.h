@@ -70,15 +70,27 @@ int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
  *
  *
  *  @param[in]     trailer              the trailer to check.
- *  @param[in]     rasm_buf               the reassembly buffer containing the SDU.
+ *  @param[in]     reassembled_sdu      the reassembly buffer containing the SDU.
  *  @param[in,out] rle_ctx              the RLE context.
  *  @param[out]    lost_packets         number of lost packets.
  *
  *  @ingroup RLE trailer.
  */
 int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
-                        const rle_rasm_buf_t *const rasm_buf,
+                        const struct rle_sdu *const reassembled_sdu,
                         struct rle_ctx_management *const rle_ctx,
                         size_t *const lost_packets);
+
+/**
+ * @brief Compute the CRC of a gven SDU for CRC ALPDU trailer
+ *
+ * @param sdu  the SDU to compute a CRC for
+ * @return     the computed CRC32
+ *
+ * @ingroup RLE trailer.
+ */
+uint32_t compute_crc32(const struct rle_sdu *const sdu)
+	__attribute__((warn_unused_result, nonnull(1)));
+
 
 #endif /* __TRAILER_H__ */

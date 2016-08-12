@@ -265,6 +265,7 @@ bool test_frag_null_transmitter(void)
 	struct rle_transmitter *transmitter = NULL;
 
 	sdu.buffer = calloc(sdu_length, sizeof(unsigned char));
+	assert(sdu.buffer != NULL);
 	memcpy((void *)sdu.buffer, (const void *)payload_initializer, sdu_length);
 	sdu.size = sdu_length;
 

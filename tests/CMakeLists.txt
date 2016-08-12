@@ -124,9 +124,22 @@ ADD_TEST(NAME non_regression_sdu_small_fragments
          COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
                                               ${SAMPLE_DIR}/non_reg -f 11)
 
+ADD_TEST(NAME non_regression_sdu_large_fragments_layer2
+         COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
+                                              ${SAMPLE_DIR}/non_reg -f 2000 --include-layer2)
+ADD_TEST(NAME non_regression_sdu_medium_fragments_layer2
+         COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
+                                              ${SAMPLE_DIR}/non_reg -f 50 --include-layer2)
+ADD_TEST(NAME non_regression_sdu_small_fragments_layer2
+         COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
+                                              ${SAMPLE_DIR}/non_reg -f 11 --include-layer2)
+
 ADD_TEST(NAME non_regression_sdu_fuzzing
          COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
                                               ${SAMPLE_DIR}/fuzzing)
+ADD_TEST(NAME non_regression_sdu_fuzzing_layer2
+         COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
+                                              ${SAMPLE_DIR}/fuzzing --include-layer2)
 
 ADD_TEST(NAME non_regression_fpdu
          COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression_fpdu

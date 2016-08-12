@@ -97,6 +97,7 @@ struct rle_frag_buf {
 	unsigned char buffer[RLE_F_BUFF_LEN]; /** Buffer itself.                                     */
 	unsigned char *cur_pos;               /** Current position.                                  */
 	struct rle_sdu sdu_info;              /** RLE SDU struct used without buffer to store infos. */
+	uint32_t crc;                         /**< The computed CRC if needed */
 	frag_buf_ptrs_t sdu;                  /** SDU after copying it.                              */
 	frag_buf_ptrs_t alpdu;                /** ALPDU after encapsulation.                         */
 	frag_buf_ptrs_t ppdu;                 /** PPDU after each fragmentation.                     */
@@ -130,6 +131,9 @@ static void frag_buf_ptrs_set(frag_buf_ptrs_t *const ptrs, unsigned char *const 
 /**
  * @brief         Decrement the start pointer in the fragmentation buffer.
  *
+ *
+ * If size is positive:
+ *
  * +-+···+-+-+···+-+-+-+···+-+-+-+···+-+
  * |/|   |/|/|   |/|/|/|   |/|/|/|   |/|
  * +-+···+-+-+···+-+-+-+···+-+-+-+···+-+
@@ -137,12 +141,22 @@ static void frag_buf_ptrs_set(frag_buf_ptrs_t *const ptrs, unsigned char *const 
  *        | <-------X         |
  *     ptr start           ptr end
  *
+ *
+ * If size is negative:
+ *
+ * +-+···+-+-+···+-+-+-+···+-+-+-+···+-+
+ * |/|   |/|/|   |/|/|/|   |/|/|/|   |/|
+ * +-+···+-+-+···+-+-+-+···+-+-+-+···+-+
+ *                  ^         ^
+ *        X-------> |         |
+ *               ptr start ptr end
+ *
  * @param[in,out] ptrs                     The fragmentation buffer pointers.
- * @param[in]     size                     The size to push.
+ * @param[in]     size                     The size to push, may be negative
  *
  * @ingroup       RLE Fragmentation buffer pointers.
  */
-static void frag_buf_ptrs_push(frag_buf_ptrs_t *const ptrs, const size_t size);
+static void frag_buf_ptrs_push(frag_buf_ptrs_t *const ptrs, const ssize_t size);
 
 /**
  * @brief         Increment the end pointer in the fragmentation buffer.
@@ -160,6 +174,16 @@ static void frag_buf_ptrs_push(frag_buf_ptrs_t *const ptrs, const size_t size);
  * @ingroup       RLE Fragmentation buffer pointers.
  */
 static void frag_buf_ptrs_put(frag_buf_ptrs_t *const ptrs, const size_t size);
+
+/**
+ * @brief         Push the SDU, ALPDU and PPDU pointers.
+ *
+ * @param[in,out] frag_buf  The fragmentation buffer.
+ * @param[in]     size      The size to pull.
+ *
+ * @ingroup       RLE Fragmentation buffer.
+ */
+void frag_buf_sdu_push(rle_frag_buf_t *const frag_buf, const ssize_t size);
 
 /**
  * @brief         Put the SDU, ALPDU and PPDU pointers.
@@ -246,6 +270,17 @@ static inline void frag_buf_set_cur_pos(rle_frag_buf_t *const frag_buf);
  * @ingroup       RLE Fragmentation buffer.
  */
 static inline int frag_buf_in_use(const rle_frag_buf_t *const frag_buf);
+
+/**
+ * @brief         Get the length of the SDU in the fragmentation buffer.
+ *
+ * @param  frag_buf   The fragmentation buffer.
+ * @return            The SDU length
+ *
+ * @ingroup       RLE Fragmentation buffer.
+ */
+static inline ssize_t frag_buf_get_sdu_len(const rle_frag_buf_t *const frag_buf)
+	__attribute__((warn_unused_result, nonnull(1)));
 
 /**
  * @brief         Get the length of the ALPDU header in the fragmentation buffer.
@@ -380,7 +415,7 @@ static void frag_buf_ptrs_set(frag_buf_ptrs_t *const ptrs, unsigned char *const 
 	ptrs->start = ptrs->end = address;
 }
 
-static void frag_buf_ptrs_push(frag_buf_ptrs_t *const ptrs, const size_t size)
+static void frag_buf_ptrs_push(frag_buf_ptrs_t *const ptrs, const ssize_t size)
 {
 	assert((ptrs->frag_buf->buffer + size) <= ptrs->start);
 
@@ -433,6 +468,11 @@ static inline void frag_buf_set_cur_pos(rle_frag_buf_t *const frag_buf)
 static inline int frag_buf_in_use(const rle_frag_buf_t *const frag_buf)
 {
 	return frag_buf->sdu.start != frag_buf->sdu.end;
+}
+
+static inline ssize_t frag_buf_get_sdu_len(const rle_frag_buf_t *const frag_buf)
+{
+	return (ssize_t)(frag_buf->sdu.end - frag_buf->sdu.start);
 }
 
 static inline ssize_t frag_buf_get_alpdu_header_len(const rle_frag_buf_t *const frag_buf)

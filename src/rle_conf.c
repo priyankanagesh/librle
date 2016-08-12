@@ -9,7 +9,13 @@
 
 #include "rle_conf.h"
 #include "constants.h"
+#include "header.h"
+#include "fragmentation_buffer.h"
+
 #include <stdbool.h>
+#ifndef __KERNEL__
+#include <net/ethernet.h>
+#endif
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -72,12 +78,6 @@ bool rle_config_check(const struct rle_config *const conf)
 		                  "set to 1 is not supported yet");
 		return false;
 	}
-	if (conf->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
-		PRINT_RLE_ERROR("configuration parameter implicit_protocol_type set to "
-		                "0x%02x is not supported yet",
-		                RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD);
-		return false;
-	}
 	if (conf->implicit_ppdu_label_size > implicit_ppdu_label_size_max) {
 		PRINT_RLE_WARNING("configuration parameter implicit_ppdu_label_size set to "
 		                  "%u while only values [0 ; %u] allowed",
@@ -103,35 +103,62 @@ bool rle_config_check(const struct rle_config *const conf)
 	return true;
 }
 
-bool ptype_is_omissible(const uint16_t ptype, const struct rle_config *const rle_conf)
+bool ptype_is_omissible(const uint16_t ptype,
+                        const struct rle_config *const rle_conf,
+                        const struct rle_frag_buf *const frag_buf)
 {
-	int status = false;
+	bool is_omissible;
 
-	const bool is_suppressible = !!rle_conf->allow_ptype_omission;
-	const int ptype_is_signal = (ptype == RLE_PROTO_TYPE_SIGNAL_UNCOMP);
+	if (rle_conf->allow_ptype_omission != 1) {
+		/* protocol omission is disabled in configuration */
+		is_omissible = false;
 
-	if (is_suppressible) {
+	} else if (ptype == RLE_PROTO_TYPE_SIGNAL_UNCOMP) {
+		/* protocol omission is enabled in configuration, and protocol is signaling */
+		is_omissible = true;
+
+	} else {
+		/* protocol omission is enabled in configuration, check the traffic payload */
 		const uint8_t default_ptype = rle_conf->implicit_protocol_type;
-		int ptype_is_default_ptype = 0;
 
-		if (default_ptype == RLE_PROTO_TYPE_IP_COMP) {
-			ptype_is_default_ptype = (ptype == RLE_PROTO_TYPE_IPV4_UNCOMP);
-			ptype_is_default_ptype |= (ptype == RLE_PROTO_TYPE_IPV6_UNCOMP);
-		} else {
-			ptype_is_default_ptype =
-				(ptype == rle_header_ptype_decompression(default_ptype));
+		switch (default_ptype) {
+		case RLE_PROTO_TYPE_IP_COMP:
+		{
+			uint8_t ip_version;
+
+			/* protocol omission is possible if IPv4 or IPv6 is detected, and the first 4 bits
+			 * of the SDU contain a supported IP version so that the RLE receiver is able to infer
+			 * the IP version from them */
+			if (frag_buf->sdu_info.size < 1) {
+				is_omissible = false;
+				break;
+			}
+
+			ip_version = (frag_buf->sdu.start[0] >> 4) & 0x0f;
+			is_omissible =
+				((ptype == RLE_PROTO_TYPE_IPV4_UNCOMP && ip_version == 4) ||
+				 (ptype == RLE_PROTO_TYPE_IPV6_UNCOMP && ip_version == 6));
+			break;
 		}
-
-		if (ptype_is_default_ptype) {
-			status = true;
+		case RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD:
+		{
+			/* VLAN protocol type can be compressed in 2 different ways:
+			 *  - VLAN contains one IPv4 or IPv6 packet as payload,
+			 *  - VLAN contains something else as payload.
+			 */
+			const uint8_t compressed_ptype =
+				is_eth_vlan_ip_frame(frag_buf->sdu.start, frag_buf->sdu_info.size);
+			is_omissible = (compressed_ptype == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD);
+			break;
 		}
-
-		if (ptype_is_signal) {
-			status = true;
+		default:
+			/* other normal cases */
+			is_omissible = (ptype == rle_header_ptype_decompression(default_ptype));
+			break;
 		}
 	}
 
-	return status;
+	return is_omissible;
 }
 
 enum rle_header_size_status rle_get_header_size(const struct rle_config *const conf,

@@ -10,6 +10,11 @@
 #include "rle_header_proto_type_field.h"
 
 #include "constants.h"
+#include "fragmentation_buffer.h"
+
+#ifndef __KERNEL__
+#include <net/ethernet.h>
+#endif
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -118,13 +123,9 @@ static const uint16_t rle_header_ptype_decomp[RLE_PROTO_TYPE_MAX_COMP_VALUE + 1]
 /*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-uint16_t rle_header_ptype_decompression(uint8_t compressed_ptype)
+uint16_t rle_header_ptype_decompression(const uint8_t compressed_ptype)
 {
-	uint16_t uncompressed_ptype = 0x0000;
-
-	uncompressed_ptype = rle_header_ptype_decomp[compressed_ptype];
-
-	return uncompressed_ptype;
+	return rle_header_ptype_decomp[compressed_ptype];
 }
 
 int rle_header_ptype_is_compressible(uint16_t uncompressed_ptype)
@@ -148,16 +149,21 @@ int rle_header_ptype_is_compressible(uint16_t uncompressed_ptype)
 	return return_value;
 }
 
-uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype)
+uint8_t rle_header_ptype_compression(const uint16_t uncompressed_ptype,
+                                     const struct rle_frag_buf *const frag_buf)
 {
-	uint8_t compressed_ptype = 0x00;
+	uint8_t compressed_ptype;
 
 	switch (uncompressed_ptype) {
 	case RLE_PROTO_TYPE_SIGNAL_UNCOMP:
 		compressed_ptype = RLE_PROTO_TYPE_SIGNAL_COMP;
 		break;
 	case RLE_PROTO_TYPE_VLAN_UNCOMP:
-		compressed_ptype = RLE_PROTO_TYPE_VLAN_COMP;
+		/* VLAN protocol type can be compressed in 2 different ways:
+		 *  - VLAN contains one IPv4 or IPv6 packet as payload,
+		 *  - VLAN contains something else as payload.
+		 */
+		compressed_ptype = is_eth_vlan_ip_frame(frag_buf->sdu.start, frag_buf->sdu_info.size);
 		break;
 	case RLE_PROTO_TYPE_VLAN_QINQ_UNCOMP:
 		compressed_ptype = RLE_PROTO_TYPE_VLAN_QINQ_COMP;
@@ -175,6 +181,7 @@ uint8_t rle_header_ptype_compression(uint16_t uncompressed_ptype)
 		compressed_ptype = RLE_PROTO_TYPE_ARP_COMP;
 		break;
 	default:
+		compressed_ptype = RLE_PROTO_TYPE_FALLBACK;
 		break;
 	}
 

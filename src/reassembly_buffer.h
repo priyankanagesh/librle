@@ -97,6 +97,7 @@ struct reassembly_buffer_ptrs {
 struct rle_reassembly_buffer {
 	unsigned char *buffer;                /** Buffer. Given by the library caller.               */
 	struct rle_sdu sdu_info;              /** RLE SDU struct used without buffer to store infos. */
+	uint8_t comp_protocol_type;           /**< The compressed protocol type found in ALPDU */
 	rasm_buf_ptrs_t sdu;                    /** SDU after copying it.                              */
 	rasm_buf_ptrs_t sdu_frag;               /** Current SDU fragment.                              */
 };
