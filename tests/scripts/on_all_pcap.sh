@@ -17,7 +17,7 @@ list_pcaps_num="$( echo "${list_pcaps}" | wc -l )"
 errors_sum=0
 for pcap_file in ${list_pcaps} ; do
 	printf "%-70s" "$(basename $1) $(basename $pcap_file): "
-	${1} --ignore-malformed ${@:3} "${pcap_file}" > /dev/null
+	${1} ${@:3} "${pcap_file}" > /dev/null
 	ret=$?
 	if [ ${ret} -eq 0 ] ; then
 		echo '[PASS]'
