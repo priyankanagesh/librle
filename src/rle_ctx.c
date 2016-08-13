@@ -190,7 +190,7 @@ uint8_t rle_ctx_get_seq_nb(const struct rle_ctx_management *const _this)
 
 void rle_ctx_incr_seq_nb(struct rle_ctx_management *_this)
 {
-	_this->next_seq_nb++;
+	_this->next_seq_nb = (_this->next_seq_nb + 1) % RLE_MAX_SEQ_NO;
 }
 
 void rle_ctx_set_use_crc(struct rle_ctx_management *_this, bool val)

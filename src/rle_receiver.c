@@ -112,6 +112,7 @@ struct rle_receiver *rle_receiver_new(const struct rle_config *const conf)
 		}
 		ctx_man->frag_id = iterator;
 		rle_ctx_set_seq_nb(ctx_man, 0);
+		receiver->is_ctx_seqnum_init[iterator] = false;
 	}
 
 	receiver->free_ctx = 0;
