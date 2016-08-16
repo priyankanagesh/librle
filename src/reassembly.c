@@ -211,6 +211,7 @@ int reassembly_comp_ppdu(struct rle_receiver *_this,
 		 * the first 4 bits of the IP payload */
 		if (!reassembly_insert_vlan_ptype(sdu_fragment, sdu_fragment_len, reassembled_sdu)) {
 			PRINT_RLE_ERROR("failed to insert VLAN protocol type in Ethernet/VLAN/IP headers\n");
+			ret = C_ERROR;
 			goto out;
 		}
 	}
