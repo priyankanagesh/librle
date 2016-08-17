@@ -224,21 +224,21 @@ static int decap_fpdus(struct rle_receiver *const receiver, const size_t *const 
 			        "RLE_DECAP_ERR_INV_FPDU" : ret_decap ==
 			        RLE_DECAP_ERR_INV_PL ?
 			        "RLE_DECAP_ERR_INV_PL" : "RLE_DECAP_ERR_INV_SDUS");
-			status = 2;
-			goto exit;
+			status = -2;
+			break;
 		case RLE_DECAP_ERR_SOME_DROP:
 		case RLE_DECAP_ERR_ALL_DROP:
 			printf_verbose(
 			        "=== RLE decapsulation: error with drop\n"
 			        "    %s\n", ret_decap == RLE_DECAP_ERR_SOME_DROP ?
 			        "RLE_DECAP_ERR_SOME_DROP:" : "RLE_DECAP_ERR_ALL_DROP");
-			status = 2;
-			goto exit;
+			status = -2;
+			break;
 		case RLE_DECAP_ERR:
 		default:
 			printf_verbose("=== RLE decapsulation: misc. failure\n");
-			status = 2;
-			goto exit;
+			status = -2;
+			break;
 		}
 	}
 	printf_verbose("\n");
@@ -253,7 +253,6 @@ static int decap_fpdus(struct rle_receiver *const receiver, const size_t *const 
 		printf_verbose("\n\n");
 	}
 
-exit:
 	printf_verbose("\n");
 	return status;
 }
@@ -520,8 +519,9 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	printf("\n");
 
 	printf("=== shutdown:\n");
-	if (err_reception == 0 && (ignore_malformed || nb_bad == 0) 
-			&& (nb_ok + nb_bad + nb_inv) == counter_confs) {
+	if ((ignore_malformed || err_reception == 0) &&
+	    (ignore_malformed || nb_bad == 0) &&
+	    (nb_ok + err_reception + nb_bad + nb_inv) == counter_confs) {
 		/* test is successful */
 		status = 0;
 	}

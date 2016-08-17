@@ -136,10 +136,12 @@ ADD_TEST(NAME non_regression_sdu_small_fragments_layer2
 
 ADD_TEST(NAME non_regression_sdu_fuzzing
          COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
-                                              ${SAMPLE_DIR}/fuzzing)
+                                              ${SAMPLE_DIR}/fuzzing
+                                              --ignore-malformed)
 ADD_TEST(NAME non_regression_sdu_fuzzing_layer2
          COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression
-                                              ${SAMPLE_DIR}/fuzzing --include-layer2)
+                                              ${SAMPLE_DIR}/fuzzing
+                                              --ignore-malformed --include-layer2)
 
 ADD_TEST(NAME non_regression_fpdu
          COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression_fpdu
@@ -147,7 +149,8 @@ ADD_TEST(NAME non_regression_fpdu
 
 ADD_TEST(NAME non_regression_fpdu_fuzzing
          COMMAND ${SCRIPT_DIR}/on_all_pcap.sh ${CMAKE_BINARY_DIR}/tests/test_non_regression_fpdu
-                                              ${SAMPLE_DIR}/fuzzing-fpdu)
+                                              ${SAMPLE_DIR}/fuzzing-fpdu
+                                              --ignore-malformed)
 
 # If fuzzing is on, launch AFL fuzzing with:
 #   $ make fuzzing (or $ make fuzzing-fpdu)

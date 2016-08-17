@@ -79,6 +79,7 @@ int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
 int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
                         const struct rle_sdu *const reassembled_sdu,
                         struct rle_ctx_management *const rle_ctx,
+                        bool *const is_ctx_seqnum_init,
                         size_t *const lost_packets);
 
 /**

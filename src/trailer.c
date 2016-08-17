@@ -108,6 +108,7 @@ int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
 int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
                         const struct rle_sdu *const reassembled_sdu,
                         struct rle_ctx_management *const rle_ctx,
+                        bool *const is_ctx_seqnum_init,
                         size_t *const lost_packets)
 {
 	int status = 0;
@@ -129,27 +130,30 @@ int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
 			*lost_packets = 1;
 		}
 	} else {
-		const uint8_t next_seq_no = rle_ctx_get_seq_nb(rle_ctx);
 		const uint8_t received_seq_no = trailer->seqno_trailer.seq_no;
-		if (received_seq_no != next_seq_no) {
-			if (received_seq_no != 0) {
-				status = 1;
-				*lost_packets = (received_seq_no - next_seq_no) % RLE_MAX_SEQ_NO;
-				PRINT_RLE_ERROR(
-				        "sequence number inconsistency, received [%d] expected [%d]\n",
-				        received_seq_no, next_seq_no);
+		if (!(*is_ctx_seqnum_init)) {
+			/* first fragmented ALPDU received, accept any seqno */
+			*is_ctx_seqnum_init = true;
+		} else {
+			const uint8_t next_seq_no = rle_ctx_get_seq_nb(rle_ctx);
+			if (received_seq_no != next_seq_no) {
+				if (received_seq_no != 0) {
+					status = 1;
+					*lost_packets = (received_seq_no - next_seq_no) % RLE_MAX_SEQ_NO;
+					PRINT_RLE_ERROR("sequence number inconsistency, received [%u] expected [%u]\n",
+					                received_seq_no, next_seq_no);
 #ifdef DEBUG
-			} else {
-				PRINT_RLE_WARNING(
-				        "sequence number null, supposing relog, received [%d] expected "
-				        "[%d]\n", received_seq_no, next_seq_no);
+				} else {
+					PRINT_RLE_WARNING("sequence number null, supposing relog, received [%u] expected "
+					                  "[%u]\n", received_seq_no, next_seq_no);
 #endif /* DEBUG */
+				}
+				/* update sequence with received one */
+				rle_ctx_set_seq_nb(rle_ctx, received_seq_no);
 			}
-			/* update sequence with received one
-			 * and increment it to resynchronize
-			 * with sender sequence */
 		}
-		rle_ctx_set_seq_nb(rle_ctx, (received_seq_no + 1) % RLE_MAX_SEQ_NO);
+		/* increment seqno to resynchronize with sender sequence */
+		rle_ctx_incr_seq_nb(rle_ctx);
 	}
 
 	return status;

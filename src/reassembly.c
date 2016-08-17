@@ -579,7 +579,8 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 		}
 	}
 
-	if (check_alpdu_trailer(rle_trailer, reassembled_sdu, rle_ctx, &lost_packets) != 0) {
+	if (check_alpdu_trailer(rle_trailer, reassembled_sdu, rle_ctx,
+	                        &(_this->is_ctx_seqnum_init[*index_ctx]), &lost_packets) != 0) {
 		PRINT_RLE_ERROR("Wrong RLE trailer.");
 		goto out;
 	}
