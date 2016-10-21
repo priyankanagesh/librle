@@ -134,6 +134,8 @@ int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
 		if (!(*is_ctx_seqnum_init)) {
 			/* first fragmented ALPDU received, accept any seqno */
 			*is_ctx_seqnum_init = true;
+			/* update sequence with received one */
+			rle_ctx_set_seq_nb(rle_ctx, received_seq_no);
 		} else {
 			const uint8_t next_seq_no = rle_ctx_get_seq_nb(rle_ctx);
 			if (received_seq_no != next_seq_no) {
