@@ -32,7 +32,7 @@
 /*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-#define MODULE_NAME "DEENCAP"
+#define MODULE_ID RLE_MOD_ID_DEENCAP
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -65,6 +65,8 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 		status = RLE_DECAP_ERR_INV_FPDU;
 		goto out;
 	}
+	PRINT_RLE_DEBUG("decapsulate one %zu-byte FPDU with a %zu-byte Payload Label",
+	                fpdu_length, payload_label_size);
 
 	if (sdus == NULL || sdus_max_nr == 0 || sdus_nr == NULL) {
 		status = RLE_DECAP_ERR_INV_SDUS;
@@ -102,17 +104,20 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 
 		/* is there padding? */
 		if (ppdu[0] == 0x00 && ppdu[1] == 0x00) {
+			PRINT_RLE_DEBUG("padding detected at byte #%zu in FPDU", offset + 1);
 			padding_detected = true;
 			continue;
 		}
 
 		/* retrieve the fragment type and length in the first 2 bytes of the PPDU fragment */
 		ppdu_length = get_fragment_length(ppdu);
+		PRINT_RLE_DEBUG("%zu-byte PPDU detected at byte #%zu in FPDU",
+		                ppdu_length, offset + 1);
 
 		/* stop parsing the FPDU if the PPDU length is wrong */
 		if (ppdu_length > (fpdu_length - offset)) {
-			PRINT("Invalid fragment size, fragment length too big for FPDU\n");
-			PRINT("Fragment length: %zu, Remaining FPDU size: %zu\n", ppdu_length,
+			PRINT_RLE_ERROR("Invalid fragment size, fragment length too big for FPDU\n");
+			PRINT_RLE_ERROR("Fragment length: %zu, Remaining FPDU size: %zu\n", ppdu_length,
 			      fpdu_length - offset);
 			status = RLE_DECAP_ERR;
 			goto out;
@@ -120,16 +125,17 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 
 		/* stop deencapulation if there is no more SDU buffers */
 		if ((*sdus_nr) == sdus_max_nr) {
-			PRINT("failed to decapsulate all SDUs from the FPDU: all %zu SDU buffers "
-			      "are full, but FPDU is not fully parsed (current %zu-byte PPDU "
-			      "fragment will be lost, as well as the %zu bytes of FPDU that "
-			      "remain to be parsed)\n", sdus_max_nr, ppdu_length,
-			      fpdu_length - offset);
+			PRINT_RLE_ERROR("failed to decapsulate all SDUs from the FPDU: all %zu SDU buffers "
+			                "are full, but FPDU is not fully parsed (current %zu-byte PPDU "
+			                "fragment will be lost, as well as the %zu bytes of FPDU that "
+			                "remain to be parsed)\n", sdus_max_nr, ppdu_length,
+			                fpdu_length - offset);
 			status = RLE_DECAP_ERR_SOME_DROP;
 			goto out;
 		}
 
 		/* parse the PPDU fragment */
+		PRINT_RLE_DEBUG("decapsule the %zu-byte PPDU", ppdu_length);
 		ret = rle_receiver_deencap_data(receiver, ppdu, ppdu_length, &fragment_id,
 		                                &sdus[*sdus_nr]);
 
@@ -137,7 +143,7 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 		offset += ppdu_length;
 
 		if ((ret != C_OK) && (ret != C_REASSEMBLY_OK)) {
-			PRINT("Error during reassembly.\n");
+			PRINT_RLE_ERROR("Error during reassembly.\n");
 			if (fragment_id != -1) {
 				rle_receiver_free_context(receiver, fragment_id);
 			}
@@ -146,16 +152,21 @@ enum rle_decap_status rle_decapsulate(struct rle_receiver *const receiver,
 			/* Potential SDU received. */
 			(*sdus_nr)++;
 		}
+		PRINT_RLE_DEBUG("%zu bytes remaining to be parsed in FPDU",
+		                fpdu_length - offset);
 	}
 
 	/* remaining FPDU bytes are padding: they should be all zero, warn if it is not the case */
+	PRINT_RLE_DEBUG("%zu-byte padding detected", fpdu_length - offset);
 	for (; offset < fpdu_length; offset++) {
 		if (fpdu[offset] != 0x00) {
-			PRINT("WARNING: FPDU padding contains octets non equal to 0x00 (at least byte #%zu "
+			PRINT_RLE_WARNING("FPDU padding contains octets non equal to 0x00 (at least byte #%zu "
 			      "of the %zu-byte FPDU)\n", offset + 1, fpdu_length);
 			break; /* stop padding verification after first error */
 		}
 	}
+
+	PRINT_RLE_DEBUG("%zu SDU(s) decapsuled from FPDU", *sdus_nr);
 
 out:
 	return status;

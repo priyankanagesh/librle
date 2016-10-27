@@ -33,7 +33,7 @@
 /*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-#define MODULE_NAME "REASSEMBLY"
+#define MODULE_ID RLE_MOD_ID_REASSEMBLY
 
 
 static bool reassembly_insert_vlan_ptype(const uint8_t *const sdu_fragment,
@@ -66,6 +66,10 @@ static bool reassembly_insert_vlan_ptype(const uint8_t *const sdu_fragment,
 		sizeof(struct ether_header) + sizeof(struct vlan_hdr) - sizeof(uint16_t);
 	const size_t sdu_min_len = comp_eth_vlan_len + 1;
 	uint16_t vlan_uncomp_ptype;
+
+	PRINT_RLE_DEBUG("compressed protocol type 0x%02x requires to insert back the "
+	                "protocol type in the VLAN header with information from the IP "
+	                "payload", RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD);
 
 	/* drop frames that are too short: the protocol type cannot be deduced from the VLAN payload */
 	if (sdu_fragment_len < sdu_min_len) {
@@ -104,6 +108,7 @@ static bool reassembly_insert_vlan_ptype(const uint8_t *const sdu_fragment,
 			                "unknown IP version %u\n", ip_version);
 			goto error;
 		}
+		PRINT_RLE_DEBUG("IP version %u detected in VLAN payload", ip_version);
 	}
 
 	reassembled_sdu->size = sdu_fragment_len + sizeof(uint16_t);
@@ -155,9 +160,7 @@ int reassembly_comp_ppdu(struct rle_receiver *_this,
 	gettimeofday(&tv_start, NULL);
 #endif
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("handle PPDU COMP");
 
 	comp_ppdu_extract_alpdu_fragment(ppdu, ppdu_length, &alpdu_fragment, &alpdu_fragment_len);
 
@@ -223,7 +226,7 @@ out:
 	gettimeofday(&tv_end, NULL);
 	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
 	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
-	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", MODULE_NAME, tv_delta.tv_sec, tv_delta.tv_usec);
+	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
 	return ret;
@@ -258,14 +261,9 @@ int reassembly_start_ppdu(struct rle_receiver *_this,
 	gettimeofday(&tv_start, NULL);
 #endif
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
-
 	*index_ctx = rle_start_ppdu_header_get_fragment_id((rle_ppdu_header_start_t *)ppdu);
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("fragment_id 0x%0x frag type %d.", MODULE_NAME, *index_ctx, frag_type);
-#endif
+	PRINT_RLE_DEBUG("START: fragment_id 0x%0x", *index_ctx);
+	PRINT_RLE_DEBUG("handle PPDU START for context with ID %d", *index_ctx);
 	assert((*index_ctx) >= 0 && (*index_ctx) <= RLE_MAX_FRAG_ID);
 
 	rle_ctx = &_this->rle_ctx_man[*index_ctx];
@@ -380,7 +378,7 @@ out:
 	gettimeofday(&tv_end, NULL);
 	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
 	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
-	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", MODULE_NAME, tv_delta.tv_sec, tv_delta.tv_usec);
+	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
 	return ret;
@@ -405,14 +403,9 @@ int reassembly_cont_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	gettimeofday(&tv_start, NULL);
 #endif
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
-
 	*index_ctx = rle_cont_end_ppdu_header_get_fragment_id((rle_ppdu_header_cont_end_t *)ppdu);
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("fragment_id 0x%0x cont PPDU.", MODULE_NAME, *index_ctx);
-#endif
+	PRINT_RLE_DEBUG("CONT: fragment_id 0x%0x", *index_ctx);
+	PRINT_RLE_DEBUG("handle PPDU CONT for context with ID %d", *index_ctx);
 	assert((*index_ctx >= 0) && (*index_ctx <= RLE_MAX_FRAG_ID));
 
 	rle_ctx = &_this->rle_ctx_man[*index_ctx];
@@ -465,7 +458,7 @@ out:
 	gettimeofday(&tv_end, NULL);
 	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
 	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
-	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", MODULE_NAME, tv_delta.tv_sec, tv_delta.tv_usec);
+	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
 	return ret;
@@ -493,14 +486,9 @@ int reassembly_end_ppdu(struct rle_receiver *_this, const unsigned char ppdu[],
 	gettimeofday(&tv_start, NULL);
 #endif
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
-
 	*index_ctx = rle_cont_end_ppdu_header_get_fragment_id((rle_ppdu_header_cont_end_t *)ppdu);
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("fragment_id 0x%0x End PPDU.", MODULE_NAME, *index_ctx);
-#endif
+	PRINT_RLE_DEBUG("END: fragment_id 0x%0x", *index_ctx);
+	PRINT_RLE_DEBUG("handle PPDU END for context with ID %d", *index_ctx);
 	assert((*index_ctx >= 0) && (*index_ctx <= RLE_MAX_FRAG_ID));
 
 	rle_ctx = &_this->rle_ctx_man[*index_ctx];
@@ -606,7 +594,7 @@ out:
 	gettimeofday(&tv_end, NULL);
 	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
 	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
-	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", MODULE_NAME, tv_delta.tv_sec, tv_delta.tv_usec);
+	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
 	return ret;

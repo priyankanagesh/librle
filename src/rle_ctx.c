@@ -25,7 +25,7 @@
 /*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-#define MODULE_NAME "RLE CTX"
+#define MODULE_ID RLE_MOD_ID_CTX
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -103,9 +103,7 @@ int rle_ctx_init_frag_buf(struct rle_ctx_management *_this)
 {
 	int status = C_ERROR;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("");
 
 	assert(_this != NULL);
 
@@ -130,9 +128,7 @@ int rle_ctx_init_rasm_buf(struct rle_ctx_management *_this)
 {
 	int status = C_ERROR;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("");
 
 	assert(_this != NULL);
 
@@ -154,9 +150,7 @@ out:
 
 void rle_ctx_destroy_frag_buf(struct rle_ctx_management *_this)
 {
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("");
 
 	assert(_this != NULL);
 	assert(_this->buff != NULL);
@@ -168,9 +162,7 @@ void rle_ctx_destroy_frag_buf(struct rle_ctx_management *_this)
 
 void rle_ctx_destroy_rasm_buf(struct rle_ctx_management *_this)
 {
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("");
 
 	assert(_this != NULL);
 	assert(_this->buff != NULL);

@@ -54,39 +54,28 @@ enum {
 	RLE_PDU_END_FRAG,   /** END packet/fragment of PDU */
 };
 
+#define PRINT_LOG(level, x, ...) \
+	do { \
+		rle_trace_callback_t the_cb = rle_get_trace_callback(); \
+		if (the_cb != NULL) { \
+			the_cb(MODULE_ID, level, __FILE__, __LINE__, __func__, x, ## __VA_ARGS__); \
+		} \
+	} while(0)
+#define PRINT_RLE_DEBUG(x, ...) PRINT_LOG(RLE_LOG_LEVEL_DEBUG, x, ## __VA_ARGS__)
+#define PRINT_RLE_WARNING(x, ...) PRINT_LOG(RLE_LOG_LEVEL_WARNING, x, ## __VA_ARGS__)
+#define PRINT_RLE_ERROR(x, ...) PRINT_LOG(RLE_LOG_LEVEL_ERROR, x, ## __VA_ARGS__)
+
 #ifndef __KERNEL__
 
 #define MALLOC(size_bytes)      malloc(size_bytes)
 #define FREE(buf_addr)          free(buf_addr)
-#define PRINT(x, ...)           printf((x), ## __VA_ARGS__)
-#define PRINT(x, ...)           printf((x), ## __VA_ARGS__)
-#define PRINT_RLE_DEBUG(x, module, ...) \
-        printf("RLE DEBUG: %s %s:l.%d %s: " x "\n", module, __FILE__, __LINE__, __func__, \
-               ## __VA_ARGS__)
-#define PRINT_RLE_WARNING(x, ...) \
-        printf("RLE WARNING: %s:l.%d %s: " x "\n", __FILE__, __LINE__, __func__, ## __VA_ARGS__)
-
-#define PRINT_RLE_ERROR(x, ...) \
-        printf("RLE ERROR: %s:l.%d %s: " x "\n", __FILE__, __LINE__, __func__, ## __VA_ARGS__)
 
 #else
 
-#define MOD_NAME                "RLE: "
 /* vmalloc allocates size with 4K modulo so for 8*2565 = 20520B it would alloc 24K
  * kmalloc allocates size with power of two so for 20520B it would alloc 32K */
 #define MALLOC(size_bytes)      kmalloc(size_bytes, GFP_KERNEL) /* vmalloc(size_bytes); */
 #define FREE(buf_addr)          kfree(buf_addr) /* vfree(buf_addr); */
-#define PRINT(x, ...)           printk(KERN_ERR x, ## __VA_ARGS__)
-#define PRINT_RLE_DEBUG(x, module, ...) \
-        printk(KERN_ERR "RLE DEBUG: %s %s:l.%d %s: " x "\n", module, __FILE__, __LINE__, __func__, \
-               ## __VA_ARGS__)
-#define PRINT_RLE_WARNING(x, ...) \
-        printk(KERN_ERR "RLE WARNING: %s:l.%d %s: " x "\n", __FILE__, __LINE__, __func__, \
-               ## __VA_ARGS__)
-
-#define PRINT_RLE_ERROR(x, ...) \
-        printk(KERN_ERR "RLE ERROR: %s:l.%d %s: " x "\n", __FILE__, __LINE__, __func__, \
-               ## __VA_ARGS__)
 
 #define assert BUG_ON
 

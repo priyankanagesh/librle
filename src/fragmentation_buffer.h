@@ -20,6 +20,7 @@
 /*------------------------------------------------------------------------------------------------*/
 /*---------------------------------- PUBLIC CONSTANTS AND MACROS ---------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
+#define MODULE_ID RLE_MOD_ID_FRAGMENTATION_BUFFER
 
 /** Maximum size for a fragmentation buffer. */
 #define RLE_F_BUFF_LEN (sizeof(rle_ppdu_header_t) + \
@@ -509,9 +510,8 @@ static inline int frag_buf_dump_mem(const rle_frag_buf_t *const frag_buf,
 	}
 
 	for (; b < end; ++b) {
-		PRINT("%02x%s", *b, ((b - start) % 16) == 15 ? "\n" : " ");
+		PRINT_RLE_DEBUG("%02x%s", *b, ((b - start) % 16) == 15 ? "\n" : " ");
 	}
-	PRINT("\n");
 
 out:
 
@@ -537,7 +537,7 @@ static inline int frag_buf_dump_ppdu_header(const rle_frag_buf_t *const frag_buf
 		goto out;
 	}
 
-	PRINT("%d-octets PPDU header dumped.", ret);
+	PRINT_RLE_DEBUG("%d-octets PPDU header dumped.", ret);
 	status = 0;
 
 out:
@@ -561,7 +561,7 @@ static inline int frag_buf_dump_alpdu_header(const rle_frag_buf_t *const frag_bu
 		goto out;
 	}
 
-	PRINT("%d-octets ALPDU header dumped.", ret);
+	PRINT_RLE_DEBUG("%d-octets ALPDU header dumped.", ret);
 	status = 0;
 
 out:
@@ -585,7 +585,7 @@ static inline int frag_buf_dump_sdu(const rle_frag_buf_t *const frag_buf)
 		goto out;
 	}
 
-	PRINT("%d-octets SDU dumped.", ret);
+	PRINT_RLE_DEBUG("%d-octets SDU dumped.", ret);
 	status = 0;
 
 out:
@@ -609,7 +609,7 @@ static inline int frag_buf_dump_alpdu_trailer(const rle_frag_buf_t *const frag_b
 		goto out;
 	}
 
-	PRINT("%d-octets ALPDU trailer dumped.", ret);
+	PRINT_RLE_DEBUG("%d-octets ALPDU trailer dumped.", ret);
 	status = 0;
 
 out:
@@ -635,7 +635,7 @@ static inline int frag_buf_dump_full_frag_buf(const rle_frag_buf_t *const frag_b
 		goto out;
 	}
 
-	PRINT("%d-octets fragmentation buffer dumped.", ret);
+	PRINT_RLE_DEBUG("%d-octets fragmentation buffer dumped.", ret);
 	status = 0;
 
 out:
@@ -654,4 +654,5 @@ static inline int frag_buf_is_fragmented(const rle_frag_buf_t *const frag_buf)
 	return is_fragmented;
 }
 
+#undef MODULE_ID
 #endif /* __FRAGMENTATION_BUFFER_H__ */
