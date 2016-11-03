@@ -22,7 +22,6 @@
 
 #endif
 
-
 /*------------------------------------------------------------------------------------------------*/
 /*---------------------------------- PUBLIC CONSTANTS AND MACROS ---------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
@@ -303,7 +302,6 @@ struct rle_receiver_stats {
 	uint64_t bytes_reassembled; /**< Number of octets sent.                 */
 	uint64_t bytes_dropped;     /**< Number of octets dropped.              */
 };
-
 
 /*------------------------------------------------------------------------------------------------*/
 /*--------------------------------------- PUBLIC FUNCTIONS ---------------------------------------*/
@@ -905,5 +903,82 @@ enum rle_header_size_status rle_get_header_size(const struct rle_config *const c
                                                 size_t *const rle_header_size)
 	__attribute__((warn_unused_result));
 
+/**
+ * Enum listing all log levels
+ */ 
+typedef enum {
+	RLE_LOG_LEVEL_CRI = 0,
+	RLE_LOG_LEVEL_ERROR = 1,
+	RLE_LOG_LEVEL_WARNING = 2,
+	RLE_LOG_LEVEL_INFO = 3,
+	RLE_LOG_LEVEL_DEBUG = 4
+} rle_log_level_t;
+
+/**
+ * Enum listing all RLE modules ID
+ */
+typedef enum {
+	RLE_MOD_ID_DEENCAP = 0,
+	RLE_MOD_ID_ENCAP = 1,
+	RLE_MOD_ID_FRAGMENTATION = 2,
+	RLE_MOD_ID_FRAGMENTATION_BUFFER = 3,
+	RLE_MOD_ID_HEADER = 4,
+	RLE_MOD_ID_PACK = 5,
+	RLE_MOD_ID_REASSEMBLY = 6,
+	RLE_MOD_ID_REASSEMBLY_BUFFER = 7,
+	RLE_MOD_ID_CONF = 8,
+	RLE_MOD_ID_CTX = 9,
+	RLE_MOD_ID_RECEIVER = 10,
+	RLE_MOD_ID_TRANSMITTER = 11,
+	RLE_MOD_ID_TRAILER = 12
+} rle_mod_id_t;
+
+
+/**
+ * Tuple associating module_id with module_name
+ */
+typedef struct {
+	rle_mod_id_t module_id;
+	char * module_name;
+} rle_log_module_tuple_t;
+
+/**
+ * @brief Return the module list (array of rle_log_module_tuple_t)
+ * @param nb_modules return the nb_modules in the array
+ * @return the modules array
+ */
+const rle_log_module_tuple_t* rle_get_log_modules_list(size_t *nb_modules);
+
+/**
+ * @brief Callback function registered in librle to handles the logs
+ * This function is variadic as it allows to format the message with
+ * additional information (as printf or snprintf)
+ * @param module_id the rle internal module id
+ * @param level the log level requested (DEBUG, WARNING, etc.)
+ * @param file the filename in librle in which the log was requested
+ * @param line the line at which the log was requested in librle
+ * @param func the function in librle in which the log was requested
+ * @param fmt the string which contains the format of the message
+ * @param ... the additional parameters used to format the message
+ */
+typedef void (*rle_trace_callback_t) (const int module_id,
+                                      const int level,
+                                      const char *const file,
+                                      const int line,
+                                      const char *const func,
+                                      const char *const message,
+                                      ...);
+
+/**
+ * @brief register the log trace callback
+ * @param callback the callback to register
+ */ 
+void rle_set_trace_callback(rle_trace_callback_t callback);
+
+/**
+ * @brief retrieve the log trace callback
+ * @return a pointer on the registered callback
+ */ 
+rle_trace_callback_t rle_get_trace_callback(void);
 
 #endif /* __RLE_H__ */

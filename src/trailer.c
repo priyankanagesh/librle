@@ -34,7 +34,7 @@
 /*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-#define MODULE_NAME "TRAILER"
+#define MODULE_ID RLE_MOD_ID_TRAILER
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -49,10 +49,6 @@ uint32_t compute_crc32(const struct rle_sdu *const sdu)
 	uint16_t field_value = 0;
 	size_t length = 0;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("RLE ctx -> 0x%p\n", MODULE_NAME, rle_ctx);
-#endif
-
 	/* first compute protocol type CRC */
 	field_value = sdu->protocol_type;
 	crc32 = compute_crc((unsigned char *)&field_value, RLE_PROTO_TYPE_FIELD_SIZE_UNCOMP,
@@ -62,10 +58,8 @@ uint32_t compute_crc32(const struct rle_sdu *const sdu)
 	length = sdu->size;
 	crc32 = compute_crc((unsigned char *)sdu->buffer, length, crc32);
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("PDU length %zu & protocol type 0x%x CRC %x\n", MODULE_NAME, length,
+	PRINT_RLE_DEBUG("PDU length %zu & protocol type 0x%x CRC %x\n", length,
 	                field_value, crc32);
-#endif
 
 	return crc32;
 }
@@ -84,9 +78,7 @@ int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
 		(rle_conf->allow_alpdu_sequence_number ? 0 : rle_conf->allow_alpdu_crc);
 	size_t alpdu_trailer_len;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("");
 
 	rle_alpdu_trailer_t *const trailer = (rle_alpdu_trailer_t *)frag_buf->alpdu.end;
 
@@ -114,9 +106,7 @@ int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
 	int status = 0;
 	const bool use_alpdu_crc = rle_ctx_get_use_crc(rle_ctx);
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif /* DEBUG */
+	PRINT_RLE_DEBUG("");
 
 	*lost_packets = 0;
 
@@ -144,11 +134,9 @@ int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
 					*lost_packets = (received_seq_no - next_seq_no) % RLE_MAX_SEQ_NO;
 					PRINT_RLE_ERROR("sequence number inconsistency, received [%u] expected [%u]\n",
 					                received_seq_no, next_seq_no);
-#ifdef DEBUG
 				} else {
 					PRINT_RLE_WARNING("sequence number null, supposing relog, received [%u] expected "
 					                  "[%u]\n", received_seq_no, next_seq_no);
-#endif /* DEBUG */
 				}
 				/* update sequence with received one */
 				rle_ctx_set_seq_nb(rle_ctx, received_seq_no);

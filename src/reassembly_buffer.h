@@ -26,6 +26,7 @@
 
 /** Maximum size for a reassembly buffer. */
 #define RLE_R_BUFF_LEN ((2 << 12) - 1)
+#define MODULE_ID RLE_MOD_ID_REASSEMBLY_BUFFER
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -408,9 +409,8 @@ static inline int rasm_buf_dump_mem(const rle_rasm_buf_t *const rasm_buf,
 	}
 
 	for (; b < end; ++b) {
-		PRINT("%02x%s", *b, ((b - start) % 16) == 15 ? "\n" : " ");
+		PRINT_RLE_DEBUG("%02x", *b);
 	}
-	PRINT("\n");
 
 out:
 
@@ -433,7 +433,7 @@ static inline int rasm_buf_dump_sdu(const rle_rasm_buf_t *const rasm_buf)
 		goto out;
 	}
 
-	PRINT("%d-octets SDU dumped.", ret);
+	PRINT_RLE_DEBUG("%d-octets SDU dumped.", ret);
 	status = 0;
 
 out:
@@ -457,7 +457,7 @@ static inline int rasm_buf_dump_reassembled_sdu(const rle_rasm_buf_t *const rasm
 		goto out;
 	}
 
-	PRINT("%d-octets reassembled SDU dumped.", ret);
+	PRINT_RLE_DEBUG("%d-octets reassembled SDU dumped.", ret);
 	status = 0;
 
 out:
@@ -483,7 +483,7 @@ static inline int rasm_buf_dump_full_rasm_buf(const rle_rasm_buf_t *const rasm_b
 		goto out;
 	}
 
-	PRINT("%d-octets reassembly buffer dumped.", ret);
+	PRINT_RLE_DEBUG("%d-octets reassembly buffer dumped.", ret);
 	status = 0;
 
 out:
@@ -506,5 +506,7 @@ out:
 	return is_reassembled;
 }
 
+/* undef the module id set at start of file */
+#undef MODULE_ID
 
 #endif /* __REASSEMBLY_BUFFER_H__ */

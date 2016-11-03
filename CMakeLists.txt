@@ -36,6 +36,7 @@ SET(SRC_LIBRLE
 	src/rle_transmitter.c
 	src/rle_receiver.c
 	src/rle_conf.c
+	src/rle_log.c
 	src/rle_header_proto_type_field.c
 )
 

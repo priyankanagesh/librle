@@ -35,7 +35,7 @@
 /*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-#define MODULE_NAME "FRAGMENTATION"
+#define MODULE_ID RLE_MOD_ID_FRAGMENTATION
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -51,9 +51,7 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 	rle_frag_buf_t *frag_buf;
 	struct rle_ctx_management *rle_ctx;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("");
 
 	if (transmitter == NULL) {
 		status = RLE_FRAG_ERR_NULL_TRMT;
@@ -110,9 +108,7 @@ enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmit
 {
 	enum rle_frag_status status = RLE_FRAG_ERR;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("");
 
 	if (!transmitter) {
 		status = RLE_FRAG_ERR_NULL_TRMT;

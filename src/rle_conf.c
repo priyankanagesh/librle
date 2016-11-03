@@ -22,7 +22,7 @@
 /*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-#define MODULE_NAME "RLE CONF"
+#define MODULE_ID RLE_MOD_ID_CONF
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -111,10 +111,12 @@ bool ptype_is_omissible(const uint16_t ptype,
 
 	if (rle_conf->allow_ptype_omission != 1) {
 		/* protocol omission is disabled in configuration */
+		PRINT_RLE_DEBUG("protocol type is NOT omissible (disabled in config)");
 		is_omissible = false;
 
 	} else if (ptype == RLE_PROTO_TYPE_SIGNAL_UNCOMP) {
 		/* protocol omission is enabled in configuration, and protocol is signaling */
+		PRINT_RLE_DEBUG("protocol type is omissible (signaling)");
 		is_omissible = true;
 
 	} else {
@@ -130,14 +132,20 @@ bool ptype_is_omissible(const uint16_t ptype,
 			 * of the SDU contain a supported IP version so that the RLE receiver is able to infer
 			 * the IP version from them */
 			if (frag_buf->sdu_info.size < 1) {
+				PRINT_RLE_DEBUG("protocol type is NOT omissible (too short IP packet)");
 				is_omissible = false;
 				break;
 			}
 
 			ip_version = (frag_buf->sdu.start[0] >> 4) & 0x0f;
-			is_omissible =
-				((ptype == RLE_PROTO_TYPE_IPV4_UNCOMP && ip_version == 4) ||
-				 (ptype == RLE_PROTO_TYPE_IPV6_UNCOMP && ip_version == 6));
+			if ((ptype == RLE_PROTO_TYPE_IPV4_UNCOMP && ip_version == 4) ||
+			    (ptype == RLE_PROTO_TYPE_IPV6_UNCOMP && ip_version == 6)) {
+				PRINT_RLE_DEBUG("protocol type is omissible (IP)");
+				is_omissible = true;
+			} else {
+				PRINT_RLE_DEBUG("protocol type is NOT omissible (unknown IP version)");
+				is_omissible = false;
+			}
 			break;
 		}
 		case RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD:
@@ -149,11 +157,20 @@ bool ptype_is_omissible(const uint16_t ptype,
 			const uint8_t compressed_ptype =
 				is_eth_vlan_ip_frame(frag_buf->sdu.start, frag_buf->sdu_info.size);
 			is_omissible = (compressed_ptype == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD);
+			PRINT_RLE_DEBUG("protocol type is%s omissible", is_omissible ? "" : " NOT");
 			break;
 		}
 		default:
 			/* other normal cases */
-			is_omissible = (ptype == rle_header_ptype_decompression(default_ptype));
+			if (ptype == rle_header_ptype_decompression(default_ptype)) {
+				PRINT_RLE_DEBUG("protocol type is omissible (protocol type = 0x%04x, implicit "
+				                "protocol type = 0x%02x)", ptype, default_ptype);
+				is_omissible = true;
+			} else {
+				PRINT_RLE_DEBUG("protocol type is NOT omissible (protocol type = 0x%04x, implicit "
+				                "protocol type = 0x%02x)", ptype, default_ptype);
+				is_omissible = false;
+			}
 			break;
 		}
 	}

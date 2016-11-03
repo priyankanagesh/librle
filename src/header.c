@@ -35,7 +35,7 @@
 /*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-#define MODULE_NAME "HEADER"
+#define MODULE_ID RLE_MOD_ID_HEADER
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -141,9 +141,7 @@ static void push_uncompressed_alpdu_header(struct rle_frag_buf *const frag_buf,
 {
 	rle_alpdu_header_uncompressed_t **p_alpdu_header;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("prepend a 2-byte ALPDU header with an uncompressed protocol type");
 
 	p_alpdu_header = (rle_alpdu_header_uncompressed_t **)&frag_buf->alpdu.start;
 
@@ -156,9 +154,7 @@ static void push_compressed_supported_alpdu_header(struct rle_frag_buf *const fr
 {
 	rle_alpdu_header_compressed_supported_t **p_alpdu_header;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("prepend a 1-byte ALPDU header with a compressed protocol type");
 
 	p_alpdu_header = (rle_alpdu_header_compressed_supported_t **)&frag_buf->alpdu.start;
 
@@ -171,9 +167,8 @@ static void push_compressed_fallback_alpdu_header(struct rle_frag_buf *const fra
 {
 	rle_alpdu_header_compressed_fallback_t **p_alpdu_header;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("prepend a 3-byte ALPDU header with an unknown compressed protocol "
+	                "type");
 
 	p_alpdu_header = (rle_alpdu_header_compressed_fallback_t **)&frag_buf->alpdu.start;
 
@@ -189,9 +184,7 @@ static void push_comp_ppdu_header(struct rle_frag_buf *const frag_buf,
 	uint16_t ppdu_length_field;
 	rle_ppdu_header_comp_t **p_ppdu_header;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("prepend a 2-byte PPDU COMP header");
 
 	p_ppdu_header = (rle_ppdu_header_comp_t **)&frag_buf->ppdu.start;
 
@@ -216,9 +209,7 @@ static void push_start_ppdu_header(struct rle_frag_buf *const frag_buf, const ui
 	uint16_t total_length_field;
 	rle_ppdu_header_start_t **p_ppdu_header;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("prepend a 4-byte PPDU START header");
 
 	p_ppdu_header = (rle_ppdu_header_start_t **)&frag_buf->ppdu.start;
 
@@ -244,9 +235,7 @@ static void push_cont_ppdu_header(struct rle_frag_buf *const frag_buf, const uin
 	uint16_t ppdu_length_field;
 	rle_ppdu_header_cont_end_t **p_ppdu_header;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("prepend a 2-byte PPDU CONT header");
 
 	p_ppdu_header = (rle_ppdu_header_cont_end_t **)&frag_buf->ppdu.start;
 
@@ -266,9 +255,7 @@ static void push_end_ppdu_header(struct rle_frag_buf *const frag_buf, const uint
 	uint16_t ppdu_length_field;
 	rle_ppdu_header_cont_end_t **p_ppdu_header;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("prepend a 2-byte PPDU END header");
 
 	p_ppdu_header = (rle_ppdu_header_cont_end_t **)&frag_buf->ppdu.start;
 
@@ -295,6 +282,7 @@ int is_eth_vlan_ip_frame(const uint8_t *const sdu, const size_t sdu_len)
 
 	if (sdu_len <= eth_vlan_hdr_min_len) {
 		/* the protocol type of short Ethernet/VLAN frames cannot be compressed */
+		PRINT_RLE_DEBUG("frame is not Ethernet/VLAN/IPv4/6 (too short VLAN frame)");
 		goto error;
 	}
 
@@ -311,6 +299,7 @@ int is_eth_vlan_ip_frame(const uint8_t *const sdu, const size_t sdu_len)
 
 		if (eth_proto_type != RLE_PROTO_TYPE_VLAN_UNCOMP) {
 			/* unexpected protocol type in Ethernet frame: it should be VLAN */
+			PRINT_RLE_DEBUG("frame is not Ethernet/VLAN/IPv4/6 (malformed VLAN)");
 			goto error;
 		}
 
@@ -318,8 +307,10 @@ int is_eth_vlan_ip_frame(const uint8_t *const sdu, const size_t sdu_len)
 		 * to the RLE receiver that the protocol field of the VLAN header is suppressed */
 		if ((vlan_proto_type == RLE_PROTO_TYPE_IPV4_UNCOMP && ip_version == 4) ||
 		    (vlan_proto_type == RLE_PROTO_TYPE_IPV6_UNCOMP && ip_version == 6)) {
+			PRINT_RLE_DEBUG("frame is Ethernet/VLAN/IPv4/6");
 			compressed_ptype = RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD;
 		} else {
+			PRINT_RLE_DEBUG("frame is Ethernet/VLAN but not Ethernet/VLAN/IPv4/6");
 			compressed_ptype = RLE_PROTO_TYPE_VLAN_COMP;
 		}
 	}
@@ -333,9 +324,7 @@ void push_alpdu_header(struct rle_frag_buf *const frag_buf,
 {
 	uint16_t protocol_type;
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("prepend a ALPDU header");
 
 	protocol_type = frag_buf->sdu_info.protocol_type;
 
@@ -374,6 +363,8 @@ void push_alpdu_header(struct rle_frag_buf *const frag_buf,
 				 *    embedded payload. */
 				if (protocol_type == RLE_PROTO_TYPE_VLAN_UNCOMP &&
 				    compressed_ptype == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
+					PRINT_RLE_DEBUG("omit the protocol field of the VLAN header making SDU 2 bytes "
+					                "less (%zu bytes in total)",frag_buf_get_sdu_len(frag_buf) - sizeof(protocol_type));
 					memmove(frag_buf->sdu.start + sizeof(protocol_type), frag_buf->sdu.start,
 					        sizeof(struct ether_header) + sizeof(struct vlan_hdr) - sizeof(protocol_type));
 					frag_buf_sdu_push(frag_buf, -(sizeof(protocol_type)));
@@ -385,6 +376,7 @@ void push_alpdu_header(struct rle_frag_buf *const frag_buf,
 		}
 	} else {
 		/* protocol type is omitted, ALDPU len == 0 */
+		PRINT_RLE_DEBUG("prepend a 0-byte ALPDU header with protocol type omitted");
 
 		/* special case if the payload is VLAN with embedded IPv4 or IPv6:
 		 *  - the RLE transmitter shall suppress the protocol field of the VLAN header,
@@ -392,6 +384,9 @@ void push_alpdu_header(struct rle_frag_buf *const frag_buf,
 		 *    embedded payload. */
 		if (protocol_type == RLE_PROTO_TYPE_VLAN_UNCOMP &&
 		    rle_conf->implicit_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD) {
+			PRINT_RLE_DEBUG("omit the protocol field of the VLAN header making SDU 2 bytes "
+			                "less (%zu bytes in total)", 
+			                frag_buf_get_sdu_len(frag_buf) - sizeof(protocol_type));
 			memmove(frag_buf->sdu.start + sizeof(protocol_type), frag_buf->sdu.start,
 			        sizeof(struct ether_header) + sizeof(struct vlan_hdr) - sizeof(protocol_type));
 			frag_buf_sdu_push(frag_buf, -(sizeof(protocol_type)));
@@ -409,9 +404,7 @@ bool push_ppdu_header(struct rle_frag_buf *const frag_buf,
 	const bool use_alpdu_crc =
 		(rle_conf->allow_alpdu_sequence_number ? false : !!rle_conf->allow_alpdu_crc);
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("");
 
 	if (frag_buf_is_fragmented(frag_buf)) {
 		/* ALPDU is fragmented, use CONT or END PPDU */
@@ -537,8 +530,12 @@ void comp_ppdu_extract_alpdu_fragment(unsigned char comp_ppdu[],
                                       unsigned char **alpdu_fragment,
                                       size_t *alpdu_fragment_len)
 {
+	PRINT_RLE_DEBUG("extract ALPDU from a %zu-byte PPDU COMP", ppdu_len);
+
 	*alpdu_fragment = comp_ppdu + sizeof(rle_ppdu_header_comp_t);
 	*alpdu_fragment_len = ppdu_len - sizeof(rle_ppdu_header_comp_t);
+
+	PRINT_RLE_DEBUG("%zu-byte ALPDU extracted from PPDU COMP", (*alpdu_fragment_len));
 }
 
 void start_ppdu_extract_alpdu_fragment(unsigned char start_ppdu[],
@@ -551,20 +548,33 @@ void start_ppdu_extract_alpdu_fragment(unsigned char start_ppdu[],
 	const rle_ppdu_header_start_t *const start_ppdu_header =
 	        (rle_ppdu_header_start_t *)start_ppdu;
 
+	PRINT_RLE_DEBUG("extract ALPDU fragment from a %zu-byte PPDU START",
+	                ppdu_len);
+
 	*alpdu_fragment = start_ppdu + sizeof(rle_ppdu_header_start_t);
 	*alpdu_fragment_len = ppdu_len - sizeof(rle_ppdu_header_start_t);
 	*alpdu_total_len = rle_ppdu_header_start_get_total_length(start_ppdu_header);
 	*is_crc_used = start_ppdu_header->use_crc;
 
 	assert(ppdu_len == (sizeof(rle_ppdu_header_start_t) + (*alpdu_fragment_len)));
+
+	PRINT_RLE_DEBUG("%zu-byte ALPDU fragment extracted from PPDU START (ALPDU total "
+	                "length = %zu bytes)", (*alpdu_fragment_len),
+	                (*alpdu_total_len));
 }
 
 void cont_end_ppdu_extract_alpdu_fragment(const unsigned char cont_end_ppdu[], const size_t ppdu_len,
                                           const unsigned char *alpdu_fragment[],
                                           size_t *const alpdu_fragment_len)
 {
+	PRINT_RLE_DEBUG("extract ALPDU fragment from a %zu-byte PPDU CONT/END",
+	                ppdu_len);
+
 	*alpdu_fragment = cont_end_ppdu + sizeof(rle_ppdu_header_cont_end_t);
 	*alpdu_fragment_len = ppdu_len - sizeof(rle_ppdu_header_cont_end_t);
+
+	PRINT_RLE_DEBUG("%zu-byte ALPDU fragment extracted from PPDU CONT/END",
+	                (*alpdu_fragment_len));
 }
 
 int signal_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
@@ -593,12 +603,20 @@ int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 	int status = 0;
 	const uint8_t default_ptype = rle_conf->implicit_protocol_type;
 
+	PRINT_RLE_DEBUG("extract SDU from a %zu-byte ALPDU with protocol type omitted",
+	                alpdu_fragment_len);
+
 	*comp_protocol_type = default_ptype;
 	*sdu_fragment = alpdu_fragment;
 	*sdu_fragment_len = alpdu_fragment_len;
+	PRINT_RLE_DEBUG("%zu-byte SDU with implicit protocol type 0x%02x extracted from "
+	                "ALPDU", (*sdu_fragment_len), default_ptype);
 
 	if (default_ptype == RLE_PROTO_TYPE_IP_COMP) {
 		uint8_t ip_version;
+
+		PRINT_RLE_DEBUG("implicit protocol type 0x%02x requires to detect IP version "
+		                "from SDU", default_ptype);
 
 		if ((*sdu_fragment_len) < 1) {
 			/* the protocol type cannot be deduced from the IP payload */
@@ -618,10 +636,15 @@ int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 			status = 1;
 			goto out;
 		}
+		PRINT_RLE_DEBUG("IP version %u detected, uncompressed protocol type is then 0x%04x",
+		                ip_version, *protocol_type);
 
 	} else {
 		*protocol_type = rle_header_ptype_decompression(default_ptype);
 	}
+
+	PRINT_RLE_DEBUG("implicit protocol type 0x%02x decompressed to 0x%04x",
+	                default_ptype, (*protocol_type));
 
 out:
 	return status;
@@ -638,6 +661,9 @@ int uncompressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[]
 	const rle_alpdu_header_uncompressed_t *const uncompressed_alpdu_header =
 	        (rle_alpdu_header_uncompressed_t *)alpdu_fragment;
 
+	PRINT_RLE_DEBUG("extract SDU from a %zu-byte ALPDU with protocol type uncompressed",
+	                alpdu_fragment_len);
+
 	if (alpdu_fragment_len < sizeof(rle_alpdu_header_uncompressed_t)) {
 		PRINT_RLE_ERROR("Invalid alpdu fragment len: %zu\n", alpdu_fragment_len);
 		status = 1;
@@ -647,6 +673,9 @@ int uncompressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[]
 	*protocol_type = htons(uncompressed_alpdu_header->proto_type);
 	*sdu_fragment = alpdu_fragment + sizeof(rle_alpdu_header_uncompressed_t);
 	*sdu_fragment_len = alpdu_fragment_len - sizeof(rle_alpdu_header_uncompressed_t);
+
+	PRINT_RLE_DEBUG("%zu-byte SDU with uncompressed protocol type 0x%04x extracted "
+	                "from ALPDU", (*sdu_fragment_len), (*protocol_type));
 
 out:
 	return status;
@@ -663,6 +692,9 @@ int compressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 	const rle_alpdu_header_t *const alpdu_header = (rle_alpdu_header_t *)alpdu_fragment;
 	int status = 0;
 
+	PRINT_RLE_DEBUG("extract SDU from a %zu-byte ALPDU with protocol type compressed",
+	                alpdu_fragment_len);
+
 	if (alpdu_fragment_len < 1) {
 		PRINT_RLE_ERROR("ALPDU fragment smaller (%zu) than the ALPDU header with compressed "
 		                "protocol type\n", alpdu_fragment_len);
@@ -670,6 +702,8 @@ int compressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 		goto out;
 	}
 	*comp_protocol_type = alpdu_header->compressed_supported.proto_type;
+	PRINT_RLE_DEBUG("SDU got compressed protocol type 0x%02x", 
+	                (*comp_protocol_type));
 
 	if ((*comp_protocol_type) == RLE_PROTO_TYPE_FALLBACK) {
 		if (alpdu_fragment_len < sizeof(alpdu_header->compressed_fallback)) {
@@ -685,6 +719,9 @@ int compressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 		if (alpdu_hdr_len) {
 			*alpdu_hdr_len = sizeof(alpdu_header->compressed_fallback);
 		}
+		PRINT_RLE_DEBUG("%zu-byte SDU with uncompressed protocol type 0x%04x extracted "
+		                "from ALPDU", (*sdu_fragment_len), (*protocol_type));
+
 	} else {
 		if (alpdu_fragment_len < sizeof(alpdu_header->compressed_supported)) {
 			PRINT_RLE_ERROR("Alpdu fragment smaller (%zu) than a header (%zu)\n",
@@ -700,6 +737,9 @@ int compressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 		if (alpdu_hdr_len) {
 			*alpdu_hdr_len = sizeof(alpdu_header->compressed_supported);
 		}
+
+		PRINT_RLE_DEBUG("%zu-byte SDU with uncompressed protocol type 0x%04x extracted "
+		                "from ALPDU", (*sdu_fragment_len), (*protocol_type));
 	}
 
 out:

@@ -32,7 +32,7 @@
 /*--------------------------------- PRIVATE CONSTANTS AND MACROS ---------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-#define MODULE_NAME "RECEIVER"
+#define MODULE_ID RLE_MOD_ID_RECEIVER
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -175,9 +175,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this,
 	gettimeofday(&tv_start, NULL);
 #endif
 
-#ifdef DEBUG
-	PRINT_RLE_DEBUG("", MODULE_NAME);
-#endif
+	PRINT_RLE_DEBUG("");
 
 	assert(index_ctx != NULL);
 
@@ -218,7 +216,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this,
 	gettimeofday(&tv_end, NULL);
 	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
 	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
-	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", MODULE_NAME, tv_delta.tv_sec, tv_delta.tv_usec);
+	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
 	return ret;
