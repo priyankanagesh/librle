@@ -27,6 +27,7 @@ EXPORT_SYMBOL(rle_receiver_destroy);
 EXPORT_SYMBOL(rle_encapsulate);
 EXPORT_SYMBOL(rle_fragment);
 EXPORT_SYMBOL(rle_pack);
+EXPORT_SYMBOL(rle_pack_init);
 EXPORT_SYMBOL(rle_pad);
 EXPORT_SYMBOL(rle_decapsulate);
 EXPORT_SYMBOL(rle_transmitter_stats_get_queue_size);
