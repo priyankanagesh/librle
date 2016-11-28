@@ -21,6 +21,7 @@ librle_common_sources = ../../src/crc.c \
                         ../../src/fragmentation.c \
                         ../../src/reassembly.c \
                         ../../src/rle_conf.c \
+                        ../../src/rle_log.c \
                         ../../src/rle_ctx.c \
                         ../../src/header.c \
                         ../../src/trailer.c \
