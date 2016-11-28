@@ -269,6 +269,15 @@ ssize_t rle_proc_write(struct file *file, const char __user *buffer, size_t coun
 	}
 	pr_info("[%s] SDU successfully encapsulated\n", THIS_MODULE->name);
 
+	/* Initialize the FPDU */
+	pack_status = rle_pack_init(payload_label, payload_label_size,
+	                            fpdu, &fpdu_current_pos, &fpdu_remaining_size);
+	if (pack_status != RLE_PACK_OK) {
+		pr_err("[%s] failed to init FPDU with Payload Label (%d)\n", THIS_MODULE->name,
+		       (int)pack_status);
+		goto error;
+	}
+
 	while (rle_transmitter_stats_get_queue_size(couple->transmitter, frag_id) != 0) {
 		size_t ppdu_length = 0;
 		unsigned char *ppdu;
@@ -285,8 +294,8 @@ ssize_t rle_proc_write(struct file *file, const char __user *buffer, size_t coun
 		pr_info("[%s] ALPDU successfully fragmented\n", THIS_MODULE->name);
 
 		/* Start packing */
-		pack_status = rle_pack(ppdu, ppdu_length, payload_label, payload_label_size,
-		                       fpdu, &fpdu_current_pos, &fpdu_remaining_size);
+		pack_status = rle_pack(ppdu, ppdu_length, NULL, 0, fpdu, &fpdu_current_pos,
+		                       &fpdu_remaining_size);
 		if (pack_status != RLE_PACK_OK) {
 			pr_err("[%s] failed to pack an FPDU (%d)\n", THIS_MODULE->name,
 			       (int)pack_status);

@@ -495,6 +495,26 @@ enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmit
 	__attribute__((warn_unused_result));
 
 /**
+ * @brief         Init the given FPDU with the given Payload Label
+ *
+ * @param[in]     label                   The FPDU label fields.
+ * @param[in]     label_size              Size of the FPDU label field
+ * @param[in,out] fpdu                    Generated/modified Frame PDU
+ * @param[in,out] fpdu_current_pos        Current position in the FPDU
+ * @param[in,out] fpdu_remaining_size     Remaining size in the FPDU
+ *
+ * @return        Frame packing status
+ *
+ * @ingroup       RLE transmitter
+ */
+enum rle_pack_status rle_pack_init(const unsigned char *const label,
+                                   const size_t label_size,
+                                   unsigned char *const fpdu,
+                                   size_t *const fpdu_current_pos,
+                                   size_t *const fpdu_remaining_size)
+	__attribute__((warn_unused_result));
+
+/**
  * @brief         RLE frame packing. Pack the given PPDU in the given FPDU.
  *
  * @param[in]     ppdu                    A PPDU to pack.
