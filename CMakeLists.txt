@@ -1,7 +1,9 @@
 PROJECT(rle C)
 
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
-INCLUDE(${INFRA_PREFIX}deps/infra/cmake/a9780.cmake)
+
+include(FindPkgConfig)
+include(tools.cmake)
 
 # Options
 #

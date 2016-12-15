@@ -1,3 +1,0 @@
-[submodule "deps/infra"]
-	path = deps/infra
-	url = ssh://git@git.a9780.tas/gw/tools/infra.git
