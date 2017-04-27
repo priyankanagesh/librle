@@ -2,7 +2,7 @@ Summary:        rle
 Name:           rle
 Version:        1.2.1
 Release:        1.el6%{?ci_flag}
-License:        Commercial
+License:        GPLv2 xor TAS
 Group:          System Environment/Libraries
 Source:         %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
