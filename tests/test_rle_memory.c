@@ -44,13 +44,23 @@ void test_rle_memory_receiver_new(void **state);
 
 int main(void)
 {
+	int test_status;
+#if defined(cmocka_unit_test)
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(test_rle_memory_frag_buf_new),
 		cmocka_unit_test(test_rle_memory_transmitter_new),
 		cmocka_unit_test(test_rle_memory_receiver_new),
 	};
-
-	return cmocka_run_group_tests(tests, NULL, NULL);
+	test_status = cmocka_run_group_tests(tests, NULL, NULL);
+#else
+	const UnitTest tests[] = {
+		unit_test(test_rle_memory_frag_buf_new),
+		unit_test(test_rle_memory_transmitter_new),
+		unit_test(test_rle_memory_receiver_new),
+	};
+	test_status = run_tests(tests);
+#endif
+	return test_status;
 }
 
 
