@@ -7,6 +7,7 @@ Group:          System Environment/Libraries
 Source:         %{name}-%{version}.tar.gz
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root
 BuildRequires:  cmake doxygen libpcap-devel libcmocka-devel
+BuildRequires:  uncrustify >= 0.64
 Provides:       %{name}.%{version}.so
 
 %define prefix /usr
@@ -34,7 +35,11 @@ mkdir build_tree
 cd build_tree
 cmake -DCMAKE_INSTALL_PREFIX=%{prefix} ..
 make
-  
+
+%check
+cd build_tree
+make check
+
 %install 
 cd build_tree
 DESTDIR=$RPM_BUILD_ROOT make install
