@@ -503,7 +503,8 @@ bool test_rle_api_robustness_transmitter(void)
 		printf("\t\trle_transmitter_stats_get_queue_size()\n");
 		queue_len = rle_transmitter_stats_get_queue_size(NULL, 0);
 		assert(queue_len == 0);
-		queue_len = rle_transmitter_stats_get_queue_size(rle_transmitter, RLE_MAX_FRAG_ID + 1);
+		queue_len = rle_transmitter_stats_get_queue_size(rle_transmitter,
+		                                                 RLE_MAX_FRAG_ID + 1);
 		assert(queue_len == 0);
 		queue_len = rle_transmitter_stats_get_queue_size(rle_transmitter, 1);
 		assert(queue_len == 0);
@@ -511,7 +512,8 @@ bool test_rle_api_robustness_transmitter(void)
 		printf("\t\trle_transmitter_stats_get_counter_sdus_in()\n");
 		counter = rle_transmitter_stats_get_counter_sdus_in(NULL, 0);
 		assert(counter == 0);
-		counter = rle_transmitter_stats_get_counter_sdus_in(rle_transmitter, RLE_MAX_FRAG_ID + 1);
+		counter = rle_transmitter_stats_get_counter_sdus_in(rle_transmitter,
+		                                                    RLE_MAX_FRAG_ID + 1);
 		assert(counter == 0);
 		counter = rle_transmitter_stats_get_counter_sdus_in(rle_transmitter, 1);
 		assert(counter == 1);
@@ -519,7 +521,8 @@ bool test_rle_api_robustness_transmitter(void)
 		printf("\t\trle_transmitter_stats_get_counter_sdus_sent()\n");
 		counter = rle_transmitter_stats_get_counter_sdus_sent(NULL, 0);
 		assert(counter == 0);
-		counter = rle_transmitter_stats_get_counter_sdus_sent(rle_transmitter, RLE_MAX_FRAG_ID + 1);
+		counter = rle_transmitter_stats_get_counter_sdus_sent(rle_transmitter,
+		                                                      RLE_MAX_FRAG_ID + 1);
 		assert(counter == 0);
 		counter = rle_transmitter_stats_get_counter_sdus_sent(rle_transmitter, 1);
 		assert(counter == 1);
@@ -527,7 +530,8 @@ bool test_rle_api_robustness_transmitter(void)
 		printf("\t\trle_transmitter_stats_get_counter_sdus_dropped()\n");
 		counter = rle_transmitter_stats_get_counter_sdus_dropped(NULL, 0);
 		assert(counter == 0);
-		counter = rle_transmitter_stats_get_counter_sdus_dropped(rle_transmitter, RLE_MAX_FRAG_ID + 1);
+		counter = rle_transmitter_stats_get_counter_sdus_dropped(rle_transmitter,
+		                                                         RLE_MAX_FRAG_ID + 1);
 		assert(counter == 0);
 		counter = rle_transmitter_stats_get_counter_sdus_dropped(rle_transmitter, 1);
 		assert(counter == 0);
@@ -535,7 +539,8 @@ bool test_rle_api_robustness_transmitter(void)
 		printf("\t\trle_transmitter_stats_get_counter_bytes_in()\n");
 		counter = rle_transmitter_stats_get_counter_bytes_in(NULL, 0);
 		assert(counter == 0);
-		counter = rle_transmitter_stats_get_counter_bytes_in(rle_transmitter, RLE_MAX_FRAG_ID + 1);
+		counter = rle_transmitter_stats_get_counter_bytes_in(rle_transmitter,
+		                                                     RLE_MAX_FRAG_ID + 1);
 		assert(counter == 0);
 		counter = rle_transmitter_stats_get_counter_bytes_in(rle_transmitter, 1);
 		assert(counter == 4);
@@ -543,7 +548,8 @@ bool test_rle_api_robustness_transmitter(void)
 		printf("\t\trle_transmitter_stats_get_counter_bytes_sent()\n");
 		counter = rle_transmitter_stats_get_counter_bytes_sent(NULL, 0);
 		assert(counter == 0);
-		counter = rle_transmitter_stats_get_counter_bytes_sent(rle_transmitter, RLE_MAX_FRAG_ID + 1);
+		counter = rle_transmitter_stats_get_counter_bytes_sent(rle_transmitter,
+		                                                       RLE_MAX_FRAG_ID + 1);
 		assert(counter == 0);
 		counter = rle_transmitter_stats_get_counter_bytes_sent(rle_transmitter, 1);
 		assert(counter == 6);
@@ -551,7 +557,8 @@ bool test_rle_api_robustness_transmitter(void)
 		printf("\t\trle_transmitter_stats_get_counter_bytes_dropped()\n");
 		counter = rle_transmitter_stats_get_counter_bytes_dropped(NULL, 0);
 		assert(counter == 0);
-		counter = rle_transmitter_stats_get_counter_bytes_dropped(rle_transmitter, RLE_MAX_FRAG_ID + 1);
+		counter = rle_transmitter_stats_get_counter_bytes_dropped(rle_transmitter,
+		                                                          RLE_MAX_FRAG_ID + 1);
 		assert(counter == 0);
 		counter = rle_transmitter_stats_get_counter_bytes_dropped(rle_transmitter, 1);
 		assert(counter == 0);
@@ -559,7 +566,9 @@ bool test_rle_api_robustness_transmitter(void)
 		printf("\t\trle_transmitter_stats_get_counters()\n");
 		counter = rle_transmitter_stats_get_counters(NULL, 0, &stats);
 		assert(counter == 1);
-		counter = rle_transmitter_stats_get_counters(rle_transmitter, RLE_MAX_FRAG_ID + 1, &stats);
+		counter = rle_transmitter_stats_get_counters(rle_transmitter,
+		                                             RLE_MAX_FRAG_ID + 1,
+		                                             &stats);
 		assert(counter == 1);
 		counter = rle_transmitter_stats_get_counters(rle_transmitter, 0, NULL);
 		assert(counter == 1);
@@ -829,7 +838,7 @@ bool test_rle_api_robustness_receiver(void)
 		unsigned char fpdu_label[fpdu_label_len];
 
 		/* init the array of SDUs */
-		for (i = 0; i < (int) sdus_max_nr; i++) {
+		for (i = 0; i < (int)sdus_max_nr; i++) {
 			sdus[i].size = 599;
 			sdus[i].protocol_type = 0x0000;
 			sdus[i].buffer = malloc(sdus[i].size);
@@ -886,14 +895,14 @@ bool test_rle_api_robustness_receiver(void)
 		/* FPDU with PPDU wrong length */
 		{
 			printf("\t\trle_decapsulate() with PPDU wrong length\n");
-			rle_ppdu_header_comp_t *ppdu_comp_hdr =
-				(rle_ppdu_header_comp_t *) (fpdu + fpdu_label_len);
-			ppdu_comp_hdr->rle_packet_length_2--;
+			rle_ppdu_hdr_comp_t *ppdu_comp_hdr =
+				(rle_ppdu_hdr_comp_t *)(fpdu + fpdu_label_len);
+			ppdu_comp_hdr->pkt_len_2--;
 			decap_status = rle_decapsulate(rle_receiver, fpdu, fpdu_len,
 			                               sdus, sdus_max_nr, &sdus_nr,
 			                               fpdu_label, fpdu_label_len);
 			assert(decap_status != RLE_DECAP_OK);
-			ppdu_comp_hdr->rle_packet_length_2++;
+			ppdu_comp_hdr->pkt_len_2++;
 		}
 
 		/* nominal case */
@@ -903,10 +912,10 @@ bool test_rle_api_robustness_receiver(void)
 		                               fpdu_label, fpdu_label_len);
 		assert(decap_status == RLE_DECAP_OK);
 		assert(sdus_nr <= sdus_max_nr);
-		assert(fpdu_label[0] == 0x00 && fpdu_label[1] == 0x01 && fpdu_label[2] == 0x02); 
+		assert(fpdu_label[0] == 0x00 && fpdu_label[1] == 0x01 && fpdu_label[2] == 0x02);
 
 		/* destroy the array of SDUs */
-		for (i = 0; i < (int) sdus_max_nr; i++) {
+		for (i = 0; i < (int)sdus_max_nr; i++) {
 			free(sdus[i].buffer);
 		}
 	}
@@ -929,7 +938,8 @@ bool test_rle_api_robustness_receiver(void)
 		printf("\t\trle_receiver_stats_get_counter_sdus_received()\n");
 		counter = rle_receiver_stats_get_counter_sdus_received(NULL, 0);
 		assert(counter == 0);
-		counter = rle_receiver_stats_get_counter_sdus_received(rle_receiver, RLE_MAX_FRAG_ID + 1);
+		counter = rle_receiver_stats_get_counter_sdus_received(rle_receiver,
+		                                                       RLE_MAX_FRAG_ID + 1);
 		assert(counter == 0);
 		counter = rle_receiver_stats_get_counter_sdus_received(rle_receiver, 1);
 		assert(counter == 0);
@@ -937,7 +947,8 @@ bool test_rle_api_robustness_receiver(void)
 		printf("\t\trle_receiver_stats_get_counter_sdus_reassembled()\n");
 		counter = rle_receiver_stats_get_counter_sdus_reassembled(NULL, 0);
 		assert(counter == 0);
-		counter = rle_receiver_stats_get_counter_sdus_reassembled(rle_receiver, RLE_MAX_FRAG_ID + 1);
+		counter = rle_receiver_stats_get_counter_sdus_reassembled(rle_receiver,
+		                                                          RLE_MAX_FRAG_ID + 1);
 		assert(counter == 0);
 		counter = rle_receiver_stats_get_counter_sdus_reassembled(rle_receiver, 1);
 		assert(counter == 0);
@@ -945,7 +956,8 @@ bool test_rle_api_robustness_receiver(void)
 		printf("\t\trle_receiver_stats_get_counter_sdus_dropped()\n");
 		counter = rle_receiver_stats_get_counter_sdus_dropped(NULL, 0);
 		assert(counter == 0);
-		counter = rle_receiver_stats_get_counter_sdus_dropped(rle_receiver, RLE_MAX_FRAG_ID + 1);
+		counter = rle_receiver_stats_get_counter_sdus_dropped(rle_receiver,
+		                                                      RLE_MAX_FRAG_ID + 1);
 		assert(counter == 0);
 		counter = rle_receiver_stats_get_counter_sdus_dropped(rle_receiver, 1);
 		assert(counter == 0);
@@ -953,7 +965,8 @@ bool test_rle_api_robustness_receiver(void)
 		printf("\t\trle_receiver_stats_get_counter_sdus_lost()\n");
 		counter = rle_receiver_stats_get_counter_sdus_lost(NULL, 0);
 		assert(counter == 0);
-		counter = rle_receiver_stats_get_counter_sdus_lost(rle_receiver, RLE_MAX_FRAG_ID + 1);
+		counter =
+			rle_receiver_stats_get_counter_sdus_lost(rle_receiver, RLE_MAX_FRAG_ID + 1);
 		assert(counter == 0);
 		counter = rle_receiver_stats_get_counter_sdus_lost(rle_receiver, 1);
 		assert(counter == 0);
@@ -961,7 +974,8 @@ bool test_rle_api_robustness_receiver(void)
 		printf("\t\trle_receiver_stats_get_counter_bytes_received()\n");
 		counter = rle_receiver_stats_get_counter_bytes_received(NULL, 0);
 		assert(counter == 0);
-		counter = rle_receiver_stats_get_counter_bytes_received(rle_receiver, RLE_MAX_FRAG_ID + 1);
+		counter = rle_receiver_stats_get_counter_bytes_received(rle_receiver,
+		                                                        RLE_MAX_FRAG_ID + 1);
 		assert(counter == 0);
 		counter = rle_receiver_stats_get_counter_bytes_received(rle_receiver, 1);
 		assert(counter == 0);
@@ -969,7 +983,8 @@ bool test_rle_api_robustness_receiver(void)
 		printf("\t\trle_receiver_stats_get_counter_bytes_reassembled()\n");
 		counter = rle_receiver_stats_get_counter_bytes_reassembled(NULL, 0);
 		assert(counter == 0);
-		counter = rle_receiver_stats_get_counter_bytes_reassembled(rle_receiver, RLE_MAX_FRAG_ID + 1);
+		counter = rle_receiver_stats_get_counter_bytes_reassembled(rle_receiver,
+		                                                           RLE_MAX_FRAG_ID + 1);
 		assert(counter == 0);
 		counter = rle_receiver_stats_get_counter_bytes_reassembled(rle_receiver, 1);
 		assert(counter == 0);
@@ -977,7 +992,8 @@ bool test_rle_api_robustness_receiver(void)
 		printf("\t\trle_receiver_stats_get_counter_bytes_dropped()\n");
 		counter = rle_receiver_stats_get_counter_bytes_dropped(NULL, 0);
 		assert(counter == 0);
-		counter = rle_receiver_stats_get_counter_bytes_dropped(rle_receiver, RLE_MAX_FRAG_ID + 1);
+		counter = rle_receiver_stats_get_counter_bytes_dropped(rle_receiver,
+		                                                       RLE_MAX_FRAG_ID + 1);
 		assert(counter == 0);
 		counter = rle_receiver_stats_get_counter_bytes_dropped(rle_receiver, 1);
 		assert(counter == 0);
@@ -985,7 +1001,8 @@ bool test_rle_api_robustness_receiver(void)
 		printf("\t\trle_receiver_stats_get_counters()\n");
 		counter = rle_receiver_stats_get_counters(NULL, 0, &stats);
 		assert(counter == 1);
-		counter = rle_receiver_stats_get_counters(rle_receiver, RLE_MAX_FRAG_ID + 1, &stats);
+		counter =
+			rle_receiver_stats_get_counters(rle_receiver, RLE_MAX_FRAG_ID + 1, &stats);
 		assert(counter == 1);
 		counter = rle_receiver_stats_get_counters(rle_receiver, 0, NULL);
 		assert(counter == 1);
@@ -1040,8 +1057,8 @@ bool test_rle_api_robustness_receiver(void)
 				0x45,                               /* fake start of IPv4 header */
 			};
 			const struct rle_sdu sdu_vlan_ipv4 = {
-				.buffer        = (unsigned char *) sdu_vlan_ipv4_data,
-				.size          = sizeof(sdu_vlan_ipv4_data),
+				.buffer = (unsigned char *)sdu_vlan_ipv4_data,
+				.size = sizeof(sdu_vlan_ipv4_data),
 				.protocol_type = RLE_PROTO_TYPE_SIGNAL_UNCOMP,
 			};
 			const unsigned char sdu_vlan_arp_data[] = {
@@ -1053,8 +1070,8 @@ bool test_rle_api_robustness_receiver(void)
 				0x00,                               /* fake start of ARP header */
 			};
 			const struct rle_sdu sdu_vlan_arp = {
-				.buffer        = (unsigned char *) sdu_vlan_arp_data,
-				.size          = sizeof(sdu_vlan_arp_data),
+				.buffer = (unsigned char *)sdu_vlan_arp_data,
+				.size = sizeof(sdu_vlan_arp_data),
 				.protocol_type = RLE_PROTO_TYPE_SIGNAL_UNCOMP,
 			};
 
@@ -1070,30 +1087,35 @@ bool test_rle_api_robustness_receiver(void)
 
 			printf("\ttest generic function rle_header_ptype_compression()\n");
 
-			comp_protocol_type = rle_header_ptype_compression(RLE_PROTO_TYPE_SIGNAL_UNCOMP, buf);
-			printf("\t\tprotocol type signaling (0x%02x) is compressed as 0x%02x (0x%02x expected)\n",
-			       RLE_PROTO_TYPE_SIGNAL_UNCOMP, comp_protocol_type, RLE_PROTO_TYPE_SIGNAL_COMP);
+			comp_protocol_type =
+				rle_header_ptype_compression(RLE_PROTO_TYPE_SIGNAL_UNCOMP, buf);
+			printf("\t\tprotocol type signaling (0x%02x) is compressed as 0x%02x "
+			       "(0x%02x expected)\n", RLE_PROTO_TYPE_SIGNAL_UNCOMP,
+			       comp_protocol_type, RLE_PROTO_TYPE_SIGNAL_COMP);
 			assert(comp_protocol_type == RLE_PROTO_TYPE_SIGNAL_COMP);
 
 			comp_protocol_type = rle_header_ptype_compression(0xffff, buf);
-			printf("\t\tprotocol type unsupported (0x%02x) is compressed as 0x%02x (0x%02x expected)\n",
-			       0xffff, comp_protocol_type, RLE_PROTO_TYPE_FALLBACK);
+			printf("\t\tprotocol type unsupported (0x%02x) is compressed as 0x%02x "
+			       "(0x%02x expected)\n", 0xffff, comp_protocol_type,
+			       RLE_PROTO_TYPE_FALLBACK);
 			assert(comp_protocol_type == RLE_PROTO_TYPE_FALLBACK);
 
-			comp_protocol_type = rle_header_ptype_compression(RLE_PROTO_TYPE_VLAN_UNCOMP, buf);
-			printf("\t\tprotocol type VLAN (0x%02x) is compressed as 0x%02x (0x%02x expected)\n",
-			       RLE_PROTO_TYPE_SIGNAL_UNCOMP, comp_protocol_type,
-			       RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD);
+			comp_protocol_type =
+				rle_header_ptype_compression(RLE_PROTO_TYPE_VLAN_UNCOMP, buf);
+			printf("\t\tprotocol type VLAN (0x%02x) is compressed as 0x%02x "
+			       "(0x%02x expected)\n", RLE_PROTO_TYPE_SIGNAL_UNCOMP,
+			       comp_protocol_type, RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD);
 			assert(comp_protocol_type == RLE_PROTO_TYPE_VLAN_COMP_WO_PTYPE_FIELD);
 
 			ret = rle_frag_buf_init(buf);
 			assert(ret == 0);
 			ret = rle_frag_buf_cpy_sdu(buf, &sdu_vlan_arp);
 			assert(ret == 0);
-			comp_protocol_type = rle_header_ptype_compression(RLE_PROTO_TYPE_VLAN_UNCOMP, buf);
-			printf("\t\tprotocol type VLAN (0x%02x) is compressed as 0x%02x (0x%02x expected)\n",
-			       RLE_PROTO_TYPE_SIGNAL_UNCOMP, comp_protocol_type,
-			       RLE_PROTO_TYPE_VLAN_COMP);
+			comp_protocol_type =
+				rle_header_ptype_compression(RLE_PROTO_TYPE_VLAN_UNCOMP, buf);
+			printf("\t\tprotocol type VLAN (0x%02x) is compressed as 0x%02x "
+			       "(0x%02x expected)\n", RLE_PROTO_TYPE_SIGNAL_UNCOMP,
+			       comp_protocol_type, RLE_PROTO_TYPE_VLAN_COMP);
 			assert(comp_protocol_type == RLE_PROTO_TYPE_VLAN_COMP);
 
 			rle_frag_buf_del(&buf);
@@ -1102,4 +1124,3 @@ bool test_rle_api_robustness_receiver(void)
 
 	return true;
 }
-

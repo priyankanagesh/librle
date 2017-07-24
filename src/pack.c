@@ -54,7 +54,8 @@
 /*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-enum rle_pack_status rle_pack_init(const unsigned char *const label, const size_t label_size,
+enum rle_pack_status rle_pack_init(const unsigned char *const label,
+                                   const size_t label_size,
                                    unsigned char *const fpdu,
                                    size_t *const fpdu_current_pos,
                                    size_t *const fpdu_remaining_size)
@@ -73,7 +74,7 @@ enum rle_pack_status rle_pack_init(const unsigned char *const label, const size_
 	}
 
 	/* Check FPDU is empty */
-	if((*fpdu_current_pos) != 0) {
+	if ((*fpdu_current_pos) != 0) {
 		status = RLE_PACK_ERR;
 		goto exit_label;
 	}
@@ -95,8 +96,10 @@ exit_label:
 	return status;
 }
 
-enum rle_pack_status rle_pack(const unsigned char *const ppdu, const size_t ppdu_length,
-                              const unsigned char *const label, const size_t label_size,
+enum rle_pack_status rle_pack(const unsigned char *const ppdu,
+                              const size_t ppdu_length,
+                              const unsigned char *const label,
+                              const size_t label_size,
                               unsigned char *const fpdu,
                               size_t *const fpdu_current_pos,
                               size_t *const fpdu_remaining_size)
@@ -144,7 +147,8 @@ exit_label:
 	return status;
 }
 
-void rle_pad(unsigned char *const fpdu, const size_t fpdu_current_pos,
+void rle_pad(unsigned char *const fpdu,
+             const size_t fpdu_current_pos,
              const size_t fpdu_remaining_size)
 {
 	if (fpdu != NULL && fpdu_remaining_size != 0) {

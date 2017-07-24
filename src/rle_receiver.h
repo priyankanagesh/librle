@@ -54,8 +54,10 @@
  * @ingroup RLE receiver
  */
 struct rle_receiver {
-	struct rle_ctx_management rle_ctx_man[RLE_MAX_FRAG_NUMBER]; /**< Reassembly contexts.       */
-	bool is_ctx_seqnum_init[RLE_MAX_FRAG_NUMBER];               /**< Whether seqnum is known yet */
+	/** Reassembly contexts */
+	struct rle_ctx_mngt rle_ctx_man[RLE_MAX_FRAG_NUMBER];
+	/** Whether seqnum is known yet */
+	bool is_ctx_seqnum_init[RLE_MAX_FRAG_NUMBER];
 	struct rle_config conf;  /**< RLE configuration */
 	uint8_t free_ctx;        /**< List of free contexts */
 };

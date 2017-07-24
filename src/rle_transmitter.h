@@ -74,7 +74,7 @@ struct transmitter_link_status {
  *
  */
 struct rle_transmitter {
-	struct rle_ctx_management rle_ctx_man[RLE_MAX_FRAG_NUMBER];
+	struct rle_ctx_mngt rle_ctx_man[RLE_MAX_FRAG_NUMBER];
 	struct rle_config conf;
 	uint8_t free_ctx;
 };

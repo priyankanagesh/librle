@@ -68,7 +68,7 @@
  */
 static int get_receiver_context(const struct rle_receiver *const receiver,
                                 const uint8_t fragment_id,
-                                const struct rle_ctx_management **const ctx_man);
+                                const struct rle_ctx_mngt **const ctx_man);
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -77,7 +77,7 @@ static int get_receiver_context(const struct rle_receiver *const receiver,
 
 static int get_receiver_context(const struct rle_receiver *const receiver,
                                 const uint8_t fragment_id,
-                                const struct rle_ctx_management **const ctx_man)
+                                const struct rle_ctx_mngt **const ctx_man)
 {
 	int status = 1;
 
@@ -101,36 +101,34 @@ error:
 /*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-struct rle_receiver *rle_receiver_new(const struct rle_config *const conf)
+struct rle_receiver * rle_receiver_new(const struct rle_config *const conf)
 {
 	struct rle_receiver *receiver = NULL;
-	size_t iterator;
+	size_t i;
 
 	if (!rle_config_check(conf)) {
-		PRINT_RLE_ERROR("failed to created RLE receiver: invalid configuration");
+		RLE_ERR("failed to created RLE receiver: invalid configuration");
 		goto error;
 	}
 
 	receiver = (struct rle_receiver *)MALLOC(sizeof(struct rle_receiver));
 	if (!receiver) {
-		PRINT_RLE_ERROR("allocating receiver module failed");
+		RLE_ERR("allocating receiver module failed");
 		goto error;
 	}
 
 	memcpy(&receiver->conf, conf, sizeof(struct rle_config));
 
-	memset(receiver->rle_ctx_man, 0,
-	       RLE_MAX_FRAG_NUMBER * sizeof(struct rle_ctx_management));
-	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-		struct rle_ctx_management *const ctx_man = &receiver->rle_ctx_man[iterator];
+	memset(receiver->rle_ctx_man, 0, RLE_MAX_FRAG_NUMBER * sizeof(struct rle_ctx_mngt));
+	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+		struct rle_ctx_mngt *const ctx_man = &receiver->rle_ctx_man[i];
 		if (rle_ctx_init_rasm_buf(ctx_man) != C_OK) {
-			PRINT_RLE_ERROR("failed to allocate memory for reassembly context with "
-			                "ID %zu\n", iterator);
+			RLE_ERR("failed to allocate memory for reassembly context with ID %zu", i);
 			goto free_ctxts;
 		}
-		ctx_man->frag_id = iterator;
+		ctx_man->frag_id = i;
 		rle_ctx_set_seq_nb(ctx_man, 0);
-		receiver->is_ctx_seqnum_init[iterator] = false;
+		receiver->is_ctx_seqnum_init[i] = false;
 	}
 
 	receiver->free_ctx = 0;
@@ -138,8 +136,8 @@ struct rle_receiver *rle_receiver_new(const struct rle_config *const conf)
 	return receiver;
 
 free_ctxts:
-	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-		struct rle_ctx_management *const ctx_man = &receiver->rle_ctx_man[iterator];
+	for (i = 0; i < RLE_MAX_FRAG_NUMBER; i++) {
+		struct rle_ctx_mngt *const ctx_man = &receiver->rle_ctx_man[i];
 		if (ctx_man->buff != NULL) {
 			rle_ctx_destroy_rasm_buf(ctx_man);
 		}
@@ -151,7 +149,7 @@ error:
 
 void rle_receiver_destroy(struct rle_receiver **const receiver)
 {
-	size_t iterator;
+	size_t i;
 
 	if (!receiver) {
 		/* Nothing to do. */
@@ -163,8 +161,8 @@ void rle_receiver_destroy(struct rle_receiver **const receiver)
 		goto out;
 	}
 
-	for (iterator = 0; iterator < RLE_MAX_FRAG_NUMBER; ++iterator) {
-		struct rle_ctx_management *const ctx_man = &(*receiver)->rle_ctx_man[iterator];
+	for (i = 0; i < RLE_MAX_FRAG_NUMBER; ++i) {
+		struct rle_ctx_mngt *const ctx_man = &(*receiver)->rle_ctx_man[i];
 		rle_ctx_destroy_rasm_buf(ctx_man);
 	}
 
@@ -193,8 +191,6 @@ int rle_receiver_deencap_data(struct rle_receiver *_this,
 	gettimeofday(&tv_start, NULL);
 #endif
 
-	PRINT_RLE_DEBUG("");
-
 	assert(index_ctx != NULL);
 
 	*index_ctx = -1;
@@ -205,27 +201,23 @@ int rle_receiver_deencap_data(struct rle_receiver *_this,
 	/* retrieve frag id if its a fragmented packet to append data to the * right frag id context
 	 * (SE bits)
 	 */
-	frag_type = rle_ppdu_get_fragment_type((const rle_ppdu_header_t *)ppdu);
+	frag_type = rle_ppdu_get_fragment_type((const rle_ppdu_hdr_t *)ppdu);
 
 	switch (frag_type) {
 	case RLE_PDU_COMPLETE:
 		ret = reassembly_comp_ppdu(_this, ppdu, ppdu_length, potential_sdu);
 		break;
-
 	case RLE_PDU_START_FRAG:
 		ret = reassembly_start_ppdu(_this, ppdu, ppdu_length, index_ctx);
 		break;
-
 	case RLE_PDU_CONT_FRAG:
 		ret = reassembly_cont_ppdu(_this, ppdu, ppdu_length, index_ctx);
 		break;
-
 	case RLE_PDU_END_FRAG:
 		ret = reassembly_end_ppdu(_this, ppdu, ppdu_length, index_ctx, potential_sdu);
 		break;
-
 	default:
-		PRINT_RLE_ERROR("Unhandled fragment type '%i'.", frag_type);
+		RLE_ERR("Unhandled fragment type '%i'.", frag_type);
 		assert(0);
 		break;
 	}
@@ -234,7 +226,7 @@ int rle_receiver_deencap_data(struct rle_receiver *_this,
 	gettimeofday(&tv_end, NULL);
 	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
 	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
-	PRINT_RLE_DEBUG("duration [%04ld.%06ld].", tv_delta.tv_sec, tv_delta.tv_usec);
+	RLE_DEBUG("duration [%04ld.%06ld].", tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
 	return ret;
@@ -250,14 +242,13 @@ size_t rle_receiver_stats_get_queue_size(const struct rle_receiver *const receiv
                                          const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	const struct rle_ctx_management *ctx_man = NULL;
+	const struct rle_ctx_mngt *ctx_man = NULL;
 
-	if (get_receiver_context(receiver, fragment_id,
-	                         (const struct rle_ctx_management **const)&ctx_man)) {
+	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto out;
 	}
 
-	stat = rasm_buf_get_reassembled_sdu_length((rle_rasm_buf_t *)ctx_man->buff);
+	stat = rasm_buf_get_reassembled_sdu_len((rle_rasm_buf_t *)ctx_man->buff);
 
 out:
 
@@ -268,7 +259,7 @@ uint64_t rle_receiver_stats_get_counter_sdus_received(const struct rle_receiver 
                                                       const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	const struct rle_ctx_management *ctx_man = NULL;
+	const struct rle_ctx_mngt *ctx_man = NULL;
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
@@ -286,7 +277,7 @@ uint64_t rle_receiver_stats_get_counter_sdus_reassembled(const struct rle_receiv
                                                          const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	const struct rle_ctx_management *ctx_man = NULL;
+	const struct rle_ctx_mngt *ctx_man = NULL;
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
@@ -303,7 +294,7 @@ uint64_t rle_receiver_stats_get_counter_sdus_dropped(const struct rle_receiver *
                                                      const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	const struct rle_ctx_management *ctx_man = NULL;
+	const struct rle_ctx_mngt *ctx_man = NULL;
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
@@ -320,7 +311,7 @@ uint64_t rle_receiver_stats_get_counter_sdus_lost(const struct rle_receiver *con
                                                   const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	const struct rle_ctx_management *ctx_man = NULL;
+	const struct rle_ctx_mngt *ctx_man = NULL;
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
@@ -337,7 +328,7 @@ uint64_t rle_receiver_stats_get_counter_bytes_received(const struct rle_receiver
                                                        const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	const struct rle_ctx_management *ctx_man = NULL;
+	const struct rle_ctx_mngt *ctx_man = NULL;
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
@@ -354,7 +345,7 @@ uint64_t rle_receiver_stats_get_counter_bytes_reassembled(const struct rle_recei
                                                           const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	const struct rle_ctx_management *ctx_man = NULL;
+	const struct rle_ctx_mngt *ctx_man = NULL;
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
@@ -371,7 +362,7 @@ uint64_t rle_receiver_stats_get_counter_bytes_dropped(const struct rle_receiver 
                                                       const uint8_t fragment_id)
 {
 	size_t stat = 0;
-	const struct rle_ctx_management *ctx_man = NULL;
+	const struct rle_ctx_mngt *ctx_man = NULL;
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
@@ -388,7 +379,7 @@ int rle_receiver_stats_get_counters(const struct rle_receiver *const receiver,
                                     struct rle_receiver_stats *const stats)
 {
 	int status = 1;
-	const struct rle_ctx_management *ctx_man = NULL;
+	const struct rle_ctx_mngt *ctx_man = NULL;
 
 	if (get_receiver_context(receiver, fragment_id, &ctx_man)) {
 		goto error;
@@ -415,10 +406,10 @@ error:
 void rle_receiver_stats_reset_counters(struct rle_receiver *const receiver,
                                        const uint8_t fragment_id)
 {
-	struct rle_ctx_management *ctx_man = NULL;
+	struct rle_ctx_mngt *ctx_man = NULL;
 
 	if (get_receiver_context(receiver, fragment_id,
-	                         (const struct rle_ctx_management **)&ctx_man)) {
+	                         (const struct rle_ctx_mngt **)&ctx_man)) {
 		goto error;
 	}
 

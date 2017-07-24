@@ -52,7 +52,7 @@
  *
  *  @ingroup
  */
-int encap_encapsulate_pdu(struct rle_ctx_management *rle_ctx,
+int encap_encapsulate_pdu(struct rle_ctx_mngt *rle_ctx,
                           struct rle_config *rle_conf,
                           void *data_buffer, size_t data_length,
                           uint16_t protocol_type);

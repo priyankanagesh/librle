@@ -61,18 +61,12 @@
 
 static int is_frag_ctx_free(struct rle_transmitter *const _this, const size_t ctx_index)
 {
-	PRINT_RLE_DEBUG("");
-
 	return rle_ctx_is_free(_this->free_ctx, ctx_index);
 }
 
 static void set_nonfree_frag_ctx(struct rle_transmitter *const _this, const size_t ctx_index)
 {
-	PRINT_RLE_DEBUG("");
-
 	rle_ctx_set_nonfree(&_this->free_ctx, ctx_index);
-
-	return;
 }
 
 
@@ -86,7 +80,7 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 {
 	enum rle_encap_status status = RLE_ENCAP_ERR;
 	enum rle_encap_status ret_encap;
-	struct rle_ctx_management *rle_ctx;
+	struct rle_ctx_mngt *rle_ctx;
 	rle_frag_buf_t *frag_buf;
 	int ret;
 
@@ -105,8 +99,7 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 	if (sdu == NULL || frag_id >= RLE_MAX_FRAG_NUMBER) {
 		goto out;
 	}
-	PRINT_RLE_DEBUG("encapsulate one %zu-byte SDU in context with ID %u",
-                    sdu->size, frag_id);
+	RLE_DEBUG("encapsulate one %zu-byte SDU in context with ID %u", sdu->size, frag_id);
 
 	rle_ctx = &transmitter->rle_ctx_man[frag_id];
 	frag_buf = (rle_frag_buf_t *)rle_ctx->buff;
@@ -118,7 +111,7 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 	}
 
 	if (is_frag_ctx_free(transmitter, frag_id) == false) {
-		PRINT_RLE_ERROR("frag id %d is not free", frag_id);
+		RLE_ERR("frag id %d is not free", frag_id);
 		goto out;
 	}
 
@@ -141,12 +134,12 @@ enum rle_encap_status rle_encapsulate(struct rle_transmitter *const transmitter,
 	gettimeofday(&tv_end, NULL);
 	tv_delta.tv_sec = tv_end.tv_sec - tv_start.tv_sec;
 	tv_delta.tv_usec = tv_end.tv_usec - tv_start.tv_usec;
-	PRINT_RLE_DEBUG("duration [%04ld.%06ld]\n", tv_delta.tv_sec, tv_delta.tv_usec);
+	RLE_DEBUG("duration [%04ld.%06ld]\n", tv_delta.tv_sec, tv_delta.tv_usec);
 #endif
 
 	status = RLE_ENCAP_OK;
-	PRINT_RLE_DEBUG("%zu-byte SDU successfully encapsulated in context with ID %u",
-                    sdu->size, frag_id);
+	RLE_DEBUG("%zu-byte SDU successfully encapsulated in context with ID %u",
+	          sdu->size, frag_id);
 
 out:
 	return status;
@@ -156,8 +149,6 @@ enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transm
                                             struct rle_frag_buf *const frag_buf)
 {
 	enum rle_encap_status status = RLE_ENCAP_ERR;
-
-	PRINT_RLE_DEBUG("");
 
 	if (!transmitter) {
 		status = RLE_ENCAP_ERR_NULL_TRMT;
@@ -179,7 +170,7 @@ enum rle_encap_status rle_encap_contextless(struct rle_transmitter *const transm
 		frag_buf->crc = compute_crc32(&frag_buf->sdu_info);
 	}
 
-	push_alpdu_header(frag_buf, &transmitter->conf);
+	push_alpdu_hdr(frag_buf, &transmitter->conf);
 	status = RLE_ENCAP_OK;
 
 out:

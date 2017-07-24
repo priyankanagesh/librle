@@ -62,7 +62,7 @@
  *
  *  @ingroup
  */
-int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
+int fragmentation_fragment_pdu(struct rle_ctx_mngt *rle_ctx,
                                struct rle_config *rle_conf,
                                void *burst_payload_buffer,
                                size_t burst_payload_length,
@@ -84,7 +84,7 @@ int fragmentation_fragment_pdu(struct rle_ctx_management *rle_ctx,
  *
  *  @ingroup
  */
-int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
+int fragmentation_copy_complete_frag(struct rle_ctx_mngt *rle_ctx,
                                      struct rle_config *rle_conf,
                                      void *burst_payload_buffer,
                                      size_t burst_payload_length);
@@ -106,7 +106,7 @@ int fragmentation_copy_complete_frag(struct rle_ctx_management *rle_ctx,
  *
  *  @ingroup
  */
-int fragmentation_add_header(struct rle_ctx_management *rle_ctx,
+int fragmentation_add_header(struct rle_ctx_mngt *rle_ctx,
                              struct rle_config *rle_conf,
                              void *burst_payload_buffer,
                              size_t burst_payload_length,
@@ -127,7 +127,7 @@ int fragmentation_add_header(struct rle_ctx_management *rle_ctx,
  *
  *  @ingroup
  */
-int fragmentation_modify_header(struct rle_ctx_management *rle_ctx, void *burst_payload_buffer,
+int fragmentation_modify_header(struct rle_ctx_mngt *rle_ctx, void *burst_payload_buffer,
                                 size_t burst_payload_length);
 
 /**
@@ -144,7 +144,7 @@ int fragmentation_modify_header(struct rle_ctx_management *rle_ctx, void *burst_
  *
  *  @ingroup
  */
-int fragmentation_add_trailer(struct rle_ctx_management *rle_ctx, void *burst_payload_buffer,
+int fragmentation_add_trailer(struct rle_ctx_mngt *rle_ctx, void *burst_payload_buffer,
                               size_t burst_payload_length);
 
 /**
@@ -164,7 +164,7 @@ int fragmentation_add_trailer(struct rle_ctx_management *rle_ctx, void *burst_pa
  *
  *  @ingroup
  */
-int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
+int fragmentation_create_frag(struct rle_ctx_mngt *rle_ctx,
                               struct rle_config *rle_conf,
                               void *burst_payload_buffer,
                               size_t burst_payload_length,
@@ -184,6 +184,6 @@ int fragmentation_create_frag(struct rle_ctx_management *rle_ctx,
  *
  *  @ingroup
  */
-int fragmentation_is_needed(struct rle_ctx_management *rle_ctx, size_t burst_payload_length);
+int fragmentation_is_needed(struct rle_ctx_mngt *rle_ctx, size_t burst_payload_length);
 
 #endif /* __FRAGMENTATION_H__ */

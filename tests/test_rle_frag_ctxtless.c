@@ -63,8 +63,8 @@ static int quick_encapsulation(struct rle_transmitter *const t,
 	int ret;
 
 	const struct rle_sdu sdu = {
-		.buffer        = (unsigned char *)payload_initializer,
-		.size          = sdu_len ? *sdu_len : DEFAULT_SDU_LEN,
+		.buffer = (unsigned char *)payload_initializer,
+		.size = sdu_len ? *sdu_len : DEFAULT_SDU_LEN,
 		.protocol_type = 0x1234,
 	};
 
@@ -82,7 +82,6 @@ static int quick_encapsulation(struct rle_transmitter *const t,
 	}
 
 	ret_encap = rle_encap_contextless(t, f_buff);
-
 	if (ret_encap == RLE_ENCAP_OK) {
 		output = true;
 	}
@@ -124,12 +123,12 @@ bool test_frag_ctxtless_null_transmitter(void)
 	}
 
 	if (quick_encapsulation(transmitter, f_buff, NULL) != true) {
-		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with null transmitter.");
+		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with "
+		            "null transmitter.");
 		goto out;
 	}
 
 	ret = rle_frag_contextless(NULL, f_buff, &ppdu, &ppdu_len);
-
 	if (ret == RLE_FRAG_ERR_NULL_TRMT) {
 		output = true;
 	}
@@ -305,7 +304,8 @@ bool test_frag_ctxtless_null_ppdu(void)
 	}
 
 	if (quick_encapsulation(transmitter, f_buff, NULL) != true) {
-		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with null PPDU length.");
+		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with null "
+		            "PPDU length.");
 		goto out;
 	}
 
@@ -368,7 +368,8 @@ bool test_frag_ctxtless_no_len(void)
 	}
 
 	if (quick_encapsulation(transmitter, f_buff, NULL) != true) {
-		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with null PPDU length.");
+		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with null "
+		            "PPDU length.");
 		goto out;
 	}
 
@@ -492,20 +493,21 @@ bool test_frag_ctxtless_too_big(void)
 
 	transmitter = rle_transmitter_new(&conf);
 	if (!transmitter) {
-		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with fragmentation too big.");
+		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with fragmentation "
+		            "too big.");
 		goto out;
 	}
 
 	if (quick_encapsulation(transmitter, f_buff, &sdu_len_good) != true) {
-		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with fragmentation too big.");
+		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with fragmentation "
+		            "too big.");
 		goto out;
 	}
 
 	ret = rle_frag_contextless(transmitter, f_buff, &ppdu, &ppdu_len_good);
-
 	if (ret != RLE_FRAG_OK) {
-		PRINT_ERROR("Unable to fragment good length. Cannot test fragmentation with fragmentation "
-		            "too big.");
+		PRINT_ERROR("Unable to fragment good length. Cannot test fragmentation with "
+		            "fragmentation too big.");
 		goto out;
 	}
 
@@ -513,12 +515,14 @@ bool test_frag_ctxtless_too_big(void)
 
 	transmitter = rle_transmitter_new(&conf);
 	if (!transmitter) {
-		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with fragmentation too big.");
+		PRINT_ERROR("Transmitter is NULL. Cannot test fragmentation with fragmentation "
+		            "too big.");
 		goto out;
 	}
 
 	if (quick_encapsulation(transmitter, f_buff, &sdu_len_wrong) != true) {
-		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with fragmentation too big.");
+		PRINT_ERROR("Unable to encapsulate. Cannot test fragmentation with fragmentation "
+		            "too big.");
 		goto out;
 	}
 

@@ -72,18 +72,17 @@ static bool test_request_rle_header_overhead(const enum rle_fpdu_types fpdu_type
 
 static char * get_fpdu_type(const enum rle_fpdu_types fpdu_type)
 {
-	switch (fpdu_type)
-	{
-		case RLE_LOGON_FPDU:
-			return "Logon";
-		case RLE_CTRL_FPDU:
-			return "Control";
-		case RLE_TRAFFIC_FPDU:
-			return "Traffic";
-		case RLE_TRAFFIC_CTRL_FPDU:
-			return "Traffic control";
-		default:
-			return "Unknown";
+	switch (fpdu_type) {
+	case RLE_LOGON_FPDU:
+		return "Logon";
+	case RLE_CTRL_FPDU:
+		return "Control";
+	case RLE_TRAFFIC_FPDU:
+		return "Traffic";
+	case RLE_TRAFFIC_CTRL_FPDU:
+		return "Traffic control";
+	default:
+		return "Unknown";
 	}
 }
 
@@ -100,10 +99,8 @@ static bool test_request_rle_header_overhead(const enum rle_fpdu_types fpdu_type
 
 	header_size_status = rle_get_header_size(conf, fpdu_type, &overhead_size);
 
-	if (header_size_status == RLE_HEADER_SIZE_OK)
-	{
-		if (overhead_size == expected_size)
-		{
+	if (header_size_status == RLE_HEADER_SIZE_OK) {
+		if (overhead_size == expected_size) {
 			output = true;
 		}
 	}
@@ -133,9 +130,8 @@ bool test_request_rle_header_overhead_traffic(void)
 
 	header_size_status = rle_get_header_size(&conf, RLE_TRAFFIC_FPDU, &overhead_size);
 
-	if (header_size_status == RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC)
-	{
-			output = true;
+	if (header_size_status == RLE_HEADER_SIZE_ERR_NON_DETERMINISTIC) {
+		output = true;
 	}
 
 	PRINT_TEST_STATUS(output);
@@ -252,8 +248,7 @@ bool test_request_rle_header_overhead_all(void)
 
 	const struct test_request *const *test_request;
 
-	for (test_request = test_requests; *test_request; ++test_request)
-	{
+	for (test_request = test_requests; *test_request; ++test_request) {
 		output &= test_request_rle_header_overhead((**test_request).fpdu_type,
 		                                           (**test_request).expected_size,
 		                                           (**test_request).conf);
@@ -296,8 +291,8 @@ bool test_rle_allocation_transmitter(void)
 	t = rle_transmitter_new(&bad_conf);
 
 	if (t) {
-		PRINT_ERROR("Transmitter should not be allocated with implicit_ppdu_label_size 0x%02x",
-		            bad_conf.implicit_ppdu_label_size);
+		PRINT_ERROR("Transmitter should not be allocated with implicit_ppdu_label_size "
+		            "0x%02x", bad_conf.implicit_ppdu_label_size);
 		goto out;
 	}
 
@@ -403,7 +398,7 @@ bool test_rle_allocation_receiver(void)
 
 	if (r) {
 		PRINT_ERROR("Receiver should not be allocated with implicit_ppdu_label_size 0x%02x",
-						bad_conf.implicit_ppdu_label_size);
+		            bad_conf.implicit_ppdu_label_size);
 		goto out;
 	}
 

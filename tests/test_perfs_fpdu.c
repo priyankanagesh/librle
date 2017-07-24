@@ -56,7 +56,7 @@
 
 /** A simple minimum macro */
 #define min(x, y) \
-        (((x) < (y)) ? (x) : (y))
+	(((x) < (y)) ? (x) : (y))
 
 /** Max FPDU sizes for fragmentation in the test. */
 #define MAX_FPDU_SIZE 599
@@ -84,17 +84,22 @@ static size_t payload_label_len = DEFAULT_PAYLOAD_LABEL_LEN;
 static void usage(void);
 static void test_interrupt(int signum);
 static int test_decap(const char *const device_name);
-static int decap(struct rle_receiver *const receiver, const size_t packet_length,
-                 const unsigned char *const packet, const size_t link_len_src,
+static int decap(struct rle_receiver *const receiver,
+                 const size_t packet_length,
+                 const unsigned char *const packet,
+                 const size_t link_len_src,
                  size_t *const delta_sdus);
-static char *str_decap_error(const enum rle_decap_status status);
+static char * str_decap_error(const enum rle_decap_status status);
 
 /** Whether the application runs in verbose mode or not */
 static int is_verbose = 0;
 
-#define printf_verbose(x ...) do { \
-		if (is_verbose) { printf(x); } \
-} while (0)
+#define TRACE(x ...) \
+	do { \
+		if (is_verbose) { \
+			printf(x); \
+		} \
+	} while (0)
 
 /** Whether to handle malformed packets as fatal for test or not */
 static int ignore_malformed = 0;
@@ -164,8 +169,8 @@ int main(int argc, char *argv[])
 			printf("payload label length value `%s'\n", optarg);
 			payload_label_len = atoi(optarg);
 			if (payload_label_len > MAX_PAYLOAD_LABEL_LEN) {
-				printf("ERROR: %zu Payload label length is too big. Maximum = %d octets.\n",
-				       payload_label_len, MAX_PAYLOAD_LABEL_LEN);
+				printf("ERROR: %zu Payload label length is too big. Maximum = %d "
+				       "octets\n", payload_label_len, MAX_PAYLOAD_LABEL_LEN);
 				goto error;
 			}
 			break;
@@ -256,16 +261,16 @@ static void usage(void)
 static void test_interrupt(int signum)
 {
 	/* end the program with next captured packet */
-	printf_verbose("signal %d catched\n", signum);
+	TRACE("signal %d catched\n", signum);
 	stop_program = 1;
 
 	/* for SIGSEGV/SIGABRT, close the PCAP dumps, print the last debug traces,
 	 * then kill the program */
 	if (signum == SIGSEGV || signum == SIGABRT) {
 		if (signum == SIGSEGV) {
-			printf_verbose("a segfault occurred at packet #%zu\n", packets_counter);
+			TRACE("a segfault occurred at packet #%zu\n", packets_counter);
 		} else {
-			printf_verbose("an assertion failed at packet #%zu\n", packets_counter);
+			TRACE("an assertion failed at packet #%zu\n", packets_counter);
 		}
 
 		if (signum == SIGSEGV) {
@@ -295,8 +300,10 @@ static void test_interrupt(int signum)
  *                          -1 if an error occurs while transmitting
  *                          -3 if the link layer is not Ethernet
  */
-static int decap(struct rle_receiver *const receiver, const size_t packet_length,
-                 const unsigned char *const packet, const size_t link_len_src,
+static int decap(struct rle_receiver *const receiver,
+                 const size_t packet_length,
+                 const unsigned char *const packet,
+                 const size_t link_len_src,
                  size_t *const delta_sdus)
 {
 	enum rle_decap_status ret_decap = RLE_DECAP_ERR;
@@ -307,28 +314,28 @@ static int decap(struct rle_receiver *const receiver, const size_t packet_length
 	unsigned char *fpdu = (unsigned char *)packet + link_len_src + IP_HDR_LEN;
 	const size_t fpdu_len = packet_length - link_len_src - IP_HDR_LEN;
 
-	printf_verbose("=== %zu-byte FPDU\n", fpdu_len);
+	TRACE("=== %zu-byte FPDU\n", fpdu_len);
 
 	ret_decap = rle_decapsulate(receiver, fpdu, fpdu_len, sdus_out, MAX_SDUS_NB, delta_sdus, pl,
 	                            payload_label_len);
 
 	switch (ret_decap) {
-		case RLE_DECAP_OK:
-			printf_verbose("=== RLE decapsulation: success\n");
-			break;
-		case RLE_DECAP_ERR_NULL_RCVR:
-		case RLE_DECAP_ERR_INV_FPDU:
-		case RLE_DECAP_ERR_INV_PL:
-		case RLE_DECAP_ERR_INV_SDUS:
-		default:
-			printf_verbose("=== RLE decapsulation: %s\n", str_decap_error(ret_decap));
-			status = 2;
-			goto exit;
+	case RLE_DECAP_OK:
+		TRACE("=== RLE decapsulation: success\n");
+		break;
+	case RLE_DECAP_ERR_NULL_RCVR:
+	case RLE_DECAP_ERR_INV_FPDU:
+	case RLE_DECAP_ERR_INV_PL:
+	case RLE_DECAP_ERR_INV_SDUS:
+	default:
+		TRACE("=== RLE decapsulation: %s\n", str_decap_error(ret_decap));
+		status = 2;
+		goto exit;
 	}
 
 exit:
 
-	printf_verbose("\n");
+	TRACE("\n");
 
 	return status;
 }
@@ -404,16 +411,17 @@ static int test_decap(const char *const device_name)
 
 	printf("=== test: \n");
 	printf("===\timplicit ptype:      0x%02x\n", conf.implicit_protocol_type);
-	printf("===\tALPDU protection:    %s\n",     conf.allow_alpdu_sequence_number ?        "SeqNo" : "CRC");
-	printf("===\tptype compression:   %s\n",     conf.use_compressed_ptype ? "On"  : "Off");
-	printf("===\tptype omission:      %s\n",     conf.allow_ptype_omission ?   "On"  : "Off");
+	printf("===\tALPDU protection:    %s\n",
+	       conf.allow_alpdu_sequence_number ?        "SeqNo" : "CRC");
+	printf("===\tptype compression:   %s\n", conf.use_compressed_ptype ? "On"  : "Off");
+	printf("===\tptype omission:      %s\n", conf.allow_ptype_omission ?   "On"  : "Off");
 
 	stop_program = 0;
 
 	printf("\nTest starting...\n");
 
 	/* Initialize SDUs */
-	for (it = 0; it < sizeof(sdus_out) / sizeof*(sdus_out); ++it) {
+	for (it = 0; it < sizeof(sdus_out) / sizeof *(sdus_out); ++it) {
 		sdus_out[it].buffer = sdu_buffers[it];
 	}
 
@@ -430,9 +438,9 @@ static int test_decap(const char *const device_name)
 		++packets_counter;
 		packet_length = header.len;
 
-		printf_verbose("FPDU #%zu\n", packets_counter);
+		TRACE("FPDU #%zu\n", packets_counter);
 
-		ret = decap(receiver, (const size_t)packet_length, (const unsigned char *const)packet,
+		ret = decap(receiver, packet_length, (const unsigned char *const)packet,
 		            link_len_src, &delta_sdus_processed);
 
 		sdus_processed += delta_sdus_processed;
@@ -464,12 +472,18 @@ static int test_decap(const char *const device_name)
 				goto close_input;
 			}
 			printf("===\tFrag ID %u\n", frag_id);
-			printf("===\treceiver received:          %" PRIu64 "\n", stats.sdus_received);
-			printf("===\treceiver reassembled:       %" PRIu64 "\n", stats.sdus_reassembled);
-			printf("===\treceiver dropped:           %" PRIu64 "\n", stats.sdus_dropped);
-			printf("===\treceiver bytes received:    %" PRIu64 "\n", stats.bytes_received);
-			printf("===\treceiver bytes reassembled: %" PRIu64 "\n", stats.bytes_reassembled);
-			printf("===\treceiver bytes dropped:     %" PRIu64 "\n", stats.bytes_dropped);
+			printf("===\treceiver received:          %" PRIu64 "\n",
+			       stats.sdus_received);
+			printf("===\treceiver reassembled:       %" PRIu64 "\n",
+			       stats.sdus_reassembled);
+			printf("===\treceiver dropped:           %" PRIu64 "\n",
+			       stats.sdus_dropped);
+			printf("===\treceiver bytes received:    %" PRIu64 "\n",
+			       stats.bytes_received);
+			printf("===\treceiver bytes reassembled: %" PRIu64 "\n",
+			       stats.bytes_reassembled);
+			printf("===\treceiver bytes dropped:     %" PRIu64 "\n",
+			       stats.bytes_dropped);
 			printf("\n");
 		}
 	}
@@ -509,7 +523,7 @@ error:
  *
  * @return    a printable decap error.
  */
-static char *str_decap_error(const enum rle_decap_status status)
+static char * str_decap_error(const enum rle_decap_status status)
 {
 	switch (status) {
 	case RLE_DECAP_OK:
@@ -519,7 +533,8 @@ static char *str_decap_error(const enum rle_decap_status status)
 	case RLE_DECAP_ERR_NULL_RCVR:
 		return "[RLE_DECAP_ERR_NULL_RCVR] Error. The receiver is NULL.";
 	case RLE_DECAP_ERR_ALL_DROP:
-		return "[RLE_DECAP_ERR_ALL_DROP] Error. All current SDUs were dropped. Some may be lost.";
+		return "[RLE_DECAP_ERR_ALL_DROP] Error. All current SDUs were dropped. "
+		       "Some may be lost.";
 	case RLE_DECAP_ERR_SOME_DROP:
 		return "[RLE_DECAP_ERR_SOME_DROP] Error. Some SDUs were dropped. Some may be lost.";
 	case RLE_DECAP_ERR_INV_FPDU:
@@ -527,7 +542,8 @@ static char *str_decap_error(const enum rle_decap_status status)
 	case RLE_DECAP_ERR_INV_SDUS:
 		return "[RLE_DECAP_ERR_INV_SDUS] Error. Given preallocated SDUs array is invalid.";
 	case RLE_DECAP_ERR_INV_PL:
-		return "[RLE_DECAP_ERR_INV_PL] Error. Given preallocated payload label array is invalid.";
+		return "[RLE_DECAP_ERR_INV_PL] Error. Given preallocated payload label array is "
+		       "invalid";
 	default:
 		return "[Unknwon RLE_DECAP status]";
 	}

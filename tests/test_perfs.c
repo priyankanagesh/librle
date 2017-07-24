@@ -56,7 +56,7 @@
 
 /** A simple minimum macro */
 #define min(x, y) \
-        (((x) < (y)) ? (x) : (y))
+	(((x) < (y)) ? (x) : (y))
 
 /** Min, max and default burst sizes for fragmentation in the test. */
 #define MIN_BURST_SIZE 14
@@ -68,21 +68,28 @@ static void usage(void);
 static void test_interrupt(int signum);
 static void dump_buffer(const unsigned char *const buffer, const size_t buffer_length);
 static int test_encap(const char *const device_name, const size_t burst_size);
-static void send_fpdu(unsigned char *const fpdu, const size_t fpdu_max_size,
-                      size_t *const fpdu_current_pos, size_t *const fpdu_remaining_size,
+static void send_fpdu(unsigned char *const fpdu,
+                      const size_t fpdu_max_size,
+                      size_t *const fpdu_cur_pos,
+                      size_t *const fpdu_remain_size,
                       size_t *const fpdus_nb);
-static int encap(struct rle_transmitter *const transmitter, const size_t fpdu_max_size,
-                 size_t *const fpdu_current_pos, unsigned char *const fpdu, const size_t packet_length,
-                 const unsigned char *const packet, const size_t link_len_src,
-                 const size_t burst_size, size_t *const fpdus_nb);
-static char *str_encap_error(const enum rle_encap_status status);
-static char *str_frag_error(const enum rle_frag_status status);
-static char *str_pack_error(const enum rle_pack_status status);
+static int encap(struct rle_transmitter *const transmitter,
+                 const size_t fpdu_max_size,
+                 size_t *const fpdu_cur_pos,
+                 unsigned char *const fpdu,
+                 const size_t packet_length,
+                 const unsigned char *const packet,
+                 const size_t link_len_src,
+                 const size_t burst_size,
+                 size_t *const fpdus_nb);
+static char * str_encap_error(const enum rle_encap_status status);
+static char * str_frag_error(const enum rle_frag_status status);
+static char * str_pack_error(const enum rle_pack_status status);
 
 /** Whether the application runs in verbose mode or not */
 static int is_verbose = 0;
 
-#define printf_verbose(x ...) do { \
+#define TRACE(x ...) do { \
 		if (is_verbose) { printf(x); } \
 } while (0)
 
@@ -248,16 +255,16 @@ static void usage(void)
 static void test_interrupt(int signum)
 {
 	/* end the program with next captured packet */
-	printf_verbose("signal %d catched\n", signum);
+	TRACE("signal %d catched\n", signum);
 	stop_program = 1;
 
 	/* for SIGSEGV/SIGABRT, close the PCAP dumps, print the last debug traces,
 	 * then kill the program */
 	if (signum == SIGSEGV || signum == SIGABRT) {
 		if (signum == SIGSEGV) {
-			printf_verbose("a segfault occurred at packet #%zu\n", packets_counter);
+			TRACE("a segfault occurred at packet #%zu\n", packets_counter);
 		} else {
-			printf_verbose("an assertion failed at packet #%zu\n", packets_counter);
+			TRACE("an assertion failed at packet #%zu\n", packets_counter);
 		}
 
 		if (signum == SIGSEGV) {
@@ -283,9 +290,9 @@ static void dump_buffer(const unsigned char *const buffer, const size_t buffer_l
 	size_t buffer_it;
 
 	for (buffer_it = 0; buffer_it < buffer_length; ++buffer_it) {
-		printf_verbose("%02x%s", buffer[buffer_it], buffer_it % 16 == 15 ? "\n" : " ");
+		TRACE("%02x%s", buffer[buffer_it], buffer_it % 16 == 15 ? "\n" : " ");
 	}
-	printf_verbose("\n");
+	TRACE("\n");
 
 	return;
 }
@@ -297,27 +304,28 @@ static void dump_buffer(const unsigned char *const buffer, const size_t buffer_l
  *
  * @param[in,out]  fpdu                 The FPDU to send. Reseted after sending.
  * @param[in]      fpdu_max_size        Max size of an FPDU.
- * @param[in,out]  fpdu_current_pos     Current position in the FPDU. Reseted after sending.
- * @param[in,out]  fpdu_remaining_size  Remaining size in the FPDU. Reseted after sending.
+ * @param[in,out]  fpdu_cur_pos     Current position in the FPDU. Reseted after sending.
+ * @param[in,out]  fpdu_remain_size  Remaining size in the FPDU. Reseted after sending.
  * @param[in,out]  fpdus_nb             Number of sent FPDU.
  */
-static void send_fpdu(unsigned char *const fpdu, const size_t fpdu_max_size,
-                      size_t *const fpdu_current_pos, size_t *const fpdu_remaining_size,
+static void send_fpdu(unsigned char *const fpdu,
+                      const size_t fpdu_max_size,
+                      size_t *const fpdu_cur_pos,
+                      size_t *const fpdu_remain_size,
                       size_t *const fpdus_nb)
 {
 	/* Padding */
-	rle_pad(fpdu, *fpdu_current_pos, *fpdu_remaining_size);
+	rle_pad(fpdu, *fpdu_cur_pos, *fpdu_remain_size);
 
-	printf_verbose("=== %zu-octets FPDU ready to be sent\n", fpdu_max_size);
+	TRACE("=== %zu-octets FPDU ready to be sent\n", fpdu_max_size);
 	dump_buffer(fpdu, fpdu_max_size);
-	printf_verbose("\n");
+	TRACE("\n");
 	++(*fpdus_nb);
 
 	/* Virtually send. */
-
 	memset((void *)fpdu, '\0', fpdu_max_size);
-	*fpdu_current_pos = 0;
-	*fpdu_remaining_size = fpdu_max_size;
+	*fpdu_cur_pos = 0;
+	*fpdu_remain_size = fpdu_max_size;
 
 	return;
 }
@@ -327,8 +335,8 @@ static void send_fpdu(unsigned char *const fpdu, const size_t fpdu_max_size,
  *
  * @param[in,out] transmitter       The transmitter to use.
  * @param[in]     fpdu_max_size     The maximum size of an FPDU
- * @param[in,out] fpdu_current_pos  The current position in the FPDU
- * @param[in,out] fpdu              A buffer to contain the FPDU, preallocated. May contains 
+ * @param[in,out] fpdu_cur_pos  The current position in the FPDU
+ * @param[in,out] fpdu              A buffer to contain the FPDU, preallocated. May contains
  *                                  fragments of SDUs between function call.
  * @param[in]     packet_length     Lenght of the packet to encapsulate.
  * @param[in]     packet            The packet to encapsulate (link layer included)
@@ -341,11 +349,15 @@ static void send_fpdu(unsigned char *const fpdu, const size_t fpdu_max_size,
  *                          -1 if an error occurs while transmitting
  *                          -3 if the link layer is not Ethernet
  */
-static int encap(struct rle_transmitter *const transmitter, const size_t fpdu_max_size,
-                 size_t *const fpdu_current_pos, unsigned char *const fpdu,
+static int encap(struct rle_transmitter *const transmitter,
+                 const size_t fpdu_max_size,
+                 size_t *const fpdu_cur_pos,
+                 unsigned char *const fpdu,
                  const size_t packet_length,
-                 const unsigned char *const packet, const size_t link_len_src,
-                 const size_t burst_size, size_t *const fpdus_nb)
+                 const unsigned char *const packet,
+                 const size_t link_len_src,
+                 const size_t burst_size,
+                 size_t *const fpdus_nb)
 {
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
 	enum rle_frag_status ret_frag = RLE_FRAG_ERR;
@@ -363,117 +375,118 @@ static int encap(struct rle_transmitter *const transmitter, const size_t fpdu_ma
 	sdu_in.size = packet_length - link_len_src;
 	sdu_in.protocol_type = ntohs(*(uint16_t *)((void *)(packet + (ETHER_HDR_LEN - 2))));
 
-	printf_verbose("=== %zu-byte SDU\n", sdu_in.size);
+	TRACE("=== %zu-byte SDU\n", sdu_in.size);
 	dump_buffer(sdu_in.buffer, sdu_in.size);
 
 	/* Encapsulate the IP packet into a RLE packet */
-	printf_verbose("=== RLE encapsulation: start\n");
+	TRACE("=== RLE encapsulation: start\n");
 	ret_encap = rle_encapsulate(transmitter, &sdu_in, frag_id);
 
 	switch (ret_encap) {
 	case RLE_ENCAP_OK:
-		printf_verbose("=== RLE encapsulation: success\n");
+		TRACE("=== RLE encapsulation: success\n");
 		break;
 	case RLE_ENCAP_ERR_NULL_TRMT:
 	case RLE_ENCAP_ERR_SDU_TOO_BIG:
-		printf_verbose("=== RLE encapsulation: misuse\n    %s\n", str_encap_error(ret_encap));
+		TRACE("=== RLE encapsulation: misuse\n    %s\n", str_encap_error(ret_encap));
 		status = -1;
 		goto exit;
 	case RLE_ENCAP_ERR:
 	default:
-		printf_verbose("=== RLE encapsulation: failure\n");
+		TRACE("=== RLE encapsulation: failure\n");
 		status = -1;
 		goto exit;
 	}
 
 	while (rle_transmitter_stats_get_queue_size(transmitter, frag_id) != 0) {
-		size_t fpdu_remaining_size = fpdu_max_size - *fpdu_current_pos;
-		printf_verbose("Remaining size : %zu\n", fpdu_remaining_size);
+		size_t fpdu_remain_size = fpdu_max_size - *fpdu_cur_pos;
+		TRACE("Remaining size : %zu\n", fpdu_remain_size);
 
 		unsigned char *ppdu;
 		size_t ppdu_length = 0;
 		size_t ppdu_needed;
 
-		/* If the FPDU already contains data, we try to make a PPDU small enough. If it is not 
-		 * possible to make a small PPDU, a regular one is made instead, and will be pack in a new
-		 * FPDU. The old FPDU then is padded and send. */
+		/* If the FPDU already contains data, we try to make a PPDU small enough.
+		 * If it is not possible to make a small PPDU, a regular one is made instead,
+		 * and will be pack in a new FPDU. The old FPDU then is padded and send. */
 
-		if (fpdu_remaining_size < burst_size) {
-			ppdu_needed = fpdu_remaining_size;
+		if (fpdu_remain_size < burst_size) {
+			ppdu_needed = fpdu_remain_size;
 		} else {
 			ppdu_needed = burst_size;
 		}
 
 		/* Fragmentation */
 		do {
-			printf_verbose("=== RLE fragmentation: start\n");
-			ret_frag = rle_fragment(transmitter, frag_id, ppdu_needed, &ppdu, &ppdu_length);
+			TRACE("=== RLE fragmentation: start\n");
+			ret_frag = rle_fragment(transmitter, frag_id, ppdu_needed,
+			                        &ppdu, &ppdu_length);
 
 			switch (ret_frag) {
 			case RLE_FRAG_OK:
-				printf_verbose("=== RLE fragmentation: success. "
-				               "burst_size: %zu, remaining alpdu: %zu.\n",
-				               ppdu_length,
-				               rle_transmitter_stats_get_queue_size(transmitter, frag_id));
-				printf_verbose("=== %zu-byte PPDU\n", ppdu_length);
+				TRACE("=== RLE fragmentation: success. burst_size: %zu, remaining "
+				      "alpdu: %zu.\n", ppdu_length,
+				      rle_transmitter_stats_get_queue_size(transmitter, frag_id));
+				TRACE("=== %zu-byte PPDU\n", ppdu_length);
 				dump_buffer(ppdu, ppdu_length);
 				break;
 			case RLE_FRAG_ERR_BURST_TOO_SMALL:
-				printf_verbose("=== RLE fragementation: burst size (%zu) too small. "
-				               "Retry fragmentation with max burst size (%zu)\n",
-				               ppdu_needed, burst_size);
+				TRACE("=== RLE fragementation: burst size (%zu) too small. "
+				      "Retry fragmentation with max burst size (%zu)\n",
+				      ppdu_needed, burst_size);
 				ppdu_needed = burst_size;
 				break;
 			case RLE_FRAG_ERR_NULL_TRMT:
 			case RLE_FRAG_ERR_INVALID_SIZE:
 			case RLE_FRAG_ERR_CONTEXT_IS_NULL:
-				printf_verbose("=== RLE fragmentation: misuse\n"
-				               "    %s\n", str_frag_error(ret_frag));
+				TRACE("=== RLE fragmentation: misuse\n"
+				      "    %s\n", str_frag_error(ret_frag));
 				status = -1;
 				goto exit;
 			case RLE_FRAG_ERR:
 			default:
-				printf_verbose("=== RLE fragmentation: failure\n");
+				TRACE("=== RLE fragmentation: failure\n");
 				status = -1;
 				goto exit;
 			}
-		} while(ret_frag == RLE_FRAG_ERR_BURST_TOO_SMALL);
+		} while (ret_frag == RLE_FRAG_ERR_BURST_TOO_SMALL);
 
 		/* Packing */
-		printf_verbose("=== RLE packing: start\n");
+		TRACE("=== RLE packing: start\n");
 		do {
-			ret_pack = rle_pack(ppdu, ppdu_length, label, label_length, fpdu, fpdu_current_pos, 
-					              &fpdu_remaining_size);
+			ret_pack = rle_pack(ppdu, ppdu_length, label, label_length,
+			                    fpdu, fpdu_cur_pos, &fpdu_remain_size);
 
 			switch (ret_pack) {
 			case RLE_PACK_OK:
-				printf_verbose("=== RLE packing: success\n");
-				if (fpdu_remaining_size != 0) {
-					printf_verbose("===> packed in %zu-byte FPDU (remains %zu bytes)\n",
-					               *fpdu_current_pos, fpdu_remaining_size);
+				TRACE("=== RLE packing: success\n");
+				if (fpdu_remain_size != 0) {
+					TRACE("===> packed in %zu-byte FPDU (remains %zu bytes)\n",
+					      *fpdu_cur_pos, fpdu_remain_size);
 				} else {
-					printf_verbose("=== RLE packing: FPDU Full.  %zu-octets FPDU ready to be sent\n",
-					               fpdu_max_size);
-					send_fpdu(fpdu, fpdu_max_size, fpdu_current_pos,
-					          &fpdu_remaining_size,
-					          fpdus_nb);
+					TRACE("=== RLE packing: FPDU Full.  %zu-octets FPDU ready "
+					      "to be sent\n", fpdu_max_size);
+					send_fpdu(fpdu, fpdu_max_size, fpdu_cur_pos,
+					          &fpdu_remain_size, fpdus_nb);
 				}
 				break;
 			case RLE_PACK_ERR_FPDU_TOO_SMALL:
-				/* FPDU too small to contain data. It is padded and send, and a new FPDU is created. */
-				printf_verbose("=== RLE packing: FPDU Full,  padding, sending,"
-						         "and starting new FPDU\n");
-				send_fpdu(fpdu, fpdu_max_size, fpdu_current_pos, &fpdu_remaining_size, fpdus_nb);
+				/* FPDU too small to contain data. It is padded and send, and a new
+				 * FPDU is created. */
+				TRACE("=== RLE packing: FPDU Full,  padding, sending, and starting "
+				      "new FPDU\n");
+				send_fpdu(fpdu, fpdu_max_size, fpdu_cur_pos, &fpdu_remain_size,
+				          fpdus_nb);
 				break;
 			case RLE_PACK_ERR_INVALID_LAB:
 			case RLE_PACK_ERR_INVALID_PPDU:
-				printf_verbose("=== RLE packing: misuse\n"
-				               "    %s\n", str_pack_error(ret_pack));
+				TRACE("=== RLE packing: misuse\n"
+				      "    %s\n", str_pack_error(ret_pack));
 				status = -1;
 				goto exit;
 			case RLE_PACK_ERR:
 			default:
-				printf_verbose("=== RLE packing: failure\n");
+				TRACE("=== RLE packing: failure\n");
 				status = -1;
 				goto exit;
 			}
@@ -482,7 +495,7 @@ static int encap(struct rle_transmitter *const transmitter, const size_t fpdu_ma
 	}
 
 exit:
-	printf_verbose("\n");
+	TRACE("\n");
 	return status;
 }
 
@@ -508,7 +521,7 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 
 	const size_t fpdu_max_size = burst_size;
 	unsigned char fpdu[fpdu_max_size];
-	size_t fpdu_current_pos = 0;
+	size_t fpdu_cur_pos = 0;
 
 	struct rle_transmitter *transmitter;
 
@@ -562,7 +575,8 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 
 	printf("=== test: \n");
 	printf("===\timplicit ptype:      0x%02x\n", conf.implicit_protocol_type);
-	printf("===\tALPDU protection:    %s\n", conf.allow_alpdu_sequence_number ? "SeqNo" : "CRC");
+	printf("===\tALPDU protection:    %s\n",
+	       conf.allow_alpdu_sequence_number ? "SeqNo" : "CRC");
 	printf("===\tptype compression:   %s\n", conf.use_compressed_ptype ? "On" : "Off");
 	printf("===\tptype omission:      %s\n", conf.allow_ptype_omission ? "On" : "Off");
 
@@ -583,12 +597,9 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 		++packets_counter;
 		packet_length = header.len;
 
-		printf_verbose("Packet #%zu\n", packets_counter);
-		ret = encap(transmitter,
-		            fpdu_max_size,
-		            &fpdu_current_pos,
-		            fpdu, (const size_t)packet_length,
-		            (const unsigned char *const)packet, link_len_src,
+		TRACE("Packet #%zu\n", packets_counter);
+		ret = encap(transmitter, fpdu_max_size, &fpdu_cur_pos, fpdu,
+		            packet_length, (const unsigned char *const)packet, link_len_src,
 		            burst_size, &delta_fpdus_processed);
 
 		fpdus_processed += delta_fpdus_processed;
@@ -612,10 +623,10 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 	}
 
 	/* Pad and send the last FPDU if exists. */
-	if (fpdu_current_pos != 0) {
+	if (fpdu_cur_pos != 0) {
 		size_t delta_fpdus_processed = 0;
-		size_t fpdu_remaining_size = fpdu_max_size - fpdu_current_pos;
-		send_fpdu(fpdu, fpdu_max_size, &fpdu_current_pos, &fpdu_remaining_size,
+		size_t fpdu_remain_size = fpdu_max_size - fpdu_cur_pos;
+		send_fpdu(fpdu, fpdu_max_size, &fpdu_cur_pos, &fpdu_remain_size,
 		          &delta_fpdus_processed);
 		fpdus_processed += delta_fpdus_processed;
 	}
@@ -628,17 +639,19 @@ static int test_encap(const char *const device_name, const size_t burst_size)
 		for (frag_id = 0; frag_id < 8; ++frag_id) {
 			printf("===\tFrag ID %u\n", frag_id);
 			printf("===\ttransmitter in:             %" PRIu64 "\n",
-					rle_transmitter_stats_get_counter_sdus_in(transmitter, frag_id));
+			       rle_transmitter_stats_get_counter_sdus_in(transmitter, frag_id));
 			printf("===\ttransmitter sent:           %" PRIu64 "\n",
-					rle_transmitter_stats_get_counter_sdus_sent(transmitter, frag_id));
+			       rle_transmitter_stats_get_counter_sdus_sent(transmitter, frag_id));
 			printf("===\ttransmitter dropped:        %" PRIu64 "\n",
-					rle_transmitter_stats_get_counter_sdus_dropped(transmitter, frag_id));
+			       rle_transmitter_stats_get_counter_sdus_dropped(transmitter,
+			                                                      frag_id));
 			printf("===\ttransmitter bytes in:       %" PRIu64 "\n",
-					rle_transmitter_stats_get_counter_bytes_in(transmitter, frag_id));
+			       rle_transmitter_stats_get_counter_bytes_in(transmitter, frag_id));
 			printf("===\ttransmitter bytes sent:     %" PRIu64 "\n",
-					rle_transmitter_stats_get_counter_bytes_sent(transmitter, frag_id));
+			       rle_transmitter_stats_get_counter_bytes_sent(transmitter, frag_id));
 			printf("===\ttransmitter bytes dropped:  %" PRIu64 "\n",
-					rle_transmitter_stats_get_counter_bytes_dropped(transmitter, frag_id));
+			       rle_transmitter_stats_get_counter_bytes_dropped(transmitter,
+			                                                       frag_id));
 			printf("\n");
 		}
 	}
@@ -678,7 +691,7 @@ error:
  *
  * @return    a printable encapsulation error.
  */
-static char *str_encap_error(const enum rle_encap_status status)
+static char * str_encap_error(const enum rle_encap_status status)
 {
 	switch (status) {
 	case RLE_ENCAP_OK:
@@ -702,7 +715,7 @@ static char *str_encap_error(const enum rle_encap_status status)
  *
  * @return    a printable fragmentation error.
  */
-static char *str_frag_error(const enum rle_frag_status status)
+static char * str_frag_error(const enum rle_frag_status status)
 {
 	switch (status) {
 	case RLE_FRAG_OK:
@@ -730,7 +743,7 @@ static char *str_frag_error(const enum rle_frag_status status)
  *
  * @return    a printable packing error.
  */
-static char *str_pack_error(const enum rle_pack_status status)
+static char * str_pack_error(const enum rle_pack_status status)
 {
 	switch (status) {
 	case RLE_PACK_OK:
@@ -738,11 +751,12 @@ static char *str_pack_error(const enum rle_pack_status status)
 	case RLE_PACK_ERR:
 		return "[RLE_PACK_ERR] SDUs should be dropped.";
 	case RLE_PACK_ERR_FPDU_TOO_SMALL:
-		return "[RLE_PACK_ERR_FPDU_TOO_SMALL] FPDU is too small for the current PPDU. No drop.";
+		return "[RLE_PACK_ERR_FPDU_TOO_SMALL] FPDU is too small for the current PPDU. "
+		       "No drop.";
 	case RLE_PACK_ERR_INVALID_PPDU:
-		return "[RLE_PACK_ERR_INVALID_PPDU] Current PPDU is invalid, maybe NULL or bad size.";
+		return "[RLE_PACK_ERR_INVALID_PPDU] Current PPDU is invalid, maybe NULL or bad size";
 	case RLE_PACK_ERR_INVALID_LAB:
-		return "[RLE_PACK_ERR_INVALID_LAB] Current label is invalid, maybe NULL or bad size.";
+		return "[RLE_PACK_ERR_INVALID_LAB] Current label is invalid, maybe NULL or bad size";
 	default:
 		return "[Unknwon status]";
 	}

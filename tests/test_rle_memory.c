@@ -34,7 +34,7 @@
 #include <stdio.h>
 
 void * __real_malloc(size_t size);
-void *__wrap_malloc(size_t size);
+void * __wrap_malloc(size_t size);
 
 void test_rle_memory_frag_buf_new(void **state);
 void test_rle_memory_transmitter_new(void **state);
@@ -44,6 +44,7 @@ void test_rle_memory_receiver_new(void **state);
 int main(void)
 {
 	int test_status;
+
 #if defined(cmocka_unit_test)
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test(test_rle_memory_frag_buf_new),
@@ -148,7 +149,7 @@ void test_rle_memory_receiver_new(void **state __attribute__((unused)))
 
 void * __wrap_malloc(size_t size)
 {
-	void *ptr = mock_ptr_type(void*);
+	void *ptr = mock_ptr_type(void *);
 
 	if (ptr != NULL) {
 		return __real_malloc(size);
@@ -156,4 +157,3 @@ void * __wrap_malloc(size_t size)
 		return ptr;
 	}
 }
-

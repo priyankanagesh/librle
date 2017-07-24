@@ -59,7 +59,7 @@
 
 /** A simple minimum macro */
 #define min(x, y) \
-        (((x) < (y)) ? (x) : (y))
+	(((x) < (y)) ? (x) : (y))
 
 /** Min, max and default ppdu sizes for fragmentation in the test. */
 #define MIN_PPDU_SIZE     3
@@ -76,7 +76,7 @@
 
 /** dummy Ethernet header value for PCAP dumping. */
 static const unsigned char ether_header[ETHER_HDR_LEN] =
-        "\x11\x22\x33\x44\x55\x66\x66\x55\x44\x33\x22\x11\x08\x00";
+	"\x11\x22\x33\x44\x55\x66\x66\x55\x44\x33\x22\x11\x08\x00";
 
 /* prototypes of private functions */
 static int init_pcap_dump(const char device_name[], const char pcap_filename[],
@@ -92,17 +92,17 @@ static void dump_buffer(const unsigned char *const buffer, const size_t buffer_l
 static int test_encap(const char device_name[], const char output[], const size_t ppdu_size,
                       const size_t fpdu_size);
 static void dump_fpdu(unsigned char *const fpdu, const size_t fpdu_size,
-                      size_t *const fpdu_current_pos, size_t *const fpdu_remaining_size,
+                      size_t *const fpdu_cur_pos, size_t *const fpdu_remain_size,
                       size_t *const fpdus_nb, pcap_dumper_t *const dumpfile,
                       unsigned char frame[]);
-static int encap(struct rle_transmitter *const transmitter, size_t *const fpdu_current_pos,
+static int encap(struct rle_transmitter *const transmitter, size_t *const fpdu_cur_pos,
                  unsigned char *const fpdu, const size_t packet_length,
                  const unsigned char *const packet, const size_t link_len_src,
                  const size_t ppdu_size, const size_t fpdu_size, size_t *const fpdus_nb,
                  pcap_dumper_t *const dumpfile, unsigned char frame[]);
-static char *str_encap_error(const enum rle_encap_status status);
-static char *str_frag_error(const enum rle_frag_status status);
-static char *str_pack_error(const enum rle_pack_status status);
+static char * str_encap_error(const enum rle_encap_status status);
+static char * str_frag_error(const enum rle_frag_status status);
+static char * str_pack_error(const enum rle_pack_status status);
 
 /** Whether the application runs in verbose mode or not */
 static int is_verbose = 0;
@@ -204,11 +204,11 @@ int main(int argc, char *argv[])
 
 			if (fpdu_size < MIN_FPDU_SIZE) {
 				printf("ERROR: %zu FPDU size is too small. Minimum = %d octets.\n",
-						fpdu_size, MIN_FPDU_SIZE);
+				       fpdu_size, MIN_FPDU_SIZE);
 				goto error;
 			} else if (fpdu_size > MAX_FPDU_SIZE) {
 				printf("ERROR: %zu FPDU size is too big. Maximum = %d octets.\n",
-						fpdu_size, MIN_FPDU_SIZE);
+				       fpdu_size, MIN_FPDU_SIZE);
 				goto error;
 			}
 			break;
@@ -306,8 +306,10 @@ error:
  * @param[in,out]  dumpfile             File used for dumping
  * @param[in,out]  frame                Ethernet frame (with preinitialized header) used for dumping
  */
-static int init_pcap_dump(const char device_name[], const char pcap_filename[],
-                          pcap_dumper_t **const dumpfile, unsigned char *const frame)
+static int init_pcap_dump(const char device_name[],
+                          const char pcap_filename[],
+                          pcap_dumper_t **const dumpfile,
+                          unsigned char *const frame)
 {
 	int status = 1;
 	pcap_t *handle;
@@ -325,7 +327,7 @@ static int init_pcap_dump(const char device_name[], const char pcap_filename[],
 	/* Open the dump file */
 	*dumpfile = pcap_dump_open(handle, pcap_filename);
 
-	if(!*dumpfile) {
+	if (!*dumpfile) {
 		fprintf(stderr, "error opening output file %s\n", pcap_geterr(handle));
 		goto error;
 	}
@@ -343,7 +345,8 @@ error:
  * @param[in]      header               PCAP packet header
  * @param[in]      data                 PCAP data
  */
-static void packet_handler(pcap_dumper_t *const dumpfile, const struct pcap_pkthdr *const header,
+static void packet_handler(pcap_dumper_t *const dumpfile,
+                           const struct pcap_pkthdr *const header,
                            const unsigned char *const data)
 {
 	if (!header) {
@@ -462,13 +465,13 @@ static uint32_t ip_checksum_init(const unsigned short *data, size_t len)
 {
 	uint32_t tmp_sum = 0;
 
-	while(len > 1) {
+	while (len > 1) {
 		tmp_sum += *data;
 		data++;
 		len -= 2;
 	}
 
-	if(len) {
+	if (len) {
 		tmp_sum += *(uint8_t *)data;
 	}
 
@@ -516,21 +519,24 @@ static uint16_t ip_checksum(const void *data, int len)
  *
  *                 Does not actually send the FPDU, as this is not requiered in our algorithm.
  *
- * @param[in,out]  fpdu                 The FPDU to send. Reseted after sending.
- * @param[in]      fpdu_size            The size of an FPDU.
- * @param[in,out]  fpdu_current_pos     Current position in the FPDU. Reseted after sending.
- * @param[in,out]  fpdu_remaining_size  Remaining size in the FPDU. Reseted after sending.
- * @param[in,out]  fpdus_nb             Number of sent FPDU.
- * @param[in,out]  dumpfile             File used for dumping
- * @param[in,out]  frame                Ethernet frame (with preinitialized header) used for dumping
+ * @param[in,out]  fpdu              The FPDU to send. Reseted after sending.
+ * @param[in]      fpdu_size         The size of an FPDU.
+ * @param[in,out]  fpdu_cur_pos      Current position in the FPDU. Reseted after sending.
+ * @param[in,out]  fpdu_remain_size  Remaining size in the FPDU. Reseted after sending.
+ * @param[in,out]  fpdus_nb          Number of sent FPDU.
+ * @param[in,out]  dumpfile          File used for dumping
+ * @param[in,out]  frame             Ethernet frame (with preinitialized header) used for dumping
  */
-static void dump_fpdu(unsigned char *const fpdu, const size_t fpdu_size,
-                      size_t *const fpdu_current_pos, size_t *const fpdu_remaining_size,
-                      size_t *const fpdus_nb, pcap_dumper_t *const dumpfile,
+static void dump_fpdu(unsigned char *const fpdu,
+                      const size_t fpdu_size,
+                      size_t *const fpdu_cur_pos,
+                      size_t *const fpdu_remain_size,
+                      size_t *const fpdus_nb,
+                      pcap_dumper_t *const dumpfile,
                       unsigned char frame[])
 {
 	/* Padding */
-	rle_pad(fpdu, *fpdu_current_pos, *fpdu_remaining_size);
+	rle_pad(fpdu, *fpdu_cur_pos, *fpdu_remain_size);
 
 	printf_verbose("=== %zu-octets FPDU ready for dumping\n", fpdu_size);
 	dump_buffer(fpdu, fpdu_size);
@@ -541,22 +547,22 @@ static void dump_fpdu(unsigned char *const fpdu, const size_t fpdu_size,
 		static uint16_t ip_id = 0;
 		struct pcap_pkthdr header = {
 			.caplen = (bpf_u_int32)(ETHER_HDR_LEN + IP_HDR_LEN + fpdu_size),
-			.len    = (bpf_u_int32)(ETHER_HDR_LEN + IP_HDR_LEN + fpdu_size),
+			.len = (bpf_u_int32)(ETHER_HDR_LEN + IP_HDR_LEN + fpdu_size),
 		};
 		struct iphdr ip_hdr;
 
-		ip_hdr.version  = 0x4;
-		ip_hdr.ihl      = 0x5;
-		ip_hdr.tos      = 0;
-		ip_hdr.tot_len  = 0;
-		ip_hdr.id       = ntohs(ip_id);
+		ip_hdr.version = 0x4;
+		ip_hdr.ihl = 0x5;
+		ip_hdr.tos = 0;
+		ip_hdr.tot_len = 0;
+		ip_hdr.id = ntohs(ip_id);
 		ip_hdr.frag_off = 0;
-		ip_hdr.ttl      = 10;
+		ip_hdr.ttl = 10;
 		ip_hdr.protocol = 0;
-		ip_hdr.check    = 0;
-		ip_hdr.saddr    = 0;
-		ip_hdr.daddr    = 0;
-		ip_hdr.check    = ip_checksum(&ip_hdr, IP_HDR_LEN);
+		ip_hdr.check = 0;
+		ip_hdr.saddr = 0;
+		ip_hdr.daddr = 0;
+		ip_hdr.check = ip_checksum(&ip_hdr, IP_HDR_LEN);
 		memcpy(frame + ETHER_HDR_LEN, &ip_hdr, IP_HDR_LEN);
 
 		memcpy(frame + ETHER_HDR_LEN + IP_HDR_LEN, fpdu, fpdu_size);
@@ -570,8 +576,8 @@ static void dump_fpdu(unsigned char *const fpdu, const size_t fpdu_size,
 	printf_verbose("=== Dumping done.\n");
 
 	memset((void *)fpdu, '\0', fpdu_size);
-	*fpdu_current_pos = 0;
-	*fpdu_remaining_size = fpdu_size;
+	*fpdu_cur_pos = 0;
+	*fpdu_remain_size = fpdu_size;
 
 	return;
 }
@@ -579,29 +585,34 @@ static void dump_fpdu(unsigned char *const fpdu, const size_t fpdu_size,
 /**
  * @brief Encapsulate, fragment, pack one SDU with a given transmitter.
  *
- * @param[in,out] transmitter       The transmitter to use.
- * @param[in,out] fpdu_current_pos  The current position in the FPDU
- * @param[in,out] fpdu              A buffer to contain the FPDU, preallocated. May contains
- *                                  fragments of SDUs between function call.
- * @param[in]     packet_length     Lenght of the packet to encapsulate.
- * @param[in]     packet            The packet to encapsulate (link layer included)
- * @param[in]     link_len_src      The length of the link layer header before IP data
- * @param[in]     ppdu_size         The size of the ppdu to frag
- * @param[in]     ppdu_size         The size of the fpdu to pack
- * @param[out]    fpdus_nb          The number of FPDU sent
- * @param[in,out] dumpfile          File used for dumping
- * @param[in,out] frame             Ethernet frame (with preinitialized header) used for dumping
+ * @param[in,out] transmitter    The transmitter to use.
+ * @param[in,out] fpdu_cur_pos   The current position in the FPDU
+ * @param[in,out] fpdu           A buffer to contain the FPDU, preallocated. May contains
+ *                               fragments of SDUs between function call.
+ * @param[in]     packet_length  Length of the packet to encapsulate.
+ * @param[in]     packet         The packet to encapsulate (link layer included)
+ * @param[in]     link_len_src   The length of the link layer header before IP data
+ * @param[in]     ppdu_size      The size of the ppdu to frag
+ * @param[in]     ppdu_size      The size of the fpdu to pack
+ * @param[out]    fpdus_nb       The number of FPDU sent
+ * @param[in,out] dumpfile       File used for dumping
+ * @param[in,out] frame          Ethernet frame (with preinitialized header) used for dumping
  *
  * @return                  1 if the process is successful
  *                          2 if the process is not successful, but due to a misuse of the RLE lib.
  *                          -1 if an error occurs while transmitting
  *                          -3 if the link layer is not Ethernet
  */
-static int encap(struct rle_transmitter *const transmitter, size_t *const fpdu_current_pos,
-                 unsigned char *const fpdu, const size_t packet_length,
-                 const unsigned char *const packet, const size_t link_len_src,
-                 const size_t ppdu_size, const size_t fpdu_size,
-                 size_t *const fpdus_nb, pcap_dumper_t *const dumpfile,
+static int encap(struct rle_transmitter *const transmitter,
+                 size_t *const fpdu_cur_pos,
+                 unsigned char *const fpdu,
+                 const size_t packet_length,
+                 const unsigned char *const packet,
+                 const size_t link_len_src,
+                 const size_t ppdu_size,
+                 const size_t fpdu_size,
+                 size_t *const fpdus_nb,
+                 pcap_dumper_t *const dumpfile,
                  unsigned char frame[])
 {
 	enum rle_encap_status ret_encap = RLE_ENCAP_ERR;
@@ -633,7 +644,8 @@ static int encap(struct rle_transmitter *const transmitter, size_t *const fpdu_c
 		break;
 	case RLE_ENCAP_ERR_NULL_TRMT:
 	case RLE_ENCAP_ERR_SDU_TOO_BIG:
-		printf_verbose("=== RLE encapsulation: misuse\n    %s\n", str_encap_error(ret_encap));
+		printf_verbose("=== RLE encapsulation: misuse\n    %s\n",
+		               str_encap_error(ret_encap));
 		status = 2;
 		goto exit;
 	case RLE_ENCAP_ERR:
@@ -644,8 +656,8 @@ static int encap(struct rle_transmitter *const transmitter, size_t *const fpdu_c
 	}
 
 	while (rle_transmitter_stats_get_queue_size(transmitter, frag_id) != 0) {
-		size_t fpdu_remaining_size = fpdu_size - *fpdu_current_pos;
-		printf_verbose("Remaining size : %zu\n", fpdu_remaining_size);
+		size_t fpdu_remain_size = fpdu_size - *fpdu_cur_pos;
+		printf_verbose("Remaining size : %zu\n", fpdu_remain_size);
 
 		unsigned char *ppdu;
 		size_t ppdu_length = 0;
@@ -655,8 +667,8 @@ static int encap(struct rle_transmitter *const transmitter, size_t *const fpdu_c
 		 * possible to make a small PPDU, a regular one is made instead, and will be pack in a new
 		 * FPDU. The old FPDU then is padded and send. */
 
-		if (fpdu_remaining_size < ppdu_size) {
-			ppdu_needed = fpdu_remaining_size;
+		if (fpdu_remain_size < ppdu_size) {
+			ppdu_needed = fpdu_remain_size;
 		} else {
 			ppdu_needed = ppdu_size;
 		}
@@ -664,14 +676,16 @@ static int encap(struct rle_transmitter *const transmitter, size_t *const fpdu_c
 		/* Fragmentation */
 		do {
 			printf_verbose("=== RLE fragmentation: start\n");
-			ret_frag = rle_fragment(transmitter, frag_id, ppdu_needed, &ppdu, &ppdu_length);
+			ret_frag = rle_fragment(transmitter, frag_id, ppdu_needed,
+			                        &ppdu, &ppdu_length);
 
 			switch (ret_frag) {
 			case RLE_FRAG_OK:
 				printf_verbose("=== RLE fragmentation: success. "
 				               "ppdu_size: %zu, remaining alpdu: %zu.\n",
 				               ppdu_length,
-				               rle_transmitter_stats_get_queue_size(transmitter, frag_id));
+				               rle_transmitter_stats_get_queue_size(transmitter,
+				                                                    frag_id));
 				printf_verbose("=== %zu-byte PPDU\n", ppdu_length);
 				dump_buffer(ppdu, ppdu_length);
 				break;
@@ -694,33 +708,33 @@ static int encap(struct rle_transmitter *const transmitter, size_t *const fpdu_c
 				status = -1;
 				goto exit;
 			}
-		} while(ret_frag == RLE_FRAG_ERR_BURST_TOO_SMALL);
+		} while (ret_frag == RLE_FRAG_ERR_BURST_TOO_SMALL);
 
 		/* Packing */
 		printf_verbose("=== RLE packing: start\n");
 		do {
-			ret_pack = rle_pack(ppdu, ppdu_length, label, label_length, fpdu, fpdu_current_pos,
-					              &fpdu_remaining_size);
+			ret_pack = rle_pack(ppdu, ppdu_length, label, label_length,
+			                    fpdu, fpdu_cur_pos, &fpdu_remain_size);
 
 			switch (ret_pack) {
 			case RLE_PACK_OK:
 				printf_verbose("=== RLE packing: success\n");
-				if (fpdu_remaining_size != 0) {
-					printf_verbose("===> packed in %zu-byte FPDU (remains %zu bytes)\n",
-					               *fpdu_current_pos, fpdu_remaining_size);
+				if (fpdu_remain_size != 0) {
+					printf_verbose("===> packed in %zu-byte FPDU (remains %zu "
+					               "bytes)\n", *fpdu_cur_pos, fpdu_remain_size);
 				} else {
-					printf_verbose("=== RLE packing: FPDU Full.  %zu-octets FPDU ready to be sent\n",
-					               fpdu_size);
-					dump_fpdu(fpdu, fpdu_size, fpdu_current_pos, &fpdu_remaining_size, fpdus_nb,
-					          dumpfile, frame);
+					printf_verbose("=== RLE packing: FPDU Full.  %zu-octet "
+					               "FPDU ready to be sent\n", fpdu_size);
+					dump_fpdu(fpdu, fpdu_size, fpdu_cur_pos, &fpdu_remain_size,
+					          fpdus_nb, dumpfile, frame);
 				}
 				break;
 			case RLE_PACK_ERR_FPDU_TOO_SMALL:
 				/* FPDU too small to contain data. It is padded and send, and a new FPDU is created. */
 				printf_verbose("=== RLE packing: FPDU Full,  padding, sending,"
-						         "and starting new FPDU\n");
-				dump_fpdu(fpdu, fpdu_size, fpdu_current_pos, &fpdu_remaining_size, fpdus_nb,
-				          dumpfile, frame);
+				               "and starting new FPDU\n");
+				dump_fpdu(fpdu, fpdu_size, fpdu_cur_pos, &fpdu_remain_size,
+				          fpdus_nb, dumpfile, frame);
 				break;
 			case RLE_PACK_ERR_INVALID_LAB:
 			case RLE_PACK_ERR_INVALID_PPDU:
@@ -759,7 +773,9 @@ exit:
  *                             1 in case of failure,
  *                             77 if test is skipped
  */
-static int test_encap(const char device_name[], const char output[], const size_t ppdu_size,
+static int test_encap(const char device_name[],
+                      const char output[],
+                      const size_t ppdu_size,
                       const size_t fpdu_size)
 {
 	char errbuf[PCAP_ERRBUF_SIZE];
@@ -769,7 +785,7 @@ static int test_encap(const char device_name[], const char output[], const size_
 	struct pcap_pkthdr header;
 
 	unsigned char fpdu[MAX_FPDU_SIZE];
-	size_t fpdu_current_pos = 0;
+	size_t fpdu_cur_pos = 0;
 
 	struct rle_transmitter *transmitter;
 
@@ -833,7 +849,8 @@ static int test_encap(const char device_name[], const char output[], const size_
 
 	printf("=== test: \n");
 	printf("===\timplicit ptype:      0x%02x\n", conf.implicit_protocol_type);
-	printf("===\tALPDU protection:    %s\n", conf.allow_alpdu_sequence_number ? "SeqNo" : "CRC");
+	printf("===\tALPDU protection:    %s\n",
+	       conf.allow_alpdu_sequence_number ? "SeqNo" : "CRC");
 	printf("===\tptype compression:   %s\n", conf.use_compressed_ptype ? "On" : "Off");
 	printf("===\tptype omission:      %s\n", conf.allow_ptype_omission ? "On" : "Off");
 
@@ -855,7 +872,7 @@ static int test_encap(const char device_name[], const char output[], const size_
 		packet_length = header.len;
 
 		printf_verbose("Packet #%zu\n", packets_counter);
-		ret = encap(transmitter, &fpdu_current_pos, fpdu, (const size_t)packet_length,
+		ret = encap(transmitter, &fpdu_cur_pos, fpdu, (const size_t)packet_length,
 		            (const unsigned char *const)packet, link_len_src, ppdu_size, fpdu_size,
 		            &delta_fpdus_processed, dumpfile, frame);
 
@@ -876,10 +893,10 @@ static int test_encap(const char device_name[], const char output[], const size_
 	}
 
 	/* Pad and dump the last FPDU if exists. */
-	if (fpdu_current_pos != 0) {
+	if (fpdu_cur_pos != 0) {
 		size_t delta_fpdus_processed = 0;
-		size_t fpdu_remaining_size = fpdu_size - fpdu_current_pos;
-		dump_fpdu(fpdu, fpdu_size, &fpdu_current_pos, &fpdu_remaining_size,
+		size_t fpdu_remain_size = fpdu_size - fpdu_cur_pos;
+		dump_fpdu(fpdu, fpdu_size, &fpdu_cur_pos, &fpdu_remain_size,
 		          &delta_fpdus_processed, dumpfile, frame);
 		fpdus_processed += delta_fpdus_processed;
 	}
@@ -896,13 +913,15 @@ static int test_encap(const char device_name[], const char output[], const size_
 			printf("===\ttransmitter sent:           %" PRIu64 "\n",
 			       rle_transmitter_stats_get_counter_sdus_sent(transmitter, frag_id));
 			printf("===\ttransmitter dropped:        %" PRIu64 "\n",
-			       rle_transmitter_stats_get_counter_sdus_dropped(transmitter, frag_id));
+			       rle_transmitter_stats_get_counter_sdus_dropped(transmitter,
+			                                                      frag_id));
 			printf("===\ttransmitter bytes in:       %" PRIu64 "\n",
 			       rle_transmitter_stats_get_counter_bytes_in(transmitter, frag_id));
 			printf("===\ttransmitter bytes sent:     %" PRIu64 "\n",
 			       rle_transmitter_stats_get_counter_bytes_sent(transmitter, frag_id));
 			printf("===\ttransmitter bytes dropped:  %" PRIu64 "\n",
-			       rle_transmitter_stats_get_counter_bytes_dropped(transmitter, frag_id));
+			       rle_transmitter_stats_get_counter_bytes_dropped(transmitter,
+			                                                       frag_id));
 			printf("\n");
 		}
 	}
@@ -946,7 +965,7 @@ error:
  *
  * @return    a printable encapsulation error.
  */
-static char *str_encap_error(const enum rle_encap_status status)
+static char * str_encap_error(const enum rle_encap_status status)
 {
 	switch (status) {
 	case RLE_ENCAP_OK:
@@ -970,7 +989,7 @@ static char *str_encap_error(const enum rle_encap_status status)
  *
  * @return    a printable fragmentation error.
  */
-static char *str_frag_error(const enum rle_frag_status status)
+static char * str_frag_error(const enum rle_frag_status status)
 {
 	switch (status) {
 	case RLE_FRAG_OK:
@@ -998,7 +1017,7 @@ static char *str_frag_error(const enum rle_frag_status status)
  *
  * @return    a printable packing error.
  */
-static char *str_pack_error(const enum rle_pack_status status)
+static char * str_pack_error(const enum rle_pack_status status)
 {
 	switch (status) {
 	case RLE_PACK_OK:
@@ -1006,11 +1025,14 @@ static char *str_pack_error(const enum rle_pack_status status)
 	case RLE_PACK_ERR:
 		return "[RLE_PACK_ERR] SDUs should be dropped.";
 	case RLE_PACK_ERR_FPDU_TOO_SMALL:
-		return "[RLE_PACK_ERR_FPDU_TOO_SMALL] FPDU is too small for the current PPDU. No drop.";
+		return "[RLE_PACK_ERR_FPDU_TOO_SMALL] FPDU is too small for the "
+		       "current PPDU. No drop.";
 	case RLE_PACK_ERR_INVALID_PPDU:
-		return "[RLE_PACK_ERR_INVALID_PPDU] Current PPDU is invalid, maybe NULL or bad size.";
+		return "[RLE_PACK_ERR_INVALID_PPDU] Current PPDU is invalid, "
+		       "maybe NULL or bad size.";
 	case RLE_PACK_ERR_INVALID_LAB:
-		return "[RLE_PACK_ERR_INVALID_LAB] Current label is invalid, maybe NULL or bad size.";
+		return "[RLE_PACK_ERR_INVALID_LAB] Current label is invalid, "
+		       "maybe NULL or bad size.";
 	default:
 		return "[Unknwon status]";
 	}

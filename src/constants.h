@@ -73,16 +73,16 @@ enum {
 	RLE_PDU_END_FRAG,   /** END packet/fragment of PDU */
 };
 
-#define PRINT_LOG(level, x, ...) \
+#define RLE_LOG(level, x, ...) \
 	do { \
 		rle_trace_callback_t the_cb = rle_get_trace_callback(); \
 		if (the_cb != NULL) { \
 			the_cb(MODULE_ID, level, __FILE__, __LINE__, __func__, x, ## __VA_ARGS__); \
 		} \
-	} while(0)
-#define PRINT_RLE_DEBUG(x, ...) PRINT_LOG(RLE_LOG_LEVEL_DEBUG, x, ## __VA_ARGS__)
-#define PRINT_RLE_WARNING(x, ...) PRINT_LOG(RLE_LOG_LEVEL_WARNING, x, ## __VA_ARGS__)
-#define PRINT_RLE_ERROR(x, ...) PRINT_LOG(RLE_LOG_LEVEL_ERROR, x, ## __VA_ARGS__)
+	} while (0)
+#define RLE_DEBUG(x, ...) RLE_LOG(RLE_LOG_LEVEL_DEBUG, x, ## __VA_ARGS__)
+#define RLE_WARN(x, ...) RLE_LOG(RLE_LOG_LEVEL_WARNING, x, ## __VA_ARGS__)
+#define RLE_ERR(x, ...) RLE_LOG(RLE_LOG_LEVEL_ERROR, x, ## __VA_ARGS__)
 
 #ifndef __KERNEL__
 
@@ -99,11 +99,10 @@ enum {
 #define assert BUG_ON
 
 /** 10Mb/s ethernet header */
-struct ether_header
-{
-  u_int8_t  ether_dhost[ETH_ALEN];	/**< destination ethernet address */
-  u_int8_t  ether_shost[ETH_ALEN];	/**< source ethernet address */
-  u_int16_t ether_type;		         /**< packet type ID field	*/
+struct ether_header {
+	u_int8_t ether_dhost[ETH_ALEN]; /**< destination ethernet address */
+	u_int8_t ether_shost[ETH_ALEN]; /**< source ethernet address */
+	u_int16_t ether_type;           /**< packet type ID field */
 } __attribute__((__packed__));
 
 #endif

@@ -245,7 +245,7 @@ error:
  * @param file    The /proc file userspace writes to
  * @param buffer  The data userspace writes
  * @param count   The number of bytes of data
- * @param ppos    
+ * @param ppos
  * @return        The number of bytes of data handled by the function,
  *                -EFAULT if another error occurs
  */
@@ -304,8 +304,8 @@ ssize_t rle_proc_write(struct file *file, const char __user *buffer, size_t coun
 
 		/* Start fragmentation */
 		frag_status =
-		        rle_fragment(couple->transmitter, frag_id, burst_size, &ppdu,
-		                     &ppdu_length);
+			rle_fragment(couple->transmitter, frag_id, burst_size, &ppdu,
+			             &ppdu_length);
 		if (frag_status != RLE_FRAG_OK) {
 			pr_err("[%s] failed to fragment the ALPDU\n", THIS_MODULE->name);
 			goto error;
@@ -327,7 +327,7 @@ ssize_t rle_proc_write(struct file *file, const char __user *buffer, size_t coun
 	frag_id = (frag_id + 1) % MAX_FRAG_ID;
 
 	rle_pad(fpdu, fpdu_current_pos, fpdu_remaining_size);
-	pr_info("[%s] FPDU padded\n", THIS_MODULE->name); 
+	pr_info("[%s] FPDU padded\n", THIS_MODULE->name);
 
 	couple->sdu_in.size = 0;
 
@@ -346,7 +346,7 @@ error:
  * @param file    The /proc file userspace reads from
  * @param buffer  The data userspace reads
  * @param count   The number of bytes of data
- * @param ppos    
+ * @param ppos
  * @return        The number of bytes of data handled by the function,
  *                -EFAULT if another error occurs
  */
@@ -381,9 +381,9 @@ ssize_t rle_proc_read(struct file *file, char __user *buffer, size_t count, loff
 		}
 
 		/* Start decapsulating */
-		decap_status = rle_decapsulate(couple->receiver, fpdu, MAX_FPDU_SIZE, sdus_out, MAX_SDUS_NR,
-				         &sdus_nr, payload_label_out, payload_label_out_size);
-
+		decap_status = rle_decapsulate(couple->receiver, fpdu, MAX_FPDU_SIZE,
+		                               sdus_out, MAX_SDUS_NR, &sdus_nr,
+		                               payload_label_out, payload_label_out_size);
 		if (decap_status != RLE_DECAP_OK) {
 			pr_err("[%s] failed to decapsulate an FPDU\n", THIS_MODULE->name);
 			goto error;
@@ -416,8 +416,8 @@ ssize_t rle_proc_read(struct file *file, char __user *buffer, size_t count, loff
 	}
 
 	/* send data to userspace */
-	ret_copy = copy_to_user(buffer, (const void *)sdus_out[current_sdu].buffer, 
-			                  sdus_out[current_sdu].size);
+	ret_copy = copy_to_user(buffer, (const void *)sdus_out[current_sdu].buffer,
+	                        sdus_out[current_sdu].size);
 
 	if (ret_copy != 0) {
 		pr_err("[%s] cannot send SDU to userspace: "
@@ -433,7 +433,7 @@ ssize_t rle_proc_read(struct file *file, char __user *buffer, size_t count, loff
 	++current_sdu;
 	--number_of_sdus_to_read;
 
-   /* everything went fine */
+	/* everything went fine */
 	return sdu_read_size;
 
 error:
@@ -483,7 +483,8 @@ static const struct file_operations rle_proc_fops = {
 int rle_proc_init(struct rle_couple *couple)
 {
 	pr_info("[%s] \t create interface /proc/%s...\n", THIS_MODULE->name, PROC_NAME);
-	couple->proc_file = proc_create(PROC_NAME, S_IFREG | S_IRUSR | S_IWUSR, NULL, &rle_proc_fops);
+	couple->proc_file =
+		proc_create(PROC_NAME, S_IFREG | S_IRUSR | S_IWUSR, NULL, &rle_proc_fops);
 	if (couple->proc_file == NULL) {
 		pr_err("[%s] \t failed to create /proc/%s\n", THIS_MODULE->name, PROC_NAME);
 		goto err;
@@ -527,15 +528,15 @@ int __init rle_test_init(void)
 	pr_info("[%s] RLE test module successfully loaded\n", THIS_MODULE->name);
 	pr_info("[%s] parameters:\n", THIS_MODULE->name);
 	pr_info("[%s]\tPPDU segment sizes(burst size): %zu\n", THIS_MODULE->name,
-			  (size_t)param_burst_size);
+	        (size_t)param_burst_size);
 	pr_info("[%s]\timplicit protocol type:         0x%02x\n", THIS_MODULE->name,
-			  (uint8_t)param_implicit_protocol_type);
+	        (uint8_t)param_implicit_protocol_type);
 	pr_info("[%s]\tuse alpdu CRC ?                 %s\n", THIS_MODULE->name,
-			  param_use_alpdu_crc ? "True" : "False");
+	        param_use_alpdu_crc ? "True" : "False");
 	pr_info("[%s]\tuse compression ?               %s\n", THIS_MODULE->name,
-			  param_use_compressed_ptype ? "True" : "False");
+	        param_use_compressed_ptype ? "True" : "False");
 	pr_info("[%s]\tuse omission ?                  %s\n", THIS_MODULE->name,
-			  param_use_ptype_omission ? "True" : "False");
+	        param_use_ptype_omission ? "True" : "False");
 
 	memset((void *)fpdu, '\0', MAX_FPDU_SIZE);
 

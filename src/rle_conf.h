@@ -51,7 +51,7 @@
  * @return      true if configuration is OK, false if KO
  */
 bool rle_config_check(const struct rle_config *const conf)
-	__attribute__((warn_unused_result));
+__attribute__((warn_unused_result));
 
 /**
  *  @brief	Check if a given protocol type is omissible depending of the conf
@@ -69,6 +69,6 @@ bool rle_config_check(const struct rle_config *const conf)
 bool ptype_is_omissible(const uint16_t ptype,
                         const struct rle_config *const rle_conf,
                         const struct rle_frag_buf *const frag_buf)
-	__attribute__((warn_unused_result, nonnull(2, 3)));
+__attribute__((warn_unused_result, nonnull(2, 3)));
 
 #endif /* __RLE_CONF_H__ */

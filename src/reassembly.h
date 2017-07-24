@@ -51,7 +51,9 @@
  *
  *  @ingroup
  */
-int reassembly_get_pdu(struct rle_ctx_management *rle_ctx, void *pdu_buffer, int *pdu_proto_type,
+int reassembly_get_pdu(struct rle_ctx_mngt *rle_ctx,
+                       void *pdu_buffer,
+                       int *pdu_proto_type,
                        uint32_t *pdu_length);
 
 /**
@@ -69,7 +71,7 @@ int reassembly_get_pdu(struct rle_ctx_management *rle_ctx, void *pdu_buffer, int
  *
  *  @ingroup
  */
-int reassembly_reassemble_pdu(struct rle_ctx_management *rle_ctx,
+int reassembly_reassemble_pdu(struct rle_ctx_mngt *rle_ctx,
                               struct rle_config *rle_conf,
                               void *data_buffer,
                               size_t data_length,

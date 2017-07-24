@@ -68,16 +68,18 @@ static bool test_pack(const size_t fpdu_length,
  * @return        true if OK, else false.
  */
 static bool test_pack_check_fpdu(const unsigned char fpdu[], const size_t fpdu_length,
-                                         const unsigned char *const ppdus[],
-                                         const size_t *const ppdus_length, const size_t nb_ppdus,
-                                         const unsigned char label[],
-                                         const size_t label_length);
+                                 const unsigned char *const ppdus[],
+                                 const size_t *const ppdus_length, const size_t nb_ppdus,
+                                 const unsigned char label[],
+                                 const size_t label_length);
 
-static bool test_pack_check_fpdu(const unsigned char fpdu[], const size_t fpdu_length,
-                                         const unsigned char *const ppdus[],
-                                         const size_t *const ppdus_length, const size_t nb_ppdus,
-                                         const unsigned char label[],
-                                         const size_t label_length)
+static bool test_pack_check_fpdu(const unsigned char fpdu[],
+                                 const size_t fpdu_length,
+                                 const unsigned char *const ppdus[],
+                                 const size_t *const ppdus_length,
+                                 const size_t nb_ppdus,
+                                 const unsigned char label[],
+                                 const size_t label_length)
 {
 	PRINT_TEST("subtest. sizes: FPDU %zu, label %zu. Nb of PPDU: %zu.\nPPDUs sizes:",
 	           fpdu_length, label_length,
@@ -122,9 +124,9 @@ static bool test_pack_check_fpdu(const unsigned char fpdu[], const size_t fpdu_l
 	output = true;
 	for (iterator = 0; iterator < fpdu_length; ++iterator) {
 		if (fpdu[iterator] != reass_fpdu[iterator]) {
-			PRINT_ERROR(
-			        "FPDU and reassembled PPDUs are different, pos.%zu, expected 0x%02x, get 0x%02x.",
-			        iterator, fpdu[iterator], reass_fpdu[iterator]);
+			PRINT_ERROR("FPDU and reassembled PPDUs are different, pos.%zu, "
+			            "expected 0x%02x, get 0x%02x.", iterator, fpdu[iterator],
+			            reass_fpdu[iterator]);
 			output = false;
 		}
 	}
@@ -177,10 +179,9 @@ static bool test_pack(const size_t fpdu_length,
 		size_t fpdu_remaining_size = fpdu_length;
 		for (iterator = 0; iterator < nb_ppdus; ++iterator) {
 			pack_status =
-			        rle_pack(ppdus[iterator], ppdus_length[iterator], label,
-			                 label_length, fpdu, &fpdu_current_pos,
-			                 &fpdu_remaining_size);
-
+				rle_pack(ppdus[iterator], ppdus_length[iterator], label,
+				         label_length, fpdu, &fpdu_current_pos,
+				         &fpdu_remaining_size);
 			if (pack_status != RLE_PACK_OK) {
 				PRINT_ERROR("Unable to pack");
 				goto exit_label;
@@ -188,11 +189,8 @@ static bool test_pack(const size_t fpdu_length,
 		}
 	}
 
-	output =
-	        test_pack_check_fpdu(fpdu, fpdu_length, (const unsigned char *const *)ppdus,
-	                             ppdus_length,
-	                             nb_ppdus, label,
-	                             label_length);
+	output = test_pack_check_fpdu(fpdu, fpdu_length, (const unsigned char *const *)ppdus,
+	                              ppdus_length, nb_ppdus, label, label_length);
 
 exit_label:
 
@@ -229,7 +227,6 @@ bool test_pack_fpdu_too_small(void)
 
 		pack_status = rle_pack(ppdu, ppdu_length, label, label_length, fpdu, &fpdu_pos,
 		                       &fpdu_remaining_length);
-
 		if (pack_status != RLE_PACK_OK) {
 			PRINT_ERROR("FPDU pack limit not passed");
 			goto exit_label;
@@ -248,7 +245,6 @@ bool test_pack_fpdu_too_small(void)
 
 		pack_status = rle_pack(ppdu, ppdu_length, label, label_length, fpdu, &fpdu_pos,
 		                       &fpdu_remaining_length);
-
 		if (pack_status != RLE_PACK_ERR_FPDU_TOO_SMALL) {
 			PRINT_ERROR("FPDU too small not raised");
 			goto exit_label;
@@ -268,20 +264,15 @@ bool test_pack_fpdu_too_small(void)
 		const size_t label_length_sec = 0;
 		const unsigned char *label_sec = NULL;
 
-		pack_status =
-		        rle_pack(ppdu, ppdu_length, label_first, label_length_first, fpdu,
-		                 &fpdu_pos,
-		                 &fpdu_remaining_length);
-
+		pack_status = rle_pack(ppdu, ppdu_length, label_first, label_length_first, fpdu,
+		                       &fpdu_pos, &fpdu_remaining_length);
 		if (pack_status != RLE_PACK_OK) {
 			PRINT_ERROR("Normal packing failed. %d", pack_status);
 			goto exit_label;
 		}
 
-		pack_status =
-		        rle_pack(ppdu, ppdu_length, label_sec, label_length_sec, fpdu, &fpdu_pos,
-		                 &fpdu_remaining_length);
-
+		pack_status = rle_pack(ppdu, ppdu_length, label_sec, label_length_sec, fpdu,
+		                       &fpdu_pos, &fpdu_remaining_length);
 		if (pack_status != RLE_PACK_ERR_FPDU_TOO_SMALL) {
 			PRINT_ERROR("FPDU too small not raised, pos %zu, remaining size %zu",
 			            fpdu_pos,
@@ -320,7 +311,6 @@ bool test_pack_invalid_ppdu(void)
 
 		pack_status = rle_pack(ppdu, ppdu_length, label, label_length, fpdu, &fpdu_pos,
 		                       &fpdu_remaining_length);
-
 		if (pack_status != RLE_PACK_ERR_INVALID_PPDU) {
 			PRINT_ERROR("Invalid PPDU not raised");
 			goto exit_label;
@@ -339,7 +329,6 @@ bool test_pack_invalid_ppdu(void)
 
 		pack_status = rle_pack(ppdu, ppdu_length, label, label_length, fpdu, &fpdu_pos,
 		                       &fpdu_remaining_length);
-
 		if (pack_status != RLE_PACK_ERR_INVALID_PPDU) {
 			PRINT_ERROR("Invalid PPDU not raised");
 			goto exit_label;
@@ -377,7 +366,6 @@ bool test_pack_invalid_label(void)
 
 		pack_status = rle_pack(ppdu, ppdu_length, label, label_length, fpdu, &fpdu_pos,
 		                       &fpdu_remaining_length);
-
 		if (pack_status != RLE_PACK_ERR_INVALID_LAB) {
 			PRINT_ERROR("Invalid label not raised");
 			goto exit_label;
@@ -396,7 +384,6 @@ bool test_pack_invalid_label(void)
 
 		pack_status = rle_pack(ppdu, ppdu_length, label, label_length, fpdu, &fpdu_pos,
 		                       &fpdu_remaining_length);
-
 		if (pack_status != RLE_PACK_ERR_INVALID_LAB) {
 			PRINT_ERROR("Invalid label not raised");
 			goto exit_label;
@@ -435,10 +422,9 @@ bool test_pack_all(void)
 	for (label_iterator = 0; label_iterator < nb_labels; ++label_iterator) {
 		size_t ppdus_iterator = 0;
 		for (ppdus_iterator = 0; ppdus_iterator < nb_ppdus_conf; ++ppdus_iterator) {
-			output &=
-			        test_pack(fpdu_length, ppdus_length_size[ppdus_iterator],
-			                  ppdus_length[ppdus_iterator],
-			                  label_length[label_iterator]);
+			output &= test_pack(fpdu_length, ppdus_length_size[ppdus_iterator],
+			                    ppdus_length[ppdus_iterator],
+			                    label_length[label_iterator]);
 		}
 	}
 
