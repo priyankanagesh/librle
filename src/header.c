@@ -151,6 +151,19 @@ static void push_cont_ppdu_header(struct rle_frag_buf *const frag_buf, const uin
  */
 static void push_end_ppdu_header(struct rle_frag_buf *const frag_buf, const uint8_t frag_id);
 
+/**
+ * @brief Get uncompressed protocol type from the first 4 bits of the SDU
+ *
+ * @param sdu      The SDU bytes
+ * @param sdu_len  The length of the SDU
+ * @param[out] pt  The uncompressed protocol type in case of success
+ * @return         true in case of success, false if SDU was too short
+ */
+static bool get_uncomp_protocol_type_from_sdu(const uint8_t *const sdu,
+                                              const size_t sdu_len,
+                                              uint16_t *const pt)
+	__attribute__((warn_unused_result, nonnull(1, 3)));
+
 
 /*------------------------------------------------------------------------------------------------*/
 /*------------------------------------ PRIVATE FUNCTIONS CODE ------------------------------------*/
@@ -288,6 +301,40 @@ static void push_end_ppdu_header(struct rle_frag_buf *const frag_buf, const uint
 	rle_ppdu_header_set_ppdu_length((rle_ppdu_header_t *)*p_ppdu_header,
 	                                ppdu_length_field);
 	(*p_ppdu_header)->frag_id = frag_id;
+}
+
+static bool get_uncomp_protocol_type_from_sdu(const uint8_t *const sdu,
+                                              const size_t sdu_len,
+                                              uint16_t *const pt)
+{
+	uint8_t ip_version;
+
+	if (sdu_len < 1) {
+		/* the protocol type cannot be deduced from the IP payload */
+		PRINT_RLE_ERROR("SDU is too short to deduce IP version from the first IP "
+		                "byte: %zu bytes available, 1 byte required at least\n",
+		                sdu_len);
+		goto error;
+	}
+
+	ip_version = (sdu[0] >> 4) & 0x0f;
+
+	if (ip_version == 4) {
+		*pt = RLE_PROTO_TYPE_IPV4_UNCOMP;
+	} else if (ip_version == 6) {
+		*pt = RLE_PROTO_TYPE_IPV6_UNCOMP;
+	} else {
+		PRINT_RLE_ERROR("unsupported IP Version %u\n", ip_version);
+		goto error;
+	}
+
+	PRINT_RLE_DEBUG("IP version %u detected, uncompressed protocol type is 0x%04x",
+	                ip_version, *pt);
+
+	return true;
+
+error:
+	return false;
 }
 
 
@@ -633,32 +680,14 @@ int suppressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 	                "ALPDU", (*sdu_fragment_len), default_ptype);
 
 	if (default_ptype == RLE_PROTO_TYPE_IP_COMP) {
-		uint8_t ip_version;
-
 		PRINT_RLE_DEBUG("implicit protocol type 0x%02x requires to detect IP version "
 		                "from SDU", default_ptype);
-
-		if ((*sdu_fragment_len) < 1) {
-			/* the protocol type cannot be deduced from the IP payload */
-			PRINT_RLE_ERROR("ALDPU fragment is too short to deduce IP version from the first IP byte: "
-			                "%zu bytes available, 1 byte required at least\n", (*sdu_fragment_len));
+		if (!get_uncomp_protocol_type_from_sdu(*sdu_fragment, *sdu_fragment_len, protocol_type)) {
+			PRINT_RLE_ERROR("failed to get uncompressed protocol type from the "
+			                "first 4 bits of SDU\n");
 			status = 1;
 			goto out;
 		}
-
-		ip_version = (*sdu_fragment[0] >> 4) & 0x0F;
-		if (ip_version == 4) {
-			*protocol_type = RLE_PROTO_TYPE_IPV4_UNCOMP;
-		} else if (ip_version == 6) {
-			*protocol_type = RLE_PROTO_TYPE_IPV6_UNCOMP;
-		} else {
-			PRINT_RLE_ERROR("Unsupported IP Version %d\n", ip_version);
-			status = 1;
-			goto out;
-		}
-		PRINT_RLE_DEBUG("IP version %u detected, uncompressed protocol type is then 0x%04x",
-		                ip_version, *protocol_type);
-
 	} else {
 		*protocol_type = rle_header_ptype_decompression(default_ptype);
 	}
@@ -750,12 +779,26 @@ int compressed_alpdu_extract_sdu_fragment(const unsigned char alpdu_fragment[],
 			status = 1;
 			goto out;
 		}
-		*protocol_type = rle_header_ptype_decompression(
-		        alpdu_header->compressed_supported.proto_type);
 		*sdu_fragment = alpdu_fragment + sizeof(alpdu_header->compressed_supported);
 		*sdu_fragment_len = alpdu_fragment_len - sizeof(alpdu_header->compressed_supported);
 		if (alpdu_hdr_len) {
 			*alpdu_hdr_len = sizeof(alpdu_header->compressed_supported);
+		}
+
+		/* determine the Ethertype of the payload */
+		if ((*comp_protocol_type) == RLE_PROTO_TYPE_IP_COMP) {
+			/* compressed protocol type 0x30 may indicate IPv4 or IPv6, disambiguation
+			 * is performed by checking the first 4 bits of the SDU */
+			PRINT_RLE_DEBUG("compressed protocol type 0x%02x requires to detect IP "
+			                "version from SDU", *comp_protocol_type);
+			if (!get_uncomp_protocol_type_from_sdu(*sdu_fragment, *sdu_fragment_len, protocol_type)) {
+				PRINT_RLE_ERROR("failed to get uncompressed protocol type from the "
+				                "first 4 bits of SDU\n");
+				status = 1;
+				goto out;
+			}
+		} else {
+			*protocol_type = rle_header_ptype_decompression(*comp_protocol_type);
 		}
 
 		PRINT_RLE_DEBUG("%zu-byte SDU with uncompressed protocol type 0x%04x extracted "
