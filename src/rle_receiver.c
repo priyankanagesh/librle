@@ -33,7 +33,6 @@
 #include "constants.h"
 #include "header.h"
 #include "trailer.h"
-#include "deencap.h"
 
 #ifndef __KERNEL__
 

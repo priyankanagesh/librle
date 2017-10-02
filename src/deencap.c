@@ -26,7 +26,6 @@
  *   Copyright (C) 2015, Thales Alenia Space France - All Rights Reserved
  */
 
-#include "deencap.h"
 #include "rle_receiver.h"
 #include "rle_ctx.h"
 #include "constants.h"
