@@ -82,7 +82,7 @@ typedef union rle_alpdu_trailer rle_alpdu_trailer_t;
  */
 int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
                        const struct rle_config *const rle_conf,
-                       struct rle_ctx_management *const rle_ctx);
+                       struct rle_ctx_mngt *const rle_ctx);
 
 /**
  *  @brief         check the ALPDU trailer with its SDU.
@@ -97,7 +97,7 @@ int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
  */
 int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
                         const struct rle_sdu *const reassembled_sdu,
-                        struct rle_ctx_management *const rle_ctx,
+                        struct rle_ctx_mngt *const rle_ctx,
                         bool *const is_ctx_seqnum_init,
                         size_t *const lost_packets);
 
@@ -110,7 +110,7 @@ int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
  * @ingroup RLE trailer.
  */
 uint32_t compute_crc32(const struct rle_sdu *const sdu)
-	__attribute__((warn_unused_result, nonnull(1)));
+__attribute__((warn_unused_result, nonnull(1)));
 
 
 #endif /* __TRAILER_H__ */

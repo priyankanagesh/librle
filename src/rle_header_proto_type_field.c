@@ -65,22 +65,22 @@
 
 /** 21 reserved protocol type for range 0x1b -> 0x2f */
 #define RLE_PROTO_TYPE_RESERVED_21      CONCAT_INITIALIZER_POW_16(RLE_PROTO_TYPE_RESERVED), \
-        CONCAT_INITIALIZER_POW_4(RLE_PROTO_TYPE_RESERVED), \
-        RLE_PROTO_TYPE_RESERVED
+	CONCAT_INITIALIZER_POW_4(RLE_PROTO_TYPE_RESERVED), \
+	RLE_PROTO_TYPE_RESERVED
 
 /** 56 reserved protocol type for range 0x48 -> 0x7f */
 #define RLE_PROTO_TYPE_RESERVED_56      CONCAT_INITIALIZER_POW_32(RLE_PROTO_TYPE_RESERVED), \
-        CONCAT_INITIALIZER_POW_16(RLE_PROTO_TYPE_RESERVED), \
-        CONCAT_INITIALIZER_POW_8(RLE_PROTO_TYPE_RESERVED)
+	CONCAT_INITIALIZER_POW_16(RLE_PROTO_TYPE_RESERVED), \
+	CONCAT_INITIALIZER_POW_8(RLE_PROTO_TYPE_RESERVED)
 
 /** 127 user defined protocol type for range 0x80 -> 0xfe */
 #define RLE_PROTO_TYPE_USER_DEFINED_127 CONCAT_INITIALIZER_POW_64(RLE_PROTO_TYPE_USER_DEFINED), \
-        CONCAT_INITIALIZER_POW_32(RLE_PROTO_TYPE_USER_DEFINED), \
-        CONCAT_INITIALIZER_POW_16(RLE_PROTO_TYPE_USER_DEFINED), \
-        CONCAT_INITIALIZER_POW_8(RLE_PROTO_TYPE_USER_DEFINED), \
-        CONCAT_INITIALIZER_POW_4(RLE_PROTO_TYPE_USER_DEFINED), \
-        CONCAT_INITIALIZER_POW_2(RLE_PROTO_TYPE_USER_DEFINED), \
-        RLE_PROTO_TYPE_USER_DEFINED
+	CONCAT_INITIALIZER_POW_32(RLE_PROTO_TYPE_USER_DEFINED), \
+	CONCAT_INITIALIZER_POW_16(RLE_PROTO_TYPE_USER_DEFINED), \
+	CONCAT_INITIALIZER_POW_8(RLE_PROTO_TYPE_USER_DEFINED), \
+	CONCAT_INITIALIZER_POW_4(RLE_PROTO_TYPE_USER_DEFINED), \
+	CONCAT_INITIALIZER_POW_2(RLE_PROTO_TYPE_USER_DEFINED), \
+	RLE_PROTO_TYPE_USER_DEFINED
 
 /* Protocol type references decompression array. ref: Table 7-3 p. 110 ETSI EN 301 545-2 v.1.2.1 */
 static const uint16_t rle_header_ptype_decomp[RLE_PROTO_TYPE_MAX_COMP_VALUE + 1] = {
@@ -182,7 +182,8 @@ uint8_t rle_header_ptype_compression(const uint16_t uncompressed_ptype,
 		 *  - VLAN contains one IPv4 or IPv6 packet as payload,
 		 *  - VLAN contains something else as payload.
 		 */
-		compressed_ptype = is_eth_vlan_ip_frame(frag_buf->sdu.start, frag_buf->sdu_info.size);
+		compressed_ptype =
+			is_eth_vlan_ip_frame(frag_buf->sdu.start, frag_buf->sdu_info.size);
 		break;
 	case RLE_PROTO_TYPE_VLAN_QINQ_UNCOMP:
 		compressed_ptype = RLE_PROTO_TYPE_VLAN_QINQ_COMP;

@@ -223,8 +223,8 @@ static bool test_frag(const uint16_t protocol_type,
 		size_t queue_size = rle_transmitter_stats_get_queue_size(transmitter, frag_id);
 
 		while (queue_size != 0) {
-			if ((sizeof(rle_ppdu_header_cont_end_t) + queue_size) < frag_size) {
-				frag_size = queue_size + sizeof(rle_ppdu_header_cont_end_t);
+			if ((sizeof(rle_ppdu_hdr_cont_end_t) + queue_size) < frag_size) {
+				frag_size = queue_size + sizeof(rle_ppdu_hdr_cont_end_t);
 			}
 
 			ret_frag = rle_fragment(transmitter, frag_id, frag_size, &ppdu, &real_size);
@@ -239,15 +239,14 @@ static bool test_frag(const uint16_t protocol_type,
 			frag_status = test_check_frag_transition(old_state, new_state);
 
 			if (frag_status != FRAG_STATUS_OK) {
-				PRINT_ERROR("Check integrity: invalid transition from state %d to %d",
-				            old_state, new_state);
+				PRINT_ERROR("Check integrity: invalid transition from state %d "
+				            "to %d", old_state, new_state);
 				goto exit_label;
 			}
 
 			old_state = new_state;
 			queue_size = rle_transmitter_stats_get_queue_size(transmitter, frag_id);
 		}
-
 	}
 
 	output = true;
@@ -480,17 +479,19 @@ bool test_frag_real_world(void)
 	const size_t sdu_lengths[] = { 100, 1500 };
 	size_t sdu_lengths_it;
 
-	for (sdu_lengths_it = 0; sdu_lengths_it < sizeof(sdu_lengths) / sizeof *(sdu_lengths); 
-			++sdu_lengths_it) {
+	for (sdu_lengths_it = 0; sdu_lengths_it < sizeof(sdu_lengths) / sizeof *(sdu_lengths);
+	     ++sdu_lengths_it) {
 		const size_t sdu_length = sdu_lengths[sdu_lengths_it];
 		const size_t burst_sizes[] =
 		{ 14, 24, 38, 51, 55, 59, 62, 69, 84, 85, 93, 96, 100, 115, 123, 130, 144, 170, 175,
 		  188, 264, 298, 355, 400, 438, 444, 539, 599 };
 		size_t burst_sizes_it;
-		for (burst_sizes_it = 0; burst_sizes_it < sizeof(burst_sizes) / sizeof *(burst_sizes); 
-				++burst_sizes_it) {
+		for (burst_sizes_it = 0;
+		     burst_sizes_it < sizeof(burst_sizes) / sizeof *(burst_sizes);
+		     ++burst_sizes_it) {
 			const size_t burst_size = burst_sizes[burst_sizes_it];
-			const bool ret = test_frag(protocol_type, conf, sdu_length, burst_size, frag_id);
+			const bool ret = test_frag(protocol_type, conf, sdu_length,
+			                           burst_size, frag_id);
 			if (ret == false) {
 				/* Only one fail means the encap test fail. */
 				output = false;
@@ -584,8 +585,8 @@ bool test_frag_all(void)
 		/* We launch the test on each configuration. All the cases then are test. */
 		for (conf = confs; *conf; ++conf) {
 			const bool ret =
-			        test_frag(protocol_type, **conf, sdu_length,
-			                  burst_sizes[burst_iterator], frag_id);
+				test_frag(protocol_type, **conf, sdu_length,
+				          burst_sizes[burst_iterator], frag_id);
 			if (ret == false) {
 				/* Only one fail means the encap test fail. */
 				return false;
@@ -597,8 +598,8 @@ bool test_frag_all(void)
 			(**conf).allow_alpdu_crc = 1;
 			(**conf).allow_alpdu_sequence_number = 1;
 			const bool ret =
-			        test_frag(protocol_type, **conf, sdu_length,
-			                  burst_sizes[burst_iterator], frag_id);
+				test_frag(protocol_type, **conf, sdu_length,
+				          burst_sizes[burst_iterator], frag_id);
 			if (ret == false) {
 				/* Only one fail means the encap test fail. */
 				return false;
@@ -610,8 +611,8 @@ bool test_frag_all(void)
 			(**conf).allow_alpdu_crc = 1;
 			(**conf).allow_alpdu_sequence_number = 0;
 			const bool ret =
-			        test_frag(protocol_type, **conf, sdu_length,
-			                  burst_sizes[burst_iterator], frag_id);
+				test_frag(protocol_type, **conf, sdu_length,
+				          burst_sizes[burst_iterator], frag_id);
 			if (ret == false) {
 				/* Only one fail means the encap test fail. */
 				return false;

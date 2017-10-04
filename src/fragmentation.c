@@ -61,16 +61,16 @@
 /*----------------------------------- PUBLIC FUNCTIONS CODE --------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, const uint8_t frag_id,
-                                  const size_t remaining_burst_size, unsigned char *ppdu[],
+enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter,
+                                  const uint8_t frag_id,
+                                  const size_t remaining_burst_size,
+                                  unsigned char *ppdu[],
                                   size_t *const ppdu_length)
 {
 	enum rle_frag_status status = RLE_FRAG_ERR; /* Error by default. */
 
 	rle_frag_buf_t *frag_buf;
-	struct rle_ctx_management *rle_ctx;
-
-	PRINT_RLE_DEBUG("");
+	struct rle_ctx_mngt *rle_ctx;
 
 	if (transmitter == NULL) {
 		status = RLE_FRAG_ERR_NULL_TRMT;
@@ -95,7 +95,7 @@ enum rle_frag_status rle_fragment(struct rle_transmitter *const transmitter, con
 
 	frag_buf_ppdu_init(frag_buf);
 
-	if (!push_ppdu_header(frag_buf, &transmitter->conf, remaining_burst_size, rle_ctx)) {
+	if (!push_ppdu_hdr(frag_buf, &transmitter->conf, remaining_burst_size, rle_ctx)) {
 		/* Burst to small for header. */
 		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
 		goto out;
@@ -127,8 +127,6 @@ enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmit
 {
 	enum rle_frag_status status = RLE_FRAG_ERR;
 
-	PRINT_RLE_DEBUG("");
-
 	if (!transmitter) {
 		status = RLE_FRAG_ERR_NULL_TRMT;
 		goto out;
@@ -148,17 +146,17 @@ enum rle_frag_status rle_frag_contextless(struct rle_transmitter *const transmit
 		goto out;
 	}
 	if (!ppdu_length) {
-		PRINT_RLE_ERROR("No PPDU length provided.");
+		RLE_ERR("No PPDU length provided");
 		goto out;
 	}
-	if (*ppdu_length < sizeof(rle_ppdu_header_comp_t)) {
+	if (*ppdu_length < sizeof(rle_ppdu_hdr_comp_t)) {
 		status = RLE_FRAG_ERR_BURST_TOO_SMALL;
 		goto out;
 	}
 
 	frag_buf_ppdu_init(frag_buf);
 
-	if (!push_ppdu_header(frag_buf, &transmitter->conf, *ppdu_length, NULL)) {
+	if (!push_ppdu_hdr(frag_buf, &transmitter->conf, *ppdu_length, NULL)) {
 		goto out;
 	}
 

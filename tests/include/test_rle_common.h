@@ -39,7 +39,7 @@
 
 #define PRINT_TEST(S, ...) printf("TEST %s:l.%d "S "\n", __func__, __LINE__, ## __VA_ARGS__)
 #define PRINT_TEST_STATUS(status) printf("RET %s:l.%d: %s\n", __func__, __LINE__, status == \
-                                         true ? "OK" : "KO")
+	                                 true ? "OK" : "KO")
 #define PRINT_ERROR(S, ...) printf("ERROR %s:l.%d: "S "\n", __func__, __LINE__, ## __VA_ARGS__)
 
 

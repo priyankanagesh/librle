@@ -55,13 +55,13 @@
 /*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-struct rle_frag_buf *rle_frag_buf_new(void)
+struct rle_frag_buf * rle_frag_buf_new(void)
 {
 	struct rle_frag_buf *frag_buf =
-	        (struct rle_frag_buf *)MALLOC(sizeof(struct rle_frag_buf));
+		(struct rle_frag_buf *)MALLOC(sizeof(struct rle_frag_buf));
 
 	if (!frag_buf) {
-		PRINT_RLE_ERROR("fragmentation buffer not allocated.");
+		RLE_ERR("fragmentation buffer not allocated");
 		goto out;
 	}
 
@@ -77,12 +77,12 @@ out:
 void rle_frag_buf_del(struct rle_frag_buf **const frag_buf)
 {
 	if (!frag_buf) {
-		PRINT_RLE_WARNING("fragmentation buffer pointer NULL, nothing can be done.");
+		RLE_WARN("fragmentation buffer pointer NULL, nothing can be done");
 		goto out;
 	}
 
 	if (!*frag_buf) {
-		PRINT_RLE_WARNING("fragmentation buffer NULL, nothing to do.");
+		RLE_WARN("fragmentation buffer NULL, nothing to do");
 		goto out;
 	}
 
@@ -102,8 +102,7 @@ int rle_frag_buf_init(struct rle_frag_buf *const frag_buf)
 
 	memset(frag_buf->buffer, '\0', RLE_F_BUFF_LEN);
 
-	frag_buf->cur_pos = frag_buf->buffer + sizeof(rle_ppdu_header_t) +
-	                    sizeof(rle_alpdu_header_t);
+	frag_buf->cur_pos = frag_buf->buffer + sizeof(rle_ppdu_hdr_t) + sizeof(rle_alpdu_hdr_t);
 
 	frag_buf_ptrs_set(&frag_buf->sdu, frag_buf->cur_pos);
 	frag_buf_ptrs_set(&frag_buf->alpdu, frag_buf->cur_pos);
@@ -174,4 +173,3 @@ size_t frag_buf_get_current_ppdu_len(const rle_frag_buf_t *const frag_buf)
 
 	return current_ppdu_len;
 }
-

@@ -68,7 +68,7 @@ struct link_status {
 };
 
 /** RLE context management structure */
-struct rle_ctx_management {
+struct rle_ctx_mngt {
 	/** specify fragment id the structure belongs to */
 	uint8_t frag_id;
 	/** next sequence number for frag_id */
@@ -100,7 +100,7 @@ struct rle_ctx_management {
  *
  * @ingroup RLE context
  */
-int rle_ctx_init_frag_buf(struct rle_ctx_management *_this);
+int rle_ctx_init_frag_buf(struct rle_ctx_mngt *_this);
 
 /**
  * @brief  Initialize RLE context structure with reassembly buffers.
@@ -112,7 +112,7 @@ int rle_ctx_init_frag_buf(struct rle_ctx_management *_this);
  *
  * @ingroup RLE context
  */
-int rle_ctx_init_rasm_buf(struct rle_ctx_management *_this);
+int rle_ctx_init_rasm_buf(struct rle_ctx_mngt *_this);
 
 /**
  * @brief  Destroy RLE context with fragmentation buffers structure and free memory
@@ -121,7 +121,7 @@ int rle_ctx_init_rasm_buf(struct rle_ctx_management *_this);
  *
  * @ingroup RLE context
  */
-void rle_ctx_destroy_frag_buf(struct rle_ctx_management *_this);
+void rle_ctx_destroy_frag_buf(struct rle_ctx_mngt *_this);
 
 /**
  * @brief  Destroy RLE context with reassembly buffers structure and free memory
@@ -130,7 +130,7 @@ void rle_ctx_destroy_frag_buf(struct rle_ctx_management *_this);
  *
  * @ingroup RLE context
  */
-void rle_ctx_destroy_rasm_buf(struct rle_ctx_management *_this);
+void rle_ctx_destroy_rasm_buf(struct rle_ctx_mngt *_this);
 
 /**
  * @brief  Set sequence number
@@ -140,7 +140,7 @@ void rle_ctx_destroy_rasm_buf(struct rle_ctx_management *_this);
  *
  * @ingroup RLE context
  */
-void rle_ctx_set_seq_nb(struct rle_ctx_management *const _this, const uint8_t val);
+void rle_ctx_set_seq_nb(struct rle_ctx_mngt *const _this, const uint8_t val);
 
 /**
  * @brief  Get current sequence number
@@ -151,7 +151,7 @@ void rle_ctx_set_seq_nb(struct rle_ctx_management *const _this, const uint8_t va
  *
  * @ingroup RLE context
  */
-uint8_t rle_ctx_get_seq_nb(const struct rle_ctx_management *const _this);
+uint8_t rle_ctx_get_seq_nb(const struct rle_ctx_mngt *const _this);
 
 /**
  * @brief  Increment by one current sequence number
@@ -160,7 +160,7 @@ uint8_t rle_ctx_get_seq_nb(const struct rle_ctx_management *const _this);
  *
  * @ingroup RLE context
  */
-void rle_ctx_incr_seq_nb(struct rle_ctx_management *const _this);
+void rle_ctx_incr_seq_nb(struct rle_ctx_mngt *const _this);
 
 /**
  * @brief  Set CRC usage flag for a specific RLE context
@@ -170,7 +170,7 @@ void rle_ctx_incr_seq_nb(struct rle_ctx_management *const _this);
  *
  * @ingroup RLE context
  */
-void rle_ctx_set_use_crc(struct rle_ctx_management *const _this, const bool val);
+void rle_ctx_set_use_crc(struct rle_ctx_mngt *const _this, const bool val);
 
 /**
  * @brief  Get current CRC usage flag
@@ -181,7 +181,7 @@ void rle_ctx_set_use_crc(struct rle_ctx_management *const _this, const bool val)
  *
  * @ingroup RLE context
  */
-bool rle_ctx_get_use_crc(const struct rle_ctx_management *const _this);
+bool rle_ctx_get_use_crc(const struct rle_ctx_mngt *const _this);
 
 /**
  * @brief  Get RLE packet length
@@ -192,7 +192,7 @@ bool rle_ctx_get_use_crc(const struct rle_ctx_management *const _this);
  *
  * @ingroup RLE context
  */
-uint32_t rle_ctx_get_rle_length(struct rle_ctx_management *const _this);
+uint32_t rle_ctx_get_rle_length(struct rle_ctx_mngt *const _this);
 
 /**
  * @brief  increment ALPDU length
@@ -202,7 +202,7 @@ uint32_t rle_ctx_get_rle_length(struct rle_ctx_management *const _this);
  *
  * @ingroup RLE context
  */
-void rle_ctx_incr_alpdu_length(struct rle_ctx_management *const _this, const uint32_t val);
+void rle_ctx_incr_alpdu_length(struct rle_ctx_mngt *const _this, const uint32_t val);
 
 /**
  * @brief  Get ALPDU length
@@ -213,7 +213,7 @@ void rle_ctx_incr_alpdu_length(struct rle_ctx_management *const _this, const uin
  *
  * @ingroup RLE context
  */
-uint32_t rle_ctx_get_alpdu_length(const struct rle_ctx_management *const _this);
+uint32_t rle_ctx_get_alpdu_length(const struct rle_ctx_mngt *const _this);
 
 /**
  * @brief  decrement remaining ALPDU length
@@ -223,7 +223,8 @@ uint32_t rle_ctx_get_alpdu_length(const struct rle_ctx_management *const _this);
  *
  * @ingroup RLE context
  */
-void rle_ctx_decr_remaining_alpdu_length(struct rle_ctx_management *const _this, const uint32_t val);
+void rle_ctx_decr_remaining_alpdu_length(struct rle_ctx_mngt *const _this,
+                                         const uint32_t val);
 
 /**
  * @brief  Get remaining ALPDU length
@@ -234,7 +235,7 @@ void rle_ctx_decr_remaining_alpdu_length(struct rle_ctx_management *const _this,
  *
  * @ingroup RLE context
  */
-uint32_t rle_ctx_get_remaining_alpdu_length(const struct rle_ctx_management *const _this);
+uint32_t rle_ctx_get_remaining_alpdu_length(const struct rle_ctx_mngt *const _this);
 
 /**
  * @brief  Get Protocol Type value
@@ -245,7 +246,7 @@ uint32_t rle_ctx_get_remaining_alpdu_length(const struct rle_ctx_management *con
  *
  * @ingroup RLE context
  */
-uint16_t rle_ctx_get_proto_type(struct rle_ctx_management *const _this);
+uint16_t rle_ctx_get_proto_type(struct rle_ctx_mngt *const _this);
 
 /**
  * @brief  Set Label Type value
@@ -264,8 +265,7 @@ uint16_t rle_ctx_get_proto_type(struct rle_ctx_management *const _this);
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_set_counter_in(struct rle_ctx_management *const _this,
-                                          const uint64_t val)
+static inline void rle_ctx_set_counter_in(struct rle_ctx_mngt *const _this, const uint64_t val)
 {
 	_this->lk_status.counter_in = val;
 
@@ -280,7 +280,7 @@ static inline void rle_ctx_set_counter_in(struct rle_ctx_management *const _this
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_reset_counter_in(struct rle_ctx_management *const _this)
+static inline void rle_ctx_reset_counter_in(struct rle_ctx_mngt *const _this)
 {
 	rle_ctx_set_counter_in(_this, 0L);
 
@@ -295,7 +295,7 @@ static inline void rle_ctx_reset_counter_in(struct rle_ctx_management *const _th
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_incr_counter_in(struct rle_ctx_management *const _this)
+static inline void rle_ctx_incr_counter_in(struct rle_ctx_mngt *const _this)
 {
 	_this->lk_status.counter_in++;
 
@@ -312,7 +312,7 @@ static inline void rle_ctx_incr_counter_in(struct rle_ctx_management *const _thi
  *
  * @ingroup RLE context
  */
-static inline uint64_t rle_ctx_get_counter_in(const struct rle_ctx_management *const _this)
+static inline uint64_t rle_ctx_get_counter_in(const struct rle_ctx_mngt *const _this)
 {
 	return _this->lk_status.counter_in;
 }
@@ -326,8 +326,7 @@ static inline uint64_t rle_ctx_get_counter_in(const struct rle_ctx_management *c
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_set_counter_ok(struct rle_ctx_management *const _this,
-                                          const uint64_t val)
+static inline void rle_ctx_set_counter_ok(struct rle_ctx_mngt *const _this, const uint64_t val)
 {
 	_this->lk_status.counter_ok = val;
 
@@ -342,7 +341,7 @@ static inline void rle_ctx_set_counter_ok(struct rle_ctx_management *const _this
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_reset_counter_ok(struct rle_ctx_management *const _this)
+static inline void rle_ctx_reset_counter_ok(struct rle_ctx_mngt *const _this)
 {
 	rle_ctx_set_counter_ok(_this, 0L);
 
@@ -357,7 +356,7 @@ static inline void rle_ctx_reset_counter_ok(struct rle_ctx_management *const _th
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_incr_counter_ok(struct rle_ctx_management *const _this)
+static inline void rle_ctx_incr_counter_ok(struct rle_ctx_mngt *const _this)
 {
 	_this->lk_status.counter_ok++;
 
@@ -374,7 +373,7 @@ static inline void rle_ctx_incr_counter_ok(struct rle_ctx_management *const _thi
  *
  * @ingroup RLE context
  */
-static inline uint64_t rle_ctx_get_counter_ok(const struct rle_ctx_management *const _this)
+static inline uint64_t rle_ctx_get_counter_ok(const struct rle_ctx_mngt *const _this)
 {
 	return _this->lk_status.counter_ok;
 }
@@ -388,8 +387,7 @@ static inline uint64_t rle_ctx_get_counter_ok(const struct rle_ctx_management *c
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_set_counter_dropped(struct rle_ctx_management *const _this,
-                                               const uint64_t val)
+static inline void rle_ctx_set_counter_dropped(struct rle_ctx_mngt *const _this, const uint64_t val)
 {
 	_this->lk_status.counter_dropped = val;
 
@@ -404,7 +402,7 @@ static inline void rle_ctx_set_counter_dropped(struct rle_ctx_management *const 
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_reset_counter_dropped(struct rle_ctx_management *const _this)
+static inline void rle_ctx_reset_counter_dropped(struct rle_ctx_mngt *const _this)
 {
 	rle_ctx_set_counter_dropped(_this, 0L);
 
@@ -419,7 +417,7 @@ static inline void rle_ctx_reset_counter_dropped(struct rle_ctx_management *cons
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_incr_counter_dropped(struct rle_ctx_management *const _this)
+static inline void rle_ctx_incr_counter_dropped(struct rle_ctx_mngt *const _this)
 {
 	_this->lk_status.counter_dropped++;
 
@@ -436,7 +434,7 @@ static inline void rle_ctx_incr_counter_dropped(struct rle_ctx_management *const
  *
  * @ingroup RLE context
  */
-static inline uint64_t rle_ctx_get_counter_dropped(const struct rle_ctx_management *const _this)
+static inline uint64_t rle_ctx_get_counter_dropped(const struct rle_ctx_mngt *const _this)
 {
 	return _this->lk_status.counter_dropped;
 }
@@ -450,8 +448,7 @@ static inline uint64_t rle_ctx_get_counter_dropped(const struct rle_ctx_manageme
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_set_counter_lost(struct rle_ctx_management *const _this,
-                                            const uint64_t val)
+static inline void rle_ctx_set_counter_lost(struct rle_ctx_mngt *const _this, const uint64_t val)
 {
 	_this->lk_status.counter_lost = val;
 
@@ -466,7 +463,7 @@ static inline void rle_ctx_set_counter_lost(struct rle_ctx_management *const _th
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_reset_counter_lost(struct rle_ctx_management *const _this)
+static inline void rle_ctx_reset_counter_lost(struct rle_ctx_mngt *const _this)
 {
 	rle_ctx_set_counter_lost(_this, 0L);
 
@@ -481,8 +478,7 @@ static inline void rle_ctx_reset_counter_lost(struct rle_ctx_management *const _
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_incr_counter_lost(struct rle_ctx_management *const _this,
-                                             const uint64_t val)
+static inline void rle_ctx_incr_counter_lost(struct rle_ctx_mngt *const _this, const uint64_t val)
 {
 	_this->lk_status.counter_lost += val;
 
@@ -499,7 +495,7 @@ static inline void rle_ctx_incr_counter_lost(struct rle_ctx_management *const _t
  *
  * @ingroup RLE context
  */
-static inline uint64_t rle_ctx_get_counter_lost(const struct rle_ctx_management *const _this)
+static inline uint64_t rle_ctx_get_counter_lost(const struct rle_ctx_mngt *const _this)
 {
 	return _this->lk_status.counter_lost;
 }
@@ -513,7 +509,7 @@ static inline uint64_t rle_ctx_get_counter_lost(const struct rle_ctx_management 
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_set_counter_bytes_in(struct rle_ctx_management *const _this,
+static inline void rle_ctx_set_counter_bytes_in(struct rle_ctx_mngt *const _this,
                                                 const uint64_t val)
 {
 	_this->lk_status.counter_bytes_in = val;
@@ -529,7 +525,7 @@ static inline void rle_ctx_set_counter_bytes_in(struct rle_ctx_management *const
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_reset_counter_bytes_in(struct rle_ctx_management *const _this)
+static inline void rle_ctx_reset_counter_bytes_in(struct rle_ctx_mngt *const _this)
 {
 	rle_ctx_set_counter_bytes_in(_this, 0L);
 
@@ -546,7 +542,7 @@ static inline void rle_ctx_reset_counter_bytes_in(struct rle_ctx_management *con
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_incr_counter_bytes_in(struct rle_ctx_management *const _this,
+static inline void rle_ctx_incr_counter_bytes_in(struct rle_ctx_mngt *const _this,
                                                  const uint64_t val)
 {
 	_this->lk_status.counter_bytes_in += val;
@@ -564,7 +560,7 @@ static inline void rle_ctx_incr_counter_bytes_in(struct rle_ctx_management *cons
  *
  * @ingroup RLE context
  */
-static inline uint64_t rle_ctx_get_counter_bytes_in(const struct rle_ctx_management *const _this)
+static inline uint64_t rle_ctx_get_counter_bytes_in(const struct rle_ctx_mngt *const _this)
 {
 	return _this->lk_status.counter_bytes_in;
 }
@@ -578,7 +574,7 @@ static inline uint64_t rle_ctx_get_counter_bytes_in(const struct rle_ctx_managem
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_set_counter_bytes_ok(struct rle_ctx_management *const _this,
+static inline void rle_ctx_set_counter_bytes_ok(struct rle_ctx_mngt *const _this,
                                                 const uint64_t val)
 {
 	_this->lk_status.counter_bytes_ok = val;
@@ -594,7 +590,7 @@ static inline void rle_ctx_set_counter_bytes_ok(struct rle_ctx_management *const
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_reset_counter_bytes_ok(struct rle_ctx_management *const _this)
+static inline void rle_ctx_reset_counter_bytes_ok(struct rle_ctx_mngt *const _this)
 {
 	rle_ctx_set_counter_bytes_ok(_this, 0L);
 
@@ -610,7 +606,7 @@ static inline void rle_ctx_reset_counter_bytes_ok(struct rle_ctx_management *con
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_incr_counter_bytes_ok(struct rle_ctx_management *const _this,
+static inline void rle_ctx_incr_counter_bytes_ok(struct rle_ctx_mngt *const _this,
                                                  const uint64_t val)
 {
 	_this->lk_status.counter_bytes_ok += val;
@@ -628,7 +624,7 @@ static inline void rle_ctx_incr_counter_bytes_ok(struct rle_ctx_management *cons
  *
  * @ingroup RLE context
  */
-static inline uint64_t rle_ctx_get_counter_bytes_ok(const struct rle_ctx_management *const _this)
+static inline uint64_t rle_ctx_get_counter_bytes_ok(const struct rle_ctx_mngt *const _this)
 {
 	return _this->lk_status.counter_bytes_ok;
 }
@@ -642,7 +638,7 @@ static inline uint64_t rle_ctx_get_counter_bytes_ok(const struct rle_ctx_managem
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_set_counter_bytes_dropped(struct rle_ctx_management *const _this,
+static inline void rle_ctx_set_counter_bytes_dropped(struct rle_ctx_mngt *const _this,
                                                      const uint64_t val)
 {
 	_this->lk_status.counter_bytes_dropped = val;
@@ -658,7 +654,7 @@ static inline void rle_ctx_set_counter_bytes_dropped(struct rle_ctx_management *
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_reset_counter_bytes_dropped(struct rle_ctx_management *const _this)
+static inline void rle_ctx_reset_counter_bytes_dropped(struct rle_ctx_mngt *const _this)
 {
 	rle_ctx_set_counter_bytes_dropped(_this, 0L);
 
@@ -674,7 +670,7 @@ static inline void rle_ctx_reset_counter_bytes_dropped(struct rle_ctx_management
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_incr_counter_bytes_dropped(struct rle_ctx_management *const _this,
+static inline void rle_ctx_incr_counter_bytes_dropped(struct rle_ctx_mngt *const _this,
                                                       const uint64_t val)
 {
 	_this->lk_status.counter_bytes_dropped += val;
@@ -693,7 +689,7 @@ static inline void rle_ctx_incr_counter_bytes_dropped(struct rle_ctx_management 
  * @ingroup RLE context
  */
 static inline uint64_t rle_ctx_get_counter_bytes_dropped(
-        const struct rle_ctx_management *const _this)
+	const struct rle_ctx_mngt *const _this)
 {
 	return _this->lk_status.counter_bytes_dropped;
 }
@@ -706,7 +702,7 @@ static inline uint64_t rle_ctx_get_counter_bytes_dropped(
  *
  * @ingroup RLE context
  */
-static inline void rle_ctx_reset_counters(struct rle_ctx_management *const _this)
+static inline void rle_ctx_reset_counters(struct rle_ctx_mngt *const _this)
 {
 	rle_ctx_reset_counter_in(_this);
 	rle_ctx_reset_counter_ok(_this);

@@ -42,10 +42,9 @@
 #define MODULE_ID RLE_MOD_ID_FRAGMENTATION_BUFFER
 
 /** Maximum size for a fragmentation buffer. */
-#define RLE_F_BUFF_LEN (sizeof(rle_ppdu_header_t) + \
-                        sizeof(rle_alpdu_header_t) + \
-                        (RLE_MAX_PDU_SIZE) + \
-                        sizeof(rle_alpdu_trailer_t))
+#define RLE_F_BUFF_LEN \
+	(sizeof(rle_ppdu_hdr_t) + sizeof(rle_alpdu_hdr_t) + \
+	 (RLE_MAX_PDU_SIZE) + sizeof(rle_alpdu_trailer_t))
 
 
 /*------------------------------------------------------------------------------------------------*/
@@ -300,7 +299,7 @@ static inline int frag_buf_in_use(const rle_frag_buf_t *const frag_buf);
  * @ingroup       RLE Fragmentation buffer.
  */
 static inline ssize_t frag_buf_get_sdu_len(const rle_frag_buf_t *const frag_buf)
-	__attribute__((warn_unused_result, nonnull(1)));
+__attribute__((warn_unused_result, nonnull(1)));
 
 /**
  * @brief         Get the length of the ALPDU header in the fragmentation buffer.
@@ -311,7 +310,7 @@ static inline ssize_t frag_buf_get_sdu_len(const rle_frag_buf_t *const frag_buf)
  *
  * @ingroup       RLE Fragmentation buffer.
  */
-static inline ssize_t frag_buf_get_alpdu_header_len(const rle_frag_buf_t *const frag_buf);
+static inline ssize_t frag_buf_get_alpdu_hdr_len(const rle_frag_buf_t *const frag_buf);
 
 /**
  * @brief         Get the length of the ALPDU trailer in the fragmentation buffer.
@@ -445,7 +444,7 @@ static void frag_buf_ptrs_push(frag_buf_ptrs_t *const ptrs, const ssize_t size)
 static void frag_buf_ptrs_put(frag_buf_ptrs_t *const ptrs, const size_t size)
 {
 	const ptrdiff_t offset =
-	        (ptrs->frag_buf->buffer + sizeof(ptrs->frag_buf->buffer)) - ptrs->end;
+		(ptrs->frag_buf->buffer + sizeof(ptrs->frag_buf->buffer)) - ptrs->end;
 
 	assert(size <= (size_t)offset);
 
@@ -495,7 +494,7 @@ static inline ssize_t frag_buf_get_sdu_len(const rle_frag_buf_t *const frag_buf)
 	return (ssize_t)(frag_buf->sdu.end - frag_buf->sdu.start);
 }
 
-static inline ssize_t frag_buf_get_alpdu_header_len(const rle_frag_buf_t *const frag_buf)
+static inline ssize_t frag_buf_get_alpdu_hdr_len(const rle_frag_buf_t *const frag_buf)
 {
 	return (ssize_t)(frag_buf->sdu.start - frag_buf->alpdu.start);
 }
@@ -512,28 +511,26 @@ static inline int frag_buf_dump_mem(const rle_frag_buf_t *const frag_buf,
 	const unsigned char *b = start;
 
 	if (!frag_buf_in_use(frag_buf)) {
-		PRINT_RLE_ERROR("fragmentation buffer not in use.");
+		RLE_ERR("fragmentation buffer not in use");
 		goto out;
 	}
 
 	if ((start < frag_buf->buffer) || (end > (frag_buf->buffer + sizeof(frag_buf->buffer)))) {
-		PRINT_RLE_ERROR("address out of buffer ([%p - %p]/[%p - %p]).", start, end,
-		                frag_buf->buffer,
-		                frag_buf->buffer + sizeof(frag_buf->buffer));
+		RLE_ERR("address out of buffer ([%p - %p]/[%p - %p])", start, end, frag_buf->buffer,
+		        frag_buf->buffer + sizeof(frag_buf->buffer));
 		goto out;
 	}
 
 	if (end < start) {
-		PRINT_RLE_ERROR("start after end (%p/%p)", start, end);
+		RLE_ERR("start after end (%p/%p)", start, end);
 		goto out;
 	}
 
 	for (; b < end; ++b) {
-		PRINT_RLE_DEBUG("%02x%s", *b, ((b - start) % 16) == 15 ? "\n" : " ");
+		RLE_DEBUG("%02x%s", *b, ((b - start) % 16) == 15 ? "\n" : " ");
 	}
 
 out:
-
 	return (int)(end - start);
 }
 
@@ -544,7 +541,7 @@ static inline int frag_buf_dump_ppdu_header(const rle_frag_buf_t *const frag_buf
 	const unsigned char *end;
 
 	if (!frag_buf_in_use(frag_buf)) {
-		PRINT_RLE_ERROR("fragmentation buffer not in use.");
+		RLE_ERR("fragmentation buffer not in use");
 		goto out;
 	}
 
@@ -556,11 +553,10 @@ static inline int frag_buf_dump_ppdu_header(const rle_frag_buf_t *const frag_buf
 		goto out;
 	}
 
-	PRINT_RLE_DEBUG("%d-octets PPDU header dumped.", ret);
+	RLE_DEBUG("%d-octets PPDU header dumped", ret);
 	status = 0;
 
 out:
-
 	return status;
 }
 
@@ -570,7 +566,7 @@ static inline int frag_buf_dump_alpdu_header(const rle_frag_buf_t *const frag_bu
 	int ret;
 
 	if (!frag_buf_in_use(frag_buf)) {
-		PRINT_RLE_ERROR("fragmentation buffer not in use.");
+		RLE_ERR("fragmentation buffer not in use");
 		goto out;
 	}
 
@@ -580,11 +576,10 @@ static inline int frag_buf_dump_alpdu_header(const rle_frag_buf_t *const frag_bu
 		goto out;
 	}
 
-	PRINT_RLE_DEBUG("%d-octets ALPDU header dumped.", ret);
+	RLE_DEBUG("%d-octets ALPDU header dumped", ret);
 	status = 0;
 
 out:
-
 	return status;
 }
 
@@ -594,7 +589,7 @@ static inline int frag_buf_dump_sdu(const rle_frag_buf_t *const frag_buf)
 	int ret;
 
 	if (!frag_buf_in_use(frag_buf)) {
-		PRINT_RLE_ERROR("fragmentation buffer not in use.");
+		RLE_ERR("fragmentation buffer not in use");
 		goto out;
 	}
 
@@ -604,11 +599,10 @@ static inline int frag_buf_dump_sdu(const rle_frag_buf_t *const frag_buf)
 		goto out;
 	}
 
-	PRINT_RLE_DEBUG("%d-octets SDU dumped.", ret);
+	RLE_DEBUG("%d-octets SDU dumped", ret);
 	status = 0;
 
 out:
-
 	return status;
 }
 
@@ -618,7 +612,7 @@ static inline int frag_buf_dump_alpdu_trailer(const rle_frag_buf_t *const frag_b
 	int ret;
 
 	if (!frag_buf_in_use(frag_buf)) {
-		PRINT_RLE_ERROR("fragmentation buffer not in use.");
+		RLE_ERR("fragmentation buffer not in use");
 		goto out;
 	}
 
@@ -628,11 +622,10 @@ static inline int frag_buf_dump_alpdu_trailer(const rle_frag_buf_t *const frag_b
 		goto out;
 	}
 
-	PRINT_RLE_DEBUG("%d-octets ALPDU trailer dumped.", ret);
+	RLE_DEBUG("%d-octets ALPDU trailer dumped", ret);
 	status = 0;
 
 out:
-
 	return status;
 }
 
@@ -642,23 +635,21 @@ static inline int frag_buf_dump_full_frag_buf(const rle_frag_buf_t *const frag_b
 	int ret;
 
 	if (!frag_buf_in_use(frag_buf)) {
-		PRINT_RLE_ERROR("fragmentation buffer not in use.");
+		RLE_ERR("fragmentation buffer not in use");
 		goto out;
 	}
 
-	ret =
-	        frag_buf_dump_mem(frag_buf, frag_buf->buffer, frag_buf->buffer +
-	                          sizeof(frag_buf->buffer));
+	ret = frag_buf_dump_mem(frag_buf, frag_buf->buffer, frag_buf->buffer +
+	                        sizeof(frag_buf->buffer));
 
 	if (ret != -1) {
 		goto out;
 	}
 
-	PRINT_RLE_DEBUG("%d-octets fragmentation buffer dumped.", ret);
+	RLE_DEBUG("%d-octets fragmentation buffer dumped", ret);
 	status = 0;
 
 out:
-
 	return status;
 }
 

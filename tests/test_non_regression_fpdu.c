@@ -53,17 +53,22 @@
 /* prototypes of private functions */
 static void usage(void);
 static int test_decap_fpdus(const bool ignore_malformed, const char *const src_filename);
-static int decap_fpdus(struct rle_receiver *const receiver, const size_t *const fpdus_lengths,
-                       unsigned char *const *const fpdus, const size_t number_of_fpdus,
+static int decap_fpdus(struct rle_receiver *const receiver,
+                       const size_t *const fpdus_lengths,
+                       unsigned char *const *const fpdus,
+                       const size_t number_of_fpdus,
                        const size_t link_len_src);
 
 
 /** Whether the application runs in verbose mode or not */
 static int is_verbose = 0;
 
-#define printf_verbose(x ...) do { \
-		if (is_verbose) { printf(x); } \
-} while (0)
+#define TRACE(x ...) \
+	do { \
+		if (is_verbose) { \
+			printf(x); \
+		} \
+	} while (0)
 
 /**
  * @brief Main function for the RLE test program
@@ -170,13 +175,15 @@ static void usage(void)
  *                          2 if the process is not successful, but due to a misuse of the RLE lib.
  *                          -2 if an error occurs while receiving
  */
-static int decap_fpdus(struct rle_receiver *const receiver, const size_t *const fpdus_lengths,
-                       unsigned char *const *const fpdus, const size_t number_of_fpdus,
+static int decap_fpdus(struct rle_receiver *const receiver,
+                       const size_t *const fpdus_lengths,
+                       unsigned char *const *const fpdus,
+                       const size_t number_of_fpdus,
                        const size_t link_len_src)
 {
 	enum rle_decap_status ret_decap = RLE_DECAP_ERR;
 
-	size_t packet_iterator = 0;
+	size_t pkt_id = 0;
 
 	const size_t max_number_of_packets = 100;
 
@@ -184,9 +191,9 @@ static int decap_fpdus(struct rle_receiver *const receiver, const size_t *const 
 	const size_t sdu_out_buf_length = 4088;
 	uint8_t sdu_out_buf[max_number_of_packets][sdu_out_buf_length];
 
-	for (packet_iterator = 0; packet_iterator < max_number_of_packets; ++packet_iterator) {
-		memset((void *)sdu_out_buf[packet_iterator], '\0', sdu_out_buf_length);
-		sdus_out[packet_iterator].buffer = sdu_out_buf[packet_iterator] + link_len_src;
+	for (pkt_id = 0; pkt_id < max_number_of_packets; ++pkt_id) {
+		memset((void *)sdu_out_buf[pkt_id], '\0', sdu_out_buf_length);
+		sdus_out[pkt_id].buffer = sdu_out_buf[pkt_id] + link_len_src;
 	}
 
 	const size_t label_size = 3;
@@ -196,83 +203,78 @@ static int decap_fpdus(struct rle_receiver *const receiver, const size_t *const 
 
 	int status = 1;
 
-	size_t fpdu_iterator;
+	size_t fpdu_id;
 
 	size_t total_sdu = 0;
 
-	printf_verbose("\n=== %zu FPDU%s to decapsulate:\n", number_of_fpdus,
-	               number_of_fpdus == 1 ? "" : "s");
-	for (fpdu_iterator = 0; fpdu_iterator < number_of_fpdus; ++fpdu_iterator) {
-		const unsigned char *const fpdu = fpdus[fpdu_iterator];
-		const size_t fpdu_length = fpdus_lengths[fpdu_iterator];
+	TRACE("\n=== %zu FPDU%s to decapsulate:\n", number_of_fpdus,
+	      number_of_fpdus == 1 ? "" : "s");
+	for (fpdu_id = 0; fpdu_id < number_of_fpdus; ++fpdu_id) {
+		const unsigned char *const fpdu = fpdus[fpdu_id];
+		const size_t fpdu_length = fpdus_lengths[fpdu_id];
 
 		size_t buffer_iterator;
-		printf_verbose("=== FPDU n°%zu:\n", fpdu_iterator + 1);
+		TRACE("=== FPDU n°%zu:\n", fpdu_id + 1);
 		for (buffer_iterator = 0; buffer_iterator < fpdu_length; ++buffer_iterator) {
-			printf_verbose("%02x%s", fpdu[buffer_iterator],
-			               buffer_iterator % 16 == 15 ? "\n" : " ");
+			TRACE("%02x%s", fpdu[buffer_iterator],
+			      buffer_iterator % 16 == 15 ? "\n" : " ");
 		}
-		printf_verbose("\n\n");
+		TRACE("\n\n");
 	}
 
-	for (fpdu_iterator = 0; fpdu_iterator < number_of_fpdus; ++fpdu_iterator) {
+	for (fpdu_id = 0; fpdu_id < number_of_fpdus; ++fpdu_id) {
 		/* decapsulate the FPDU */
-		unsigned char *const fpdu = fpdus[fpdu_iterator];
-		const size_t fpdu_length = fpdus_lengths[fpdu_iterator];
+		unsigned char *const fpdu = fpdus[fpdu_id];
+		const size_t fpdu_length = fpdus_lengths[fpdu_id];
 
-		printf_verbose("=== RLE decapsulation: start\n");
-		ret_decap =
-		        rle_decapsulate(receiver, fpdu, fpdu_length, &sdus_out[total_sdu],
-		                        max_number_of_packets, &sdus_nr, label, label_size);
+		TRACE("=== RLE decapsulation: start\n");
+		ret_decap = rle_decapsulate(receiver, fpdu, fpdu_length, &sdus_out[total_sdu],
+		                            max_number_of_packets, &sdus_nr, label, label_size);
 
 		total_sdu += sdus_nr;
 
 		switch (ret_decap) {
 		case RLE_DECAP_OK:
-			printf_verbose("=== RLE decapsulation: success\n");
+			TRACE("=== RLE decapsulation: success\n");
 			break;
 		case RLE_DECAP_ERR_NULL_RCVR:
 		case RLE_DECAP_ERR_INV_FPDU:
 		case RLE_DECAP_ERR_INV_PL:
 		case RLE_DECAP_ERR_INV_SDUS:
-			printf_verbose(
-			        "=== RLE decapsulation: misuse\n"
-			        "    %s\n", ret_decap == RLE_DECAP_ERR_NULL_RCVR ?
-			        "RLE_DECAP_ERR_NULL_RCVR" : ret_decap ==
-			        RLE_DECAP_ERR_INV_FPDU ?
-			        "RLE_DECAP_ERR_INV_FPDU" : ret_decap ==
-			        RLE_DECAP_ERR_INV_PL ?
-			        "RLE_DECAP_ERR_INV_PL" : "RLE_DECAP_ERR_INV_SDUS");
+			TRACE("=== RLE decapsulation: misuse\n    %s\n",
+			      ret_decap == RLE_DECAP_ERR_NULL_RCVR ? "RLE_DECAP_ERR_NULL_RCVR" :
+			      ret_decap == RLE_DECAP_ERR_INV_FPDU ? "RLE_DECAP_ERR_INV_FPDU" :
+			      ret_decap == RLE_DECAP_ERR_INV_PL ? "RLE_DECAP_ERR_INV_PL" :
+			      "RLE_DECAP_ERR_INV_SDUS");
 			status = -2;
 			break;
 		case RLE_DECAP_ERR_SOME_DROP:
 		case RLE_DECAP_ERR_ALL_DROP:
-			printf_verbose(
-			        "=== RLE decapsulation: error with drop\n"
-			        "    %s\n", ret_decap == RLE_DECAP_ERR_SOME_DROP ?
-			        "RLE_DECAP_ERR_SOME_DROP:" : "RLE_DECAP_ERR_ALL_DROP");
+			TRACE("=== RLE decapsulation: error with drop\n    %s\n",
+			      ret_decap == RLE_DECAP_ERR_SOME_DROP ? "RLE_DECAP_ERR_SOME_DROP:" :
+			      "RLE_DECAP_ERR_ALL_DROP");
 			status = -2;
 			break;
 		case RLE_DECAP_ERR:
 		default:
-			printf_verbose("=== RLE decapsulation: misc. failure\n");
+			TRACE("=== RLE decapsulation: misc. failure\n");
 			status = -2;
 			break;
 		}
 	}
-	printf_verbose("\n");
+	TRACE("\n");
 
-	for (packet_iterator = 0; packet_iterator < total_sdu; ++packet_iterator) {
-		printf_verbose("%zu-byte decapsuled SDU:\n", sdus_out[packet_iterator].size);
+	for (pkt_id = 0; pkt_id < total_sdu; ++pkt_id) {
+		TRACE("%zu-byte decapsuled SDU:\n", sdus_out[pkt_id].size);
 		size_t it = 0;
-		for (it = 0; it < sdus_out[packet_iterator].size; ++it) {
-			printf_verbose("%02x%s", sdus_out[packet_iterator].buffer[it],
-			               it % 16 == 15 ? "\n" : " ");
+		for (it = 0; it < sdus_out[pkt_id].size; ++it) {
+			TRACE("%02x%s", sdus_out[pkt_id].buffer[it],
+			      it % 16 == 15 ? "\n" : " ");
 		}
-		printf_verbose("\n\n");
+		TRACE("\n\n");
 	}
 
-	printf_verbose("\n");
+	TRACE("\n");
 	return status;
 }
 
@@ -403,7 +405,6 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 
 	/* for each fpdu in the dump */
 	unsigned char **fpdus = malloc(sizeof(unsigned char *));
-
 	if (fpdus == NULL) {
 		printf("failed to allocate FPDUs.\n");
 		status = 1;
@@ -411,7 +412,6 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 	}
 
 	size_t *fpdus_lengths = malloc(sizeof(size_t));
-
 	if (fpdus_lengths == NULL) {
 		printf("failed to allocate FPDUs lengths.\n");
 		status = 1;
@@ -490,21 +490,31 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 			u_int8_t frag_id;
 			struct rle_receiver_stats stats;
 			for (frag_id = 0; frag_id < 8; ++frag_id) {
-				if (rle_receiver_stats_get_counters(receiver, frag_id, &stats) != 0) {
-					printf("failed to get receiver counters for frag_id %u\n", frag_id);
+				if (rle_receiver_stats_get_counters(receiver, frag_id,
+				                                    &stats) != 0) {
+					printf("failed to get receiver counters for frag_id %u\n",
+					       frag_id);
 					status = 1;
 					goto free_alloc;
 				}
 				printf("===\tFrag ID %u\n", frag_id);
-				printf("===\treceiver received:          %" PRIu64 "\n", stats.sdus_received);
-				printf("===\treceiver reassembled:       %" PRIu64 "\n", stats.sdus_reassembled);
-				printf("===\treceiver lost:              %" PRIu64 "\n", stats.sdus_lost);
-				printf("===\treceiver dropped:           %" PRIu64 "\n", stats.sdus_dropped);
-				printf("===\treceiver bytes received:    %" PRIu64 "\n", stats.bytes_received);
-				printf("===\treceiver bytes reassembled: %" PRIu64 "\n", stats.bytes_reassembled);
-				printf("===\treceiver bytes dropped:     %" PRIu64 "\n", stats.bytes_dropped);
-				printf("===\tremaining size in queue:    %zu\n", rle_receiver_stats_get_queue_size(
-				                                                         receiver, frag_id));
+				printf("===\treceiver received:          %" PRIu64 "\n",
+				       stats.sdus_received);
+				printf("===\treceiver reassembled:       %" PRIu64 "\n",
+				       stats.sdus_reassembled);
+				printf("===\treceiver lost:              %" PRIu64 "\n",
+				       stats.sdus_lost);
+				printf("===\treceiver dropped:           %" PRIu64 "\n",
+				       stats.sdus_dropped);
+				printf("===\treceiver bytes received:    %" PRIu64 "\n",
+				       stats.bytes_received);
+				printf("===\treceiver bytes reassembled: %" PRIu64 "\n",
+				       stats.bytes_reassembled);
+				printf("===\treceiver bytes dropped:     %" PRIu64 "\n",
+				       stats.bytes_dropped);
+				printf("===\tremaining size in queue:    %zu\n",
+				       rle_receiver_stats_get_queue_size(
+					       receiver, frag_id));
 				printf("\n");
 				rle_receiver_stats_reset_counters(receiver, frag_id);
 			}
@@ -547,12 +557,10 @@ static int test_decap_fpdus(const bool ignore_malformed, const char *const src_f
 
 free_alloc:
 	if (fpdus != NULL) {
-		size_t fpdu_iterator;
-		for (fpdu_iterator = 0;
-		     fpdu_iterator < (size_t)counter;
-		     ++fpdu_iterator) {
-			if (fpdus[fpdu_iterator] != NULL) {
-				free(fpdus[fpdu_iterator]);
+		size_t fpdu_id;
+		for (fpdu_id = 0; fpdu_id < (size_t)counter; ++fpdu_id) {
+			if (fpdus[fpdu_id] != NULL) {
+				free(fpdus[fpdu_id]);
 			}
 		}
 		free(fpdus);

@@ -65,6 +65,12 @@ IF (BUILD_TESTS)
 	ADD_CUSTOM_TARGET(check COMMAND
 	                  ${CMAKE_CTEST_COMMAND} --no-compress-output -T Test)
 	ADD_SUBDIRECTORY(tests EXCLUDE_FROM_ALL)
+
+	# check coding style
+	ADD_CUSTOM_TARGET(coding_style
+		COMMAND ${CMAKE_SOURCE_DIR}/contrib/coding_style_check.sh
+		        ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR})
+	ADD_DEPENDENCIES(check coding_style) # to build with make check
 ENDIF(BUILD_TESTS)
 
 IF (BUILD_DOC)

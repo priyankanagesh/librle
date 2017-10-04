@@ -77,8 +77,7 @@ uint32_t compute_crc32(const struct rle_sdu *const sdu)
 	length = sdu->size;
 	crc32 = compute_crc((unsigned char *)sdu->buffer, length, crc32);
 
-	PRINT_RLE_DEBUG("PDU length %zu & protocol type 0x%x CRC %x\n", length,
-	                field_value, crc32);
+	RLE_DEBUG("PDU length %zu & protocol type 0x%x CRC %x\n", length, field_value, crc32);
 
 	return crc32;
 }
@@ -90,14 +89,12 @@ uint32_t compute_crc32(const struct rle_sdu *const sdu)
 
 int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
                        const struct rle_config *const rle_conf,
-                       struct rle_ctx_management *const rle_ctx)
+                       struct rle_ctx_mngt *const rle_ctx)
 {
 	int status = 1;
 	const bool use_alpdu_crc =
 		(rle_conf->allow_alpdu_sequence_number ? 0 : rle_conf->allow_alpdu_crc);
 	size_t alpdu_trailer_len;
-
-	PRINT_RLE_DEBUG("");
 
 	rle_alpdu_trailer_t *const trailer = (rle_alpdu_trailer_t *)frag_buf->alpdu.end;
 
@@ -118,23 +115,22 @@ int push_alpdu_trailer(struct rle_frag_buf *const frag_buf,
 
 int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
                         const struct rle_sdu *const reassembled_sdu,
-                        struct rle_ctx_management *const rle_ctx,
+                        struct rle_ctx_mngt *const rle_ctx,
                         bool *const is_ctx_seqnum_init,
                         size_t *const lost_packets)
 {
 	int status = 0;
 	const bool use_alpdu_crc = rle_ctx_get_use_crc(rle_ctx);
 
-	PRINT_RLE_DEBUG("");
-
 	*lost_packets = 0;
 
 	if (use_alpdu_crc) {
 		const uint32_t expected_crc = compute_crc32(reassembled_sdu);
 		if (trailer->crc_trailer.crc != expected_crc) {
-			PRINT_RLE_ERROR("wrong CRC for %zu-byte SDU of protocol 0x%02x: 0x%08x found while 0x%08x "
-			                "expected", reassembled_sdu->size, reassembled_sdu->protocol_type,
-			                ntohl(trailer->crc_trailer.crc), expected_crc);
+			RLE_ERR("wrong CRC for %zu-byte SDU of protocol 0x%02x: 0x%08x found "
+			        "while 0x%08x expected", reassembled_sdu->size,
+			        reassembled_sdu->protocol_type, ntohl(trailer->crc_trailer.crc),
+			        expected_crc);
 			status = 1;
 			*lost_packets = 1;
 		}
@@ -150,12 +146,13 @@ int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
 			if (received_seq_no != next_seq_no) {
 				if (received_seq_no != 0) {
 					status = 1;
-					*lost_packets = (received_seq_no - next_seq_no) % RLE_MAX_SEQ_NO;
-					PRINT_RLE_ERROR("sequence number inconsistency, received [%u] expected [%u]\n",
-					                received_seq_no, next_seq_no);
+					*lost_packets = (received_seq_no - next_seq_no) %
+					                RLE_MAX_SEQ_NO;
+					RLE_ERR("sequence number inconsistency: received %u, "
+					        "expected %u", received_seq_no, next_seq_no);
 				} else {
-					PRINT_RLE_WARNING("sequence number null, supposing relog, received [%u] expected "
-					                  "[%u]\n", received_seq_no, next_seq_no);
+					RLE_WARN("sequence number null, supposing relog: received "
+					         "%u, expected %u", received_seq_no, next_seq_no);
 				}
 				/* update sequence with received one */
 				rle_ctx_set_seq_nb(rle_ctx, received_seq_no);

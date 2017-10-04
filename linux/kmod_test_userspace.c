@@ -105,7 +105,8 @@ static int write_file(const size_t sdu_in_length, const unsigned char *const sdu
 	out_file_fd = open(out_filename, O_WRONLY);
 
 	if (out_file_fd == -1) {
-		printf("ERROR: Unable to open %s - %s (%d).\n", out_filename, strerror(errno), errno);
+		printf("ERROR: Unable to open %s - %s (%d).\n", out_filename, strerror(errno),
+		       errno);
 		goto error;
 	}
 
@@ -116,18 +117,21 @@ static int write_file(const size_t sdu_in_length, const unsigned char *const sdu
 		       out_filename, strerror(errno), errno);
 		ret = close(out_file_fd);
 		if (ret == -1) {
-			printf("ERROR: Unable to close file %s - %s (%d).\n", out_filename, strerror(errno), errno);
+			printf("ERROR: Unable to close file %s - %s (%d).\n",
+			       out_filename, strerror(errno), errno);
 		}
 		goto error;
 	}
 
 	ret = close(out_file_fd);
 	if (ret == -1) {
-		printf("ERROR: Unable to close file %s - %s (%d).\n", out_filename, strerror(errno), errno);
+		printf("ERROR: Unable to close file %s - %s (%d).\n", out_filename, strerror(
+			       errno), errno);
 		goto error;
 	}
 
-	printf_verbose("writing success, %zu-octets SDU written in %s.\n", sdu_in_length, out_filename);
+	printf_verbose("writing success, %zu-octets SDU written in %s.\n",
+	               sdu_in_length, out_filename);
 
 	exit_status = EXIT_SUCCESS;
 
@@ -142,7 +146,8 @@ error:
  * @param[out]    sdu_out_length        The real size of the SDU.
  * @return        EXIT_SUCCESS if successful, else EXIT_FAILURE.
  */
-static int read_file(const size_t sdu_out_buffer_length, unsigned char *const sdu_out_buffer,
+static int read_file(const size_t sdu_out_buffer_length,
+                     unsigned char *const sdu_out_buffer,
                      size_t *sdu_out_length)
 {
 	int exit_status = EXIT_FAILURE;
@@ -162,11 +167,13 @@ static int read_file(const size_t sdu_out_buffer_length, unsigned char *const sd
 	ret = read(in_file_fd, (void *)sdu_out_buffer, sdu_out_buffer_length);
 
 	if (ret == -1) {
-		printf("ERROR: Unable to read SDU from %s - %s (%d).\n", in_filename, strerror(errno), errno);
+		printf("ERROR: Unable to read SDU from %s - %s (%d).\n", in_filename,
+		       strerror(errno), errno);
 		close(in_file_fd);
 		ret = close(in_file_fd);
 		if (ret == -1) {
-			printf("ERROR: Unable to close file %s - %s (%d).\n", in_filename, strerror(errno), errno);
+			printf("ERROR: Unable to close file %s - %s (%d).\n", in_filename,
+			       strerror(errno), errno);
 		}
 		goto error;
 	}
@@ -175,7 +182,8 @@ static int read_file(const size_t sdu_out_buffer_length, unsigned char *const sd
 
 	ret = close(in_file_fd);
 	if (ret == -1) {
-		printf("ERROR: Unable to close file %s - %s (%d).\n", in_filename, strerror(errno), errno);
+		printf("ERROR: Unable to close file %s - %s (%d).\n", in_filename,
+		       strerror(errno), errno);
 		goto error;
 	}
 
@@ -195,14 +203,16 @@ error:
  * @param[in] sdu_out      The SDU out (the one read from the test module).
  * @return    EXIT_SUCCESS if the SDUs are the same, else EXIT_FAILURE.
  */
-static int compare_sdus(const size_t sdu_in_size, const unsigned char *const sdu_in,
-                        const size_t sdu_out_size, const unsigned char *const sdu_out)
+static int compare_sdus(const size_t sdu_in_size,
+                        const unsigned char *const sdu_in,
+                        const size_t sdu_out_size,
+                        const unsigned char *const sdu_out)
 {
 	int exit_status = EXIT_SUCCESS;
 
 	if (sdu_in_size != sdu_out_size) {
 		printf("=== ERROR: SDUs have different lengths (in: %zu, out: %zu)\n",
-				  sdu_in_size, sdu_out_size);
+		       sdu_in_size, sdu_out_size);
 	}
 
 	printf_verbose("Comparing %zu-octets SDUs.\n", sdu_in_size);
@@ -211,8 +221,9 @@ static int compare_sdus(const size_t sdu_in_size, const unsigned char *const sdu
 
 	for (iterator = 0; iterator < sdu_in_size; ++iterator) {
 		if (sdu_in[iterator] != sdu_out[iterator]) {
-			printf_verbose("Difference pos. %zu.\t(%02x != %02x)\n", iterator, sdu_in[iterator],
-					         sdu_out[iterator]);
+			printf_verbose("Difference pos. %zu.\t(%02x != %02x)\n", iterator,
+			               sdu_in[iterator],
+			               sdu_out[iterator]);
 			exit_status = EXIT_FAILURE;
 		}
 	}
@@ -239,7 +250,7 @@ static int test_encap_and_decap(const char src_filename[])
 
 	unsigned char *packet;
 
-	int counter;
+	size_t counter;
 
 	int ret;
 	int status = 1;
@@ -276,7 +287,8 @@ static int test_encap_and_decap(const char src_filename[])
 	size_t *packets_length = malloc(sizeof(size_t));
 
 	if (packets_length == NULL) {
-		printf("ERROR - Unable to allocate packets length - %s (%d).\n", strerror(errno), errno);
+		printf("ERROR - Unable to allocate packets length - %s (%d).\n",
+		       strerror(errno), errno);
 		goto free_alloc;
 	}
 
@@ -311,18 +323,15 @@ static int test_encap_and_decap(const char src_filename[])
 			goto free_alloc;
 		}
 
-		memcpy((void *)packets[counter - 1], (const void *)packet, packets_length[counter - 1]);
+		memcpy(packets[counter - 1], packet, packets_length[counter - 1]);
 	}
 
 
-	ret = encap_decap((const size_t *const)packets_length,
-	                   (const unsigned char *const *const)packets,
-	                   (const size_t)counter,
-	                   link_len_src);
+	ret = encap_decap(packets_length, packets, counter, link_len_src);
 
-   /* show the encapsulation/decapsulation results. */
+	/* show the encapsulation/decapsulation results. */
 	printf_verbose("=== summary:\n");
-	printf_verbose("===\tSDU processed:        %d\n", counter);
+	printf_verbose("===\tSDU processed:        %zu\n", counter);
 	printf_verbose("===\tmatches:              %d\n", ret);
 	printf_verbose("\n");
 
@@ -335,7 +344,7 @@ static int test_encap_and_decap(const char src_filename[])
 free_alloc:
 	if (packets != NULL) {
 		size_t packet_iterator;
-		for (packet_iterator = 0; packet_iterator < (size_t)counter; ++packet_iterator) {
+		for (packet_iterator = 0; packet_iterator < counter; ++packet_iterator) {
 			if (packets[packet_iterator] != NULL) {
 				free(packets[packet_iterator]);
 			}
@@ -361,6 +370,7 @@ error:
 static void dump_sdu(const struct rle_sdu sdu)
 {
 	size_t it;
+
 	for (it = 0; it < sdu.size; ++it) {
 		printf_verbose("%02x%s", sdu.buffer[it], it % 16 == 15 ? "\n" : " ");
 	}
@@ -384,22 +394,22 @@ static int check_ip_integrity(const struct rle_sdu sdu)
 	int ret_val = EXIT_FAILURE;
 
 	switch (sdu_in_ptype) {
-		case 0x0800:
-			if (sdu_in_ip_version != 0x04) {
-				printf("Invalid: IP version in IPv4 packet is %d, expected: %d.\n",
-						 sdu_in_ip_version, 0x04);
-				goto error;
-			}
-			break;
-		case 0x86dd:
-			if (sdu_in_ip_version != 0x06) {
-				printf("Invalid: IP version in IPv6 packet is %d, expected: %d.\n",
-						 sdu_in_ip_version, 0x06);
-				goto error;
-			}
-			break;
-		default:
-			break;
+	case 0x0800:
+		if (sdu_in_ip_version != 0x04) {
+			printf("Invalid: IP version in IPv4 packet is %d, expected: %d.\n",
+			       sdu_in_ip_version, 0x04);
+			goto error;
+		}
+		break;
+	case 0x86dd:
+		if (sdu_in_ip_version != 0x06) {
+			printf("Invalid: IP version in IPv6 packet is %d, expected: %d.\n",
+			       sdu_in_ip_version, 0x06);
+			goto error;
+		}
+		break;
+	default:
+		break;
 	}
 
 	ret_val = EXIT_SUCCESS;
@@ -421,7 +431,8 @@ error:
  * @return    EXIT_SUCCESS if OK, else EXIT_FAILURE.
  */
 static int encap_decap(const size_t *const packets_length,
-                       const unsigned char *const *const packets, const size_t number_of_packets,
+                       const unsigned char *const *const packets,
+                       const size_t number_of_packets,
                        const size_t link_len_src)
 {
 	int ret = 0;
@@ -454,7 +465,7 @@ static int encap_decap(const size_t *const packets_length,
 		printf_verbose("\n=== packet #%zu:\n", packet_iterator + 1);
 
 		sdus_in[packet_iterator].protocol_type =
-		        ntohs(*(uint16_t *)((void *)(packets[packet_iterator] + (ETHER_HDR_LEN - 2))));
+			ntohs(*(uint16_t *)(packets[packet_iterator] + ETHER_HDR_LEN - 2));
 
 		ip_integrity = check_ip_integrity(sdus_in[packet_iterator]);
 
@@ -466,7 +477,8 @@ static int encap_decap(const size_t *const packets_length,
 		printf_verbose("=== %zu-byte SDU\n", sdus_in[packet_iterator].size);
 		dump_sdu(sdus_in[packet_iterator]);
 
-		exit_status = write_file(sdus_in[packet_iterator].size, sdus_in[packet_iterator].buffer);
+		exit_status = write_file(sdus_in[packet_iterator].size,
+		                         sdus_in[packet_iterator].buffer);
 
 		if (exit_status == EXIT_FAILURE) {
 			printf("ERROR: Unable to write SDU in /proc file.\n");
@@ -496,7 +508,8 @@ static int encap_decap(const size_t *const packets_length,
 		struct rle_sdu sdu_in = sdus_in[packet_iterator];
 		struct rle_sdu sdu_out = sdus_out[packet_iterator];
 
-		exit_status = compare_sdus(sdu_in.size, sdu_in.buffer, sdu_out.size, sdu_out.buffer);
+		exit_status =
+			compare_sdus(sdu_in.size, sdu_in.buffer, sdu_out.size, sdu_out.buffer);
 		if (exit_status == EXIT_FAILURE) {
 			printf_verbose("=== IP comparison: failure\n");
 		} else {

@@ -47,8 +47,8 @@ bool test_encap_ctxtless_null_transmitter(void)
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_sdu sdu = {
-		.buffer        = (unsigned char *)payload_initializer,
-		.size          = 100,
+		.buffer = (unsigned char *)payload_initializer,
+		.size = 100,
 		.protocol_type = 0x1234,
 	};
 	struct rle_transmitter *transmitter = NULL;
@@ -76,16 +76,16 @@ bool test_encap_ctxtless_null_transmitter(void)
 	ret_encap = rle_encap_contextless(transmitter, f_buff);
 
 	switch (ret_encap) {
-		case RLE_ENCAP_ERR_NULL_TRMT:
-			PRINT_TEST("NULL transmitter detected, test sucessfull.");
-			output = true;
-			break;
-		case RLE_ENCAP_OK:
-			PRINT_TEST("Encapsulation is OK, Big error.");
-			break;
-		default:
-			PRINT_TEST("Encapsulation failed, but not due to NULL transmitter. Test failed.");
-			break;
+	case RLE_ENCAP_ERR_NULL_TRMT:
+		PRINT_TEST("NULL transmitter detected, test sucessfull.");
+		output = true;
+		break;
+	case RLE_ENCAP_OK:
+		PRINT_TEST("Encapsulation is OK, Big error.");
+		break;
+	default:
+		PRINT_TEST("Encapsulation failed, but not due to NULL transmitter. Test failed.");
+		break;
 	}
 
 out:
@@ -140,16 +140,16 @@ bool test_encap_ctxtless_null_f_buff(void)
 	ret = rle_encap_contextless(transmitter, f_buff);
 
 	switch (ret) {
-		case RLE_ENCAP_ERR_NULL_F_BUFF:
-			PRINT_TEST("NULL fragmentation buffer detected, test sucessfull.");
-			output = true;
-			break;
-		case RLE_ENCAP_OK:
-			PRINT_TEST("Encapsulation is OK, Big error.");
-			break;
-		default:
-			PRINT_TEST("Encapsulation failed, but not due to NULL transmitter. Test failed.");
-			break;
+	case RLE_ENCAP_ERR_NULL_F_BUFF:
+		PRINT_TEST("NULL fragmentation buffer detected, test sucessfull.");
+		output = true;
+		break;
+	case RLE_ENCAP_OK:
+		PRINT_TEST("Encapsulation is OK, Big error.");
+		break;
+	default:
+		PRINT_TEST("Encapsulation failed, but not due to NULL transmitter. Test failed.");
+		break;
 	}
 
 out:
@@ -203,17 +203,17 @@ bool test_encap_ctxtless_f_buff_not_init(void)
 	ret = rle_encap_contextless(transmitter, f_buff);
 
 	switch (ret) {
-		case RLE_ENCAP_ERR_N_INIT_F_BUFF:
-			PRINT_TEST("Not initialized fragmentation buffer transmitter detected, "
-			           "test sucessfull.");
-			output = true;
-			break;
-		case RLE_ENCAP_OK:
-			PRINT_TEST("Encapsulation is OK, Big error.");
-			break;
-		default:
-			PRINT_TEST("Encapsulation failed, but not due to NULL transmitter. Test failed.");
-			break;
+	case RLE_ENCAP_ERR_N_INIT_F_BUFF:
+		PRINT_TEST("Not initialized fragmentation buffer transmitter detected, "
+		           "test sucessfull.");
+		output = true;
+		break;
+	case RLE_ENCAP_OK:
+		PRINT_TEST("Encapsulation is OK, Big error.");
+		break;
+	default:
+		PRINT_TEST("Encapsulation failed, but not due to NULL transmitter. Test failed.");
+		break;
 	}
 
 out:
@@ -240,14 +240,14 @@ bool test_encap_ctxtless_too_big(void)
 	struct rle_frag_buf *f_buff = rle_frag_buf_new();
 
 	const struct rle_sdu sdu_ok = {
-		.buffer        = (unsigned char *)payload_initializer,
-		.size          = 4088,
+		.buffer = (unsigned char *)payload_initializer,
+		.size = 4088,
 		.protocol_type = 0x1234,
 	};
 
 	const struct rle_sdu sdu_ko = {
-		.buffer        = (unsigned char *)payload_initializer,
-		.size          = 4089,
+		.buffer = (unsigned char *)payload_initializer,
+		.size = 4089,
 		.protocol_type = 0x1234,
 	};
 

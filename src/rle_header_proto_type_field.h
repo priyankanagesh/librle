@@ -84,7 +84,7 @@
 uint8_t get_alpdu_label_type(const uint16_t protocol_type,
                              const bool is_protocol_type_suppressed,
                              const uint8_t type_0_alpdu_label_size)
-	__attribute__((warn_unused_result));
+__attribute__((warn_unused_result));
 
 
 #endif /* __RLE_HEADER_PROTO_TYPE_FIELD_H__ */

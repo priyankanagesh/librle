@@ -96,9 +96,7 @@
 /*--------------------------------------- PUBLIC FUNCTIONS ---------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-uint32_t compute_crc(const unsigned char *data,
-                     const size_t length,
-                     const uint32_t crc_init)
-	__attribute__((warn_unused_result, nonnull(1)));
+uint32_t compute_crc(const unsigned char *data, const size_t length, const uint32_t crc_init)
+__attribute__((warn_unused_result, nonnull(1)));
 
 #endif

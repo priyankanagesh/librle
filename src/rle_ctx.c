@@ -58,7 +58,7 @@
  *
  *  @ingroup RLE context
  */
-static void flush(struct rle_ctx_management *_this);
+static void flush(struct rle_ctx_mngt *_this);
 
 /**
  *  @brief  Flush all data and pointer of a RLE context structure with fragmentation buffers.
@@ -67,7 +67,7 @@ static void flush(struct rle_ctx_management *_this);
  *
  *  @ingroup RLE context
  */
-static void flush_ctxt_frag_buf(struct rle_ctx_management *_this);
+static void flush_ctxt_frag_buf(struct rle_ctx_mngt *_this);
 
 /**
  *  @brief  Flush all data and pointer of a RLE context structure with reassembly buffers.
@@ -76,14 +76,14 @@ static void flush_ctxt_frag_buf(struct rle_ctx_management *_this);
  *
  *  @ingroup RLE context
  */
-static void flush_ctxt_rasm_buf(struct rle_ctx_management *_this);
+static void flush_ctxt_rasm_buf(struct rle_ctx_mngt *_this);
 
 
 /*------------------------------------------------------------------------------------------------*/
 /*----------------------------------- PRIVATE FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-static void flush(struct rle_ctx_management *_this)
+static void flush(struct rle_ctx_mngt *_this)
 {
 	_this->frag_id = 0xff;
 	_this->next_seq_nb = 0xff;
@@ -93,7 +93,7 @@ static void flush(struct rle_ctx_management *_this)
 	return;
 }
 
-static void flush_ctxt_frag_buf(struct rle_ctx_management *_this)
+static void flush_ctxt_frag_buf(struct rle_ctx_mngt *_this)
 {
 	int ret;
 
@@ -105,7 +105,7 @@ static void flush_ctxt_frag_buf(struct rle_ctx_management *_this)
 	return;
 }
 
-static void flush_ctxt_rasm_buf(struct rle_ctx_management *_this)
+static void flush_ctxt_rasm_buf(struct rle_ctx_mngt *_this)
 {
 	flush(_this);
 	rasm_buf_init((rle_rasm_buf_t *)_this->buff);
@@ -118,11 +118,9 @@ static void flush_ctxt_rasm_buf(struct rle_ctx_management *_this)
 /*------------------------------------ PUBLIC FUNCTIONS CODE -------------------------------------*/
 /*------------------------------------------------------------------------------------------------*/
 
-int rle_ctx_init_frag_buf(struct rle_ctx_management *_this)
+int rle_ctx_init_frag_buf(struct rle_ctx_mngt *_this)
 {
 	int status = C_ERROR;
-
-	PRINT_RLE_DEBUG("");
 
 	assert(_this != NULL);
 
@@ -130,7 +128,7 @@ int rle_ctx_init_frag_buf(struct rle_ctx_management *_this)
 
 	/* allocate enough memory space for the fragmentation */
 	if (!_this->buff) {
-		PRINT_RLE_ERROR("fragmentation buffer allocation failed.");
+		RLE_ERR("fragmentation buffer allocation failed.");
 		goto out;
 	}
 
@@ -143,18 +141,16 @@ out:
 	return status;
 }
 
-int rle_ctx_init_rasm_buf(struct rle_ctx_management *_this)
+int rle_ctx_init_rasm_buf(struct rle_ctx_mngt *_this)
 {
 	int status = C_ERROR;
-
-	PRINT_RLE_DEBUG("");
 
 	assert(_this != NULL);
 
 	/* allocate enough memory space for the reassembly */
 	_this->buff = (void *)rasm_buf_new();
 	if (!_this->buff) {
-		PRINT_RLE_ERROR("reassembly buffer allocation failed.");
+		RLE_ERR("reassembly buffer allocation failed.");
 		goto out;
 	}
 
@@ -167,10 +163,8 @@ out:
 	return status;
 }
 
-void rle_ctx_destroy_frag_buf(struct rle_ctx_management *_this)
+void rle_ctx_destroy_frag_buf(struct rle_ctx_mngt *_this)
 {
-	PRINT_RLE_DEBUG("");
-
 	assert(_this != NULL);
 	assert(_this->buff != NULL);
 
@@ -179,44 +173,42 @@ void rle_ctx_destroy_frag_buf(struct rle_ctx_management *_this)
 	rle_frag_buf_del((rle_frag_buf_t **)&_this->buff);
 }
 
-void rle_ctx_destroy_rasm_buf(struct rle_ctx_management *_this)
+void rle_ctx_destroy_rasm_buf(struct rle_ctx_mngt *_this)
 {
-	PRINT_RLE_DEBUG("");
-
 	assert(_this != NULL);
 	assert(_this->buff != NULL);
 
-	rasm_buf_del((rle_rasm_buf_t**)&_this->buff);
+	rasm_buf_del((rle_rasm_buf_t **)&_this->buff);
 }
 
-void rle_ctx_set_seq_nb(struct rle_ctx_management *_this, uint8_t val)
+void rle_ctx_set_seq_nb(struct rle_ctx_mngt *_this, uint8_t val)
 {
 	_this->next_seq_nb = val;
 }
 
-uint8_t rle_ctx_get_seq_nb(const struct rle_ctx_management *const _this)
+uint8_t rle_ctx_get_seq_nb(const struct rle_ctx_mngt *const _this)
 {
 	return _this->next_seq_nb;
 }
 
-void rle_ctx_incr_seq_nb(struct rle_ctx_management *_this)
+void rle_ctx_incr_seq_nb(struct rle_ctx_mngt *_this)
 {
 	_this->next_seq_nb = (_this->next_seq_nb + 1) % RLE_MAX_SEQ_NO;
 }
 
-void rle_ctx_set_use_crc(struct rle_ctx_management *_this, bool val)
+void rle_ctx_set_use_crc(struct rle_ctx_mngt *_this, bool val)
 {
 	_this->use_crc = val;
 }
 
-bool rle_ctx_get_use_crc(const struct rle_ctx_management *const _this)
+bool rle_ctx_get_use_crc(const struct rle_ctx_mngt *const _this)
 {
 	return _this->use_crc;
 }
 
 size_t get_fragment_length(const unsigned char *const buffer)
 {
-	const rle_ppdu_header_t *const ppdu_hdr = (rle_ppdu_header_t *) buffer;
+	const rle_ppdu_hdr_t *const ppdu_hdr = (rle_ppdu_hdr_t *)buffer;
 
-	return (rle_ppdu_header_get_ppdu_length(ppdu_hdr) + sizeof(ppdu_hdr->common));
+	return (rle_ppdu_hdr_get_ppdu_length(ppdu_hdr) + sizeof(ppdu_hdr->common));
 }

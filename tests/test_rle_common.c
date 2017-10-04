@@ -34,6 +34,8 @@
 #include <stdint.h>
 #include <string.h>
 
+typedef uint64_t (*const stats_func_t)(const void *const, const u_int8_t);
+
 const unsigned char payload_initializer[5000] =
 { 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46,
   0x47, 0x48, 0x49, 0x4a, 0x4b, 0x4c, 0x4d, 0x4e, 0x4f, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55,
@@ -381,12 +383,14 @@ const unsigned char payload_initializer[5000] =
  * @param[in]     stats_functions          The statistics functions to execute
  * @param[in]     function_names           The names of the functions.
  */
-static void print_stats(const void *const module, const char *const module_name,
-                        size_t (*const stats_functions[]) (const void *const, const u_int8_t),
+static void print_stats(const void *const module,
+                        const char *const module_name,
+                        const stats_func_t stats_functions[],
                         const char *const function_names[]);
 
-static void print_stats(const void *const module, const char *const module_name,
-                        size_t (*const stats_functions[]) (const void *const, const u_int8_t),
+static void print_stats(const void *const module,
+                        const char *const module_name,
+                        const stats_func_t stats_functions[],
                         const char *const function_names[])
 {
 	if (module == NULL || stats_functions == NULL || function_names == NULL) {
@@ -401,18 +405,15 @@ static void print_stats(const void *const module, const char *const module_name,
 		printf("STATS %s:\n", module_name);
 
 		for (frag_id = 0; frag_id < 8; ++frag_id) {
-
-			size_t (*const *stats_function) (const void *const, const u_int8_t);
+			const stats_func_t *stats_function;
 
 			printf("\tFrag ID %u\n", frag_id);
 
 			for (stats_function = stats_functions, function_name = function_names;
 			     (*stats_function) && (*function_name);
 			     ++stats_function, ++function_name) {
-
 				printf("\t\t%s %s: %ld\n", module_name, *function_name,
 				       (long int)(**stats_function)(module, frag_id));
-
 			}
 		}
 	}
@@ -423,78 +424,64 @@ exit_label:
 
 void print_transmitter_stats(const struct rle_transmitter *const transmitter)
 {
+	const char *const module_name = "Transmitter";
+	const char *const function_names[] = {
+		"counter SDUs in       ",
+		"counter SDUs sent     ",
+		"counter SDUs dropped  ",
+		"counter bytes in      ",
+		"counter bytes sent    ",
+		"counter bytes dropped ",
+		NULL
+	};
+	const stats_func_t stats_functions[] = {
+		(stats_func_t)rle_transmitter_stats_get_counter_sdus_in,
+		(stats_func_t)rle_transmitter_stats_get_counter_sdus_sent,
+		(stats_func_t)rle_transmitter_stats_get_counter_sdus_dropped,
+		(stats_func_t)rle_transmitter_stats_get_counter_bytes_in,
+		(stats_func_t)rle_transmitter_stats_get_counter_bytes_sent,
+		(stats_func_t)rle_transmitter_stats_get_counter_bytes_dropped,
+		NULL
+	};
+
 	if (transmitter == NULL) {
 		PRINT_ERROR("Unable to print stats.");
-		goto exit_label;
+		return;
 	}
 
-	{
-		const char *const module_name = "Transmitter";
-		const char *const function_names[] = {
-			"counter SDUs in       ",
-			"counter SDUs sent     ",
-			"counter SDUs dropped  ",
-			"counter bytes in      ",
-			"counter bytes sent    ",
-			"counter bytes dropped ",
-			NULL
-		};
-
-		uint64_t (*const stats_functions[]) (const struct rle_transmitter *const, const u_int8_t)
-		        = {
-			rle_transmitter_stats_get_counter_sdus_in,
-			rle_transmitter_stats_get_counter_sdus_sent,
-			rle_transmitter_stats_get_counter_sdus_dropped,
-			rle_transmitter_stats_get_counter_bytes_in,
-			rle_transmitter_stats_get_counter_bytes_sent,
-			rle_transmitter_stats_get_counter_bytes_dropped,
-			NULL
-			};
-
-		print_stats((const void *const)transmitter, module_name,
-		            (size_t (*const *) (const void *const, const u_int8_t))stats_functions,
-		            function_names);
-	}
-
-exit_label:
-	return;
+	print_stats((const void *const)transmitter, module_name,
+	            stats_functions, function_names);
 }
 
 void print_receiver_stats(const struct rle_receiver *const receiver)
 {
+	const char *const module_name = "receiver";
+	const char *const function_names[] = {
+		"counter SDUs received       ",
+		"counter SDUs reassembled    ",
+		"counter SDUs dropped        ",
+		"counter SDUs lost           ",
+		"counter bytes received      ",
+		"counter bytes SDUs received ",
+		"counter bytes dropped       ",
+		NULL
+	};
+	const stats_func_t stats_functions[] = {
+		(stats_func_t)rle_receiver_stats_get_counter_sdus_received,
+		(stats_func_t)rle_receiver_stats_get_counter_sdus_reassembled,
+		(stats_func_t)rle_receiver_stats_get_counter_sdus_dropped,
+		(stats_func_t)rle_receiver_stats_get_counter_sdus_lost,
+		(stats_func_t)rle_receiver_stats_get_counter_bytes_received,
+		(stats_func_t)rle_receiver_stats_get_counter_bytes_reassembled,
+		(stats_func_t)rle_receiver_stats_get_counter_bytes_dropped,
+		NULL
+	};
+
 	if (receiver == NULL) {
 		PRINT_ERROR("Unable to print stats.");
-		goto exit_label;
+		return;
 	}
 
-	{
-		const char *const module_name = "receiver";
-		const char *const function_names[] = {
-			"counter SDUs received       ",
-			"counter SDUs reassembled    ",
-			"counter SDUs dropped        ",
-			"counter SDUs lost           ",
-			"counter bytes received      ",
-			"counter bytes SDUs received ",
-			"counter bytes dropped       ",
-			NULL
-		};
-		uint64_t (*const stats_functions[]) (const struct rle_receiver *const, const u_int8_t) = {
-			rle_receiver_stats_get_counter_sdus_received,
-			rle_receiver_stats_get_counter_sdus_reassembled,
-			rle_receiver_stats_get_counter_sdus_dropped,
-			rle_receiver_stats_get_counter_sdus_lost,
-			rle_receiver_stats_get_counter_bytes_received,
-			rle_receiver_stats_get_counter_bytes_reassembled,
-			rle_receiver_stats_get_counter_bytes_dropped,
-			NULL
-		};
-
-		print_stats((const void *const)receiver, module_name,
-		            (size_t (*const *) (const void *const, const u_int8_t))stats_functions,
-		            function_names);
-	}
-
-exit_label:
-	return;
+	print_stats((const void *const)receiver, module_name,
+	            stats_functions, function_names);
 }
