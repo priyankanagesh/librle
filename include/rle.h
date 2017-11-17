@@ -570,16 +570,21 @@ void rle_pad(unsigned char *const fpdu,
              const size_t fpdu_remaining_size);
 
 /**
- * @brief         RLE decapsulation function. Decapsulate the given FPDU into zero or more SDUs.
+ * @brief Decapsulate the given FPDU into zero or more SDUs
  *
- *                The function returns all of the SDUs that are fully decapsulated.
- *                If some PPDU fragments are missing for some of them, the fragments
- *                that are already received are kept in the internal contexts of the
- *                library. Next calls to the function may complete them, they will
- *                then be added to the \e sdus output parameter.
- *                The payload label is extracted in a preallocated buffer depending on the size
- *                given by the caller. This size is known by the type of fpdu awaited and the
- *                predefined size given by ETSI EN 301 545-2 V1.2.1, tab. 7-10 p. 119.
+ * The function returns all of the SDUs that are fully decapsulated. If some
+ * PPDU fragments are missing for some of them, the fragments that are already
+ * received are kept in the internal contexts of the library. Next calls to
+ * the function may complete them, they will then be added to the \e sdus output
+ * parameter.
+ *
+ * The payload label is extracted in a preallocated buffer depending on the size
+ * given by the caller. This size is known by the type of FPDU awaited and the
+ * predefined size given by ETSI EN 301 545-2 V1.2.1, tab. 7-10 p. 119.
+ *
+ * The array of SDUs \e sdus shall be initialized by the caller with
+ * \e sdus_max_nr memory areas of at least 4095 bytes each. The \e sdus[n].size
+ * and \e sdus[n].protocol_type shall be set to 0.
  *
  * @param[in,out] receiver                The receiver module.
  * @param[in]     fpdu                    The FPDU to decapsulate.
