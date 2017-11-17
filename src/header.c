@@ -411,7 +411,7 @@ void push_alpdu_hdr(struct rle_frag_buf *const frag_buf, const struct rle_config
 			}
 
 			if (comp_ptype == RLE_PROTO_TYPE_FALLBACK) {
-				/* protocol type is NOT compressible, prepend the 3-byte ALDPU before the SDU */
+				/* protocol type is NOT compressible, prepend the 3-byte ALPDU before the SDU */
 				push_comp_fallback_alpdu_hdr(frag_buf, net_ptype);
 			} else {
 				/* protocol type is compressible, ALPDU len = 1 */
@@ -431,12 +431,12 @@ void push_alpdu_hdr(struct rle_frag_buf *const frag_buf, const struct rle_config
 					frag_buf_sdu_push(frag_buf, -(sizeof(ptype)));
 				}
 
-				/* prepend the 1-byte ALDPU before the SDU */
+				/* prepend the 1-byte ALPDU before the SDU */
 				push_comp_supported_alpdu_hdr(frag_buf, comp_ptype);
 			}
 		}
 	} else {
-		/* protocol type is omitted, ALDPU len == 0 */
+		/* protocol type is omitted, ALPDU len == 0 */
 		RLE_DEBUG("prepend a 0-byte ALPDU header with protocol type omitted");
 
 		/* special case if the payload is VLAN with embedded IPv4 or IPv6:
@@ -549,7 +549,7 @@ bool push_ppdu_hdr(struct rle_frag_buf *const frag_buf,
 
 			if (ppdu_len < (ppdu_and_alpdu_hdrs_len + 1)) {
 				/* buffer is too small for the smallest PPDU START fragment: the buffer shall be large
-				 * enough for the PPDU START header, the full ALDPU header and at least one byte of
+				 * enough for the PPDU START header, the full ALPDU header and at least one byte of
 				 * ALPDU because the fragmentation of the ALPDU header is not supported by the RLE
 				 * reassembler yet */
 				goto error;

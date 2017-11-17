@@ -92,7 +92,7 @@ static bool reassembly_insert_vlan_ptype(const uint8_t *const sdu_frag,
 
 	/* drop frames that are too short: the protocol type cannot be deduced from the VLAN payload */
 	if (sdu_frag_len < sdu_min_len) {
-		RLE_ERR("ALDPU fragment is too short to deduce the VLAN protocol type "
+		RLE_ERR("ALPDU fragment is too short to deduce the VLAN protocol type "
 		        "from the first IP byte: %zu bytes available, %zu bytes required "
 		        "at least\n", sdu_frag_len, sdu_min_len);
 		goto error;
@@ -357,7 +357,7 @@ int reassembly_start_ppdu(struct rle_receiver *_this,
 		alpdu_trailer_len = sizeof(rle_alpdu_seqno_trailer_t);
 	}
 	if (alpdu_trailer_len > sdu_total_len) {
-		RLE_ERR("PPDU START with frag id %d contains too few bytes for the ALDPU trailer "
+		RLE_ERR("PPDU START with frag id %d contains too few bytes for the ALPDU trailer "
 		        "(at least %zu bytes needed, but only %zu bytes available", *index_ctx,
 		        alpdu_trailer_len, sdu_total_len);
 		goto out;

@@ -457,9 +457,9 @@ __attribute__((warn_unused_result));
  * @brief         RLE fragmentation. Get the next PPDU fragment.
  *
  *                The ALPDU is stored in the internal context of the RLE transmitter.
- *                Call this function to retrieve a fragment of the ALDPU. Use function
+ *                Call this function to retrieve a fragment of the ALPDU. Use function
  *                \ref rle_transmitter_stats_get_queue_size to determine if there is
- *                some ALDPU data to fragment.
+ *                some ALPDU data to fragment.
  *
  * @warning       /!\ REAL ZERO COPY /!\ The PPDU returned belongs to the fragmentation buffer.
  *                If the library user does not copy nor send it before asking for another one, the
