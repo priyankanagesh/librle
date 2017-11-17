@@ -126,8 +126,12 @@ int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
 
 	if (use_alpdu_crc) {
 		const uint32_t expected_crc = compute_crc32(reassembled_sdu);
+		RLE_DEBUG("check CRC for %zu-byte SDU of protocol 0x%02x: 0x%08x received, "
+		          "0x%08x expected", reassembled_sdu->size,
+		          reassembled_sdu->protocol_type, ntohl(trailer->crc_trailer.crc),
+		          expected_crc);
 		if (trailer->crc_trailer.crc != expected_crc) {
-			RLE_ERR("wrong CRC for %zu-byte SDU of protocol 0x%02x: 0x%08x found "
+			RLE_ERR("wrong CRC for %zu-byte SDU of protocol 0x%02x: 0x%08x received "
 			        "while 0x%08x expected", reassembled_sdu->size,
 			        reassembled_sdu->protocol_type, ntohl(trailer->crc_trailer.crc),
 			        expected_crc);
@@ -136,13 +140,18 @@ int check_alpdu_trailer(const rle_alpdu_trailer_t *const trailer,
 		}
 	} else {
 		const uint8_t received_seq_no = trailer->seqno_trailer.seq_no;
+		RLE_DEBUG("check seqnum for %zu-byte SDU: %u received",
+		          reassembled_sdu->size, received_seq_no);
 		if (!(*is_ctx_seqnum_init)) {
 			/* first fragmented ALPDU received, accept any seqno */
 			*is_ctx_seqnum_init = true;
 			/* update sequence with received one */
 			rle_ctx_set_seq_nb(rle_ctx, received_seq_no);
+			RLE_DEBUG("check seqnum: first fragment, sync on seqnum %u",
+			          received_seq_no);
 		} else {
 			const uint8_t next_seq_no = rle_ctx_get_seq_nb(rle_ctx);
+			RLE_DEBUG("check seqnum: %u expected", next_seq_no);
 			if (received_seq_no != next_seq_no) {
 				if (received_seq_no != 0) {
 					status = 1;

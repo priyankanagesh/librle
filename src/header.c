@@ -614,7 +614,8 @@ void start_ppdu_extract_alpdu_frag(unsigned char start_ppdu[],
 	assert(ppdu_len == (sizeof(rle_ppdu_hdr_start_t) + (*alpdu_frag_len)));
 
 	RLE_DEBUG("%zu-byte ALPDU fragment extracted from PPDU START (ALPDU total "
-	          "length = %zu bytes)", (*alpdu_frag_len), (*alpdu_total_len));
+	          "length = %zu bytes, protected by %s)", (*alpdu_frag_len),
+	          (*alpdu_total_len), ((*is_crc_used) == 1 ? "CRC" : "seqnum"));
 }
 
 void cont_end_ppdu_extract_alpdu_frag(const unsigned char cont_end_ppdu[],

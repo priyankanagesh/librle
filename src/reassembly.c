@@ -352,8 +352,10 @@ int reassembly_start_ppdu(struct rle_receiver *_this,
 	sdu_total_len -= alpdu_hdr_len;
 
 	if (is_crc_used) {
+		RLE_DEBUG("ALPDU trailer is CRC");
 		alpdu_trailer_len = sizeof(rle_alpdu_crc_trailer_t);
 	} else {
+		RLE_DEBUG("ALPDU trailer is seqnum");
 		alpdu_trailer_len = sizeof(rle_alpdu_seqno_trailer_t);
 	}
 	if (alpdu_trailer_len > sdu_total_len) {
@@ -365,6 +367,8 @@ int reassembly_start_ppdu(struct rle_receiver *_this,
 	sdu_total_len -= alpdu_trailer_len;
 
 	rle_ctx_set_use_crc(rle_ctx, is_crc_used);
+	RLE_DEBUG("ALPDU trailer is %s",
+	          rle_ctx_get_use_crc(rle_ctx) ? "CRC" : "seqnum");
 
 	if (sdu_frag_len > sdu_total_len) {
 		RLE_ERR("PPDU START with frag id %d contains more SDU bytes than expected in total "
@@ -438,6 +442,9 @@ int reassembly_cont_ppdu(struct rle_receiver *_this,
 		/* Freeing context and updating stats. At least one packet is partialy lost.*/
 		goto out;
 	}
+
+	RLE_DEBUG("ALPDU trailer is %s",
+	          rle_ctx_get_use_crc(rle_ctx) ? "CRC" : "seqnum");
 
 	cont_end_ppdu_extract_alpdu_frag(ppdu, ppdu_length, &alpdu_frag,
 	                                 &alpdu_frag_len);
@@ -532,8 +539,10 @@ int reassembly_end_ppdu(struct rle_receiver *_this,
 	cont_end_ppdu_extract_alpdu_frag(ppdu, ppdu_length, &alpdu_frag, &alpdu_frag_len);
 
 	if (rle_ctx_get_use_crc(rle_ctx)) {
+		RLE_DEBUG("ALPDU trailer is CRC");
 		rle_trailer_len = sizeof(rle_alpdu_crc_trailer_t);
 	} else {
+		RLE_DEBUG("ALPDU trailer is seqnum");
 		rle_trailer_len = sizeof(rle_alpdu_seqno_trailer_t);
 	}
 	if (alpdu_frag_len < rle_trailer_len) {
@@ -573,8 +582,14 @@ int reassembly_end_ppdu(struct rle_receiver *_this,
 		reassembled_sdu->size = rasm_buf->sdu_info.size;
 		reassembled_sdu->protocol_type = rasm_buf->sdu_info.protocol_type;
 		memcpy(reassembled_sdu->buffer, rasm_buf->sdu_info.buffer, reassembled_sdu->size);
+		RLE_DEBUG("%zu-byte SDU with protocol 0x%04x is complete",
+		          reassembled_sdu->size, reassembled_sdu->protocol_type);
 	} else {
 		assert(rasm_buf->sdu_info.protocol_type == RLE_PROTO_TYPE_VLAN_UNCOMP);
+
+		RLE_DEBUG("%zu-byte SDU with protocol 0x%04x shall be modified to insert "
+		          "the Protocol Type field in the VLAN header",
+		          rasm_buf->sdu_info.size, rasm_buf->sdu_info.protocol_type);
 
 		/* special case for VLAN with embedded IPv4/IPv6: the protocol field of the VLAN
 		 * header is suppressed by the RLE transmitter and shall be rebuilt by the RLE
