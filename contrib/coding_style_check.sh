@@ -31,6 +31,7 @@
 script_dir=$( dirname "$0" )
 sources_dir=$1
 work_dir=$2
+do_apply=$3
 
 # check script usage
 if [ -z "${sources_dir}" ] || [ -z "${work_dir}" ] ; then
@@ -51,15 +52,29 @@ find ${sources_dir} -name *.h -or -name *.c | \
 	grep -v "^${work_dir}" \
 	> ${work_dir}/coding_style.list
 
-# ask uncrustify to check for coding style on every source file
-uncrustify -q \
-	-c ${script_dir}/uncrustify.cfg \
-	-F ${work_dir}/coding_style.list \
-	--check
-ret=$?
-if [ ${ret} -ne 0 ] ; then
-	echo "coding style is not fully respected, go fix your code (code ${ret})" >&2
-	exit ${ret}
+if [ "${do_apply}" != "apply" ] ; then
+	# ask uncrustify to check for coding style on every source file
+	uncrustify -q \
+		-c ${script_dir}/uncrustify.cfg \
+		-F ${work_dir}/coding_style.list \
+		--check
+	ret=$?
+	if [ ${ret} -ne 0 ] ; then
+		echo "coding style is not fully respected, go fix your code (code ${ret})" >&2
+		exit ${ret}
+	fi
+else
+	# ask uncrustify to apply coding style on every source file
+	uncrustify -q \
+		-c ${script_dir}/uncrustify.cfg \
+		-F ${work_dir}/coding_style.list \
+		--replace --no-backup --mtime
+	ret=$?
+	if [ ${ret} -ne 0 ] ; then
+		echo "coding style was not applied correctly (code ${ret})" >&2
+		exit ${ret}
+	fi
+	echo "coding style was applied on every source file"
 fi
 
 exit 0
