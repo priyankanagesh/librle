@@ -72,6 +72,15 @@ static int compare_packets(const unsigned char *const pkt1,
                            const unsigned char *const pkt2,
                            const int pkt2_size);
 
+static void print_logs(const int module_id,
+                       const int level,
+                       const char *const file,
+                       const int line,
+                       const char *const func,
+                       const char *const fmt,
+                       ...)
+__attribute__((format(printf, 6, 7), nonnull(3, 5, 6)));
+
 static char * str_encap_error(const enum rle_encap_status status);
 static char * str_frag_error(const enum rle_frag_status status);
 static char * str_pack_error(const enum rle_pack_status status);
@@ -905,6 +914,9 @@ static int test_encap_and_decap(const char *const src_filename)
 	for (conf = confs; *conf; ++conf) {
 		++counter_confs;
 
+		/* configure trace handler */
+		rle_set_trace_callback(print_logs);
+
 		/* create the transmitter */
 		transmitter = rle_transmitter_new(*conf);
 		if (transmitter == NULL) {
@@ -1031,6 +1043,42 @@ error:
 	return status;
 }
 
+/**
+ * @brief Callback function registered in librle to handle the logs
+ *
+ * @param module_id  the rle internal module id
+ * @param level      the log level requested (DEBUG, WARNING, etc.)
+ * @param file       the filename in librle in which the log was requested
+ * @param line       the line at which the log was requested in librle
+ * @param func       the function in librle in which the log was requested
+ * @param fmt        the string which contains the format of the message
+ * @param ...        the additional parameters used to format the message
+ */
+static void print_logs(const int module_id,
+                       const int level,
+                       const char *const file,
+                       const int line,
+                       const char *const func,
+                       const char *const fmt,
+                       ...)
+{
+	if (level <= RLE_LOG_LEVEL_WARNING || is_verbose) {
+		const char *const level_descr[] = {
+			[RLE_LOG_LEVEL_CRI] = "CRITICAL",
+			[RLE_LOG_LEVEL_ERROR] = "ERROR",
+			[RLE_LOG_LEVEL_WARNING] = "WARNING",
+			[RLE_LOG_LEVEL_INFO] = "INFO",
+			[RLE_LOG_LEVEL_DEBUG] = "DEBUG",
+		};
+		va_list args;
+
+		printf("[%s] [%d:%s:%d:%s()] ", level_descr[level], module_id, file, line, func);
+		va_start(args, fmt);
+		vprintf(fmt, args);
+		va_end(args);
+		printf("\n");
+	}
+}
 
 /**
  * @brief Compare two network packets and print differences if any
