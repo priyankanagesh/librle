@@ -46,7 +46,7 @@ add_definitions("-g -W -Wall -Wextra -Wuninitialized
 -Wstrict-prototypes -Wcast-align -Wmissing-prototypes -Wchar-subscripts
 -Wpointer-arith -Winline  -Wno-conversion -Wshadow -fno-strict-aliasing")
 
-ADD_LIBRARY(rle SHARED ${SRC_LIBRLE})
+ADD_LIBRARY(rle STATIC ${SRC_LIBRLE})
 
 TARGET_LINK_LIBRARIES(rle)
 SET_TARGET_PROPERTIES(rle PROPERTIES SOVERSION ${ABI_VERSION_MAJOR} VERSION ${ABI_VERSION})
